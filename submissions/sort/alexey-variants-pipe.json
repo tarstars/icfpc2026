@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "note": "Alexey research line. Compacted rebuild of the sort_00/sort_01 systolic pipeline. Ships as sort_04; it does NOT beat sort_03 (the ring) and is kept for the record and for the measurement it produced.",
+  "problem": {
+    "id": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
+    "slug": "sort-numbers",
+    "name": "Sort",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "sort_04",
+      "label": "compacted 16-stage systolic pipeline",
+      "parent": "sort_01",
+      "changeType": "geometry+control-rooms",
+      "architecture": "same token protocol as sort_00/01 (SHIFT=10001 encoding, keep-max/forward-min stages, 16 HIGH flush tokens, RESET=-1). Stage room rebuilt from 14x20 to 8x9 by putting instructions on the vertical branch runs and sharing the reset/compare send cell. Dispatcher room removed entirely: the gate now ends a round by detecting RESET's sign instead of being told n, so no control pipe exists and every room has exactly one incoming and one outgoing pipe. Vertical serpentine puts stage 0 and stage 15 both on the array's top row so the loader and gate sit two cells away.",
+      "source": {
+        "path": "submissions/sort/sort_04.man",
+        "generator": "src/littleman/alexey_sort_pipe.py:build_sort_pipe",
+        "sha256": "5f6978dad8aa0bf84bdcbdb85740c892be68678bf232c0ca55d1b0fda18679a8",
+        "bytes": 2143,
+        "width": 48,
+        "height": 50,
+        "footprint": 2500
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "averageTicks": 1800.7,
+        "score": 4501786,
+        "stress": "tests/test_alexey_sort_pipe.py: stage/loader/gate contracts verified in isolation, then 8 worst-shape and 60 randomized whole-program cases"
+      },
+      "liveSubmission": {
+        "id": "fb0d8708-a99a-48f5-a343-427755daa02b",
+        "status": "done",
+        "casesPassed": 25,
+        "casesTotal": 25,
+        "width": 48,
+        "height": 50,
+        "area2": 2500,
+        "avgTicks": 2224.96,
+        "score": 5562400,
+        "createdAt": "2026-07-24T20:31:39.732Z",
+        "updatedAt": "2026-07-24T20:31:50.965Z",
+        "fullResponse": "submissions/sort/alexey-sort_04-submit.json"
+      },
+      "comparison": {
+        "vsSort01Pipeline": "7.0x better score (38,830,462 -> 5,562,400)",
+        "vsSort03Ring": "3.8x worse score; 1.81x FASTER on ticks (2224.96 vs 4032.52) but 6.9x larger footprint (2500 vs 361)",
+        "breakEvenFootprint": 654,
+        "breakEvenMaxDimension": 25.6,
+        "whyUnreachable": "16 stage rooms at 8x9 are 1152 cells; a 25x25 bounding box holds 625, before the loader, the gate and 19 pipes"
+      }
+    }
+  ]
+}

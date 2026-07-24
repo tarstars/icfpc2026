@@ -1,0 +1,17 @@
+{
+  "area2": 2500,
+  "avgTicks": 2224.96,
+  "casesPassed": 25,
+  "casesTotal": 25,
+  "createdAt": "2026-07-24T20:31:39.732Z",
+  "error": null,
+  "height": 50,
+  "id": "fb0d8708-a99a-48f5-a343-427755daa02b",
+  "loadError": null,
+  "output": "Passed 25/25 test cases",
+  "problemId": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
+  "score": 5562400,
+  "status": "done",
+  "updatedAt": "2026-07-24T20:31:50.965Z",
+  "width": 48
+}

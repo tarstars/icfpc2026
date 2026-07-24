@@ -175,3 +175,55 @@ Fix: circulate the count as an extra value in the ring itself — read it
 first each cycle, re-send it last. That removes 3 corridor rows
 (361 -> ~256-289) and the per-cycle corridor walk. Estimated score
 ~800-900k, i.e. 1.6-1.8x better, at a fraction of the pipeline's risk.
+
+## 2026-07-24 — sort_04: the compacted pipeline, built and measured
+
+Built despite the earlier analysis predicting it would lose, because the
+open question was whether unseen private tests favour it. They do favour
+it on ticks — and it still loses. Server results for the three lines:
+
+| variant | footprint | server avgTicks | server score |
+|---------|-----------|-----------------|--------------|
+| sort_01 pipeline (baseline) | 8464 | 4587.72 | 38,830,462 |
+| sort_04 pipeline (compacted) | 2500 | 2224.96 | 5,562,400 |
+| sort_03 ring | 361 | 4032.52 | 1,455,740 |
+
+So the compaction is a real **7.0x** improvement on the pipeline line,
+and the speed hypothesis is confirmed more strongly on the private tests
+than on the public ones: the pipeline is **1.81x faster per tick** than
+the ring on the server (only 1.43x locally), which says the private
+cases carry longer lists. But footprint is squared: 2500 vs 361 is a
+6.9x penalty, so the pipeline lands 3.8x behind.
+
+Break-even would need footprint <= 654, i.e. a bounding box of 25x25.
+Sixteen stage rooms at 8x9 are already 1152 cells and a 25x25 box holds
+625 — before the loader, the gate and 19 pipes. The gap is structural,
+not a matter of more golfing.
+
+### What made the compaction work
+
+- **Stage 14x20 -> 8x9.** The old room lost 24 cells to a shared return
+  track. Instructions were moved ONTO the vertical branch runs (the
+  reset `s` and the `+ s` of the d<0 arm execute while the man walks
+  north), and one `s` cell is shared by the reset path walking east and
+  the d<0 arm walking north. Cycle time 53.7 -> 20 ticks per token.
+- **The dispatcher room disappeared.** It only existed to broadcast n to
+  the gate. Having the gate end its round by testing the sign of the
+  RESET token removes the need for n, which removes the control pipe,
+  which leaves every room with exactly one incoming and one outgoing
+  pipe — no nearest-pipe audits anywhere in the program.
+- **Vertical serpentine.** Running the chain down col 0, up col 1, and
+  so on puts stage 0 and stage 15 both on the array's top row, so the
+  loader and gate sit two cells from the stages they talk to. A
+  horizontal serpentine strands stage 15 at the bottom-left and needs a
+  program-length pipe, whose transit ticks would eat the speedup.
+- **Computed constants.** HIGH = SHIFT + SHIFT via `W M +` instead of a
+  second 7-cell literal.
+
+### Settled by the way
+
+sort_00/sort_01 have passed 25/25 on the server while relying on B
+surviving `-` (their stage does `-` then `+` to restore A). So the
+cookbook's sec.1 claim that `+ - * N & | ~ { } %` destroy B is wrong for
+`-` at least, and the simulator's behaviour is the correct one. Machines
+in this line still avoid depending on it where it is free to do so.
