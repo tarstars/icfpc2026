@@ -55,3 +55,9 @@
   (terminal arrowhead may be a bend, Canvas.pipe needs manual patch);
   teammate's stricter vertical-backtick pairing forbids X/W between
   aligned literal columns. 26/26 live 5690cc53, server 7.47M.
+- Handoff written for less-powerful continuation: docs/littleman-
+  cookbook.md (all verified idioms: register discipline, loop idioms,
+  X geometry, pipe rules, FIFO discipline, shared cells, displays,
+  debug ladder), claude/plotter-plan.md (full room-by-room plotter
+  spec with build order), STATE.md rewritten as board + priorities.
+  plotter.py flagged as broken sketch - rewrite from plan.

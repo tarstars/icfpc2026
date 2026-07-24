@@ -1,75 +1,68 @@
 # STATE — read this first after any context flush
 
-Updated: 2026-07-24
+Updated: 2026-07-24 late (contest day 1 of 3).
 
-## Where we are
+## Read order for a fresh session
 
-Contest started 2026-07-24 (runs Jul 24–27). The task is the **littleman
-language**: 2D ASCII-grid programs (`.man` files) where "little men" (`@`)
-walk rooms executing single-character instructions, communicate via pipes
-between rooms, do I/O through special I/O rooms, and draw on an LM-75
-display (max 64x64, 16 colors, double-buffered).
+1. This file.
+2. `docs/littleman-cookbook.md` — ALL verified idioms, layout rules,
+   debug ladder, submission workflow. Non-negotiable reading before
+   touching any .man design.
+3. If working plotter: `claude/plotter-plan.md` (complete spec).
+4. `docs/language-reference.md` only for spec disputes.
 
-All contest docs archived in `docs/`: textbook, language-reference (exact
-semantics incl. tick order, pipe parsing/targeting rules, 64-bit wrapping),
-grading, rules, api. All 16 problem specs + public tests in
-`data/small/problems/` (fetched via public API; needs a browser User-Agent,
-plain urllib gets 403).
+## Contest clock
 
-Key scoring insight: score = max(width,height)² × avg ticks → COMPACT
-programs matter as much as fast ones. Points: test-fraction (up to 1) +
-ranking vs other teams (up to 1) per problem. Must pass ≥1 private test to
-be eligible (API currently reports privateTestCount 0 for all — likely
-just not disclosed). Rounds share one program run — no reset between
-rounds; judge withholds later input until earlier output is produced.
+Lightning round ends 2026-07-25 12:00 UTC (scoreboard frozen 10:00–
+14:00 UTC). Full contest ends 2026-07-27 12:00 UTC, final freeze from
+10:00 UTC. Check live: `uv run icfpc-api clock`.
 
-## Ground truth I must not forget
+## Board (graded problems, best live submission)
 
-- Repo root: `~/prj/icfpc2026`. My area: `claude/`. Don't touch `codex/`.
-- Bulk data goes ONLY through the symlinks (`artifacts/`, `outputs/`,
-  `yt_work/`, `data/generated/`, `data/external/`) backed by the USB disk
-  labeled `medium_data`. Before ANY bulk write:
-  `python3 scripts/check_external_storage.py --required-free-gib <GiB>`
-  If it fails — stop, don't improvise a local directory.
-- Policies live in `AGENTS.md`; shared status in `docs/current-state.md`.
-- Never search inside `~/prj/arc00` or `~/prj/arcadia`.
-- YT cluster root: `//home/delivery_ml/research/tarstars/icfpc2026` — use for
-  CPU work >~1h; credentials not yet probed.
-- Current branch: `agent/initialize-contest-workspace` (main is `main`).
+| problem   | status | live score | ours? | notes |
+|-----------|--------|-----------|-------|-------|
+| triangle  | 19/19  | 1053      | claude | at proven floor, done |
+| memory    | 24/24  | 43.8M     | claude | v1; compaction is the biggest single win available (footprint 4489 = 67²; ~40-wide target ≈ 2.8× better) |
+| reverse   | 25?/   | 1.95M     | claude | shrinking ring; fine |
+| sort      | 25/25  | 3.46M     | claude | sort_02 ring; teammate's pipeline superseded |
+| brackets  | 26/26  | 7.47M     | claude | packed base-3 stack |
+| tcp       | 20/20  | 20.0M     | codex  | paired-value ring |
+| history   | 1/1    | 7921      | codex  | footprint-only |
+| plotter   | UNSOLVED | —       | —     | display infra DONE; machine spec ready in plotter-plan.md; plotter.py = broken sketch, rewrite |
+| gradebook | UNSOLVED | —       | —     | ring of (subject,student,grade)? read spec first |
+| matmul    | UNSOLVED | —       | —     | ring storage + nested loops; big |
+| sudoku    | UNSOLVED | —       | —     | 81 values, 27 group-sum/set checks; bitmask-in-64bit per group looks right |
+| subset-sum| UNSOLVED | —       | —     | n small? 15M tick cap hints brute-force enumeration via binary counter + x-loop |
+
+Practice: max-element solved (10/10, no submission possible).
+
+## Ground truth (unchanged)
+
+- Repo `~/prj/icfpc2026`; my area `claude/`; NEVER touch `codex/`
+  (teammate works in parallel — pull before starting, expect their
+  uncommitted files, commit only your own).
+- `.env` (mode 600) holds team API key. Submit ONLY via
+  `uv run icfpc-api submit <problemId> <file> --confirm --wait`,
+  redirect stdout to a file to keep the submission id.
+- Problem ids/slugs: `uv run icfpc-api problems`. Specs cached in
+  `data/small/problems/*.json`.
+- Versioning: .man files immutable; new attempt = `<slug>_NN.man` +
+  variants.json entry. See any submissions/*/README.md.
+- Simulator is trustworthy: 7 problems went to the server on first
+  try after local green. If sim and server ever disagree, STOP and
+  fix the sim first.
 
 ## In progress
 
-Nothing mid-flight. Last action: initialized this `claude/` area
-(2026-07-24).
+Plotter: infra (display parse/semantics/frame-judge) merged and
+green (72 tests). Machine not started beyond broken sketches.
+Next concrete step = step 1 of plotter-plan.md build order.
 
-## Toolchain (working)
+## Priorities (my recommendation, in order)
 
-- Python project at repo root, uv-managed (`uv run pytest`, 27 tests).
-- `src/littleman/sim.py` — full simulator (no display support yet).
-- `src/littleman/judge.py` — round gating, streaming compare, scoring.
-- CLI: `uv run python -m littleman <prog.man> <slug>` judges against
-  `data/small/problems/<slug>.json`.
-- `submissions/triangle/triangle.man` — VERIFIED 6/6, 14 ticks, score 1134.
-
-## Solved locally (in submissions/, judged vs public tests)
-
-- triangle: 6/6, score 1134.
-- memory: 7/7, score 43.8M — pipeline machine, see `src/littleman/memory.py`
-  docstring for the architecture and command encoding. v1 unoptimized.
-
-## Next action
-
-1. Submit triangle + memory via `uv run icfpc-api` (tooling in docs/api-tools.md,
-   creds in .env — added by teammate). Verify problem IDs first.
-2. Memory optimization levers, in value order: compact the canvas
-   (footprint 4489 = 67² dominates; rooms can pack much tighter),
-   unroll station relay loops (6 ticks/value -> ~4), 3-per-word packing
-   (34-word ring) only if standings warrant.
-3. Display support in simulator (needed for palette/plotter/history-lesson).
-4. More problems: reverse-a-list / sort-numbers / max-element reuse the
-   ring idioms; atoi/brackets/tcp are stream parsers like P2.
-
-## Open questions
-
-- What language/stack will the task favor? (Decide only after reading it.)
-- Is YT access working for this project? (Probe before the first big job.)
+1. Plotter via plotter-plan.md (2 points at stake, plan is ready).
+2. Sudoku Auditor / Grade Book (likely ring + streaming compare,
+   reuse cookbook idioms; read specs).
+3. Memory compaction (known ~2.5-3× score win, pure layout work).
+4. Subset Sum (needs algorithm thought; 15M cap).
+5. Matmul last (biggest machine).
