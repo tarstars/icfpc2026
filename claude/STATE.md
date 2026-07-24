@@ -10,11 +10,18 @@ walk rooms executing single-character instructions, communicate via pipes
 between rooms, do I/O through special I/O rooms, and draw on an LM-75
 display (max 64x64, 16 colors, double-buffered).
 
-Textbook archived at `docs/textbook.md` (reconstructed from the site's JS
-bundle — the site is an SPA, plain curl gets an empty shell). Includes a
-compiled instruction table. NOT yet captured: `/language-reference`,
-`/grading`, `/problem-sets`, `/editor-help` — these hold the exact
-semantics, scoring, and the actual problems. Get them next.
+All contest docs archived in `docs/`: textbook, language-reference (exact
+semantics incl. tick order, pipe parsing/targeting rules, 64-bit wrapping),
+grading, rules, api. All 16 problem specs + public tests in
+`data/small/problems/` (fetched via public API; needs a browser User-Agent,
+plain urllib gets 403).
+
+Key scoring insight: score = max(width,height)² × avg ticks → COMPACT
+programs matter as much as fast ones. Points: test-fraction (up to 1) +
+ranking vs other teams (up to 1) per problem. Must pass ≥1 private test to
+be eligible (API currently reports privateTestCount 0 for all — likely
+just not disclosed). Rounds share one program run — no reset between
+rounds; judge withholds later input until earlier output is produced.
 
 ## Ground truth I must not forget
 
@@ -37,14 +44,17 @@ Nothing mid-flight. Last action: initialized this `claude/` area
 
 ## Next action
 
-1. Capture `/language-reference` (exact semantics: pipe "nearest" rules,
-   tie-breaking, full instruction set), `/grading` (scoring!), and
-   `/problem-sets` (the actual problems). Same SPA-bundle extraction trick
-   works; also check for a JSON API behind the app.
-2. Then: build a littleman simulator/interpreter locally (the judge runs
-   these programs; we need a fast local one to iterate), plus a program
-   generator/assembler — hand-writing 2D ASCII is not scalable.
-3. Update `docs/current-state.md` with constraints and scoring once known.
+1. Build a local littleman simulator matching `docs/language-reference.md`
+   exactly (tick order: pipes shift → I/O → execute → move; blocking;
+   halting; errors; display). Validate against the textbook example
+   programs and problem public tests.
+2. Build a scorer (footprint-tick) so we can compare candidate solutions
+   locally.
+3. Team needs credentials/API key (register on site) before submitting.
+4. Start with easy problems: triangle, reverse-a-list, sort-numbers.
+   `history-lesson` is footprint-only (a display problem, 1 test) — pure
+   code-golf on area.
+5. Longer term: a codegen/assembler layer that emits compact 2D layouts.
 
 ## Open questions
 

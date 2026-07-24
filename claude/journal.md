@@ -11,3 +11,7 @@
   it's an SPA, so extracted the content from assets/textbook-9zWRf841.js.
   Archived reconstruction with all example programs and an instruction
   table to docs/textbook.md. Task: the "littleman" 2D ASCII language.
+- Captured the rest of the contest docs from SPA bundles: language
+  reference (exact semantics), grading, rules, API. Fetched all 16
+  problem specs + public tests via the public API (needs browser UA) into
+  data/small/problems/. Updated docs/current-state.md with contest facts.

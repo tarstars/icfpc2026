@@ -4,8 +4,24 @@ Updated: 2026-07-24
 
 ## Objective
 
-Prepare a durable workspace for ICFPC 2026. The contest specification and
-implementation language are not known yet.
+Compete in ICFPC 2026 (live 2026-07-24 → 07-27). The task is the
+**littleman** language: 2D ASCII-grid programs walked by "little men",
+communicating through pipes, with I/O rooms and an LM-75 display.
+
+## Contest facts
+
+- Task docs archived: `docs/textbook.md`, `docs/language-reference.md`,
+  `docs/grading.md`, `docs/rules.md`, `docs/api.md`.
+- 16 problems released so far (12 graded in "Semester 1–3", 4 practice);
+  specs + public test data in `data/small/problems/`.
+- Scoring per problem: up to 1 point for test-case fraction + up to 1 point
+  for ranking vs other teams. Program score = `max(width,height)² × avg
+  ticks` (footprint-tick; lower is better); a few problems are
+  footprint-only. Step cap usually 5M ticks; programs ≤ 10 MB.
+- Submissions via editor or REST API (`/api/v1`), bearer token per team,
+  best submission counts, max 5 pending. Scoreboard freezes at hours 22–26
+  and from hour 70.
+- Values are signed 64-bit, wrapping. Execution is deterministic.
 
 ## Repository
 
