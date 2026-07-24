@@ -54,3 +54,16 @@ programs.
 - memory (67×38, score 43.8M): footprint 4489 dominates; canvas
   compaction is the big lever.
 - tcp (38×41, 20.0M): ring is paired-value; same folding ideas apply.
+
+## 2026-07-24 — merged teammates' work, pushed
+
+- `origin/main` was 4 commits ahead (plotter v2, toolchain plan,
+  littleman cookbook, synthesis stack). Zero file overlap with this
+  line, so `git merge --no-ff origin/main` was clean.
+- Full suite after merge: 75 passed. Pushed as `6572bea`.
+- Protected-files list extended with the teammates' new files
+  (`docs/littleman-cookbook.md`, `docs/toolchain-plan.md`,
+  `docs/synthesis-stack.md`, `claude/plotter-plan.md`,
+  `src/littleman/plotter.py`).
+- The cookbook is now the authoritative semantics reference; the
+  trick sheet points at it instead of duplicating register rules.

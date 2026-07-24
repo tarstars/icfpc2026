@@ -7,7 +7,17 @@ into **new** files, preferably prefixed `alexey-` (docs) or added as new
 variant files (submissions). Committing new files, including contest
 solutions, is fine.
 
-Snapshot of tracked files at session start (git `main` @ 2bc008d):
+Snapshot of tracked files at session start (git `main` @ 2bc008d), plus
+files that arrived from teammates in the 2026-07-24 merge (@ 7e3aecc):
+
+## Arrived from teammates after session start (also off limits)
+
+- `docs/littleman-cookbook.md` — verified idioms and register-discipline
+  rules; the authoritative reference now. Read it, never edit it.
+- `docs/toolchain-plan.md`, `docs/synthesis-stack.md`
+- `claude/plotter-plan.md`
+- `src/littleman/plotter.py`
+
 
 ## Policy / shared state (never touch)
 

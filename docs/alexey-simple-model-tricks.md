@@ -6,6 +6,12 @@ Maintained by the assistant; append new tricks as they are discovered.
 Full semantics live in `docs/language-reference.md` — open it only for
 exact edge cases (tick order, pipe targeting, literal parsing).
 
+**Companion (read it too, it is authoritative):**
+`docs/littleman-cookbook.md`, written by a teammate — register discipline
+(which ops destroy B, `/` giving quotient+remainder, BP being write-only),
+loop idioms, shared-cell rules. This file stays focused on **space golf,
+workflow, and this machine's environment** and does not duplicate it.
+
 ## Contest rules in one breath
 
 - ICFPC 2026, live 2026-07-24 → 07-27. Language: **littleman** — 2D ASCII
