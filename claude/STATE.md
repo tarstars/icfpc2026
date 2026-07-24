@@ -4,9 +4,17 @@ Updated: 2026-07-24
 
 ## Where we are
 
-Pre-contest. The ICFPC 2026 task has **not** been published. The workspace
-scaffold is done (layout, policies, external storage, Git LFS). No language,
-toolchain, or solver exists yet — deliberately.
+Contest started 2026-07-24 (runs Jul 24–27). The task is the **littleman
+language**: 2D ASCII-grid programs (`.man` files) where "little men" (`@`)
+walk rooms executing single-character instructions, communicate via pipes
+between rooms, do I/O through special I/O rooms, and draw on an LM-75
+display (max 64x64, 16 colors, double-buffered).
+
+Textbook archived at `docs/textbook.md` (reconstructed from the site's JS
+bundle — the site is an SPA, plain curl gets an empty shell). Includes a
+compiled instruction table. NOT yet captured: `/language-reference`,
+`/grading`, `/problem-sets`, `/editor-help` — these hold the exact
+semantics, scoring, and the actual problems. Get them next.
 
 ## Ground truth I must not forget
 
@@ -29,15 +37,14 @@ Nothing mid-flight. Last action: initialized this `claude/` area
 
 ## Next action
 
-Wait for contest materials. The moment they arrive:
-
-1. Archive the original statement + inputs with checksums (bulk copies go to
-   `artifacts/`, small reviewable pieces to `data/small/`).
-2. Distill constraints, scoring, and the submission interface into
-   `docs/current-state.md`.
-3. Pick the smallest toolchain that fits; write parser/validator + tiny
-   fixtures FIRST, then a deterministic baseline, then optimize.
-4. Set up one reproducible submission command; record it here.
+1. Capture `/language-reference` (exact semantics: pipe "nearest" rules,
+   tie-breaking, full instruction set), `/grading` (scoring!), and
+   `/problem-sets` (the actual problems). Same SPA-bundle extraction trick
+   works; also check for a JSON API behind the app.
+2. Then: build a littleman simulator/interpreter locally (the judge runs
+   these programs; we need a fast local one to iterate), plus a program
+   generator/assembler — hand-writing 2D ASCII is not scalable.
+3. Update `docs/current-state.md` with constraints and scoring once known.
 
 ## Open questions
 
