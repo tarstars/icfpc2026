@@ -103,16 +103,12 @@ class Machine:
         for p in pipes:
             self.out_pipes.setdefault(id(p.source), []).append(p)
             self.in_pipes.setdefault(id(p.dest), []).append(p)
-        self.input_pipe = next(
-            (p for p in pipes if p.source.kind == "input"), None
-        )
-        self.output_pipe = next(
-            (p for p in pipes if p.dest.kind == "output"), None
-        )
+        self.input_pipe = next((p for p in pipes if p.source.kind == "input"), None)
+        self.output_pipe = next((p for p in pipes if p.dest.kind == "output"), None)
 
     # ------------------------------------------------------------- parsing
     @classmethod
-    def parse(cls, text: str) -> "Machine":
+    def parse(cls, text: str) -> Machine:
         lines = text.split("\n")
         while lines and lines[-1] == "":
             lines.pop()
@@ -275,33 +271,27 @@ class Machine:
             # horizontal pairing per row
             for r in rrange:
                 cols = [c for c in crange if self.grid[r][c] == "`"]
-                i = 0
-                while i + 1 < len(cols):
+                for i in range(0, len(cols) - 1, 2):
                     a, b = cols[i], cols[i + 1]
                     between = [self.grid[r][c] for c in range(a + 1, b)]
-                    if all(ch.isdigit() or ch == " " for ch in between):
-                        self._register_literal(between, (r, a), (r, b), "h")
-                        for c in range(a + 1, b):
-                            if self.grid[r][c].isdigit():
-                                self.hdigits.add((r, c))
-                        i += 2
-                    else:
-                        i += 1
+                    if not all(ch.isdigit() or ch == " " for ch in between):
+                        raise LoadError(f"invalid horizontal literal at {(r, a)}")
+                    self._register_literal(between, (r, a), (r, b), "h")
+                    for c in range(a + 1, b):
+                        if self.grid[r][c].isdigit():
+                            self.hdigits.add((r, c))
             # vertical pairing per column
             for c in crange:
                 rows = [r for r in rrange if self.grid[r][c] == "`"]
-                i = 0
-                while i + 1 < len(rows):
+                for i in range(0, len(rows) - 1, 2):
                     a, b = rows[i], rows[i + 1]
                     between = [self.grid[r][c] for r in range(a + 1, b)]
-                    if all(ch.isdigit() or ch == " " for ch in between):
-                        self._register_literal(between, (a, c), (b, c), "v")
-                        for r in range(a + 1, b):
-                            if self.grid[r][c].isdigit():
-                                self.vdigits.add((r, c))
-                        i += 2
-                    else:
-                        i += 1
+                    if not all(ch.isdigit() or ch == " " for ch in between):
+                        raise LoadError(f"invalid vertical literal at {(a, c)}")
+                    self._register_literal(between, (a, c), (b, c), "v")
+                    for r in range(a + 1, b):
+                        if self.grid[r][c].isdigit():
+                            self.vdigits.add((r, c))
         for pos in ticks:
             if pos not in self.hpairs and pos not in self.vpairs:
                 raise LoadError(f"unmatched backtick at {pos}")
@@ -347,7 +337,9 @@ class Machine:
         return int(digits) if digits else None
 
     # ------------------------------------------------------------- running
-    def run(self, inputs=None, max_ticks: int = 5_000_000, controller=None) -> RunResult:
+    def run(
+        self, inputs=None, max_ticks: int = 5_000_000, controller=None
+    ) -> RunResult:
         """Run to completion.
 
         `controller` (optional) gates input and observes output for judging:
@@ -477,8 +469,8 @@ class Machine:
             return None
         if ch.isdigit():
             horizontal = man.direction in (LEFT, RIGHT)
-            in_literal = (
-                (man.r, man.c) in (self.hdigits if horizontal else self.vdigits)
+            in_literal = (man.r, man.c) in (
+                self.hdigits if horizontal else self.vdigits
             )
             if not in_literal:
                 man.A = int(ch)

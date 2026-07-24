@@ -44,6 +44,16 @@ def test_triangle_passes_all_public_cases():
     assert all(t > 0 for t in report.case_ticks)
 
 
+def test_footprint_scoring_ignores_ticks():
+    problem = {
+        "publicTestData": [{"rounds": [{"in": ["1"], "out": ["1"]}]}],
+        "scoring": "footprint",
+    }
+    report = judge_problem(ECHO, problem)
+    assert report.cases_passed == report.cases_total == 1
+    assert report.score == report.footprint
+
+
 def test_echo_passes_multi_round_case():
     rounds = [{"in": ["1"], "out": ["1"]}, {"in": ["2"], "out": ["2"]}]
     result = judge_case(ECHO, rounds)

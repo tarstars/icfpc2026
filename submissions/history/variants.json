@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "3ef9ec95-03ff-4825-b42d-dbad3ee54af0",
+    "slug": "history-lesson",
+    "name": "History Lesson",
+    "scoring": "footprint"
+  },
+  "variants": [
+    {
+      "version": "history_00",
+      "label": "parser-ambiguous serpentine",
+      "parent": null,
+      "architecture": "radix-92 packed text with quotient relay and ASCII mapper",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 92,
+        "asciiShift": 31,
+        "packedWords": 343,
+        "dataRows": 75,
+        "literalTapeCells": 6178
+      },
+      "source": {
+        "path": "submissions/history/history_00.man",
+        "generator": "src/littleman/history.py:build_history_unsafe",
+        "sha256": "60d8f6b3b5bb8bdaa400c2939b4af54b76390323662ce01c88dd41e80edfa8d7",
+        "bytes": 7483,
+        "width": 89,
+        "height": 88,
+        "footprint": 7921
+      },
+      "liveSubmission": {
+        "id": "b91aa4d8-d904-484f-9ed3-46aa2566598e",
+        "status": "done",
+        "casesPassed": 0,
+        "casesTotal": 0,
+        "loadError": "expected a digit or a space between backticks, but found '.' at (2, 21)",
+        "score": null,
+        "createdAt": "2026-07-24T16:57:18.338Z",
+        "updatedAt": "2026-07-24T16:57:26.542Z"
+      }
+    },
+    {
+      "version": "history_01",
+      "label": "server-safe fixed slots",
+      "parent": "history_00",
+      "architecture": "radix-92 fixed-slot text with quotient relay and ASCII mapper",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 92,
+        "asciiShift": 31,
+        "packedWords": 308,
+        "dataRows": 77,
+        "wordsPerRow": 4,
+        "decimalFieldWidth": 18
+      },
+      "source": {
+        "path": "submissions/history/history_01.man",
+        "generator": "src/littleman/history.py:build_history",
+        "sha256": "157be247ef582e0f761a6fac060eee3cdf82e7cb509d172b922da3b408295351",
+        "bytes": 7631,
+        "width": 89,
+        "height": 89,
+        "footprint": 7921
+      },
+      "localValidation": {
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "ticks": 192736,
+        "score": 7921
+      },
+      "liveSubmission": {
+        "id": "7f3e13a3-99e5-42d5-bd08-24b968d0d398",
+        "status": "done",
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "width": 89,
+        "height": 89,
+        "area2": 7921,
+        "score": 7921,
+        "loadError": null,
+        "error": null,
+        "createdAt": "2026-07-24T17:04:00.040Z",
+        "updatedAt": "2026-07-24T17:04:08.880Z"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-24T17:02:12.107Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 7,
+    "casesPassed": 1,
+    "casesTotal": 1,
+    "score": 7921,
+    "passPoints": 1.0,
+    "rankPoints": 0.8536585365853658,
+    "points": 1.8536585365853657,
+    "rows": 42
+  }
+}

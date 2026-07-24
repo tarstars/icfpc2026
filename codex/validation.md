@@ -46,11 +46,39 @@ Updated: 2026-07-24
 - `uv run icfpc-api submission __credential_probe__` — returned
   `404 not_found`, confirming the bearer key was accepted rather than rejected
   with `401`; no submission was created.
+- `uv run pytest -q` — 38 tests passed after adding the Sort stage, loader,
+  reset, and multi-round integration tests.
+- `uv run python -m littleman submissions/sort/sort.man sort-numbers` — passed
+  all 7 public cases with footprint 10,201; per-case ticks and score are in
+  `reports/2026-07-24-sort-pipeline.md`.
+- Submitted SHA-256
+  `668318060ad980c95b34c9cda5c2f8f9f3d377a5e777f143346c6553bd2f2bd4`
+  once as submission `1a673762-fe78-4d26-bced-5063fd49b221`; the server
+  reported `done`, 25/25 cases passed, width 96, height 101, and no error.
+- `build_sort()` still reproduces the submitted baseline SHA-256 exactly.
+- The geometry-only `sort_01` candidate passed all 7 public cases at 92×92;
+  its SHA-256 is
+  `ddb1341dc8321b8b9b121383e81eb27629c78ee407a82a52540cfdec7ce76877`,
+  and its local score is 31,000,004.57 versus 40,379,929.86 for the baseline.
+- Submitted that exact candidate once as
+  `2e8dbabf-02fd-4701-b811-cf1dec8aba95`; the server reported `done`, 25/25,
+  92×92, average ticks 4,587.72, score 38,830,462.08, and no error.
+- The unfrozen Sort standings snapshot updated at
+  `2026-07-24T16:02:12.313Z` placed `wheezards` 17th with 1.448275862 points.
+- Preserved rejected History submission
+  `b91aa4d8-d904-484f-9ed3-46aa2566598e`; it exposed stricter server pairing
+  for vertically aligned backticks and ran no cases.
+- Tightened the simulator parser and added a regression test for that rule.
+- `history_01.man` passed the exact 2,810-byte output locally in 192,736 ticks
+  and live as submission `7f3e13a3-99e5-42d5-bd08-24b968d0d398`, at 89×89
+  and score 7,921. Its SHA-256 is
+  `157be247ef582e0f761a6fac060eee3cdf82e7cb509d172b922da3b408295351`.
+- Both checked-in History artifacts exactly match their recorded generators.
+- A judge regression test confirms footprint-only scores ignore ticks.
 
 ## Pending validation
 
-- The submission POST is unit-tested but intentionally has not been exercised
-  against the live contest without a selected program and explicit intent.
+- No pending History Lesson submission validation.
 
 No YT connectivity, pool availability, or credentials have been validated for
 this project.

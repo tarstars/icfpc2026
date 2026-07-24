@@ -10,10 +10,7 @@ from .sim import Machine
 def footprint(text: str) -> int:
     rows = [line for line in text.split("\n")]
     occupied = [
-        (r, c)
-        for r, line in enumerate(rows)
-        for c, ch in enumerate(line)
-        if ch != " "
+        (r, c) for r, line in enumerate(rows) for c, ch in enumerate(line) if ch != " "
     ]
     if not occupied:
         return 0
@@ -102,7 +99,9 @@ def judge_case(text: str, rounds, max_ticks: int = 5_000_000) -> CaseResult:
     return CaseResult(passed=False, ticks=res.ticks, reason=reason)
 
 
-def judge_problem(text: str, problem: dict, max_ticks: int | None = None) -> ProblemReport:
+def judge_problem(
+    text: str, problem: dict, max_ticks: int | None = None
+) -> ProblemReport:
     cap = max_ticks or problem.get("tickCap") or 5_000_000
     cases = problem["publicTestData"]
     report = ProblemReport(cases_total=len(cases), cases_passed=0)
@@ -114,6 +113,9 @@ def judge_problem(text: str, problem: dict, max_ticks: int | None = None) -> Pro
             report.cases_passed += 1
             report.case_ticks.append(result.ticks)
     if report.cases_passed == report.cases_total and report.case_ticks:
-        avg = sum(report.case_ticks) / len(report.case_ticks)
-        report.score = report.footprint * avg
+        if problem.get("scoring") == "footprint":
+            report.score = float(report.footprint)
+        else:
+            avg = sum(report.case_ticks) / len(report.case_ticks)
+            report.score = report.footprint * avg
     return report

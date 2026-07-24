@@ -63,6 +63,14 @@ UNMATCHED = """\
 +------+
 """
 
+INVALID_VERTICAL_PAIR = """\
++------+
+|@`1` H|
+| .    |
+| `2`  |
++------+
+"""
+
 
 def test_horizontal_literal_loads_and_outputs():
     res = Machine.parse(LITERALS1).run()
@@ -99,3 +107,8 @@ def test_vertical_literal_walked_downward():
 def test_unmatched_backtick_is_load_error():
     with pytest.raises(LoadError):
         Machine.parse(UNMATCHED)
+
+
+def test_paired_backticks_reject_non_digits_between_them():
+    with pytest.raises(LoadError, match="invalid vertical literal"):
+        Machine.parse(INVALID_VERTICAL_PAIR)

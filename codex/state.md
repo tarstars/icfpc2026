@@ -21,6 +21,16 @@ solutions.
   authenticated submission reads and waits, and explicitly confirmed
   submission creation.
 - Added shared API tool descriptions and tests.
+- Implemented a generated 16-stage streaming Sort pipeline, passed all 7
+  public cases locally, and submitted it successfully for 25/25 server cases.
+- Preserved Sort variants in a machine-readable catalogue and submitted the
+  geometry-only 92×92 successor successfully for 25/25 server cases and a
+  38,830,462.08 server score.
+- Implemented and preserved a radix-packed 89×89 History Lesson solution; it
+  passed 1/1 live at score 7,921 and tied rank 7 at the recorded snapshot.
+- Corrected the local judge to honor footprint-only scoring.
+- Matched local backtick pairing to the stricter server parser after preserving
+  the initial rejected candidate and its load error.
 
 ## Blockers
 
@@ -28,6 +38,5 @@ solutions.
 
 ## Next steps
 
-1. Support Claude with live problem retrieval and result polling.
-2. Create contest submissions only when the exact problem ID and locally
-   judged program are intentionally selected.
+1. Support Claude with live problem retrieval, submission, and result polling.
+2. Develop the next selected target, Packet Reassembly.

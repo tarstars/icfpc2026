@@ -32,6 +32,13 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   API client.
 - `uv run icfpc-api` provides JSON problem reads and guarded submission/polling
   commands; local credentials remain in the ignored `.env`.
+- Three submitted Sort variants passed all 25 server cases. The current best is
+  the 27×24 shrinking-ring `sort_02`, with server score 3,460,708.8. The
+  earlier pipeline variants and their geometry-only optimization are preserved
+  under `submissions/sort/`; their experiment is summarized in
+  `reports/2026-07-24-sort-pipeline.md`.
+- The server-safe 89×89 History Lesson program passed 1/1 with footprint score
+  7,921 and is tied at rank 7 in its recorded standings snapshot.
 
 ## Storage
 
