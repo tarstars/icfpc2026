@@ -46,3 +46,6 @@
 - Fixed the shared Memory compaction work in progress by separating its two
   wraparound pipe corridors. The geometry-only `memory_01` candidate passed
   24/24 live and improved the server score by 49.78%.
+- Built Plotter in a new generator module from the shared symmetric-Bresenham
+  design. Public and deterministic 20-round oracle tests passed, followed by
+  a 20/20 live result at server score 75,794,498,065.

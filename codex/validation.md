@@ -175,6 +175,24 @@ Updated: 2026-07-24
   1.7 points.
 - `uv run pytest -q` — 119 tests passed in 763.90 seconds after the Memory
   geometry change and its regression coverage.
+- The generated Plotter setup pipeline emitted exact constants for four
+  directed segments. All six public cases passed at ticks
+  `[90404, 215202, 5759, 137648, 312647, 326976]`, footprint 286,225, and
+  local score 51,932,473,183.333336.
+- A deterministic 20-round test at seed `20260724` matched every frame from
+  the Python symmetric-Bresenham oracle and completed at tick 1,051,453.
+- `uv run pytest tests/test_codex_plotter.py -q` — 3 tests passed in
+  29.16 seconds.
+- Submitted SHA-256
+  `13a1322961d8985bc165fd03f93070640dc4ee4b653c49c1d9f1dd4588bf8e03`
+  as `4c1aa9a7-6362-46c6-a62e-8bc814d871f6`; the server reported `done`,
+  20/20, 394×535, average ticks 264,807.4, score 75,794,498,065, and no
+  error.
+- `uv run pytest -q` — 122 tests passed in 785.02 seconds after adding the
+  complete Plotter pipeline and oracle coverage.
+- The unfrozen Plotter standings snapshot updated at
+  `2026-07-24T21:52:57.148Z` placed `wheezards` 19th of 30 rows with
+  1.3793103448 points.
 
 ## Pending validation
 

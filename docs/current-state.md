@@ -65,6 +65,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
   improved the server score from 181,952,075.875 to 91,372,247.625. Details
   are in `reports/2026-07-24-memory-compaction.md`.
+- Plotter is solved by a generated symmetric-Bresenham pipeline. The first
+  correctness baseline passed all 20 live cases at 394×535 and score
+  75,794,498,065. Its exact source and private-test-oriented validation are
+  documented in `reports/2026-07-24-plotter.md`.
 
 ## Storage
 
