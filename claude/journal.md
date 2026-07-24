@@ -30,3 +30,7 @@
 - SUBMITTED both solutions, full marks on private tests too:
   triangle 0efa32a5 19/19 (9x9); memory 788c05a4 24/24 (67x38).
   Both problems are now score-golf: footprint x ticks vs other teams.
+- Triangle optimized: n²+n then >>1 (rM*+M1W}s, 9 ops) in a 2x7
+  interior: 81 x 13 = 1053 (was 1134). Submitted ff8567e2, 19/19.
+  Argued floor: halving needs constant-load + W + op (3 cells), so
+  8 instructions impossible; 8-wide room can't hold 13 cells.

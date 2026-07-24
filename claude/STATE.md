@@ -51,14 +51,23 @@ Nothing mid-flight. Last action: initialized this `claude/` area
   `data/small/problems/<slug>.json`.
 - `submissions/triangle/triangle.man` — VERIFIED 6/6, 14 ticks, score 1134.
 
+## Solved locally (in submissions/, judged vs public tests)
+
+- triangle: 6/6, score 1134.
+- memory: 7/7, score 43.8M — pipeline machine, see `src/littleman/memory.py`
+  docstring for the architecture and command encoding. v1 unoptimized.
+
 ## Next action
 
-1. Cross-check triangle in the web editor, submit it (needs team API key —
-   user must register), record submission id.
-2. Memory: implement unpacked ring + head pointer per the design discussed
-   (see journal 2026-07-24); measure, then decide on 3-per-word packing.
+1. Submit triangle + memory via `uv run icfpc-api` (tooling in docs/api-tools.md,
+   creds in .env — added by teammate). Verify problem IDs first.
+2. Memory optimization levers, in value order: compact the canvas
+   (footprint 4489 = 67² dominates; rooms can pack much tighter),
+   unroll station relay loops (6 ticks/value -> ~4), 3-per-word packing
+   (34-word ring) only if standings warrant.
 3. Display support in simulator (needed for palette/plotter/history-lesson).
-4. Longer term: codegen/assembler layer emitting compact 2D layouts.
+4. More problems: reverse-a-list / sort-numbers / max-element reuse the
+   ring idioms; atoi/brackets/tcp are stream parsers like P2.
 
 ## Open questions
 
