@@ -123,15 +123,64 @@ workflow, and this machine's environment** and does not duplicate it.
   executes `r` before the first `s`, or it sends a spurious 0 (A=0)
   into the ring.
 
+## Ring-machine upgrades (reverse_01, 2026-07-24) — reuse these
+
+Both replace machinery that costs ROWS, so they are space wins as much
+as tick wins. They apply to any shrinking-ring problem (sort, tcp).
+
+- **Carry the ring size in B instead of calling `q`.** `q` only counts
+  what has reached the in-pipe, which is the ONLY reason the delay
+  corridor exists (3-4 rows). B survives `r s m d a x ] q b H > < ^ v X`
+  and digits, so the pump can just hold j. Per cycle: `W b M` at the
+  branch (A=j, BP=j, B=j), and `1 W - M` after the emit (A=B=j-1).
+  A tracked counter never races: an `r` that runs early blocks until the
+  value arrives, which costs ticks and cannot corrupt anything.
+  Note `1 W - M` re-establishes B with an explicit `M`, so it does not
+  depend on whether `-` preserves B (sec. 1 says it does not; the
+  simulator says it does — do not build on that disagreement).
+- **Test BEFORE relaying in a skip loop.** The classic `>rsv / ^ md`
+  relays BP+1 values, so a "skip j-1 then take" needs BP = j-2 (two
+  `m`s) AND a separate bypass lane for j == 1, plus a merge cell.
+  Putting the test first relays exactly BP times:
+
+      >   d       enter heading east; `d` turns south while BP > 0,
+      ^msr<       body runs back west: r, s, m, then climb to `>`
+
+  Enter with BP = j-1 and it relays j-1 for every j, including j == 1
+  (0 relays, straight through the `d`). The bypass lane, its merge, and
+  one `m` all disappear — three rows saved in reverse_01.
+- **Reaching a room's `@` from the load path is free.** Put `@` on an
+  otherwise-empty cell of a row the machine walks anyway; the man starts
+  heading EAST with A=B=BP=0, so route him through cells that are
+  no-ops at zero (`W`, `b`, `M`, and `a`/`d` which do not turn at BP=0)
+  and let him fall into the load prologue. `@` is a nop once walked over.
+- **A cell can serve two paths when both want the same direction.**
+  reverse_01 shares one `v` between the load-loop exit falling south and
+  the emit row turning south, and one `>` between the branch descent and
+  the skip-loop return.
+
 ## Verification pattern for geometry changes
 
 1. Rebuild via generator, print, eyeball the ASCII.
 2. Judge all public cases (`judge_problem`).
-3. Stress: `judge_case` on synthetic rounds at the constraint boundary
-   (max n, all-equal, reverse-sorted, extremes, 2–6 rounds) plus a few
-   hundred randomized cases — see `tests/test_alexey_sort_ring2.py` as
-   the template.
-4. Submit only after 100% local + stress; capture the full submit JSON
+3. **Audit pipe resolution empirically** — every `s`/`r`/`q` cell, before
+   running anything. Hand distance math is bug source #1:
+
+       m = Machine.parse(text)
+       pump = [rm for rm in m.rooms if rm.contains_interior(R, C)][0]
+       class F: pass
+       f = F(); f.r, f.c, f.room = R, C, pump
+       m._nearest_incoming(f).cells[-1]   # or _nearest_outgoing(...).cells[0]
+
+   Also assert `len(Machine.parse(text).pipes)` equals the count you
+   intended: a serpentine bend that lands next to another room's CORNER
+   parses as an extra spurious pipe (hit in reverse_01 — the fix was
+   ending the leg one column earlier).
+4. Stress: `judge_case` on synthetic rounds at the constraint boundary
+   (max n, all-equal, reverse-sorted, extremes, every legal round count)
+   plus a few hundred randomized cases — see
+   `tests/test_alexey_reverse2.py` or `tests/test_alexey_sort_ring2.py`.
+5. Submit only after 100% local + stress; capture the full submit JSON
    to a file (`… > submissions/<p>/alexey-<v>-submit.json`).
 
 ## This machine (Alexey's box) — environment
