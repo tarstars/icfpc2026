@@ -120,3 +120,38 @@ def build_memory() -> str:
         ]
     )
     return cv.render()
+
+
+def build_memory_compact() -> str:
+    """memory_01: geometry-only compaction. Identical logic; P4 relocated
+    from the top-right (cols 48-66, the sole cause of width 67) to the
+    bottom, its two P2<->P4 pipes wrapped up the empty right side. Brings
+    the bounding box from 67x38 (footprint 4489) toward ~47x47."""
+    cv = Canvas()
+    cv.put(2, 0, ["+-+", "|I|", "+-+"])
+    cv.put(0, 6, P2)
+    cv.put(8, 6, P3W)
+    cv.put(22, 6, P3R)
+    cv.put(26, 0, ["+-+", "|O|", "+-+"])
+    cv.put(32, 6, RELAY)
+    cv.put(39, 6, P4)                              # MOVED: rows 39-43, cols 6-24
+
+    cv.pipe([(3, 3), (3, 5)])
+    cv.pipe([(6, 16), (7, 16), (7, 3), (11, 3), (11, 5)])
+    cv.pipe([(19, 8), (21, 8)])
+    cv.pipe([(19, 22), (20, 22), (20, 15), (21, 15)])
+    cv.pipe([(27, 5), (27, 3)])
+    cv.pipe([(30, 16), (31, 16), (31, 3), (36, 3), (36, 5)])
+    cv.pipe(
+        [
+            (35, 18), (35, 30), (21, 30), (21, 32), (35, 32), (35, 34),
+            (21, 34), (21, 36), (35, 36), (35, 38), (21, 38), (20, 38),
+            (20, 24), (19, 24),
+        ]
+    )
+    # P2 right row1 -> wrap down col45, under, up to P4 left row2
+    cv.pipe([(1, 44), (1, 45), (44, 45), (44, 5), (41, 5)])
+    cv.cells[(41, 5)] = ">"                        # terminal bend into P4 left
+    # P4 out bottom col14 -> wrap up col46 to P2 right row3
+    cv.pipe([(44, 20), (45, 20), (45, 46), (3, 46), (3, 44)])
+    return cv.render()
