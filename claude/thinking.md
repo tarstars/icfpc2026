@@ -37,8 +37,25 @@ Display infra DONE (sim + judge frames). Machine plan:
   (swap 0); else +1 to E; E (loops [E] and [dy,dx]) computes c1/c2 via
   two X-tests on dy-E / dx-E with B=E, updates E with + + per lane,
   sends delta = c1+2c2 in {1,2,3} to A; A updates addr by X-chain.
-- UNSOLVED: A-pump has 3 incoming (SETUP, delta-from-E, const-loop).
-  Options: route delta through the const-loop relay room (relay merges
-  streams? no — FIFO corruption); or split A into plot-room (stateless,
-  receives addr stream) + update-room; or accept 3-in with wide audits.
+- SOLVED (v2 architecture, all rooms <=2-in/<=2-out):
+  * N = max(dx,-dy) computed at SETUP -> both pumps BP-countdown, no
+    handshake tokens at all.
+  * SETUP = pipeline of 5 tiny 1-in/1-out STREAM rooms (S1..S5), no
+    scratch loops: S1 reorders/dups [y0,x0,x0,y0,y1,x1]; S2 addr
+    (B-hold); S3 dx/SX; S4 dy/SYW + dup dy,dx; S5 N/E0, emits
+    [N, N, dy, E0, dx, SX, SYW, addr].
+  * E split in two: E-TEST (state ring order [dy,E,dx]; TEST1 E-dy via
+    B-held dy, recover E with +, TEST2 dx-E; terminals emit code 1/2/3
+    on the code pipe; BP=N; X-up lanes are real rows, dead branch of
+    n1's TEST2 left unrouted as an assertion) and E-UPDATE (in: ring +
+    code; 3 lanes apply E+=2dy/2dx keeping ring order via W-holds;
+    forwards [SX,SYW,addr] then per-iter delta to A; BP=N; sends -1 END).
+  * A-pump: loop [SX,SYW,addr]; r(delta): <0 END (flush, -1 to
+    DISPATCH); else 3-way on delta-2; adds via B-held const; plots to
+    DISPATCH each iter + initial plot at init.
+  * DISPATCH: >=0 -> PLOT room (s ADDR, `15` s DATA); <0 -> SWAP room
+    (send 0: commit+clear). PLOT DATA-vs-next-ADDR race is safe when
+    loop period > 2 (verified reasoning; test will confirm).
+  * Chain: I->S1..S5->E-TEST->(ring)->E-UPDATE->A->DISPATCH; code pipe
+    E-TEST->E-UPDATE also carries A-init [SX,SYW,addr] during init.
 - Public case frames confirm SWAP 0 per round (clears next buffer).
