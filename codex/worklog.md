@@ -40,3 +40,6 @@
   `reports/2026-07-24-matrix-multiply.md`.
 - Submitted the exact `matmul_02` artifact; it passed 20/20 live at server
   score 33,286,994,352.
+- Implemented and submitted the first Sudoku Auditor candidate. Three parallel
+  mask-ring workers passed public, generated adversarial, and all 20 live
+  cases at server score 105,335,908,125.2.

@@ -49,6 +49,9 @@ solutions.
   the tick cap, and improves the measured local score 60.25× over the
   16-worker baseline. It passed all 20 live cases at server score
   33,286,994,352.
+- Implemented a parallel row/column/box mask-ring Sudoku Auditor. It passed
+  all six public cases, deterministic valid-prefix and forced-duplicate
+  tests, and all 20 live cases at server score 105,335,908,125.2.
 
 ## Blockers
 
@@ -56,6 +59,7 @@ solutions.
 
 ## Next steps
 
-1. Optimize Grade Book geometry and control routing against the preserved
+1. Complete the remaining unsolved Plotter or Subset Sum problem.
+2. Optimize Grade Book geometry and control routing against the preserved
    `gradebook_00` baseline.
-2. Support Claude with live problem retrieval, submission, and result polling.
+3. Support Claude with live problem retrieval, submission, and result polling.

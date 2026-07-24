@@ -56,6 +56,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   score 60.25× over the parallel baseline. Details are in
   `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
   cases at server score 33,286,994,352.
+- The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
+  average 529,549.7 ticks, and score 105,335,908,125.2. Its parallel mask-ring
+  architecture and exact source are documented in
+  `reports/2026-07-24-sudoku-auditor.md` and
+  `submissions/sudoku-validity/`.
 
 ## Storage
 

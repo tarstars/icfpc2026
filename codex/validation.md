@@ -142,6 +142,23 @@ Updated: 2026-07-24
 - `uv run pytest -q` — 92 tests passed after Matrix, exact benchmarking,
   standings API access, adversarial coverage, and simulator movement lookup
   optimization.
+- `sudoku_00` passed all six public cases with ticks
+  `[885889, 38489, 831560, 49336, 440472, 885893]`, occupied dimensions
+  446×200, footprint 198,916, average ticks 521,939.8333333333, and local
+  score 103,822,183,887.33333.
+- Eight deterministic shuffled valid-prefix cases (seeds `20260724..20260731`)
+  and three directed row/column/box duplicate cases passed against the Python
+  oracle.
+- Submitted exact SHA-256
+  `150abdba2a07421dc37cf975fc68a2313e7cee727bd582597f9ad15923d2d11a`
+  as `09a4a36c-3ff5-4560-a57a-f14879767fe4`; the server reported `done`,
+  20/20, 446×200, average ticks 529,549.7, score 105,335,908,125.2, and no
+  error.
+- The unfrozen Sudoku standings snapshot updated at
+  `2026-07-24T21:04:11.324Z` placed `wheezards` 28th of 32 rows with
+  1.1290322581 points.
+- `uv run pytest -q` — 95 tests passed after adding and submitting Sudoku
+  Auditor.
 
 ## Pending validation
 
