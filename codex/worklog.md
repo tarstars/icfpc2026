@@ -28,3 +28,5 @@
 - Implemented a paired-value ring for Packet Reassembly, including exact
   maximum-delay handling and burst draining; all public and adversarial cases
   pass. See `reports/2026-07-24-packet-reassembly.md`.
+- Preserved and submitted `tcp_00`; it passed all 20 server cases at score
+  20,028,106.4.

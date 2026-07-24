@@ -39,9 +39,9 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   `reports/2026-07-24-sort-pipeline.md`.
 - The server-safe 89×89 History Lesson program passed 1/1 with footprint score
   7,921 and is tied at rank 7 in its recorded standings snapshot.
-- Packet Reassembly has an unsubmitted 38×41 paired-value ring candidate that
-  passes all six public cases at local score 12,232,076.67; details are in
-  `reports/2026-07-24-packet-reassembly.md`.
+- The submitted 38×41 Packet Reassembly paired-value ring passed all 20 server
+  cases with score 20,028,106.4; the immutable source and properties are under
+  `submissions/tcp/`.
 
 ## Storage
 

@@ -33,6 +33,8 @@ solutions.
   the initial rejected candidate and its load error.
 - Implemented a 38×41 Packet Reassembly ring candidate that passes all six
   public cases at local score 12,232,076.67.
+- Preserved and submitted its exact source; it passed 20/20 live with score
+  20,028,106.4.
 
 ## Blockers
 
@@ -41,5 +43,5 @@ solutions.
 ## Next steps
 
 1. Support Claude with live problem retrieval, submission, and result polling.
-2. Preserve and submit the Packet Reassembly candidate only when explicitly
-   selected, then optimize its geometry against the live result.
+2. Optimize Packet Reassembly geometry against the preserved `tcp_00`
+   baseline.

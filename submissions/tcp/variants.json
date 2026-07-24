@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
+    "slug": "tcp",
+    "name": "Packet Reassembly",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "tcp_00",
+      "label": "submitted paired-value ring",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "single controller with a scanned ring of absolute (sequence, value) pairs",
+      "source": {
+        "path": "submissions/tcp/tcp_00.man",
+        "generator": "src/littleman/tcp.py:build_tcp",
+        "sha256": "fd8f78f09ce01b1221fb5935deb26808086029791337f5e73fe77060b38420b1",
+        "bytes": 1561,
+        "width": 38,
+        "height": 41,
+        "footprint": 1681
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": {
+          "in-order stream": 1850,
+          "single max-displacement swap": 6380,
+          "drain burst": 9830,
+          "loss case": 5610,
+          "shortest stream": 200,
+          "block-reversed n=32": 19790
+        },
+        "averageTicks": 7276.666666666667,
+        "score": 12232076.666666668,
+        "adversarialMaxStreamTicks": 29750
+      },
+      "liveSubmission": {
+        "id": "65939c21-197f-4124-b6eb-2043e615f665",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 38,
+        "height": 41,
+        "area2": 1681,
+        "averageTicks": 11914.4,
+        "score": 20028106.4,
+        "createdAt": "2026-07-24T17:31:56.807Z",
+        "updatedAt": "2026-07-24T17:32:00.293Z"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-24T17:32:12.065Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 5,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "score": 20028106.4,
+    "passPoints": 1.0,
+    "rankPoints": 0.8260869565217391,
+    "points": 1.8260869565217392,
+    "rows": 25
+  }
+}

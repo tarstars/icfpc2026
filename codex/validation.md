@@ -85,11 +85,18 @@ Updated: 2026-07-24
 - `uv run pytest -q` — 67 tests passed after adding Packet Reassembly.
 - `uvx ruff check` and `uvx ruff format --check` passed for the Packet source
   and tests.
+- `tcp_00.man` exactly matches `build_tcp()` and retains SHA-256
+  `fd8f78f09ce01b1221fb5935deb26808086029791337f5e73fe77060b38420b1`.
+- Submitted that exact artifact once as
+  `65939c21-197f-4124-b6eb-2043e615f665`; the server reported `done`, 20/20,
+  38×41, average ticks 11,914.4, score 20,028,106.4, and no error.
+- The unfrozen Packet standings snapshot updated at
+  `2026-07-24T17:32:12.065Z` placed `wheezards` fifth of 25 rows with
+  1.8260869565 points.
 
 ## Pending validation
 
-- Packet Reassembly has not been submitted; only local/public-case validation
-  is complete.
+- No pending Packet Reassembly submission validation.
 
 No YT connectivity, pool availability, or credentials have been validated for
 this project.

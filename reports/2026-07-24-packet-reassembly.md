@@ -56,13 +56,18 @@ passing tests.
 
 The generated candidate is 1,561 bytes with SHA-256
 `fd8f78f09ce01b1221fb5935deb26808086029791337f5e73fe77060b38420b1`.
-It has not been submitted.
+The exact bytes are preserved as `submissions/tcp/tcp_00.man`.
 
-## Live context
+## Live result
 
 The problem endpoint reports six public cases and `privateTestCount: 0`, while
-the standings use 20 cases. At the snapshot updated
-`2026-07-24T17:08:12.051Z`, 19 teams had 20/20; the best full-pass score was
-5,602,693.05 and the second-best was 21,294,487.5. The candidate's public
-score is therefore promising for a first live attempt, but the 20-case tick
-distribution remains unknown until submission.
+the live grader uses 20 cases. The exact candidate was submitted once as
+`65939c21-197f-4124-b6eb-2043e615f665` and passed 20/20:
+
+- width 38, height 41, footprint 1,681;
+- average ticks 11,914.4;
+- server score 20,028,106.4;
+- no runtime or load error.
+
+The unfrozen standings snapshot updated at `2026-07-24T17:32:12.065Z`
+placed `wheezards` fifth of 25 rows, with 1.8260869565 points.

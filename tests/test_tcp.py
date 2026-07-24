@@ -8,12 +8,17 @@ from littleman.sim import Machine
 from littleman.tcp import build_tcp
 
 PROBLEMS = Path(__file__).resolve().parent.parent / "data" / "small" / "problems"
+SUBMISSIONS = Path(__file__).resolve().parent.parent / "submissions" / "tcp"
 
 
 def test_passes_all_public_cases():
     problem = json.loads((PROBLEMS / "tcp.json").read_text())
     report = judge_problem(build_tcp(), problem)
     assert report.cases_passed == report.cases_total == 6, report.case_results
+
+
+def test_checked_in_candidate_matches_generator():
+    assert (SUBMISSIONS / "tcp_00.man").read_text() == build_tcp()
 
 
 def test_in_order_two_packets():
