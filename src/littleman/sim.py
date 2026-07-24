@@ -486,21 +486,21 @@ class Machine:
             if err:
                 return err
         # 4. movement
+        occupied = {(man.r, man.c): man for man in self.men}
         for man in self.men:
             if man.halted or man.blocked:
                 continue
             nr, nc = man.r + man.direction[0], man.c + man.direction[1]
             if not man.room.contains_interior(nr, nc):
                 return "wall"
-            occupant = next(
-                (o for o in self.men if o is not man and (o.r, o.c) == (nr, nc)),
-                None,
-            )
+            occupant = occupied.get((nr, nc))
             if occupant:
                 man.halted = True
                 occupant.halted = True
                 continue
+            del occupied[(man.r, man.c)]
             man.r, man.c = nr, nc
+            occupied[(nr, nc)] = man
         return None
 
     # ------------------------------------------------------------- display

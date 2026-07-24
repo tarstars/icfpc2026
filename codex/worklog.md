@@ -30,3 +30,13 @@
   pass. See `reports/2026-07-24-packet-reassembly.md`.
 - Preserved and submitted `tcp_00`; it passed all 20 server cases at score
   20,028,106.4.
+- Implemented, preserved, submitted, committed, and pushed `gradebook_00`; it
+  passed all 20 live cases at score 124,123,713,433.2.
+- Added the repository-wide pre-commit solution freshness policy requested by
+  the user.
+- Implemented a parallel Matrix Multiply baseline and two compact-ring
+  successors. All three pass all seven public cases; the balanced 183×180
+  candidate improves the local score 60.25×. See
+  `reports/2026-07-24-matrix-multiply.md`.
+- Submitted the exact `matmul_02` artifact; it passed 20/20 live at server
+  score 33,286,994,352.

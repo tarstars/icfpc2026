@@ -26,6 +26,15 @@ A `practice` problem is ungraded and rejects submissions. No key needed.
 Adds `description`, `io`, `scoring`, and `publicTestData` — the same public
 cases the editor runs. Private cases are not served. No key needed.
 
+## Fetch problem standings
+
+    curl https://icfpcontest2026.com/api/v1/standings/problems/<problem-id>
+
+Returns the current public snapshot for one graded problem, including update
+time, freeze state, team rows, passed cases, scores, ranks, and points. No key
+needed. The repository command is
+`uv run icfpc-api standings <problem-id>`.
+
 ## Submit a program
 
     curl -X POST https://icfpcontest2026.com/api/v1/submissions \

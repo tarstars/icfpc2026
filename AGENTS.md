@@ -76,3 +76,20 @@ virtual environments, raw run outputs, and bulk datasets do not belong in Git.
 - Preserve repo-relative paths in manifests and documentation.
 - Keep secrets, personal tokens, browser state, and session data out of Git
   and shared artifact storage.
+
+## Solution commit freshness
+
+Before committing any new or changed solution version:
+
+- Pull and integrate the current GitHub branch. Use `git pull --rebase` (or an
+  equivalent fetch-and-integrate workflow) before staging the solution so the
+  commit is not based on stale remote work. Never autostash unrelated worktree
+  changes; if they make a safe pull impossible, stop and resolve the scope
+  first.
+- Query the contest API for the current score and latest submission state of
+  the exact problem being changed.
+- Reconcile the pulled solution catalog and live API result with the candidate
+  being committed. Preserve distinct versions and their measured properties;
+  do not replace a stronger or newer result with stale local metadata.
+- Record only command- or API-traceable score facts in solution metadata and
+  reports.

@@ -69,6 +69,12 @@ def _parser() -> argparse.ArgumentParser:
         help="fetch live contest and scoreboard-freeze timing",
     )
 
+    standings = commands.add_parser(
+        "standings",
+        help="fetch public standings for one graded problem",
+    )
+    standings.add_argument("problem_id", help="problem ID from `problems`")
+
     submission = commands.add_parser(
         "submission",
         help="fetch one submission owned by this team",
@@ -158,6 +164,8 @@ def _run(args: argparse.Namespace, parser: argparse.ArgumentParser) -> Any:
             return client.get_problem(args.slug)
         if args.command == "clock":
             return client.get_contest_clock()
+        if args.command == "standings":
+            return client.get_problem_standings(args.problem_id)
         if args.command == "submission":
             return client.get_submission(args.submission_id)
         if args.command == "wait":

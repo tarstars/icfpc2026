@@ -96,6 +96,14 @@ class ContestApiClient:
 
         return self._request_object("GET", "public/contest-clock")
 
+    def get_problem_standings(self, problem_id: str) -> dict[str, Any]:
+        """Return the public standings snapshot for one graded problem."""
+
+        return self._request_object(
+            "GET",
+            f"standings/problems/{quote(problem_id, safe='')}",
+        )
+
     def submit(self, *, problem_id: str, program: str) -> dict[str, Any]:
         """Create exactly one submission.
 

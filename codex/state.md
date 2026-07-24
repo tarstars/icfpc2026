@@ -41,6 +41,14 @@ solutions.
   37,077,609,660. Its exact source and properties are preserved under
   `submissions/gradebook/`; it passed 20/20 live with server score
   124,123,713,433.2.
+- Added a mandatory pre-commit solution freshness policy: pull/integrate
+  GitHub and query the exact problem's live API score before every solution
+  version commit.
+- Implemented and preserved three Matrix Multiply candidates. The best
+  nested-ring geometry occupies 183×180, passes all seven public cases below
+  the tick cap, and improves the measured local score 60.25× over the
+  16-worker baseline. It passed all 20 live cases at server score
+  33,286,994,352.
 
 ## Blockers
 
