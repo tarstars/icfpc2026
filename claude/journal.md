@@ -19,3 +19,11 @@
   pipes/IO, literals, backpack, judge harness with round gating and
   footprint-tick scoring, CLI (python -m littleman). 27 tests green.
   Triangle solution verified: 6/6 public cases, 14 ticks, score 1134.
+- Memory solved: pipeline-of-rooms machine (P2 parse -> P3w/P3r ring
+  stations, P4 head-pointer loop, relay+init, 107-cell ring serpentine).
+  Key ideas: rooms small so nearest-pipe resolution is trivial; command
+  encoding k / -(k+1) with the involution N(x+1) so one entry row
+  forwards correctly for both ops; `>rsv/^ md` loop relays BP+1 and
+  exits with last value in A. 7/7 public tests, score 43.8M. v1
+  unoptimized (footprint 4489 dominates; compaction + loop unrolling
+  + 3-per-word packing are the levers).

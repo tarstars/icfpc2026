@@ -42,19 +42,23 @@ rounds; judge withholds later input until earlier output is produced.
 Nothing mid-flight. Last action: initialized this `claude/` area
 (2026-07-24).
 
+## Toolchain (working)
+
+- Python project at repo root, uv-managed (`uv run pytest`, 27 tests).
+- `src/littleman/sim.py` — full simulator (no display support yet).
+- `src/littleman/judge.py` — round gating, streaming compare, scoring.
+- CLI: `uv run python -m littleman <prog.man> <slug>` judges against
+  `data/small/problems/<slug>.json`.
+- `submissions/triangle/triangle.man` — VERIFIED 6/6, 14 ticks, score 1134.
+
 ## Next action
 
-1. Build a local littleman simulator matching `docs/language-reference.md`
-   exactly (tick order: pipes shift → I/O → execute → move; blocking;
-   halting; errors; display). Validate against the textbook example
-   programs and problem public tests.
-2. Build a scorer (footprint-tick) so we can compare candidate solutions
-   locally.
-3. Team needs credentials/API key (register on site) before submitting.
-4. Start with easy problems: triangle, reverse-a-list, sort-numbers.
-   `history-lesson` is footprint-only (a display problem, 1 test) — pure
-   code-golf on area.
-5. Longer term: a codegen/assembler layer that emits compact 2D layouts.
+1. Cross-check triangle in the web editor, submit it (needs team API key —
+   user must register), record submission id.
+2. Memory: implement unpacked ring + head pointer per the design discussed
+   (see journal 2026-07-24); measure, then decide on 3-per-word packing.
+3. Display support in simulator (needed for palette/plotter/history-lesson).
+4. Longer term: codegen/assembler layer emitting compact 2D layouts.
 
 ## Open questions
 
