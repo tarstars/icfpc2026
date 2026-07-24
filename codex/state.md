@@ -31,6 +31,8 @@ solutions.
 - Corrected the local judge to honor footprint-only scoring.
 - Matched local backtick pairing to the stricter server parser after preserving
   the initial rejected candidate and its load error.
+- Implemented a 38×41 Packet Reassembly ring candidate that passes all six
+  public cases at local score 12,232,076.67.
 
 ## Blockers
 
@@ -39,4 +41,5 @@ solutions.
 ## Next steps
 
 1. Support Claude with live problem retrieval, submission, and result polling.
-2. Develop the next selected target, Packet Reassembly.
+2. Preserve and submit the Packet Reassembly candidate only when explicitly
+   selected, then optimize its geometry against the live result.

@@ -75,10 +75,21 @@ Updated: 2026-07-24
   `157be247ef582e0f761a6fac060eee3cdf82e7cb509d172b922da3b408295351`.
 - Both checked-in History artifacts exactly match their recorded generators.
 - A judge regression test confirms footprint-only scores ignore ticks.
+- The generated Packet Reassembly candidate passed all six public cases with
+  ticks `[1850, 6380, 9830, 5610, 200, 19790]`, footprint 1,681, and local
+  score 12,232,076.67.
+- A maximum-size stream made of three reverse-ordered 16-packet windows passed
+  in 29,750 ticks.
+- The Packet ring's measured parking pipe has capacity 38 values, above the
+  32-value maximum; both settling corridors exceed its full round-trip path.
+- `uv run pytest -q` — 67 tests passed after adding Packet Reassembly.
+- `uvx ruff check` and `uvx ruff format --check` passed for the Packet source
+  and tests.
 
 ## Pending validation
 
-- No pending History Lesson submission validation.
+- Packet Reassembly has not been submitted; only local/public-case validation
+  is complete.
 
 No YT connectivity, pool availability, or credentials have been validated for
 this project.

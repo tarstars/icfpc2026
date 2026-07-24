@@ -25,3 +25,6 @@
   preserved its variant metadata, and corrected footprint-only local scoring.
 - Preserved its server parser rejection, corrected literal pairing locally,
   and submitted the fixed-slot 89×89 replacement successfully at score 7,921.
+- Implemented a paired-value ring for Packet Reassembly, including exact
+  maximum-delay handling and burst draining; all public and adversarial cases
+  pass. See `reports/2026-07-24-packet-reassembly.md`.
