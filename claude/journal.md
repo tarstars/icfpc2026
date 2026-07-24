@@ -40,3 +40,6 @@
   rule adopted: .man files immutable, variants.json catalogue per
   problem. Teammate shipped Sort (pipeline, 25/25); ring skeleton is a
   candidate sort_02 (est ~1M vs their 34M local).
+- sort_02: shrinking-ring min-scan (27x24, footprint 729), 7/7 local
+  score 2.24M vs pipeline sort_01 ~31M local -> 14x better. Submitted
+  799f0c93: 25/25, server score 3.46M. Catalogued in variants.json.

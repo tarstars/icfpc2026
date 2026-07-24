@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
+    "slug": "sort-numbers",
+    "name": "Sort",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "sort_00",
+      "label": "submitted baseline",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "16-stage streaming insertion pipeline",
+      "source": {
+        "path": "submissions/sort/sort.man",
+        "generator": "src/littleman/sort.py:build_sort",
+        "sha256": "668318060ad980c95b34c9cda5c2f8f9f3d377a5e777f143346c6553bd2f2bd4",
+        "bytes": 8601,
+        "width": 96,
+        "height": 101,
+        "footprint": 10201
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "warm up": 4021,
+          "already sorted": 3874,
+          "all equal": 2791,
+          "reverse sorted": 2687,
+          "negatives and duplicates": 2908,
+          "min to max size": 4402,
+          "long case": 7026
+        },
+        "averageTicks": 3958.4285714285716,
+        "score": 40379929.85714286
+      },
+      "liveSubmission": {
+        "id": "1a673762-fe78-4d26-bced-5063fd49b221",
+        "status": "done",
+        "casesPassed": 25,
+        "casesTotal": 25,
+        "width": 96,
+        "height": 101,
+        "area2": 10201,
+        "averageTicks": 4936.52,
+        "score": 50357440.52,
+        "createdAt": "2026-07-24T15:40:24.352Z",
+        "updatedAt": "2026-07-24T15:40:37.834Z"
+      }
+    },
+    {
+      "version": "sort_01",
+      "label": "compact geometry",
+      "parent": "sort_00",
+      "changeType": "geometry-only",
+      "architecture": "16-stage streaming insertion pipeline",
+      "source": {
+        "path": "submissions/sort/sort_01.man",
+        "generator": "src/littleman/sort.py:build_sort_compact_geometry",
+        "sha256": "ddb1341dc8321b8b9b121383e81eb27629c78ee407a82a52540cfdec7ce76877",
+        "bytes": 8287,
+        "width": 92,
+        "height": 92,
+        "footprint": 8464
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "warm up": 3694,
+          "already sorted": 3547,
+          "all equal": 2573,
+          "reverse sorted": 2469,
+          "negatives and duplicates": 2690,
+          "min to max size": 4075,
+          "long case": 6590
+        },
+        "averageTicks": 3662.5714285714284,
+        "score": 31000004.57142857
+      },
+      "improvementFromParent": {
+        "footprintPercent": 17.027742378198216,
+        "averageTicksPercent": 7.474105886174173,
+        "scorePercent": 23.2291767690009
+      },
+      "liveSubmission": {
+        "id": "2e8dbabf-02fd-4701-b811-cf1dec8aba95",
+        "status": "done",
+        "casesPassed": 25,
+        "casesTotal": 25,
+        "width": 92,
+        "height": 92,
+        "area2": 8464,
+        "averageTicks": 4587.72,
+        "score": 38830462.080000006,
+        "createdAt": "2026-07-24T16:01:46.643Z",
+        "updatedAt": "2026-07-24T16:01:59.032Z"
+      }
+    },
+    {
+      "version": "sort_02",
+      "label": "shrinking-ring selection sort",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "shrinking-ring min-scan (pump + relay, q-counted ring, delay corridor); shares skeleton with reverse-a-list reverse_00",
+      "source": {
+        "path": "submissions/sort/sort_02.man",
+        "generator": "src/littleman/sort_ring.py:build_sort_ring",
+        "width": 27,
+        "height": 24,
+        "footprint": 729
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "warm up": 1560,
+          "already sorted": 1312,
+          "all equal": 1510,
+          "reverse sorted": 1092,
+          "negatives and duplicates": 1882,
+          "min to max size": 4048,
+          "long case": 10092
+        },
+        "averageTicks": 3070.86,
+        "score": 2238654.9
+      },
+      "liveSubmission": {
+        "id": "799f0c93-155e-476a-8302-819d7765a386",
+        "status": "done",
+        "casesPassed": 25,
+        "casesTotal": 25,
+        "serverScore": 3460708.8
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-24T16:02:12.313Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 17,
+    "casesPassed": 25,
+    "casesTotal": 25,
+    "score": 38830462.080000006,
+    "passPoints": 1.0,
+    "rankPoints": 0.4482758620689655,
+    "points": 1.4482758620689655,
+    "rows": 31
+  }
+}
