@@ -55,3 +55,27 @@
   (terminal arrowhead may be a bend, Canvas.pipe needs manual patch);
   teammate's stricter vertical-backtick pairing forbids X/W between
   aligned literal columns. 26/26 live 5690cc53, server 7.47M.
+- Handoff written for less-powerful continuation: docs/littleman-
+  cookbook.md (all verified idioms: register discipline, loop idioms,
+  X geometry, pipe rules, FIFO discipline, shared cells, displays,
+  debug ladder), claude/plotter-plan.md (full room-by-room plotter
+  spec with build order), STATE.md rewritten as board + priorities.
+  plotter.py flagged as broken sketch - rewrite from plan.
+- Toolchain hierarchy written to docs/toolchain-plan.md with per-level
+  APIs, implementation notes anchored to existing code, tests, and
+  build order: L2 pipe-intent checker (1h) -> L3 symbolic reg/queue
+  tracker (2-3h) -> L4 idiom macros -> L1 lane assembler (1d) ->
+  L6 debugger; L5 dataflow compiler deferred post-contest. Principle:
+  checks before generators.
+- Wrote docs/synthesis-stack.md: top-down analysis of the user's
+  three-tier compiler-stack idea. Core reframe: target is hardware
+  synthesis (HLS + place&route), not software compilation; the
+  "linker" is really place-and-route and is the flagship (footprint
+  dominates). Latency-insensitivity (Carloni) gives correctness-
+  separability under two conditions (no R/U; rigid small components =
+  cookbook rule); cost does NOT separate (phase-ordering). Fork A
+  soft-core (breadth/insurance for matmul/sudoku/subset-sum) vs Fork B
+  synthesis (score); library serves both. Includes netlist schema and
+  a pragmatic router build order (semi-auto compactor first = 80/20).
+  Meets toolchain-plan.md at the netlist interface. ROI verdict: full
+  stack net-negative this contest; harvest bottom+middle now.
