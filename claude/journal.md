@@ -34,3 +34,9 @@
   interior: 81 x 13 = 1053 (was 1134). Submitted ff8567e2, 19/19.
   Argued floor: halving needs constant-load + W + op (3 cells), so
   8 instructions impossible; 8-wide room can't hold 13 cells.
+- Reverse-a-list solved with shrinking-ring machine (pump+relay, 28x24):
+  8/8 public, local 1.31M, submitted (server score 1.95M; id lost to
+  tail-truncation — capture full submit JSON next time). New project
+  rule adopted: .man files immutable, variants.json catalogue per
+  problem. Teammate shipped Sort (pipeline, 25/25); ring skeleton is a
+  candidate sort_02 (est ~1M vs their 34M local).

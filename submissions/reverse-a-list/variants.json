@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "537ec979-d883-40f3-9663-b59579a0682c",
+    "slug": "reverse-a-list",
+    "name": "Reverse a List",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "reverse_00",
+      "label": "shrinking-ring baseline",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "shrinking-ring selection (pump + relay, q-counted ring, delay corridor)",
+      "source": {
+        "path": "submissions/reverse-a-list/reverse_00.man",
+        "generator": "src/littleman/reverse.py:build_reverse",
+        "width": 28,
+        "height": 24,
+        "footprint": 784
+      },
+      "localValidation": {
+        "casesPassed": 8,
+        "casesTotal": 8,
+        "averageTicks": 1674.0,
+        "score": 1312416.0
+      },
+      "liveSubmission": {
+        "id": null,
+        "note": "submitted 2026-07-24T16:04Z, status done, server score 1950905.6; id lost to output truncation - recover from submissions page",
+        "status": "done"
+      }
+    }
+  ]
+}
