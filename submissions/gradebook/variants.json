@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "d1415447-bf8d-49ef-924e-e024b06a504d",
+    "slug": "gradebook",
+    "name": "Grade Book",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "gradebook_00",
+      "label": "four subject workers",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "normalized parser broadcast; four ID/grade rings; chained acknowledgements; merged result collector",
+      "source": {
+        "path": "submissions/gradebook/gradebook_00.man",
+        "generator": "src/littleman/gradebook.py:build_gradebook",
+        "sha256": "16a9fe2c71ae917470c16f5021594f4573efc57266e43c399ab1215a96ada522",
+        "bytes": 224886,
+        "width": 494,
+        "height": 462,
+        "footprint": 244036
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "tiny roster walkthrough": 40753,
+          "TOP demotion": 125295,
+          "tie-break": 131664,
+          "floor rounding": 103892,
+          "mixed batch": 148646,
+          "K=1 minimal": 68874,
+          "N=16 K=4 max": 444421
+        },
+        "averageTicks": 151935.0,
+        "score": 37077609660.0
+      },
+      "liveSubmission": {
+        "id": "97526857-55b8-4e83-9ad5-2864afb3a02e",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 494,
+        "height": 462,
+        "area2": 244036,
+        "averageTicks": 508628.7,
+        "score": 124123713433.2,
+        "createdAt": "2026-07-24T19:07:39.907Z",
+        "updatedAt": "2026-07-24T19:07:54.515Z"
+      }
+    }
+  ]
+}

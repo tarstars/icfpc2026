@@ -42,6 +42,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - The submitted 38×41 Packet Reassembly paired-value ring passed all 20 server
   cases with score 20,028,106.4; the immutable source and properties are under
   `submissions/tcp/`.
+- The submitted 494×462 Grade Book candidate passed all 20 server cases with
+  average 508,628.7 ticks and score 124,123,713,433.2. Its exact source and
+  properties are under `submissions/gradebook/`, with architecture and metrics
+  in `reports/2026-07-24-grade-book.md`.
 
 ## Storage
 

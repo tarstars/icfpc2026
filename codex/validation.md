@@ -93,6 +93,23 @@ Updated: 2026-07-24
 - The unfrozen Packet standings snapshot updated at
   `2026-07-24T17:32:12.065Z` placed `wheezards` fifth of 25 rows with
   1.8260869565 points.
+- The generated Grade Book candidate parsed as 16 rooms and 30 pipes and
+  passed all seven public cases with ticks
+  `[40753, 125295, 131664, 103892, 148646, 68874, 444421]`.
+- Its dimensions are 494×462, footprint 244,036, average public ticks 151,935,
+  local score 37,077,609,660, and generated size 224,886 bytes. The generated
+  text SHA-256 is
+  `16a9fe2c71ae917470c16f5021594f4573efc57266e43c399ab1215a96ada522`.
+- `submissions/gradebook/gradebook_00.man` exactly matches
+  `build_gradebook()` and the recorded SHA-256.
+- `uv run pytest -q` — 78 tests passed after adding Grade Book and sparse pipe
+  shifting.
+- `uvx ruff check` passed for the Grade Book, simulator, and Grade Book tests;
+  `uvx ruff format --check` passed for the new source and tests.
+- `git diff --check` — passed after the Grade Book implementation and report.
+- Submitted that exact Grade Book artifact once as
+  `97526857-55b8-4e83-9ad5-2864afb3a02e`; the server reported `done`, 20/20,
+  494×462, average ticks 508,628.7, score 124,123,713,433.2, and no error.
 
 ## Pending validation
 

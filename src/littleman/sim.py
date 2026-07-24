@@ -68,20 +68,38 @@ class Pipe:
     dest: Room
     values: list = None
     side: str | None = None  # display pipes: addr | data | swap
+    occupied: set[int] = field(default_factory=set)
 
     def __post_init__(self):
         if self.values is None:
             self.values = [None] * len(self.cells)
+        self.occupied = {
+            i for i, value in enumerate(self.values) if value is not None
+        }
+
+    def put(self, index: int, value: int):
+        index %= len(self.values)
+        self.values[index] = value
+        self.occupied.add(index)
+
+    def take(self, index: int):
+        index %= len(self.values)
+        value = self.values[index]
+        self.values[index] = None
+        self.occupied.discard(index)
+        return value
 
     def shift(self):
-        for i in range(len(self.values) - 1, 0, -1):
-            if self.values[i] is None and self.values[i - 1] is not None:
-                self.values[i] = self.values[i - 1]
-                self.values[i - 1] = None
+        for i in sorted(self.occupied, reverse=True):
+            if i + 1 < len(self.values) and i + 1 not in self.occupied:
+                self.values[i + 1] = self.values[i]
+                self.values[i] = None
+                self.occupied.remove(i)
+                self.occupied.add(i + 1)
 
     @property
     def count(self):
-        return sum(1 for v in self.values if v is not None)
+        return len(self.occupied)
 
 
 @dataclass
@@ -440,10 +458,9 @@ class Machine:
         # 2. I/O: emit output, then inject input
         self._verdict = None
         if self.output_pipe and self.output_pipe.values[-1] is not None:
-            value = self.output_pipe.values[-1]
+            value = self.output_pipe.take(-1)
             res.output.append(value)
             res.output_ticks.append(res.ticks)
-            self.output_pipe.values[-1] = None
             if self._controller:
                 verdict = self._controller.on_output(value, res.ticks)
                 if verdict:
@@ -453,9 +470,9 @@ class Machine:
             if self._controller:
                 value = self._controller.pop_input()
                 if value is not None:
-                    self.input_pipe.values[0] = value
+                    self.input_pipe.put(0, value)
             elif self._input_queue:
-                self.input_pipe.values[0] = self._input_queue.pop(0)
+                self.input_pipe.put(0, self._input_queue.pop(0))
         # 3. execute
         for man in self.men:
             if man.halted:
@@ -496,8 +513,7 @@ class Machine:
             pipe = by_side.get(side)
             if pipe is None or pipe.values[-1] is None:
                 continue
-            v = pipe.values[-1]
-            pipe.values[-1] = None
+            v = pipe.take(-1)
             size = disp.disp_w * disp.disp_h
             if side == "addr":
                 if not 0 <= v < size:
@@ -644,7 +660,7 @@ class Machine:
             if pipe.values[0] is not None:
                 man.blocked = True
             else:
-                pipe.values[0] = man.A
+                pipe.put(0, man.A)
         elif ch == "S":
             pipes = self._outgoing(man)
             if not pipes:
@@ -653,7 +669,7 @@ class Machine:
                 man.blocked = True
             else:
                 for p in pipes:
-                    p.values[0] = man.A
+                    p.put(0, man.A)
         elif ch == "r":
             pipe = self._nearest_incoming(man)
             if pipe is None:
@@ -661,8 +677,7 @@ class Machine:
             if pipe.values[-1] is None:
                 man.blocked = True
             else:
-                man.A = pipe.values[-1]
-                pipe.values[-1] = None
+                man.A = pipe.take(-1)
         elif ch in "RU":
             pipes = self._incoming(man)
             if not pipes:
@@ -672,8 +687,7 @@ class Machine:
                 man.blocked = True
             else:
                 pipe = min(ready, key=lambda p: p.cells[-1])
-                man.A = pipe.values[-1]
-                pipe.values[-1] = None
+                man.A = pipe.take(-1)
                 if ch == "U":
                     self._turn_away(man, pipe)
         elif ch == "q":
