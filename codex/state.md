@@ -52,6 +52,9 @@ solutions.
 - Implemented a parallel row/column/box mask-ring Sudoku Auditor. It passed
   all six public cases, deterministic valid-prefix and forced-duplicate
   tests, and all 20 live cases at server score 105,335,908,125.2.
+- Completed the geometry-only Memory compaction from the shared handoff. The
+  46×47 candidate passed all 24 live cases and reduced the server score from
+  181,952,075.875 to 91,372,247.625.
 
 ## Blockers
 

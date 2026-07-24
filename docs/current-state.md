@@ -61,6 +61,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   architecture and exact source are documented in
   `reports/2026-07-24-sudoku-auditor.md` and
   `submissions/sudoku-validity/`.
+- Memory `memory_01` preserves the submitted pipeline logic but relocates one
+  room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
+  improved the server score from 181,952,075.875 to 91,372,247.625. Details
+  are in `reports/2026-07-24-memory-compaction.md`.
 
 ## Storage
 

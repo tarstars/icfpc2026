@@ -159,6 +159,22 @@ Updated: 2026-07-24
   1.1290322581 points.
 - `uv run pytest -q` — 95 tests passed after adding and submitting Sudoku
   Auditor.
+- `memory_01` reproduced exactly from `build_memory_compact`, parsed at 46×47,
+  and passed all seven public cases at ticks
+  `[179, 1301, 3744, 2498, 3776, 1269, 55482]`, footprint 2,209, and local
+  score 21,537,434.42857143.
+- `uv run pytest tests/test_memory_rooms.py tests/test_memory_compact.py -q`
+  — 4 tests passed.
+- Submitted SHA-256
+  `68d5fb3d73f21c7171ad59dde0f6b22a493cbba297f7bc1f8dcbab04cad92089`
+  as `22931081-bd2d-4c19-a733-b8035e5bf0af`; the server reported `done`,
+  24/24, 46×47, average ticks 41,363.625, score 91,372,247.625, and no
+  error.
+- The unfrozen Memory standings snapshot updated at
+  `2026-07-24T21:22:11.313Z` placed `wheezards` 25th of 85 rows with
+  1.7 points.
+- `uv run pytest -q` — 119 tests passed in 763.90 seconds after the Memory
+  geometry change and its regression coverage.
 
 ## Pending validation
 
