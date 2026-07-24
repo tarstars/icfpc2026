@@ -58,3 +58,9 @@ status.
 - `413 payload_too_large` — programs cap at 10 MB.
 - `429 too_many_requests` — 5 of your submissions may be waiting to run at
   once. Wait for one to finish.
+
+## Repository tooling
+
+Use the `icfpc-api` commands rather than hand-built authenticated requests.
+Their command descriptions, setup, and submission safeguards are documented
+in [api-tools.md](api-tools.md).

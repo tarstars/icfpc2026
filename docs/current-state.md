@@ -28,7 +28,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - Shared layout and operating policy are initialized.
 - Small tracked data belongs in `data/small`.
 - Bulk data is separated behind five external-backed logical roots.
-- No solver, build system, or language toolchain has been selected.
+- Python 3.10+ and `uv` manage the simulator, judge harness, tests, and contest
+  API client.
+- `uv run icfpc-api` provides JSON problem reads and guarded submission/polling
+  commands; local credentials remain in the ignored `.env`.
 
 ## Storage
 
@@ -49,12 +52,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   heavyweight formats are covered by `.gitattributes`.
 - YT access and credentials have not been probed for this new project.
 
-## Next trigger
+## Active workflow
 
-When the contest materials arrive:
-
-1. archive the original statement and input checksum;
-2. record constraints and scoring in this file;
-3. choose the smallest suitable toolchain;
-4. implement parser/validator and tiny fixtures before optimization;
-5. establish a reproducible submission command and baseline.
+1. Develop and judge candidate `.man` programs against the archived public
+   cases.
+2. Before any submission, verify the graded problem ID and preserve the exact
+   locally judged source.
+3. Submit only through the confirmed API command and poll its terminal result.

@@ -20,5 +20,13 @@ Start with [docs/current-state.md](docs/current-state.md), then read
 python3 scripts/check_external_storage.py --required-free-gib 1
 ```
 
-The contest problem and implementation stack are intentionally left open until
-the task is published.
+Install and test the Python tools with:
+
+```bash
+uv sync
+uv run pytest
+```
+
+The local judge is available through `uv run python -m littleman`; the contest
+API commands and safety rules are documented in
+[docs/api-tools.md](docs/api-tools.md).

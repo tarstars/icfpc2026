@@ -26,3 +26,16 @@ and roughly one hour of expected local wall time as the point to evaluate YT.
 
 Codex owns `codex/`; Claude owns `claude/`. Shared facts are promoted into
 `docs/` rather than editing the other assistant's private handoff area.
+
+## 2026-07-24 — Keep contest credentials local
+
+Store the web login, password, and bearer key only in the Git-ignored root
+`.env` with mode `0600`. Normal tools read only the bearer key, never accept it
+as a command-line argument, and never include it in output.
+
+## 2026-07-24 — Guard submission mutations
+
+Public API reads omit authorization. Submission reads use the bearer key.
+Creating a submission requires the explicit `--confirm` flag, enforces the
+documented size limit locally, and is never retried automatically because an
+ambiguous POST failure could otherwise create duplicates.
