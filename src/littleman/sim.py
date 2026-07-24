@@ -32,7 +32,20 @@ class Room:
     left: int
     bottom: int  # inclusive border rows/cols
     right: int
-    kind: str = "room"  # room | input | output
+    kind: str = "room"  # room | input | output | display
+    # display state (kind == "display" only)
+    disp_w: int = 0
+    disp_h: int = 0
+    cursor: int = 0
+    current: list = None
+    next: list = None
+
+    def init_display(self):
+        self.disp_w = self.right - self.left - 1
+        self.disp_h = self.bottom - self.top - 1
+        self.current = [[0] * self.disp_w for _ in range(self.disp_h)]
+        self.next = [[0] * self.disp_w for _ in range(self.disp_h)]
+        self.cursor = 0
 
     def interior(self):
         return range(self.top + 1, self.bottom), range(self.left + 1, self.right)
@@ -54,6 +67,7 @@ class Pipe:
     source: Room
     dest: Room
     values: list = None
+    side: str | None = None  # display pipes: addr | data | swap
 
     def __post_init__(self):
         if self.values is None:
@@ -89,6 +103,8 @@ class RunResult:
     error: str | None = None
     output: list = field(default_factory=list)
     output_ticks: list = field(default_factory=list)
+    frames: list = field(default_factory=list)
+    frame_ticks: list = field(default_factory=list)
     ticks: int = 0
 
 
@@ -105,6 +121,7 @@ class Machine:
             self.in_pipes.setdefault(id(p.dest), []).append(p)
         self.input_pipe = next((p for p in pipes if p.source.kind == "input"), None)
         self.output_pipe = next((p for p in pipes if p.dest.kind == "output"), None)
+        self.displays = [r for r in rooms if r.kind == "display"]
 
     # ------------------------------------------------------------- parsing
     @classmethod
@@ -155,6 +172,30 @@ class Machine:
                 if not all(grid[rr][c2] == "|" for rr in range(r + 1, r2)):
                     continue
                 candidates.append(Room(r, c, r2, c2))
+        # displays: + corners, = horizontal walls, : vertical walls
+        for r in range(h):
+            for c in range(w):
+                if grid[r][c] != "+":
+                    continue
+                c2 = c + 1
+                while c2 < w and grid[r][c2] == "=":
+                    c2 += 1
+                if c2 >= w or grid[r][c2] != "+" or c2 == c + 1:
+                    continue
+                r2 = r + 1
+                while r2 < h and grid[r2][c] == ":":
+                    r2 += 1
+                if r2 >= h or grid[r2][c] != "+" or r2 == r + 1:
+                    continue
+                if grid[r2][c2] != "+":
+                    continue
+                if not all(grid[r2][cc] == "=" for cc in range(c + 1, c2)):
+                    continue
+                if not all(grid[rr][c2] == ":" for rr in range(r + 1, r2)):
+                    continue
+                disp = Room(r, c, r2, c2, kind="display")
+                disp.init_display()
+                candidates.append(disp)
         rooms = []
         for a in candidates:
             nested = any(
@@ -238,7 +279,29 @@ class Machine:
                 if 0 <= fr < h and 0 <= fc < w:
                     target = border_room(fr, fc)
                     if target is not None and target is not source:
-                        return Pipe(cells=cells, source=source, dest=target)
+                        pipe = Pipe(cells=cells, source=source, dest=target)
+                        if target.kind == "display":
+                            on_top = fr == target.top
+                            on_bottom = fr == target.bottom
+                            on_left = fc == target.left
+                            corner = (on_top or on_bottom) and (
+                                fc in (target.left, target.right)
+                            )
+                            if corner or fc == target.right and not corner:
+                                raise LoadError(
+                                    f"bad display attach at {(fr, fc)}"
+                                )
+                            if on_top:
+                                pipe.side = "addr"
+                            elif on_bottom:
+                                pipe.side = "swap"
+                            elif on_left:
+                                pipe.side = "data"
+                            else:
+                                raise LoadError(
+                                    f"bad display attach at {(fr, fc)}"
+                                )
+                        return pipe
             # advance
             r, c = r + d[0], c + d[1]
             if not (0 <= r < h and 0 <= c < w):
@@ -362,6 +425,10 @@ class Machine:
             if all(m.halted for m in self.men):
                 if self.output_pipe and self.output_pipe.count:
                     continue  # drain output pipe
+                if any(
+                    p.count for p in self.pipes if p.dest.kind == "display"
+                ):
+                    continue  # displays keep consuming in-flight values
                 res.status = "halted"
                 return res
         return res
@@ -397,6 +464,10 @@ class Machine:
             err = self._execute(man)
             if err:
                 return err
+        for disp in self.displays:
+            err = self._display_tick(disp, res)
+            if err:
+                return err
         # 4. movement
         for man in self.men:
             if man.halted or man.blocked:
@@ -413,6 +484,48 @@ class Machine:
                 occupant.halted = True
                 continue
             man.r, man.c = nr, nc
+        return None
+
+    # ------------------------------------------------------------- display
+    def _display_tick(self, disp, res: RunResult):
+        """Consume one value from ADDR, then DATA, then SWAP pipes."""
+        by_side = {}
+        for p in self.in_pipes.get(id(disp), []):
+            by_side[p.side] = p
+        for side in ("addr", "data", "swap"):
+            pipe = by_side.get(side)
+            if pipe is None or pipe.values[-1] is None:
+                continue
+            v = pipe.values[-1]
+            pipe.values[-1] = None
+            size = disp.disp_w * disp.disp_h
+            if side == "addr":
+                if not 0 <= v < size:
+                    return "display"
+                disp.cursor = v
+            elif side == "data":
+                if not 0 <= v <= 15:
+                    return "display"
+                disp.next[disp.cursor // disp.disp_w][
+                    disp.cursor % disp.disp_w
+                ] = v
+                disp.cursor = (disp.cursor + 1) % size
+            else:  # swap
+                if v not in (0, 1):
+                    return "display"
+                disp.current = [row[:] for row in disp.next]
+                res.frames.append([row[:] for row in disp.current])
+                res.frame_ticks.append(res.ticks)
+                on_frame = getattr(self._controller, "on_frame", None)
+                if on_frame:
+                    verdict = on_frame(disp.current, res.ticks)
+                    if verdict:
+                        self._verdict = verdict
+                if v == 0:
+                    disp.next = [
+                        [0] * disp.disp_w for _ in range(disp.disp_h)
+                    ]
+                    disp.cursor = 0
         return None
 
     # ------------------------------------------------------- pipe selection

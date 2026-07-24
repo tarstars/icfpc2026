@@ -21,16 +21,26 @@ def footprint(text: str) -> int:
     return max(width, height) ** 2
 
 
+def _parse_frame(rows):
+    return [[int(ch, 16) for ch in row] for row in rows]
+
+
 class RoundController:
-    """Releases round N+1 input only after all round N output is received."""
+    """Releases round N+1 input only after all round N output (values
+    and/or committed display frames) is received."""
 
     def __init__(self, rounds):
         self.rounds = [
-            {"in": [int(v) for v in rd["in"]], "out": [int(v) for v in rd["out"]]}
+            {
+                "in": [int(v) for v in rd["in"]],
+                "out": [int(v) for v in rd.get("out", [])],
+                "frames": [_parse_frame(f) for f in rd.get("frames", [])],
+            }
             for rd in rounds
         ]
         self.round_idx = 0
         self.out_idx = 0
+        self.frame_idx = 0
         self.queue = []
         self.last_output_tick = 0
         self.done = not self.rounds
@@ -38,30 +48,46 @@ class RoundController:
 
     def _release_current(self):
         while self.round_idx < len(self.rounds):
-            self.queue.extend(self.rounds[self.round_idx]["in"])
-            if self.rounds[self.round_idx]["out"]:
+            rd = self.rounds[self.round_idx]
+            self.queue.extend(rd["in"])
+            if rd["out"] or rd["frames"]:
                 return
-            self.round_idx += 1  # no output expected: unlock next immediately
+            self.round_idx += 1  # nothing expected: unlock next immediately
         self.done = True
 
     def pop_input(self):
         return self.queue.pop(0) if self.queue else None
 
+    def _round_complete(self, tick):
+        rd = self.rounds[self.round_idx]
+        if self.out_idx < len(rd["out"]) or self.frame_idx < len(rd["frames"]):
+            return None
+        self.round_idx += 1
+        self.out_idx = 0
+        self.frame_idx = 0
+        self.last_output_tick = tick
+        self._release_current()
+        return "passed" if self.done else None
+
     def on_output(self, value, tick):
         if self.done:
             return "failed"  # output after everything was already matched
         expected = self.rounds[self.round_idx]["out"]
-        if value != expected[self.out_idx]:
+        if self.out_idx >= len(expected) or value != expected[self.out_idx]:
             return "failed"
         self.out_idx += 1
         self.last_output_tick = tick
-        if self.out_idx == len(expected):
-            self.round_idx += 1
-            self.out_idx = 0
-            self._release_current()
-            if self.done:
-                return "passed"
-        return None
+        return self._round_complete(tick)
+
+    def on_frame(self, frame, tick):
+        if self.done:
+            return "failed"
+        expected = self.rounds[self.round_idx]["frames"]
+        if self.frame_idx >= len(expected) or frame != expected[self.frame_idx]:
+            return "failed"
+        self.frame_idx += 1
+        self.last_output_tick = tick
+        return self._round_complete(tick)
 
 
 @dataclass
