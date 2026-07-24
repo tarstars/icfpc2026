@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "d0b34a23-67c1-4087-b88e-90a74404d50e",
+    "slug": "memory",
+    "name": "Memory",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "memory_00",
+      "label": "submitted pipeline-ring baseline",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "parse and head-pointer rooms; write and read stations over a 100-value FIFO ring",
+      "source": {
+        "path": "submissions/memory/memory.man",
+        "generator": "src/littleman/memory.py:build_memory",
+        "sha256": "02367f3791b70ab015e80ad895b8dd2b2a6c5e0ce1b3a3e4b2517b8267a6bb44",
+        "bytes": 1509,
+        "width": 67,
+        "height": 38,
+        "maxDimension": 67,
+        "footprint": 4489
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "fresh cell reads zero": 162,
+          "write then read": 1301,
+          "overwrite": 3744,
+          "boundary addresses and values": 2498,
+          "write zero, trailing write": 3776,
+          "reads only": 1269,
+          "interleaved cells": 55482
+        },
+        "averageTicks": 9747.42857142857,
+        "score": 43756206.85714285
+      },
+      "liveBestBeforeChild": {
+        "standingsUpdatedAt": "2026-07-24T21:06:12.284Z",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "score": 181952075.875
+      }
+    },
+    {
+      "version": "memory_01",
+      "label": "relocated head-pointer room",
+      "parent": "memory_00",
+      "changeType": "geometry-only",
+      "architecture": "identical pipeline and FIFO ring; head-pointer room moved below the ring with disjoint outbound and return corridors",
+      "source": {
+        "path": "submissions/memory/memory_01.man",
+        "generator": "src/littleman/memory.py:build_memory_compact",
+        "sha256": "68d5fb3d73f21c7171ad59dde0f6b22a493cbba297f7bc1f8dcbab04cad92089",
+        "bytes": 2207,
+        "width": 46,
+        "height": 47,
+        "maxDimension": 47,
+        "footprint": 2209
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "fresh cell reads zero": 179,
+          "write then read": 1301,
+          "overwrite": 3744,
+          "boundary addresses and values": 2498,
+          "write zero, trailing write": 3776,
+          "reads only": 1269,
+          "interleaved cells": 55482
+        },
+        "averageTicks": 9749.857142857143,
+        "score": 21537434.42857143
+      },
+      "improvementFromParent": {
+        "footprintPercent": 50.790822009356205,
+        "averageTicksPercent": -0.02491499589636428,
+        "localScorePercent": 50.7785615446792,
+        "liveScorePercent": 49.782245030404496
+      },
+      "liveSubmission": {
+        "id": "22931081-bd2d-4c19-a733-b8035e5bf0af",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 46,
+        "height": 47,
+        "area2": 2209,
+        "averageTicks": 41363.625,
+        "score": 91372247.625,
+        "createdAt": "2026-07-24T21:09:00.337Z",
+        "updatedAt": "2026-07-24T21:09:03.407Z",
+        "fullResponse": "submissions/memory/memory_01-submit.json"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-24T21:22:11.313Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 25,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "score": 91372247.625,
+    "passPoints": 1.0,
+    "rankPoints": 0.7,
+    "points": 1.7,
+    "rows": 85
+  }
+}

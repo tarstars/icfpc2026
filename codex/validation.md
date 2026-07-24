@@ -142,6 +142,57 @@ Updated: 2026-07-24
 - `uv run pytest -q` — 92 tests passed after Matrix, exact benchmarking,
   standings API access, adversarial coverage, and simulator movement lookup
   optimization.
+- `sudoku_00` passed all six public cases with ticks
+  `[885889, 38489, 831560, 49336, 440472, 885893]`, occupied dimensions
+  446×200, footprint 198,916, average ticks 521,939.8333333333, and local
+  score 103,822,183,887.33333.
+- Eight deterministic shuffled valid-prefix cases (seeds `20260724..20260731`)
+  and three directed row/column/box duplicate cases passed against the Python
+  oracle.
+- Submitted exact SHA-256
+  `150abdba2a07421dc37cf975fc68a2313e7cee727bd582597f9ad15923d2d11a`
+  as `09a4a36c-3ff5-4560-a57a-f14879767fe4`; the server reported `done`,
+  20/20, 446×200, average ticks 529,549.7, score 105,335,908,125.2, and no
+  error.
+- The unfrozen Sudoku standings snapshot updated at
+  `2026-07-24T21:04:11.324Z` placed `wheezards` 28th of 32 rows with
+  1.1290322581 points.
+- `uv run pytest -q` — 95 tests passed after adding and submitting Sudoku
+  Auditor.
+- `memory_01` reproduced exactly from `build_memory_compact`, parsed at 46×47,
+  and passed all seven public cases at ticks
+  `[179, 1301, 3744, 2498, 3776, 1269, 55482]`, footprint 2,209, and local
+  score 21,537,434.42857143.
+- `uv run pytest tests/test_memory_rooms.py tests/test_memory_compact.py -q`
+  — 4 tests passed.
+- Submitted SHA-256
+  `68d5fb3d73f21c7171ad59dde0f6b22a493cbba297f7bc1f8dcbab04cad92089`
+  as `22931081-bd2d-4c19-a733-b8035e5bf0af`; the server reported `done`,
+  24/24, 46×47, average ticks 41,363.625, score 91,372,247.625, and no
+  error.
+- The unfrozen Memory standings snapshot updated at
+  `2026-07-24T21:22:11.313Z` placed `wheezards` 25th of 85 rows with
+  1.7 points.
+- `uv run pytest -q` — 119 tests passed in 763.90 seconds after the Memory
+  geometry change and its regression coverage.
+- The generated Plotter setup pipeline emitted exact constants for four
+  directed segments. All six public cases passed at ticks
+  `[90404, 215202, 5759, 137648, 312647, 326976]`, footprint 286,225, and
+  local score 51,932,473,183.333336.
+- A deterministic 20-round test at seed `20260724` matched every frame from
+  the Python symmetric-Bresenham oracle and completed at tick 1,051,453.
+- `uv run pytest tests/test_codex_plotter.py -q` — 3 tests passed in
+  29.16 seconds.
+- Submitted SHA-256
+  `13a1322961d8985bc165fd03f93070640dc4ee4b653c49c1d9f1dd4588bf8e03`
+  as `4c1aa9a7-6362-46c6-a62e-8bc814d871f6`; the server reported `done`,
+  20/20, 394×535, average ticks 264,807.4, score 75,794,498,065, and no
+  error.
+- `uv run pytest -q` — 122 tests passed in 785.02 seconds after adding the
+  complete Plotter pipeline and oracle coverage.
+- The unfrozen Plotter standings snapshot updated at
+  `2026-07-24T21:52:57.148Z` placed `wheezards` 19th of 30 rows with
+  1.3793103448 points.
 
 ## Pending validation
 

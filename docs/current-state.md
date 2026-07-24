@@ -56,6 +56,19 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   score 60.25× over the parallel baseline. Details are in
   `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
   cases at server score 33,286,994,352.
+- The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
+  average 529,549.7 ticks, and score 105,335,908,125.2. Its parallel mask-ring
+  architecture and exact source are documented in
+  `reports/2026-07-24-sudoku-auditor.md` and
+  `submissions/sudoku-validity/`.
+- Memory `memory_01` preserves the submitted pipeline logic but relocates one
+  room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
+  improved the server score from 181,952,075.875 to 91,372,247.625. Details
+  are in `reports/2026-07-24-memory-compaction.md`.
+- Plotter is solved by a generated symmetric-Bresenham pipeline. The first
+  correctness baseline passed all 20 live cases at 394×535 and score
+  75,794,498,065. Its exact source and private-test-oriented validation are
+  documented in `reports/2026-07-24-plotter.md`.
 
 ## Storage
 

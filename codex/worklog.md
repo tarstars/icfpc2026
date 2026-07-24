@@ -40,3 +40,12 @@
   `reports/2026-07-24-matrix-multiply.md`.
 - Submitted the exact `matmul_02` artifact; it passed 20/20 live at server
   score 33,286,994,352.
+- Implemented and submitted the first Sudoku Auditor candidate. Three parallel
+  mask-ring workers passed public, generated adversarial, and all 20 live
+  cases at server score 105,335,908,125.2.
+- Fixed the shared Memory compaction work in progress by separating its two
+  wraparound pipe corridors. The geometry-only `memory_01` candidate passed
+  24/24 live and improved the server score by 49.78%.
+- Built Plotter in a new generator module from the shared symmetric-Bresenham
+  design. Public and deterministic 20-round oracle tests passed, followed by
+  a 20/20 live result at server score 75,794,498,065.

@@ -149,9 +149,12 @@ def build_memory_compact() -> str:
             (20, 24), (19, 24),
         ]
     )
-    # P2 right row1 -> wrap down col45, under, up to P4 left row2
-    cv.pipe([(1, 44), (1, 45), (44, 45), (44, 5), (41, 5)])
+    # P2 right row1 -> wrap down col45, under, up to P4 left row2.
+    # Row 46 is deliberately below the return pipe's row 45 corridor.
+    cv.pipe([(1, 44), (1, 45), (46, 45), (46, 5), (41, 5)])
     cv.cells[(41, 5)] = ">"                        # terminal bend into P4 left
-    # P4 out bottom col14 -> wrap up col46 to P2 right row3
-    cv.pipe([(44, 20), (45, 20), (45, 46), (3, 46), (3, 44)])
+    # P4 out bottom col14 -> approach P2 right row3 from below on col44.
+    # This stays disjoint from the other wrap pipe's col45 corridor.
+    cv.pipe([(44, 20), (45, 20), (45, 44), (3, 44)])
+    cv.cells[(3, 44)] = "<"                        # terminal bend into P2
     return cv.render()

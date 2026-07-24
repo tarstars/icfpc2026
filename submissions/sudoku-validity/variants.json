@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "f66c928f-3369-4870-9153-8b20cafc2ecd",
+    "slug": "sudoku-validity",
+    "name": "Sudoku Auditor",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "sudoku_00",
+      "label": "parallel row-column-box mask rings",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "triple broadcaster; parallel row, column, and box workers; nine-mask FIFO per worker; duplicate-flag aggregator",
+      "source": {
+        "path": "submissions/sudoku-validity/sudoku_00.man",
+        "generator": "src/littleman/sudoku.py:build_sudoku",
+        "sha256": "150abdba2a07421dc37cf975fc68a2313e7cee727bd582597f9ad15923d2d11a",
+        "bytes": 70816,
+        "width": 446,
+        "height": 200,
+        "maxDimension": 446,
+        "footprint": 198916
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": {
+          "a valid grid": 885889,
+          "early row violation": 38489,
+          "late box violation": 831560,
+          "checksum-tie trap": 49336,
+          "col violation": 440472,
+          "violation on final cell": 885893
+        },
+        "averageTicks": 521939.8333333333,
+        "score": 103822183887.33333,
+        "adversarial": {
+          "seed": 20260724,
+          "generatedCases": 8,
+          "directedCases": 3,
+          "coverage": "valid shuffled prefixes; forced row, column, and box duplicates"
+        }
+      },
+      "liveSubmission": {
+        "id": "09a4a36c-3ff5-4560-a57a-f14879767fe4",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 446,
+        "height": 200,
+        "area2": 198916,
+        "averageTicks": 529549.7,
+        "score": 105335908125.2,
+        "createdAt": "2026-07-24T20:46:44.013Z",
+        "updatedAt": "2026-07-24T20:46:48.581Z",
+        "fullResponse": "submissions/sudoku-validity/sudoku_00-submit.json"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-24T21:04:11.324Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 28,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "score": 105335908125.2,
+    "passPoints": 1.0,
+    "rankPoints": 0.12903225806451613,
+    "points": 1.129032258064516,
+    "rows": 32
+  }
+}
