@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "note": "Alexey research line. triangle_02 supersedes the 1053 program.",
+  "problem": {"id": "d82d7d2f-4be9-47ad-a3cd-7deb763a76a9", "slug": "triangle", "name": "Triangle", "scoring": "footprint-tick"},
+  "variants": [
+    {
+      "version": "triangle_02",
+      "label": "two rooms, constant preloaded off the critical path",
+      "parent": "triangle_01",
+      "changeType": "algorithm+geometry",
+      "architecture": "Room A runs `@rM*+sH` and ships n^2+n. Room B runs `@1Mr}sH`: it loads B=1 and then blocks on `r`, so the three ops that set up the halving (M 1 W) cost nothing on the critical path -- the wait is free. 9x9, both compute rooms 3x9, I and O in the middle band.",
+      "source": {
+        "path": "submissions/triangle/triangle_02.man",
+        "sha256": "383744acfa2ea4e3036754c2cfbc316b99b62821c6e07b9e255cefe5976a55ce",
+        "width": 9, "height": 9, "footprint": 81
+      },
+      "localValidation": {"casesPassed": 6, "casesTotal": 6, "ticks": 11,
+        "edgeCases": "n in {0,1,2,3,5,10,17,100,999,1000} all correct at 11 ticks"},
+      "liveSubmission": {"id": "fa4bb82f-b2e1-4635-9c21-9991a855b615", "status": "done",
+        "casesPassed": 19, "casesTotal": 19, "area2": 81, "avgTicks": 11, "score": 891,
+        "fullResponse": "submissions/triangle/alexey-triangle_02-submit.json"},
+      "supersedes": {"previous": 1053, "improvementPercent": 15.4}
+    }
+  ],
+  "rejected": [
+    {"design": "8x8 single room (Alexey's hand-built)", "footprint": 64, "ticks": 18, "score": 1152,
+     "why": "3-cell input pipe and 4-cell output pipe"},
+    {"design": "same 8x8 with both pipes shortened to 2 cells", "footprint": 64, "ticks": 15, "score": 960,
+     "why": "a 3x5 interior needs 4 turns to carry 9 instructions, putting `s` on step 14"}
+  ]
+}
