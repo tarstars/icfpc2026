@@ -43,3 +43,6 @@
 - sort_02: shrinking-ring min-scan (27x24, footprint 729), 7/7 local
   score 2.24M vs pipeline sort_01 ~31M local -> 14x better. Submitted
   799f0c93: 25/25, server score 3.46M. Catalogued in variants.json.
+- max-element (practice): streaming max, no storage (running max in B),
+  14x14 canvas, 10/10, score 29.6k. Halts after single output. New
+  idiom: loop counter m ON the return row so prologue enters with BP=n.
