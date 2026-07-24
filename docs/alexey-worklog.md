@@ -320,3 +320,22 @@ split (which needs >= 74 cells against 64 available). Either the leaders
 exploit a rule this line has not modelled, or the server's room parser is
 more permissive somewhere else. Best submitted remains triangle_02 at
 891.
+
+### Walk-length table (exhaustive, triangle's 9-instruction chain)
+
+Earliest step the 9th instruction (`s`) can land on, by compute-room
+interior. Ticks = that step + 1 with a 2-cell output pipe. The man always
+starts heading east, so the first segment is horizontal and width is
+worth twice height: the longest three-segment walk is 2*width + height - 2.
+
+| interior (w x h) | `s` on step | ticks | fits 8x8? |
+|------------------|-------------|-------|-----------|
+| 6 x 3            | 12          | 13    | only with a shared wall (server-illegal) |
+| 5 x 4, 4 x 5     | 13          | 14    | no — leaves <3 rows or cols for I/O |
+| 5 x 3            | 14          | 15    | yes (14 legal layouts) — this is the 960 program |
+| 4 x 4            | 14          | 15    | no |
+| 3 x 5            | 15          | 16    | yes, but rotating loses 2 ticks |
+
+So 960 is the ceiling for a single-room 8x8 triangle, and the rotated
+3x5 interior is strictly worse than 5x3 — a narrow, tall room wastes the
+eastward start.
