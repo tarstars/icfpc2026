@@ -91,3 +91,12 @@
   reformulation and the honest finding that the 6-value/2-condition
   per-iteration lap needs a scratch pipe (memory-style) or a TEST/UPDATE
   room split. Worker build remains.
+- Memory compaction started (memory_01, geometry-only). Relocated P4
+  from top-right (cols48-66, sole cause of width 67) to the bottom,
+  wrapping its 2 pipes up the right. Renders 47x46 (footprint 2209 vs
+  4489, ~2x) but parse fails: the two wrap pipes collide near P2's
+  right ports (bad glyph at (3,45)). Wrote claude/memory-compaction-
+  handoff.md with the exact fix (route pipe B up col44 into P2 row3 with
+  terminal '<' bend, keeping it disjoint from pipe A's col45), the
+  7/7 verify checklist, submission steps (id d0b34a23...), and the
+  follow-on 3-per-word packing idea. build_memory unchanged/submitted.

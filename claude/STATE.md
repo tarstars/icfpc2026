@@ -18,6 +18,17 @@ Updated: 2026-07-24 late (contest day 1 of 3).
    netlist. Near-term actionable piece: the semi-automatic compactor.
 4. `docs/language-reference.md` only for spec disputes.
 
+## Active WIP (hand-off ready)
+
+- Memory compaction (memory_01, geometry-only ~2x win): IN PROGRESS,
+  blocked on one pipe collision. Full continue-from-here instructions in
+  `claude/memory-compaction-handoff.md`. Code is in
+  src/littleman/memory.py:build_memory_compact (renders 47x46 but
+  parse fails 'bad pipe glyph at (3,45)' — two wrap pipes cross; the
+  handoff gives the exact fix to try).
+- Plotter: drivers built + ADDRDRV validated; worker spec in
+  claude/plotter-worker.md. Separate track.
+
 ## Contest clock
 
 Lightning round ends 2026-07-25 12:00 UTC (scoreboard frozen 10:00–
