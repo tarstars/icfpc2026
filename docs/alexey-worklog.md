@@ -115,3 +115,63 @@ pipe count.
   and its `q`-counted design has a corridor to delete.
 - sort_03 could drop its corridor the same way (its ring size is also
   derivable), but the counter would have to survive the min-scan.
+
+## 2026-07-24 — analysis: is a compacted 16-stage pipeline worth building?
+
+Question raised: sort_00/01's systolic pipeline has 16 nearly-empty
+rooms; compacted, shouldn't it beat the ring on ticks? Measured both on
+identical single rounds (ticks to last output):
+
+| n  | pipeline sort_01 | ring sort_02 | ring sort_03 |
+|----|------------------|--------------|--------------|
+| 1  | 1071             | 100          | 57           |
+| 2  | 1119             | 202          | 135          |
+| 4  | 1221             | 462          | 347          |
+| 8  | 1444             | 1226         | 1015         |
+| 12 | 1656             | 2274         | 1967         |
+| 16 | 1877             | 3638         | 3235         |
+
+The tick intuition is right only for n >= 12. The pipeline is linear
+(53.7 ticks per token — that is one stage's cycle time, since stages run
+in parallel and throughput is what matters) on top of a **1017-tick
+fixed overhead** (~19 token-slots: 16 flush tokens plus the depth of the
+16-stage chain). The ring is quadratic but starts near zero, so it wins
+below n = 12 and loses 1.7x at n = 16. Public rounds are mixed-size, so
+the average is not dominated by n = 16.
+
+Where the 53.7 ticks go: the stage room is 14x20 with a 24-cell shared
+return track (row 12 west, then col 2 north). A compact stage needs ~17
+instruction cells (r, X, the reset chain `0 M 1 N s`, `-`, X, and the
+three compare arms `+ s` / `+ s` / `W s + M`) plus routing, so ~30 cells
+-> a 6x6 interior at best, and its return walk still costs ~10-14 ticks.
+Realistic cycle: 15-20 ticks, i.e. a 3x speedup, not more.
+
+Break-even against sort_03 (361 x 4032.52 = 1.456M):
+
+| stage speedup | server ticks | break-even footprint | max dimension |
+|---------------|--------------|----------------------|---------------|
+| x2            | 2294         | 635                  | 25            |
+| x3            | 1529         | 952                  | 31            |
+| x4.5          | 1019         | 1428                 | 38            |
+| x6            | 764          | 1904                 | 44            |
+
+Sixteen rooms of 8x8 in a 4x4 grid with one-cell pipe gaps is already
+35x35 = 1225, before the loader, gate and dispatcher (currently 12x45
+and 15x56, both literal-heavy). So the achievable pair is roughly
+footprint 1225-2000 at a 3x speedup = **1.9M-3.1M, worse than the
+1.46M sort_03 already scores**. Winning would need footprint ~900 AND a
+5x+ speedup simultaneously.
+
+**Verdict: do not build it.** Footprint is squared and ticks are linear;
+16 rooms cannot pay for themselves here. Recorded so nobody re-derives
+it.
+
+### The better lever for sort
+
+Apply the reverse_01 treatment to the ring: no `q`, no delay corridor.
+The obstacle is that sort's min-scan already uses B for the candidate
+minimum, so the ring size cannot ride in B as it does in reverse_01.
+Fix: circulate the count as an extra value in the ring itself — read it
+first each cycle, re-send it last. That removes 3 corridor rows
+(361 -> ~256-289) and the per-cycle corridor walk. Estimated score
+~800-900k, i.e. 1.6-1.8x better, at a fraction of the pipeline's risk.
