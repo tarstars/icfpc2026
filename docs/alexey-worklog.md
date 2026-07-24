@@ -227,3 +227,50 @@ surviving `-` (their stage does `-` then `+` to restore A). So the
 cookbook's sec.1 claim that `+ - * N & | ~ { } %` destroy B is wrong for
 `-` at least, and the simulator's behaviour is the correct one. Machines
 in this line still avoid depending on it where it is free to do so.
+
+## 2026-07-24 — triangle: 1053 -> 891, and what 8x8 actually costs
+
+Alexey hand-built an 8x8 triangle program, on the theory that the leaders'
+832 = 64 x 13 means they fit the program into 8x8. The size is right and
+the program passes, but measured on the simulator it takes 18 ticks, so
+64 x 18 = 1152 — worse than the 9x9 x 13 = 1053 it was meant to beat.
+It also taught me something my layout model had wrong: the I and O rooms
+can sit flush against each other, sharing no gap.
+
+Shortening both of its pipes to 2 cells (input into the right wall,
+output out of the top wall into O's left wall) gives 15 ticks = **960**.
+Kept as `submissions/triangle/alexey-triangle_8x8_960.man`, deliberately
+NOT submitted — see below.
+
+**Submitted instead: `triangle_02.man`, 9x9 x 11 ticks = 891** (live
+19/19, submission fa4bb82f). The win is a scheduling trick, not a
+geometry one: split into two rooms and let the downstream room preload
+its constant while the upstream one computes.
+
+    room A: @rM*+sH     ships n^2+n at tick 6
+    room B: @1Mr}sH     loads B=1, then blocks on `r` — the wait is free
+
+Blocking costs ticks only if the man is on the critical path, and he is
+not: the three ops that set up the halving (`M 1 W`) leave it entirely.
+13 ticks -> 11. This generalizes — any downstream room can prepare
+constants, masks or counters during the upstream room's work.
+
+### Why 8x8 tops out at 15 ticks
+
+Two exhaustive searches, both worth keeping:
+
+- **The arithmetic cannot be shorter than 9 instructions.** BFS over all
+  of `M W + - * N % / & | ~ { }` and digits from (A=n, B=0), deduping by
+  the signature on 12 values of n: nothing at depth 6, exactly two hits
+  at depth 7 (`M * + M 1 W }` and `M * + M 2 W /`).
+- **8x8 admits at most a 3x5 compute interior.** Exhaustive over room
+  placements and legal pipe paths. (First version of this search was
+  wrong: it let a pipe bend before its first cell's arrow direction. A
+  pipe's cell i+1 is always cell i plus cell i's direction.)
+
+In a 3x5 interior, 9 instructions need 4 turns, so `s` lands on step 14
+and 15 ticks is the floor. 832 needs 13 ticks — `s` on step 12 — which
+needs a 12-cell three-segment walk and therefore a 3x6 interior, and a
+5x8 room does not fit in 8x8 in any layout the search found. Treat that
+as "not found" rather than "impossible": the adjacency fact above shows
+the model of legal layouts has been incomplete before.

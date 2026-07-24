@@ -22,10 +22,26 @@
       "supersedes": {"previous": 1053, "improvementPercent": 15.4}
     }
   ],
-  "rejected": [
-    {"design": "8x8 single room (Alexey's hand-built)", "footprint": 64, "ticks": 18, "score": 1152,
-     "why": "3-cell input pipe and 4-cell output pipe"},
-    {"design": "same 8x8 with both pipes shortened to 2 cells", "footprint": 64, "ticks": 15, "score": 960,
-     "why": "a 3x5 interior needs 4 turns to carry 9 instructions, putting `s` on step 14"}
+  "notSubmitted": [
+    {
+      "design": "8x8 single room, hand-built by Alexey, pipes as first drawn",
+      "footprint": 64, "ticks": 18, "score": 1152,
+      "why": "3-cell input pipe delayed `r` by a tick; 4-cell output pipe cost three more in transit",
+      "keptOnlyAsMeasurement": true
+    },
+    {
+      "design": "same 8x8 with both pipes shortened to 2 cells",
+      "path": "submissions/triangle/alexey-triangle_8x8_960.man",
+      "sha256": "7946731bd3f5ae04ea840053faa3cdc1fc1b89ccddddab07321d75e62fddd597",
+      "footprint": 64, "ticks": 15, "score": 960,
+      "localValidation": {"casesPassed": 6, "casesTotal": 6},
+      "why": "Kept for the record, deliberately NOT submitted: 960 beats the old 1053 but loses to triangle_02's 891. In 8x8 the compute room cannot exceed a 3x5 interior, and 9 instructions need 4 turns there, so `s` lands on step 14 and 15 ticks is the floor. The footprint win (64 vs 81, 1.27x) does not pay for the tick loss (15 vs 11, 1.36x).",
+      "watchOut": "the first line starts with two spaces; strip them and the rooms shift and the program stops parsing (bad pipe glyph at (1,2))"
+    }
+  ],
+  "provenBounds": [
+    "The arithmetic needs 7 compute ops (9 instructions with r and s): BFS over all of M W + - * N % / & | ~ { } and digits finds nothing at depth 6 and exactly two sequences at depth 7 (`M * + M 1 W }`, `M * + M 2 W /`).",
+    "In an 8x8 box the largest compute room connectable to I and O is a 3x5 interior (exhaustive search over room placements and legal pipe paths).",
+    "Reaching the leaders' 832 needs 13 ticks, i.e. `s` on step 12, i.e. a 12-cell 3-segment walk, i.e. a 3x6 interior -- which does not fit in 8x8 in any layout this search found. Alexey's adjacent I/O rooms showed the model of legal layouts was incomplete once already, so this bound is 'not found', not 'impossible'."
   ]
 }
