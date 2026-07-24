@@ -61,3 +61,9 @@
   debug ladder), claude/plotter-plan.md (full room-by-room plotter
   spec with build order), STATE.md rewritten as board + priorities.
   plotter.py flagged as broken sketch - rewrite from plan.
+- Toolchain hierarchy written to docs/toolchain-plan.md with per-level
+  APIs, implementation notes anchored to existing code, tests, and
+  build order: L2 pipe-intent checker (1h) -> L3 symbolic reg/queue
+  tracker (2-3h) -> L4 idiom macros -> L1 lane assembler (1d) ->
+  L6 debugger; L5 dataflow compiler deferred post-contest. Principle:
+  checks before generators.

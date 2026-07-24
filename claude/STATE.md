@@ -9,6 +9,9 @@ Updated: 2026-07-24 late (contest day 1 of 3).
    debug ladder, submission workflow. Non-negotiable reading before
    touching any .man design.
 3. If working plotter: `claude/plotter-plan.md` (complete spec).
+   If building tooling: `docs/toolchain-plan.md` (levels, APIs, build
+   order — levels 2+3 are quick pure-checker wins, do them before
+   the next machine).
 4. `docs/language-reference.md` only for spec disputes.
 
 ## Contest clock
