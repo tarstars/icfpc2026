@@ -33,6 +33,7 @@ take precedence over `.env`. Never pass the key on the command line, commit
 | `uv run icfpc-api problems` | List released problems. Use this to map a slug to the `problemId` required by submission and to reject `practice` targets. | None |
 | `uv run icfpc-api problem <slug>` | Fetch the statement, I/O contract, scoring rule, and public test data for one released problem. | None |
 | `uv run icfpc-api clock` | Fetch contest timing, submission closure, and scoreboard-freeze state. | None |
+| `uv run icfpc-api standings <problem-id>` | Fetch the current public standings snapshot and live scores for one graded problem. Use this before committing a new solution version. | None |
 | `uv run icfpc-api submission <id>` | Read one submission owned by this team once. | Bearer key |
 | `uv run icfpc-api wait <id>` | Poll at 2.5-second intervals until the submission is `done` or `failed`. | Bearer key |
 | `uv run icfpc-api submit <problem-id> <program-file> --confirm` | Create exactly one contest submission from the file's exact UTF-8 contents. This is an external mutation. | Bearer key |

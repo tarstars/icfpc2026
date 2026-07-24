@@ -110,6 +110,38 @@ Updated: 2026-07-24
 - Submitted that exact Grade Book artifact once as
   `97526857-55b8-4e83-9ad5-2864afb3a02e`; the server reported `done`, 20/20,
   494×462, average ticks 508,628.7, score 124,123,713,433.2, and no error.
+- `matmul_00` passed all seven Matrix Multiply public cases with ticks
+  `[43976, 54494, 138024, 1660920, 482316, 208409, 327120]`, dimensions
+  1,982×291, footprint 3,928,324, and local score
+  1,636,011,699,416.5713.
+- `matmul_01` parsed as 11 rooms, 9 men, and 18 pipes. Its two matrix return
+  pipes have capacities 350 and 276 for the 256-value maximum.
+- `matmul_01` passed all seven public cases with ticks
+  `[23726, 31502, 109586, 4198442, 718378, 189656, 405220]`, dimensions
+  109×289, footprint 80,656, and local score 65,406,370,080.
+- All three checked-in Matrix artifacts exactly match their generators and
+  recorded SHA-256 hashes.
+- Geometry-only `matmul_02` parsed as 12 rooms, 10 men, and 19 pipes. Its A/B
+  return capacities are 334 and 268.
+- `matmul_02` passed all seven public cases with ticks
+  `[23684, 31460, 109544, 4198400, 718336, 189614, 405178]`, occupied
+  dimensions 183×180, footprint 33,489, and local score 27,155,828,232.
+- Submitted exact SHA-256
+  `4d4b47c05a39fa1f428d45748e1a0d5b8af4de240eec6aad2d76adb9b8570e5b`
+  as `c2e95f37-585d-41b2-8f71-a255345fa784`; the server reported `done`,
+  20/20, 183×180, average ticks 993,968, score 33,286,994,352, and no error.
+- The unfrozen Matrix standings snapshot updated at
+  `2026-07-24T20:32:11.660Z` placed `wheezards` ninth of 19 rows with
+  1.5555555556 points.
+- `scripts/benchmark_candidates.py` reproduced the checked-in Max Element
+  candidate through the canonical judge and emitted deterministic JSON with
+  exact-file hashes, dimensions, case ticks, score, and parent comparison.
+- Five deterministic Matrix adversarial cases (seed `20260724`) passed against
+  a Python multiplication oracle, covering boundary dimensions M=16, K=16,
+  N=16, alternating ±99 values, mixed signs, and varied shapes.
+- `uv run pytest -q` — 92 tests passed after Matrix, exact benchmarking,
+  standings API access, adversarial coverage, and simulator movement lookup
+  optimization.
 
 ## Pending validation
 

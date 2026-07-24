@@ -27,6 +27,22 @@ def test_public_problem_list_omits_bearer_key():
         assert client.list_problems() == [{"id": "p1", "slug": "echo"}]
 
 
+def test_problem_standings_omit_bearer_key_and_quote_id():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.raw_path == b"/api/v1/standings/problems/p%20one"
+        assert "authorization" not in request.headers
+        return httpx.Response(200, json={"rows": [], "frozen": False})
+
+    with ContestApiClient(
+        api_key="secret-key",
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        assert client.get_problem_standings("p one") == {
+            "rows": [],
+            "frozen": False,
+        }
+
+
 def test_submit_sends_exact_program_and_bearer_key():
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/v1/submissions"

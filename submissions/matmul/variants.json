@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "58f54636-3ec4-497d-8102-b486f13a1ed1",
+    "slug": "matmul",
+    "name": "Matrix Multiply",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "matmul_00",
+      "label": "sixteen parallel column workers",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "A ring; B column broadcast; 16 column workers; chained row-major result token",
+      "source": {
+        "path": "submissions/matmul/matmul_00.man",
+        "generator": "src/littleman/matmul.py:build_matmul",
+        "sha256": "35e825d744e4f4e70fc234e231ae090db5081fb4f75c909b979aaa4336f2391f",
+        "bytes": 354611,
+        "width": 1982,
+        "height": 291,
+        "maxDimension": 1982,
+        "footprint": 3928324
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "2x2 warm up": 43976,
+          "non-square 2x3x2": 54494,
+          "identity": 138024,
+          "16x16x16 full size": 1660920,
+          "skinny 16x2x16": 482316,
+          "negative heavy": 208409,
+          "max magnitude 7x5x9": 327120
+        },
+        "averageTicks": 416465.5714285714,
+        "score": 1636011699416.5713
+      },
+      "liveSubmission": null
+    },
+    {
+      "version": "matmul_01",
+      "label": "compact nested matrix rings",
+      "parent": "matmul_00",
+      "changeType": "algorithm-and-geometry",
+      "architecture": "single controller; canonical A/B FIFO rings; K partial-sum ring; nested U-shaped 256-value storage",
+      "source": {
+        "path": "submissions/matmul/matmul_01.man",
+        "generator": "src/littleman/matmul_ring.py:build_matmul_ring",
+        "sha256": "7f17ac2d7ce8977c28854a01de7619eecf7cd7a0a4b78fc45de1818c26778149",
+        "bytes": 28458,
+        "width": 109,
+        "height": 289,
+        "maxDimension": 289,
+        "footprint": 80656
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "2x2 warm up": 23726,
+          "non-square 2x3x2": 31502,
+          "identity": 109586,
+          "16x16x16 full size": 4198442,
+          "skinny 16x2x16": 718378,
+          "negative heavy": 189656,
+          "max magnitude 7x5x9": 405220
+        },
+        "averageTicks": 810930.0,
+        "score": 65406370080.0
+      },
+      "improvementFromParent": {
+        "footprintPercent": 97.94680886810762,
+        "averageTicksPercent": -94.71717607252049,
+        "scorePercent": 96.00208420860774
+      },
+      "liveSubmission": null
+    },
+    {
+      "version": "matmul_02",
+      "label": "balanced nested-ring geometry",
+      "parent": "matmul_01",
+      "changeType": "geometry",
+      "architecture": "matmul_01 controller and rings; rectangular outer A return; folded inner B return; relayed side output",
+      "source": {
+        "path": "submissions/matmul/matmul_02.man",
+        "generator": "src/littleman/matmul_ring.py:build_matmul_ring_compact",
+        "sha256": "4d4b47c05a39fa1f428d45748e1a0d5b8af4de240eec6aad2d76adb9b8570e5b",
+        "bytes": 22413,
+        "width": 183,
+        "height": 180,
+        "maxDimension": 183,
+        "footprint": 33489
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "2x2 warm up": 23684,
+          "non-square 2x3x2": 31460,
+          "identity": 109544,
+          "16x16x16 full size": 4198400,
+          "skinny 16x2x16": 718336,
+          "negative heavy": 189614,
+          "max magnitude 7x5x9": 405178
+        },
+        "averageTicks": 810888.0,
+        "score": 27155828232.0
+      },
+      "improvementFromParent": {
+        "footprintPercent": 58.47922039277921,
+        "averageTicksPercent": 0.005179238651918168,
+        "scorePercent": 58.481370853045206
+      },
+      "liveSubmission": {
+        "id": "c2e95f37-585d-41b2-8f71-a255345fa784",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 183,
+        "height": 180,
+        "area2": 33489,
+        "averageTicks": 993968.0,
+        "score": 33286994352.0,
+        "createdAt": "2026-07-24T20:16:08.990Z",
+        "updatedAt": "2026-07-24T20:16:21.269Z",
+        "fullResponse": "submissions/matmul/matmul_02-submit.json"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-24T20:32:11.660Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 9,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "score": 33286994352.0,
+    "passPoints": 1.0,
+    "rankPoints": 0.5555555555555556,
+    "points": 1.5555555555555556,
+    "rows": 19
+  }
+}

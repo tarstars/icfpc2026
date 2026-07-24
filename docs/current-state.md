@@ -32,6 +32,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   API client.
 - `uv run icfpc-api` provides JSON problem reads and guarded submission/polling
   commands; local credentials remain in the ignored `.env`.
+- Before committing any solution version, agents must pull and integrate the
+  current GitHub branch and query the exact problem's current score/submission
+  state through the contest API; the mandatory freshness policy is in
+  `AGENTS.md`.
 - Three submitted Sort variants passed all 25 server cases. The current best is
   the 27×24 shrinking-ring `sort_02`, with server score 3,460,708.8. The
   earlier pipeline variants and their geometry-only optimization are preserved
@@ -46,6 +50,12 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   average 508,628.7 ticks and score 124,123,713,433.2. Its exact source and
   properties are under `submissions/gradebook/`, with architecture and metrics
   in `reports/2026-07-24-grade-book.md`.
+- Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
+  The best compact nested-ring geometry occupies 183×180, passes all seven
+  public cases, including 16×16×16 in 4,198,400 ticks, and improves the local
+  score 60.25× over the parallel baseline. Details are in
+  `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
+  cases at server score 33,286,994,352.
 
 ## Storage
 
