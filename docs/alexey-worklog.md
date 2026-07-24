@@ -274,3 +274,49 @@ needs a 12-cell three-segment walk and therefore a 3x6 interior, and a
 5x8 room does not fit in 8x8 in any layout the search found. Treat that
 as "not found" rather than "impossible": the adjacency fact above shows
 the model of legal layouts has been incomplete before.
+
+## 2026-07-24 — IMPORTANT: our simulator accepts layouts the server rejects
+
+Chasing the leaders' triangle score of 832 (= 64 x 13) turned up a
+simulator/server divergence that can bite any problem, so read this
+before trusting a local pass.
+
+**Rooms may NOT share a wall.** `littleman.sim` happily parses
+
+    +-+-+        two 3x3 rooms sharing the middle column
+    |I|O|
+    +-+-+
+
+as two rooms. The server does not. Submitting an 8x8 triangle built on
+that (submission 0eec139b) came back with
+
+    loadError: pipe interrupted: expected '-' or an arrowhead to
+    continue it, but found '|' at (6, 6)
+
+(6,6) was the right wall of the shared-wall O room. The server never
+detected O, so the pipe aimed at it ran on into the wall glyph. Local
+result was 6/6 at 13 ticks; server result was a load error and a zero.
+
+`src/littleman/sim.py` belongs to the shared line so this line does not
+patch it — flagging it instead. Anyone relying on adjacency should give
+each room its own wall, as the working programs already do.
+
+**A '+' in the middle of a wall also splits differently.** Our parser
+refuses a room whose edge carries '+' (it simply fails to find the room);
+that at least fails locally rather than on the server.
+
+### Where that leaves 832
+
+Reaching 13 ticks needs `s` on walk step 12, so a 12-cell three-segment
+walk, so a compute interior of at least 3x6 (2w + h >= 14). An exhaustive
+parser-validated search over 8x8 finds exactly four layouts with a 3x6
+interior and two 2-cell pipes, and **all four require rooms to share a
+wall** — i.e. all four are server-invalid. Without sharing, 8x8 caps the
+compute interior at 3x5, where 9 instructions need 4 turns, `s` lands on
+step 14, and 15 ticks (score 960) is the floor.
+
+So 832 is reachable neither by the single-room shape nor by a two-room
+split (which needs >= 74 cells against 64 available). Either the leaders
+exploit a rule this line has not modelled, or the server's room parser is
+more permissive somewhere else. Best submitted remains triangle_02 at
+891.

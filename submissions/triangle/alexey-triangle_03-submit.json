@@ -1,0 +1,18 @@
+{
+  "area2": null,
+  "avgTicks": null,
+  "casesPassed": 0,
+  "casesTotal": 0,
+  "createdAt": "2026-07-24T23:23:01.006Z",
+  "error": null,
+  "height": 0,
+  "id": "0eec139b-50e6-4bc3-b310-2a774199b1a9",
+  "loadError": "pipe interrupted: expected '-' or an arrowhead to continue it, but found '|' at (6, 6)",
+  "output": "Your program failed to load: pipe interrupted: expected '-' or an arrowhead to continue it, but found '|' at (6, 6)",
+  "problemId": "d82d7d2f-4be9-47ad-a3cd-7deb763a76a9",
+  "score": null,
+  "status": "done",
+  "uberStrictPassed": null,
+  "updatedAt": "2026-07-24T23:23:10.529Z",
+  "width": 0
+}
