@@ -1,0 +1,33 @@
+# Editors and operating systems
+*~
+*.swp
+.DS_Store
+
+# Local environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Reproducible build output
+/build/
+/target/
+/dist/
+/tmp/
+
+# External-backed bulk roots. No trailing slash: ignore the symlink itself.
+/artifacts
+/outputs
+/yt_work
+/data/generated
+/data/external
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+*.token
