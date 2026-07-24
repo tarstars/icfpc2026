@@ -27,3 +27,6 @@
   exits with last value in A. 7/7 public tests, score 43.8M. v1
   unoptimized (footprint 4489 dominates; compaction + loop unrolling
   + 3-per-word packing are the levers).
+- SUBMITTED both solutions, full marks on private tests too:
+  triangle 0efa32a5 19/19 (9x9); memory 788c05a4 24/24 (67x38).
+  Both problems are now score-golf: footprint x ticks vs other teams.
