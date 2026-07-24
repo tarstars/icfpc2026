@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "5977822a-7bab-4fc5-9fe8-f79583113072",
+    "slug": "brackets",
+    "name": "Brackets",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "brackets_00",
+      "label": "packed-stack three-room baseline",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "base-3 digit-packed stack in one 64-bit word; classify + open/close stations with circulating [S,p] state",
+      "source": {
+        "path": "submissions/brackets/brackets_00.man",
+        "generator": "src/littleman/brackets.py:build_brackets",
+        "width": 50,
+        "height": 39,
+        "footprint": 2500
+      },
+      "localValidation": {
+        "casesPassed": 9,
+        "casesTotal": 9,
+        "averageTicks": 1505.8,
+        "score": 3764444.4
+      },
+      "liveSubmission": {
+        "id": "5690cc53-838c-4eee-92be-39c5236621ac",
+        "status": "done",
+        "casesPassed": 26,
+        "casesTotal": 26,
+        "serverScore": 7473269.2
+      }
+    }
+  ]
+}

@@ -46,3 +46,12 @@
 - max-element (practice): streaming max, no storage (running max in B),
   14x14 canvas, 10/10, score 29.6k. Halts after single output. New
   idiom: loop counter m ON the return row so prologue enters with BP=n.
+- Brackets solved: base-3 packed stack (digits 1-3, depth 32 fits 64
+  bits where base-4 would not), match+pop in ONE division (rem!=0 =
+  mismatch, quotient = popped stack), push = M r W + + + (no literal).
+  Three rooms: classify chain + OPEN/CLOSE stations, [S,p] circulating.
+  Debug lessons: prologue cells must be off the racetrack (re-seeding
+  bug); pipes must START with the arrowhead adjacent to the source wall
+  (terminal arrowhead may be a bend, Canvas.pipe needs manual patch);
+  teammate's stricter vertical-backtick pairing forbids X/W between
+  aligned literal columns. 26/26 live 5690cc53, server 7.47M.
