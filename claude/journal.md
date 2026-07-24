@@ -79,3 +79,15 @@
   a pragmatic router build order (semi-auto compactor first = 80/20).
   Meets toolchain-plan.md at the netlist interface. ROI verdict: full
   stack net-negative this contest; harvest bottom+middle now.
+- Plotter progress: adopted simpler v3 architecture (single Bresenham
+  worker ring + 3-driver chain, vs the 11-room v2). Built ADDRDRV/
+  DATADRV/SWAPDRV; VALIDATED ADDRDRV in isolation ([3,6,1,-1]->[2,5,0]),
+  committed with test. Key driver idioms: forward token unconditionally
+  BEFORE the X branch (lanes carry no sends, man parks on r); worker
+  emits addr+1 so one X splits plot/end without addr=0 ambiguity;
+  end/return lanes turn LEFT into a clean corridor; SWAPDRV discard
+  returns via row3+left-riser to avoid crossing its swap-send. Wrote
+  claude/plotter-worker.md: full v3 spec incl. Bresenham-on-addr
+  reformulation and the honest finding that the 6-value/2-condition
+  per-iteration lap needs a scratch pipe (memory-style) or a TEST/UPDATE
+  room split. Worker build remains.

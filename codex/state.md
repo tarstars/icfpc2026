@@ -35,6 +35,12 @@ solutions.
   public cases at local score 12,232,076.67.
 - Preserved and submitted its exact source; it passed 20/20 live with score
   20,028,106.4.
+- Implemented a four-worker Grade Book candidate with chained
+  acknowledgements and generated compact control geometry. It passes all
+  seven public cases at 494×462, worst-case 444,421 ticks, and local score
+  37,077,609,660. Its exact source and properties are preserved under
+  `submissions/gradebook/`; it passed 20/20 live with server score
+  124,123,713,433.2.
 
 ## Blockers
 
@@ -42,6 +48,6 @@ solutions.
 
 ## Next steps
 
-1. Support Claude with live problem retrieval, submission, and result polling.
-2. Optimize Packet Reassembly geometry against the preserved `tcp_00`
-   baseline.
+1. Optimize Grade Book geometry and control routing against the preserved
+   `gradebook_00` baseline.
+2. Support Claude with live problem retrieval, submission, and result polling.

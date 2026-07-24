@@ -39,3 +39,15 @@ Public API reads omit authorization. Submission reads use the bearer key.
 Creating a submission requires the explicit `--confirm` flag, enforces the
 documented size limit locally, and is never retried automatically because an
 ambiguous POST failure could otherwise create duplicates.
+
+## 2026-07-24 — Partition Grade Book by subject
+
+Use four parallel subject workers instead of one ring containing every grade.
+This makes subject selection spatial, keeps each stored record to an ID/grade
+pair, and gives GET, SET, AVG, and TOP one common scan protocol. Chain worker
+acknowledgements so the parser waits for all workers through one pipe without
+letting an any-pipe receive consume future contest input.
+
+Generate the control rooms from an explicit finite-state graph. Keep the
+correctness-first state machine independent from geometry, then compact bands
+and edge tracks mechanically.
