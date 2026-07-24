@@ -159,6 +159,43 @@ as tick wins. They apply to any shrinking-ring problem (sort, tcp).
   the emit row turning south, and one `>` between the branch descent and
   the skip-loop return.
 
+## Room-compaction tricks (from rebuilding the sort pipeline)
+
+A stage room went 14x20 -> 8x9 and its cycle 53.7 -> 20 ticks with these.
+They apply to any room whose man loops forever over a branch tree.
+
+- **Put instructions ON the vertical branch runs.** After an `X` sends
+  the man north, the cells he walks through execute for free. `s`, `+`,
+  `0`, `M` all work mid-walk, so an arm costs rows it was going to spend
+  anyway instead of its own horizontal row.
+- **Share a cell between two paths that both want the same effect.** One
+  `s` served both the reset path walking east and the compare arm
+  walking north.
+- **Merge two arms that end the same way onto one tail.** Two arms that
+  both finish with `M` (B := A) can converge on a single `M` cell.
+- **Order matters more than cell count**: forwarding a token then
+  clearing (`s 0 M`, 3 cells) beats clearing then rebuilding the token
+  (`0 M 1 N s`, 5 cells).
+- **Delete a room by deleting the reason it exists.** A dispatcher room
+  existed only to tell the gate how many values to expect; having the
+  gate detect the end-of-round token by sign removed the room, its two
+  pipes, and every nearest-pipe audit in the program.
+- **Compute constants from other constants.** `W M +` turns SHIFT into
+  2*SHIFT for 3 cells instead of a 7-cell literal.
+- **Choose the chain topology so the endpoints land where the control
+  rooms are.** A vertical serpentine (down col 0, up col 1, ...) puts
+  the first and last stage on the same edge; a horizontal one strands
+  them at opposite corners and needs a long pipe, and pipe cells cost a
+  tick each in transit.
+
+## Settled: `-` does NOT destroy B
+
+The cookbook sec.1 lists `+ - * N & | ~ { } %` as destroying B. The
+simulator disagrees, and the server sides with the simulator: sort_00
+and sort_01 both passed 25/25 while their stage relies on `-` leaving B
+intact (it does `-` then `+` to restore A). Only `M`, `W` and `/` write
+B. Still prefer re-establishing B with an explicit `M` when it is free.
+
 ## Verification pattern for geometry changes
 
 1. Rebuild via generator, print, eyeball the ASCII.
