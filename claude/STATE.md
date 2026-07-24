@@ -12,6 +12,10 @@ Updated: 2026-07-24 late (contest day 1 of 3).
    If building tooling: `docs/toolchain-plan.md` (levels, APIs, build
    order — levels 2+3 are quick pure-checker wins, do them before
    the next machine).
+   `docs/synthesis-stack.md` — top-down compiler-stack analysis
+   (HLS/place-and-route framing, latency-insensitivity, netlist
+   schema, soft-core vs synthesis fork); meets toolchain-plan at the
+   netlist. Near-term actionable piece: the semi-automatic compactor.
 4. `docs/language-reference.md` only for spec disputes.
 
 ## Contest clock

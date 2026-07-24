@@ -67,3 +67,15 @@
   tracker (2-3h) -> L4 idiom macros -> L1 lane assembler (1d) ->
   L6 debugger; L5 dataflow compiler deferred post-contest. Principle:
   checks before generators.
+- Wrote docs/synthesis-stack.md: top-down analysis of the user's
+  three-tier compiler-stack idea. Core reframe: target is hardware
+  synthesis (HLS + place&route), not software compilation; the
+  "linker" is really place-and-route and is the flagship (footprint
+  dominates). Latency-insensitivity (Carloni) gives correctness-
+  separability under two conditions (no R/U; rigid small components =
+  cookbook rule); cost does NOT separate (phase-ordering). Fork A
+  soft-core (breadth/insurance for matmul/sudoku/subset-sum) vs Fork B
+  synthesis (score); library serves both. Includes netlist schema and
+  a pragmatic router build order (semi-auto compactor first = 80/20).
+  Meets toolchain-plan.md at the netlist interface. ROI verdict: full
+  stack net-negative this contest; harvest bottom+middle now.
