@@ -73,9 +73,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
   cases at server score 33,286,994,352.
 - The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
-  average 529,549.7 ticks, and score 105,335,908,125.2. Its parallel mask-ring
-  architecture and exact source are documented in
-  `reports/2026-07-24-sudoku-auditor.md` and
+  average 529,549.7 ticks, and score 105,335,908,125.2. The unsubmitted
+  geometry-only `sudoku_01` folds its unchanged workers into two rows,
+  occupies 286×285, passes the focused compatibility and adversarial gates,
+  and improves measured local score 59.15%. Details and exact sources are in
+  `reports/2026-07-25-sudoku-two-row.md` and
   `submissions/sudoku-validity/`.
 - Memory `memory_01` preserves the submitted pipeline logic but relocates one
   room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
@@ -103,10 +105,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   workloads at local score 261,393.75, 12.15% below live `reverse_01`; it has
   not been submitted.
 - TCP-derived transfer audits are complete for Grade Book, Matrix, Brackets,
-  Plotter, Sudoku, and Subset Sum. They record two rejected standalone
-  protocol changes, a 306-square Sudoku packing bound, and a Subset Sum
-  relocation probe that reaches the 3,029 height bound but exposes a specific
-  pipe-route collision. See `reports/2026-07-25-tcp-transfer-audits.md`.
+  Plotter, Sudoku, and Subset Sum. The Sudoku packing bound has since become
+  the validated 286-square `sudoku_01`; the Subset Sum relocation probe still
+  reaches the 3,029 height bound but exposes a specific pipe-route collision.
+  See `reports/2026-07-25-tcp-transfer-audits.md`.
 - `littleman.server_compat` is the pre-submission judge for the two confirmed
   parser differences: it rejects locally accepted shared-wall rooms and
   permits a final wall step after a send while the output pipe drains.

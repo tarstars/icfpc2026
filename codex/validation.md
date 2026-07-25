@@ -327,6 +327,25 @@ Updated: 2026-07-25
   `AGENTS.md`, the normative protocol, Claude prompt, templates, durable
   decision record, and a sender-owned policy message.
 - `git diff --check` — passed for the liveness-policy update.
+- `build_sudoku()` still reproduces immutable `sudoku_00` exactly at SHA-256
+  `150abdba2a07421dc37cf975fc68a2313e7cee727bd582597f9ad15923d2d11a`.
+- Exact `sudoku_01` is 70,926 bytes, SHA-256
+  `c14eff02498f37c56c56bc78ff7a9f7b6cb98613bc8b744d3546accf9498244a`,
+  and reproduces from `build_sudoku_two_row()`. It occupies 286×285, parses
+  as 20 rooms, 33 pipes, and 18 men, retains twelve 41-cell rings, and passes
+  `littleman.server_compat`.
+- `sudoku_01` passed all six public cases at ticks
+  `[880073, 38211, 826099, 48987, 437567, 880077]`, average
+  518,502.3333333333, and local score 42,411,416,857.33333. This is a
+  59.1499472759% measured score improvement over `sudoku_00`.
+- Eight deterministic shuffled valid-prefix/forced-duplicate cases and three
+  directed row/column/box duplicate cases pass for both Sudoku versions.
+- `uv run pytest tests/test_sudoku.py -q` — 6 tests passed in 19.00 seconds.
+- `uv run pytest -q` — 188 tests passed in 86.59 seconds with the retained
+  candidate and artifact.
+- Read-only Sudoku freshness check at `2026-07-25T08:26:57.258Z` confirmed
+  live submission `09a4a36c-3ff5-4560-a57a-f14879767fe4` remains 20/20 at
+  446×200, score 105,335,908,125.2, rank 46/50.
 
 ## Pending validation
 

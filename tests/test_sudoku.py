@@ -7,13 +7,16 @@ import random
 from pathlib import Path
 
 from littleman.judge import judge_case, judge_problem
+from littleman.server_compat import validate_layout
 from littleman.sim import Machine
-from littleman.sudoku import build_sudoku
+from littleman.sudoku import build_sudoku, build_sudoku_two_row
 
 REPO = Path(__file__).resolve().parent.parent
 PROBLEM = json.loads(
     (REPO / "data" / "small" / "problems" / "sudoku-validity.json").read_text()
 )
+BASELINE_ARTIFACT = REPO / "submissions" / "sudoku-validity" / "sudoku_00.man"
+TWO_ROW_ARTIFACT = REPO / "submissions" / "sudoku-validity" / "sudoku_01.man"
 
 
 def _verdict_rounds(cells):
@@ -45,13 +48,34 @@ def test_sudoku_program_loads():
     assert ring_capacities == [41] * 12
 
 
+def test_sudoku_artifacts_reproduce_and_two_row_layout_is_server_safe():
+    baseline = build_sudoku()
+    two_row = build_sudoku_two_row()
+    assert baseline == BASELINE_ARTIFACT.read_text()
+    assert two_row == TWO_ROW_ARTIFACT.read_text()
+
+    lines = two_row.rstrip("\n").splitlines()
+    assert max(map(len, lines)) == 286
+    assert len(lines) == 285
+
+    machine = Machine.parse(two_row)
+    assert len(machine.rooms) == 20
+    assert len(machine.pipes) == 33
+    assert sorted(len(pipe.cells) for pipe in machine.pipes).count(41) == 12
+    validate_layout(two_row)
+
+
 def test_sudoku_passes_public_cases():
     report = judge_problem(build_sudoku(), PROBLEM)
     assert report.cases_passed == report.cases_total == 6, report.case_results
 
 
-def test_sudoku_deterministic_valid_prefixes_and_forced_duplicates():
-    text = build_sudoku()
+def test_sudoku_two_row_passes_public_cases():
+    report = judge_problem(build_sudoku_two_row(), PROBLEM)
+    assert report.cases_passed == report.cases_total == 6, report.case_results
+
+
+def _assert_deterministic_valid_prefixes_and_forced_duplicates(text):
     solved = [
         (row, column, (row * 3 + row // 3 + column) % 9 + 1)
         for row in range(9)
@@ -80,3 +104,11 @@ def test_sudoku_deterministic_valid_prefixes_and_forced_duplicates():
     ):
         result = judge_case(text, _verdict_rounds(cells))
         assert result.passed, (cells, result)
+
+
+def test_sudoku_deterministic_valid_prefixes_and_forced_duplicates():
+    _assert_deterministic_valid_prefixes_and_forced_duplicates(build_sudoku())
+
+
+def test_sudoku_two_row_deterministic_valid_prefixes_and_forced_duplicates():
+    _assert_deterministic_valid_prefixes_and_forced_duplicates(build_sudoku_two_row())

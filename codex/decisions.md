@@ -166,3 +166,15 @@ Do not treat timestamp churn as progress. Inspect the peer branch and any
 announced long-running job first, preserve Claude's worktree and commits, and
 establish a new exclusive owner before continuing from a separate branch or
 solution version.
+
+## 2026-07-25 — Retain Sudoku state machines and fold only their geometry
+
+Preserve `sudoku_00` and every compiled room program byte-for-byte. Place the
+row and column worker modules in an upper row, center the box worker below,
+and regenerate only the broadcaster, command, result, and output routes.
+
+Keep four columns between upper worker envelopes: three would put a command
+corridor adjacent to a room wall. Accept the fold only after exact artifact
+reproduction, ring-capacity assertions, public and directed duplicate tests,
+and the server-compatibility gate. Preserve the result as unsubmitted
+`sudoku_01`.

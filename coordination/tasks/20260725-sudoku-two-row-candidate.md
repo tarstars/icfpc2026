@@ -1,6 +1,6 @@
 # 20260725-sudoku-two-row-candidate
 
-- Status: active
+- Status: validated; pending integration commit
 - Record owner: codex
 - Work owner: codex
 - Reviewer: codex
@@ -10,7 +10,7 @@
 - Branch: `main`
 - Progress lease: four-hour goal session
 - Created UTC: 2026-07-25T08:10:44Z
-- Last updated UTC: 2026-07-25T08:10:44Z
+- Last updated UTC: 2026-07-25T08:25:43Z
 
 ## Outcome
 
@@ -74,3 +74,10 @@ Contest submission: forbidden by the active goal.
 Codex integrates and pushes the exact validated state to `main`, or records a
 specific negative result if no working two-row candidate improves
 `sudoku_00`.
+
+## Result
+
+Retained `sudoku_01` at 286×285 and local score 42,411,416,857.33333,
+59.15% below `sudoku_00`. The artifact reproduces exactly, all focused tests
+pass, and the live counted result remains unchanged. No submission was
+created. Integration commit and push are the remaining steps.

@@ -8,3 +8,8 @@ entry; older candidates are never overwritten.
 row, column, and box workers, each maintaining nine digit bit masks in a FIFO
 ring. It passed all 20 live cases as submission
 `09a4a36c-3ff5-4560-a57a-f14879767fe4`.
+
+`sudoku_01.man` keeps those room programs and protocols but packs the row and
+column workers above the centered box worker. It occupies 286×285, passes all
+focused local gates, and improves measured local score by 59.15%. It has not
+been submitted. See `reports/2026-07-25-sudoku-two-row.md`.

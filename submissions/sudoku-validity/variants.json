@@ -57,19 +57,64 @@
         "updatedAt": "2026-07-24T20:46:48.581Z",
         "fullResponse": "submissions/sudoku-validity/sudoku_00-submit.json"
       }
+    },
+    {
+      "version": "sudoku_01",
+      "label": "two-row packed worker geometry",
+      "parent": "sudoku_00",
+      "changeType": "geometry",
+      "architecture": "unchanged parser, broadcaster, row-column-box mask workers, rings, and aggregator; row and column modules share the upper row and the box module is centered below",
+      "source": {
+        "path": "submissions/sudoku-validity/sudoku_01.man",
+        "generator": "src/littleman/sudoku.py:build_sudoku_two_row",
+        "sha256": "c14eff02498f37c56c56bc78ff7a9f7b6cb98613bc8b744d3546accf9498244a",
+        "bytes": 70926,
+        "width": 286,
+        "height": 285,
+        "maxDimension": 286,
+        "footprint": 81796
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": {
+          "a valid grid": 880073,
+          "early row violation": 38211,
+          "late box violation": 826099,
+          "checksum-tie trap": 48987,
+          "col violation": 437567,
+          "violation on final cell": 880077
+        },
+        "averageTicks": 518502.3333333333,
+        "score": 42411416857.33333,
+        "adversarial": {
+          "seed": 20260724,
+          "generatedCases": 8,
+          "directedCases": 3,
+          "coverage": "valid shuffled prefixes; forced row, column, and box duplicates"
+        },
+        "serverCompatibility": "passed",
+        "comparisonWithParent": {
+          "maxDimensionPercent": 35.874439461883405,
+          "footprintPercent": 58.87912485672344,
+          "averageTicksPercent": 0.6586008157389789,
+          "scorePercent": 59.14994727585607
+        }
+      },
+      "liveSubmission": null
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-24T21:04:11.324Z",
+    "updatedAt": "2026-07-25T08:26:57.258Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 28,
+    "rank": 46,
     "casesPassed": 20,
     "casesTotal": 20,
     "score": 105335908125.2,
     "passPoints": 1.0,
-    "rankPoints": 0.12903225806451613,
-    "points": 1.129032258064516,
-    "rows": 32
+    "rankPoints": 0.0625,
+    "points": 1.0625,
+    "rows": 50
   }
 }

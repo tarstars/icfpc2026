@@ -348,3 +348,161 @@ def build_sudoku() -> str:
         ]
     )
     return canvas.render()
+
+
+def build_sudoku_two_row() -> str:
+    """Build the same Sudoku machine with its workers packed in two rows.
+
+    The row and column workers occupy the upper module row.  The taller box
+    worker is centered beneath them.  A dedicated command route descends to
+    the left of both rows, while the row-worker result moves through the gap
+    between module rows before descending around the box worker.
+    """
+
+    workers = _compile_workers()
+    worker_width = max(worker.width for worker in workers) + 2
+    gap = 4
+    margin = 6
+    upper_offsets = (margin, margin + worker_width + gap)
+    lower_offset = (2 * worker_width + gap - worker_width) // 2 + margin
+    total_width = upper_offsets[1] + worker_width
+
+    parser = compile_fsm(build_parser_fsm(), PARSER_ZONES)
+    parser_top = 5
+    parser_bottom = parser_top + parser.height + 1
+    broadcaster_top = parser_bottom + 5
+    broadcaster_bottom = broadcaster_top + 4
+    upper_top = broadcaster_bottom + 6
+    lower_top = upper_top + (workers[0].height + 2) + 2 + 14
+    placements = [
+        (upper_top, upper_offsets[0], workers[0]),
+        (upper_top, upper_offsets[1], workers[1]),
+        (lower_top, lower_offset, workers[2]),
+    ]
+
+    canvas = Canvas()
+    canvas.put(parser_top, 0, parser.rows)
+
+    input_x = parser.zones["input"]
+    canvas.put(0, input_x - 1, ["+-+", "|I|", "+-+"])
+    canvas.pipe([(3, input_x), (parser_top - 1, input_x)])
+
+    canvas.put(broadcaster_top, 0, build_broadcaster(total_width))
+    broadcaster_center = total_width // 2
+    command_x = parser.zones["command"]
+    canvas.pipe(
+        [
+            (parser_bottom + 1, command_x),
+            (broadcaster_top - 3, command_x),
+            (broadcaster_top - 3, broadcaster_center - 1),
+            (broadcaster_top - 1, broadcaster_center - 1),
+        ]
+    )
+
+    # The upper modules retain the baseline bottom-entry command route.
+    for worker_top, offset, worker in placements[:2]:
+        canvas.put(worker_top, offset, worker.rows)
+        worker_command_x = offset + worker.zones["command"]
+        worker_bottom = worker_top + worker.height + 1
+        command_corridor_x = offset - 3
+        canvas.pipe(
+            [
+                (broadcaster_bottom + 1, worker_command_x),
+                (worker_top - 3, worker_command_x),
+                (worker_top - 3, command_corridor_x),
+                (worker_bottom + 3, command_corridor_x),
+                (worker_bottom + 3, worker_command_x),
+                (worker_bottom + 1, worker_command_x),
+            ]
+        )
+
+    # The box command descends outside both worker rows and enters its bottom
+    # command port.  Starting it at column 2 keeps it separate from the upper
+    # row worker's command corridor at column 5.
+    box_top, box_offset, box_worker = placements[2]
+    canvas.put(box_top, box_offset, box_worker.rows)
+    box_bottom = box_top + box_worker.height + 1
+    box_command_x = box_offset + box_worker.zones["command"]
+    canvas.pipe(
+        [
+            (broadcaster_bottom + 1, 2),
+            (box_bottom + 3, 2),
+            (box_bottom + 3, box_command_x),
+            (box_bottom + 1, box_command_x),
+        ]
+    )
+
+    rings_bottom = upper_top
+    result_sources = []
+    for worker_top, offset, worker in placements:
+        worker_bottom = worker_top + worker.height + 1
+        relay_top = worker_bottom + 7
+        for in_zone, out_zone in (
+            ("state_in", "state_out"),
+            ("target_in", "target_out"),
+            ("bit_in", "bit_out"),
+            ("flag_in", "flag_out"),
+        ):
+            rings_bottom = max(
+                rings_bottom,
+                _put_ring(
+                    canvas,
+                    room_bottom=worker_bottom,
+                    relay_top=relay_top,
+                    out_x=offset + worker.zones[out_zone],
+                    in_x=offset + worker.zones[in_zone],
+                ),
+            )
+        result_sources.append((worker_bottom + 1, offset + worker.zones["result"]))
+
+    aggregator = compile_fsm(build_aggregator_fsm(), AGGREGATOR_ZONES)
+    aggregator_top = rings_bottom + 3
+    box_result_x = result_sources[2][1]
+    aggregator_left = box_result_x - aggregator.width // 2
+    canvas.put(aggregator_top, aggregator_left, aggregator.rows)
+    aggregator_bottom = aggregator_top + aggregator.height + 1
+
+    # The upper-left result first exits through the empty row gap, then
+    # descends just right of the box module into a second top entry.  Using a
+    # top entry avoids crossing the box command's bottom horizontal segment.
+    upper_gap_row = box_top - 2
+    box_right_corridor = box_offset + worker_width + 3
+    canvas.pipe(
+        [
+            result_sources[0],
+            (upper_gap_row, result_sources[0][1]),
+            (upper_gap_row, box_right_corridor),
+            (aggregator_top - 1, box_right_corridor),
+        ]
+    )
+
+    # The box result enters from above.
+    canvas.pipe(
+        [
+            result_sources[2],
+            (aggregator_top - 1, result_sources[2][1]),
+        ]
+    )
+
+    # The upper-right result already lies outside the box module.
+    aggregator_right = aggregator_left + aggregator.width + 1
+    right_entry_row = aggregator_top + 5
+    canvas.pipe(
+        [
+            result_sources[1],
+            (right_entry_row, result_sources[1][1]),
+            (right_entry_row, aggregator_right + 1),
+        ]
+    )
+    canvas.cells[(right_entry_row, aggregator_right + 1)] = "<"
+
+    output_x = aggregator_left + aggregator.zones["output"]
+    output_top = aggregator_bottom + 3
+    canvas.put(output_top, output_x - 1, ["+-+", "|O|", "+-+"])
+    canvas.pipe(
+        [
+            (aggregator_bottom + 1, output_x),
+            (output_top - 1, output_x),
+        ]
+    )
+    return canvas.render()
