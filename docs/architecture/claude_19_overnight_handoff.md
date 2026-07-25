@@ -96,3 +96,19 @@ deliberately constructed maximal-growth game (serpentine fruit
 placement, 99 rounds, **48-cell snake**) passes on both artifacts —
 that is the test that actually justified the change, and it is now in
 the record rather than the builder's argument.
+
+### 2026-07-25T19:55Z — queue item 1 mostly done
+
+- **CLASSIFY** complete: 185x86, 59 tests. Its load-bearing acceptance —
+  `classify(scan(t)) == lllm_loader.reference_stream(t)` — was SKIPPING
+  because Codex's oracle lived only on `origin/agent/codex-lllm-loader`.
+  Imported it; the assertion now really runs: **50/50** over 10 public +
+  40 fuzz worlds. Lesson: a test that can skip its own premise is not a
+  gate. 130 tests green across scan+classify+loader.
+- **SCAN** landed (17 KB module + tests).
+- **STEP is the last blocker**: setup and round 1 are transcribed and
+  rig-verified byte-exact against the real FETCH (69 tests), but the
+  per-tick interpreter is NOT. Resumed with its own handoff data
+  (`_step_main_plan()` + the `Tape` layout tool) and a prioritised arm
+  order, so a subset-capable machine can still be assembled if the full
+  9-way dispatch does not fit the night.
