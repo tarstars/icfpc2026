@@ -135,3 +135,25 @@ answered.
 Consequence: our simulator's Y implementation should adopt /split
 wholesale: die-not-stop removal, same-cell and swap-through detection,
 spawn-conflict deaths, creation-order insertion, 65536 cap.
+
+## SERVER-CONFIRMED (both probes, 2026-07-25T15:53Z)
+
+- Probe 1 (`memory_05_probe_y_nav`, submission
+  `7873d7b1-fbda-4478-a721-0dba33042fe5`): **24/24.** Y is accepted by the
+  judge pipeline at load, birth geometry is as documented, copies inherit
+  registers, the relay copy reached its loop.
+- Probe 2 (`memory_06_probe_y_collision`, submission
+  `3ed21a74-c444-4d92-acd5-de3831f66e54`): **24/24.** Same-cell colliders
+  DIED (a stop-semantics corpse would have blocked the relay man: 0/24).
+  Die-not-stop is now server-proven, closing the chain: /split text ->
+  user's editor observation -> judge behavior. Evidence level: Observed on
+  the server.
+- Bonus measurement: both probes and memory_04 report IDENTICAL server
+  avgTicks (20,273.083). A front-of-pipeline gate adds zero measured
+  ticks -- input feeding runs ahead of the bottleneck station, so added
+  input latency is fully absorbed. Composition rule: pre-input gadgets are
+  tick-free as long as the first station is not input-starved.
+
+The Y exploitation line is fully de-risked semantically. Remaining work is
+engineering: Y in our simulator (YMachine in split_probe.py is the
+reference implementation), then the worker-fan-out redesigns.
