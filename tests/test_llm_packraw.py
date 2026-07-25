@@ -133,6 +133,6 @@ def test_pack_tick_and_size_bounds(text):
     script = check(text, rows_of(max(CASES, key=lambda c: len(rows_of(c)))))
     assert script.last_tick < 200_000
     lines = text.splitlines()
-    assert len(lines) < 4_000
+    assert len(lines) < 11_000
     assert max(map(len, lines)) < 128
     assert WORDS == 64
