@@ -17,9 +17,12 @@ SMALL = ["triangle/triangle_04.man", "max-element/max_00.man"]
 
 PROBLEMS = ROOT / "data" / "small" / "problems"
 PROBLEM_OF = {
+    "atoi": "atoi",
     "brackets": "brackets",
     "gradebook": "gradebook",
+    "hello-world": "hello-world",
     "history": "history-lesson",
+    "llm": "little-little-man",
     "lllm": "little-little-little-man",
     "matmul": "matmul",
     "max-element": "max-element",
