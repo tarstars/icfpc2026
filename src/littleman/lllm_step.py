@@ -478,7 +478,12 @@ HW = dict(arm=69, move=66, emit=64, round=63)
 # frozen) run under the descent instead of through it.  Then the descent can
 # be a single straight wire and the ascent the single column east of it.
 ASC_COL = 70        # live arm: rows 11..TICK_ROW+5, north to the FETCH band
-DESC_COL = 65       # band exit: rows 12..43, south to the class staircase
+# The band exit sits as far EAST as the ascent allows, because it is also the
+# class staircase's first rung: the staircase steps two columns west per rung,
+# so every column it borrows is one the nine arms cannot turn off in.  At 65
+# the eight rungs reach column 49 and leave only seven arm columns for eight
+# arms; at 67 they reach 51 and leave nine.
+DESC_COL = 67       # band exit: rows 12..43, south to the class staircase
 ROUND_EXIT_COL = 41  # round-in -> tick: west of the tape zone, so no
                      # staircase rung (columns 42..60) ever crosses it
 SEED_ROW, ROUND_ROW = 23, 30
@@ -724,12 +729,23 @@ def _step_class(room) -> None:
 # (``BI``), i.e. with ``ADDR`` at the head: five is the cheapest rotation that
 # both reaches ``CTRL`` and writes it, and paying the remaining lap once in
 # the shared MOVE row is far cheaper than paying it in every arm.
-ARM_MISC = (44, 57)         # classes 3..7: one shared column, one stub
 MERGE_COL, MOVE_ROW = 62, 70
-ARM_SPEC = {                # rung -> (turn column, tape row, opcode tape)
-    0: (42, 65, list("rs") * 5),
-    1: (43, 61, list("rs") * 4 + ["r", "W", "s"]),
-    7: (45, 53, list("rs") * 4 + ["r", "M", "#4", "+", "s"]),
+ARM_MERGE = 68              # the class arms' own merge, east of MOVE's
+ARM_HI = 66                 # ... so their tapes get the width class 7 needs
+_R = list("rs")             # one ring relay
+# rung -> (turn column, tape row, opcode tape).  Rung r fires on class r+1
+# (rung 0 also on class 0).  EVERY tape must leave the ring rotated five slots
+# on from the staircase's head (BI), i.e. with ADDR at the head, because MOVE's
+# align tape is shared and starts from there.  ``value`` rides in B untouched.
+ARM_SPEC = {
+    0: (42, 69, _R * 5),                                  # space (and wall)
+    1: (43, 67, _R * 4 + ["r", "W", "s"]),                # heading: CTRL=value
+    2: (44, 65, _R + ["r", "W", "s"] + _R * 3),           # digit:   AI=value
+    3: (45, 63, list("rrss") + _R * 3),                   # M:  BI=AI, AI=AI
+    4: (46, 61, list("rMsr+s") + _R * 3),                 # add: AI=AI+BI
+    5: (47, 59, list("rMsr-s") + _R * 3),                 # sub: AI=AI-BI
+    6: (48, 57, []),                                      # branch X: TODO
+    7: (49, 55, _R * 4 + ["r", "M", "4", "+", "s"]),      # halt: CTRL |= 4
 }
 
 
@@ -742,23 +758,40 @@ def _step_arms(room) -> None:
     meet a tape that is below its own foot.  That one rule makes all four
     arms planar without a single jog.
     """
-    misc_col, misc_row = ARM_MISC
-    for r in range(CLASS_RUNGS):
-        col = ARM_SPEC[r][0] if r in ARM_SPEC else misc_col
-        room.put(CLASS_ROW + r, col, "v")
-    top = min(row for _, row, _ in ARM_SPEC.values())
-    for col, arm_row, tokens in ARM_SPEC.values():
-        start = CLASS_ROW + next(r for r, s in ARM_SPEC.items() if s[0] == col)
-        for r in range(start + 1, arm_row):
+    for rung, (col, arm_row, tokens) in ARM_SPEC.items():
+        for r in range(CLASS_ROW + rung, arm_row):
             room.put(r, col, "v")
         room.put(arm_row, col, ">")
-        Tape(room, arm_row, col + 1, col + 1, TAPE_HI).emit(*tokens)
-    for r in range(CLASS_ROW + CLASS_RUNGS - 2, misc_row):
-        room.put(r, misc_col, "v")
-    room.put(misc_row, misc_col, "H")     # TODO: classes 3..7 (arith, X)
-    for r in range(top, MOVE_ROW):
-        room.put(r, MERGE_COL, "v")
+        if tokens:
+            Tape(room, arm_row, col + 1, col + 1, ARM_HI).emit(*tokens)
+        else:
+            _step_branch(room, arm_row, col + 1)
+    for r in range(min(s[1] for s in ARM_SPEC.values()), MOVE_ROW):
+        room.put(r, ARM_MERGE, "v")
+    room.put(MOVE_ROW, ARM_MERGE, "<")    # west, on to MOVE's own merge
     _step_move(room)
+
+
+def _step_branch(room, row: int, col: int) -> None:
+    """Class 7 (``X``): turn the interpreted man by ``sign(AI)``.
+
+    The only arm that is not a straight tape.  ``AI`` is read into A and left
+    in place, then one ``X`` fans three ways; because the ROWS BETWEEN the
+    arms are empty (each arm owns an odd row, so the even ones are spare),
+    the two sign arms simply step off onto the row above and the row below
+    and run east on their own, rejoining at the shared merge column.
+
+    A frozen man never ticks, so ``CTRL`` is 0..3 here and the halt bit needs
+    no masking: ``(CTRL + 1) % 4`` and ``(CTRL + 3) % 4`` are the whole job.
+    """
+    room.put(row, col, "rsrs")                # relay to AI, read it, keep it
+    xcol = col + 4
+    room.put(row, xcol, "X")
+    room.put(row, xcol + 1, "rsrsrs")         # AI == 0: no turn, just the lap
+    for drow, step in ((row - 1, "3"), (row + 1, "1")):
+        room.put(drow, xcol, ">")             # <0 counter-clockwise (north),
+        room.put(drow, xcol + 1, "rsrs")      # >0 clockwise (south)
+        room.put(drow, xcol + 5, "rM" + step + "+M4W%s")
 
 
 MOVE_CLASS_ROW = 76         # first rung of the heading staircase

@@ -343,17 +343,19 @@ def test_tick_interpreter_not_transcribed_yet():
 
 
 def test_round_loop_tapes_place_without_collision():
-    """The seed / round-in choreography is placeable -- only ROUND 1's
-    post-pixel geometry blocks wiring it in (see the BLOCKER note)."""
+    """The seed / round-in choreography is placeable, and the round loop it
+    starts now closes: seed -> round-in -> tick -> class -> move -> EMIT."""
     from littleman.lllm_fetch import Room
-    from littleman.lllm_step import STEP_COLS, STEP_ROWS, _step_seed
+    from littleman.lllm_step import (
+        EMIT_DRAW_ROW, STEP_COLS, STEP_ROWS, _step_seed)
 
     room = Room(STEP_ROWS, STEP_COLS)
     room.put(23, 3, ">")
     _step_seed(room)
     grid = room.render()
     assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads
-    assert "H" in "".join(grid)                               # loop stub
+    assert "sN1s" in grid[EMIT_DRAW_ROW + 2]                  # EMIT's commit
+    assert "H" not in "".join(grid)                           # no stub left
 
 
 def test_tape_snakes_and_reverses_literals():
