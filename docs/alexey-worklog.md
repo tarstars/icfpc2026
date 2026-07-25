@@ -538,3 +538,54 @@ were already published and referenced), and folding my authoritative
 server responses — ids, scores, tick counts — into `alexey-variants.json`,
 which their copy lacked. Every entry now carries `alexeyNumbering`.
 **Match these machines by score or sha256, never by file number.**
+
+## 2026-07-25 — geometry sweep: one win, one server rule, one negative result
+
+Goal was cheap footprint wins with no algorithm changes. Measured the whole
+line first (fill density per submission, and how many places each problem's
+standings move per unit of score) rather than guessing.
+
+**Shipped: sort_06, 1,455,740 → 1,367,454 (−6%).** `sort_05` already existed
+at 18×18 (fp 324, better than the live sort_03's 361) and judged 7/7 locally
+— but the server refuses to load it.
+
+**New server rule: every pipe must be at least TWO cells.** A one-cell pipe
+loads with `pipe runs into a room wall — end it with an arrowhead pointing
+into the room`. Our parser accepts it and the local judge then reports a
+clean pass, so `sort_05` (one 1-cell pipe) and `reverse_02` (three of them,
+15×15, fp 225 vs the live 256) were both built, validated and abandoned
+without anyone connecting the load error to pipe length. Practical form:
+**two rooms must be two cells apart, not one.** Checker:
+`src/littleman/alexey_pipecheck.py` (the teammates' `server_compat` gate
+covers the other two divergences but not this one).
+
+Rerouting the input out of another wall to keep 18×18 failed for a reason
+worth remembering: the ring read at rel(5,11) had exactly ONE step of
+margin over the input pipe, so moving where the input entered flipped that
+read and deadlocked a machine that still parsed and audited fine. Restoring
+the column instead keeps sort_05's faster machine at sort_03's footprint.
+
+Divergences run both ways: `history_00.man` is live at 7,921 yet our parser
+rejects it outright (`invalid vertical literal at (20, 2)`). A local parse
+failure is not evidence the server will refuse a program.
+
+**Negative results — do not spend time here:**
+
+* *history-lesson is already geometrically optimal.* Swept the data-row
+  capacity from 78 to 91: capacities 83, 84 and 85 all give fp 7921, because
+  narrowing a row adds exactly the rows it saves. 89×88 sits on the balance
+  point. Only fewer literal cells (better than the current 2.2 cells/char)
+  can help, and the alphabet is 71 symbols, so re-basing the radix buys
+  nothing — 9 characters per 18-digit word either way.
+* *brackets repacking is worth ~15-20%, not more.* It looks wasteful (50×39,
+  30% fill) but CLASSIFY (20 wide) beside OPEN (22 wide) already forces
+  ~46 columns, and stacking all three rooms trades that for ~47 rows. Best
+  case ≈ fp 2116-2209 against 2500, which the standings turn into +1-2 places.
+* *reverse_02 cannot be saved at 15×15* — the I and O gaps are exactly the
+  one-cell pipes the server rejects, and widening either returns fp to 256.
+
+Where the headroom actually is, by places gained per unit of score
+(measured off the live standings): history-lesson −20% → **+22 places**
+(rank 28→6, densest field in the contest), reverse-a-list −50% → +18,
+memory −75% → +34, sort −50% → +11. All four need algorithm work, not
+geometry.

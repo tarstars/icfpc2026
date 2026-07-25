@@ -1,0 +1,18 @@
+{
+  "area2": null,
+  "avgTicks": null,
+  "casesPassed": 0,
+  "casesTotal": 0,
+  "createdAt": "2026-07-25T08:59:36.432Z",
+  "error": null,
+  "height": 0,
+  "id": "0eb8a494-a6f8-4bde-a39c-dd96d7ffd713",
+  "loadError": "pipe runs into a room wall — end it with an arrowhead pointing into the room at (4, 1)",
+  "output": "Your program failed to load: pipe runs into a room wall — end it with an arrowhead pointing into the room at (4, 1)",
+  "problemId": "537ec979-d883-40f3-9663-b59579a0682c",
+  "score": null,
+  "status": "done",
+  "uberStrictPassed": null,
+  "updatedAt": "2026-07-25T08:59:53.060Z",
+  "width": 0
+}
