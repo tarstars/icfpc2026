@@ -4,7 +4,9 @@
 
 Pursue this goal autonomously from activation until the queue in
 `docs/architecture/claude_19_overnight_handoff.md` is empty, or until
-**2026-07-27T09:00Z**, whichever comes first. Work only in
+**2026-07-26T06:00Z (09:00 Europe/Moscow)** — when the user wakes and
+rejoins — whichever comes first. That is roughly TEN HOURS from
+activation, not two days: scope accordingly. Work only in
 `/home/tarstars/prj/icfpc2026-claude` on branch `agent/claude`.
 
 The user is asleep. Do not wait for input. Do not ask questions you can
@@ -99,8 +101,9 @@ active overnight.
 
 ## End condition
 
-Stop when the queue is empty, at 2026-07-27T09:00Z, or if every remaining
-item has failed twice. Before stopping:
+Stop when the queue is empty, at **2026-07-26T06:00Z (09:00 Moscow)**, or
+if every remaining item has failed twice. Start no NEW queue item after
+05:00Z; an item already in flight may finish. Before stopping:
 
 1. finish or safely terminate running commands and subagents;
 2. push everything;
@@ -109,5 +112,7 @@ item has failed twice. Before stopping:
    submitted with which scores, what failed and why, and the smallest
    next action for the morning.
 
-Do not start new work after 2026-07-27T09:00Z; the final freeze is 10:00Z
-and the contest ends 12:00Z.
+The user rejoins at 06:00Z and will take over; leave the tree clean, the
+branch pushed, and the morning's smallest next action written down. The
+contest itself runs until 2026-07-27T12:00Z (freeze 10:00Z), so there is
+a full day left after the handback — do not gamble the night on item 6.

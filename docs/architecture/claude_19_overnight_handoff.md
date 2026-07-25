@@ -1,8 +1,15 @@
 # OVERNIGHT HANDOFF — state, queue, and operating rules
 
-Written 2026-07-25T19:2xZ for an autonomous session. Contest ends
-2026-07-27T12:00Z; final freeze 10:00Z. **Do no new design.** Everything
-below is already specified; execute the queue in order.
+Written 2026-07-25T19:2xZ for an autonomous session that runs until
+**2026-07-26T06:00Z (09:00 Moscow)**, when the user rejoins — about TEN
+HOURS. The contest itself ends 2026-07-27T12:00Z (freeze 10:00Z), so a
+full working day remains after the handback. **Do no new design.**
+
+Realistic scope for ten hours, given today's measured build times
+(a component room took 1-3h with a subagent): items 1-2 are the MUST,
+item 3 is likely, items 4-6 are stretch. Getting LLLM submitted is worth
+more than partial progress on three other things — a problem at zero
+scores nothing, and only the best submission counts.
 
 ## Live scores (only these count)
 
