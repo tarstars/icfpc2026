@@ -51,17 +51,15 @@ from .sim import Machine
 # DONE: algorithm (alexey_tcp_model, 6/6 public, 258 ring ops/case), the room
 #       and pipe skeleton, the pipe-zone map with assertions, and all ten
 #       layout nodes (build_wip) -- it builds, parses and holds the zones.
-# TODO: FOUND, not yet fixed. The init drops south down col 9 and that
-#       highway crosses two phases that already own cells in it:
-#         step 10, (3,9)  -- the ']' of the prologue's ]]]] chain, which
-#                            shifts BP from 16 to 8, so the seed loop then
-#                            fills the ring with 8 zeros instead of 16;
-#         step 23, (16,9) -- the drain's 's', which injects a stray value
-#                            into the ring.
-#       Nothing is overwritten, so Grid cannot catch it: the collision is
-#       between a WALK and a cell, not between two writes. Fix by routing
-#       the init highway down a column no phase occupies (or by rerouting
-#       the phases), then judge against alexey_tcp_model.
+# FIXED: the init used to descend col 9 and stepped on (3,9), a ']' of the
+#       prologue (BP 16 -> 8, so the ring got 8 zeros), and on (16,9), the
+#       drain's 's' (a stray value into the ring). Nothing was overwritten,
+#       so Grid could not catch it: the conflict was between a WALK and
+#       cells another phase owns. The pump gained two columns and the init
+#       now descends col 17, which no phase occupies. Traced clean: BP stays
+#       16 the whole way down.
+# TODO: run a packet end to end and diff against alexey_tcp_model, then
+#       submit as tcp_01 and compact the room.
 #
 #       Worth adding: a walk checker that runs the man and flags every cell
 #       he executes that belongs to a different phase. Grid only guards
@@ -76,7 +74,7 @@ from .sim import Machine
 # the best known 593k. Compaction comes after it is correct.
 
 SLOTS = 16
-PUMP_H, PUMP_W = 24, 16         # pump interior (correctness first, golf later)
+PUMP_H, PUMP_W = 24, 18         # pump interior (correctness first, golf later)
 PUMP_TOP, PUMP_LEFT = 0, 5      # canvas position of the pump's top-left corner
 
 # Pipe segment cells, by role. These are the cells `nearest` measures to.
@@ -205,8 +203,12 @@ def build_wip() -> str:
     """
     g = Grid()
     # init: read n and drop it, A=0, BP=16, then seed the ring with zeros
-    g.put(1, 1, "@r`16`b0v")
-    g.put(19, 3, "v"); g.put(19, 9, "<")
+    g.put(1, 1, "@r`16`b0")
+    # The init highway needs a column no phase owns. There is none in
+    # 16: the prologue fills row 3 across cols 2-11 and the drain fills
+    # row 16, so any descent between them steps on someone. Hence the
+    # two spare columns, and the descent down col 17.
+    g.put(1, 17, "v"); g.put(19, 17, "<"); g.put(19, 3, "v")
     g.put(20, 3, ">   d"); g.put(21, 3, "^ ms<"); g.put(20, 8, "^")
     g.put(2, 8, "<"); g.put(2, 2, "v")
     # packet prologue: d = seq - expected, then the delay and zero tests
