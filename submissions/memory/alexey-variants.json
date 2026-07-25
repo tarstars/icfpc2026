@@ -104,6 +104,32 @@
     "fullResponse": "submissions/memory/alexey-memory_02-submit.json"
    },
    "verdict": "SUPERSEDED by memory_04 (~27.8M). This was the pipeline-ring line; the geometry work on it was correct but applied to a baseline already beaten 3x."
+  },
+  {
+   "version": "memory_07",
+   "label": "block1+block2 folded, room4 de-columned, block5 magnetised left",
+   "changeType": "geometry",
+   "architecture": "Three independent geometry moves on memory_06's packed-storage machine, no algorithm change. (1) Block 2 folded width-only 4x29 -> 4x21 by re-dealing its straight-line body across the same rows. (2) Block 1 folded 5x29 -> 5x17 using the perimeter-corridor layout for its single `d` branch (docs/alexey-room-folding.md sec.4). (3) Block 4's three empty interior columns removed and block 5 slid two columns left into the freed space, with both of its pipes re-routed by src/littleman/alexey_piperoute.py at their original lengths (28->29, 19) so no buffer shrank.",
+   "source": {
+    "path": "submissions/memory/memory_07.man",
+    "width": 32,
+    "height": 31,
+    "footprintBefore": 1156,
+    "footprintAfter": 1024
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 23344360,
+    "score": 20491008,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "gain": 1.14
+   },
+   "verdict": "BEST. Width now 32 and height 31 -- height binds, so further width folds (block 3 is 7x26) are banked, not cashed, until a row comes out."
   }
  ],
  "note": "Alexey research line for memory. memory_06 is the current best at 23,344,360 (34x32), reached from memory_04 (37x37, ~27.8M) purely by room packing -- no machine logic touched. Intermediates in submissions/memory/room-packing/."

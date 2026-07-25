@@ -1188,3 +1188,31 @@ O, one from block 3); I redrew only the incoming one. Redrawing all four is
 the remaining work for that joint — and note that block 3 has two outgoing
 pipes, so moving its bottom port to the left wall (as this attempt did) needs
 its `s` cells re-audited, not just re-routed.
+
+## 2026-07-25 — memory_07: 23,344,360 -> 20,491,008 (24/24, 32x31, fp 1024)
+
+Three geometry moves, no algorithm change, all recorded in
+`submissions/memory/room-packing/`:
+
+1. Block 2 folded width-only, 4x29 -> 4x21.
+2. Block 1 folded 5x29 -> 5x17. It branches, so the plain serpentine does
+   not apply; the perimeter-corridor layout does. Written up as sec.4 of
+   `docs/alexey-room-folding.md`.
+3. Block 4 had three *interior* empty columns (21, 22, 25). Removing them
+   pulled its right wall from col 26 to col 23, which let block 5 slide two
+   columns left -- and block 5 was the only thing holding the right edge at
+   col 33. Width 34 -> 32; height was already 32 and squeezed to 31.
+
+Both of block 5's pipes had to be re-routed. That is what
+`src/littleman/alexey_piperoute.py` is for: BFS shortest path, inflated to a
+target length with +2 detours, rendered with `-`/`|` runs and arrowheads
+only at turns. It keeps a re-route from silently shrinking a buffer.
+
+**Trap paid for here:** a pipe is only recognised when the cell touching the
+room carries an arrow pointing *away* from that room. A route that happens
+to leave sideways is not a pipe at all -- the machine loads, runs, and fails
+with a pipe count one short as the only clue. `Router.route(out=...)` now
+forces the first step. Also: a pipe may not attach to a room's *corner*.
+
+Ticks fell too (avg 4143.6 -> 4109.9 locally) because block 4 lost three
+columns the man was walking across.
