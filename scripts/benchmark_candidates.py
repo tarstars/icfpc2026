@@ -9,7 +9,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from littleman.judge import judge_problem
+from littleman.alexey_pipecheck import PipeLengthError
+from littleman.alexey_pipecheck import check as check_pipe_lengths
+from littleman.server_compat import (
+    ServerCompatibilityError,
+    judge_problem,
+    validate_layout,
+)
 from littleman.sim import LoadError, Machine
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -35,7 +41,9 @@ def benchmark_candidate(path: Path, problem: dict[str, Any]) -> dict[str, Any]:
     """Measure the exact bytes at *path*; never invoke a generator."""
     raw = path.read_bytes()
     text = raw.decode("utf-8")
-    Machine.parse(text)
+    machine = Machine.parse(text)
+    validate_layout(text)
+    check_pipe_lengths(text)
     report = judge_problem(text, problem)
     width, height = occupied_bounds(text)
     case_names = [
@@ -64,6 +72,10 @@ def benchmark_candidate(path: Path, problem: dict[str, Any]) -> dict[str, Any]:
         "height": height,
         "maxDimension": max(width, height),
         "footprint": report.footprint,
+        "rooms": len(machine.rooms),
+        "men": len(machine.men),
+        "pipes": len(machine.pipes),
+        "pipeLengths": sorted(len(pipe.cells) for pipe in machine.pipes),
         "casesPassed": report.cases_passed,
         "casesTotal": report.cases_total,
         "cases": cases,
@@ -158,6 +170,8 @@ def main(argv: list[str] | None = None) -> int:
         UnicodeError,
         json.JSONDecodeError,
         LoadError,
+        PipeLengthError,
+        ServerCompatibilityError,
         ValueError,
     ) as error:
         print(f"benchmark_candidates: {error}", file=sys.stderr)
