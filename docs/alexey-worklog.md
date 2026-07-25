@@ -1028,3 +1028,34 @@ side realigned, not just a sideways nudge.
 
 Beyond that, height 46 is 39 rows of rooms plus 7 of gaps; reaching 40 would
 need six rows out of the rooms themselves.
+
+### memory: bottom room's ports belong on the right wall — 12.6% is there, one bug away
+
+The bottom room (rows 38-42, cols 5-23 in `alexey-memory-narrow40.man`) has
+**exactly one incoming and one outgoing pipe**. With one pipe of each
+direction, nearest-pipe resolution is trivial — every `r` takes the only
+incoming, every `s` the only outgoing — so **the wall those ports use is
+free to choose**. That is the observation that unlocks this.
+
+Both pipes currently leave through the left and bottom walls and loop
+through rows 43-45, which is why those three rows exist at all. Routing both
+through the RIGHT wall instead, into the six columns freed by the earlier
+trim, removes them:
+
+    46 rows -> 43 rows,  footprint 2,116 -> 1,849   (-12.6%)
+
+Geometry confirmed by construction. Not finished: the incoming pipe's
+terminal cell fails to trace — `bad pipe glyph '|' at (41,23)`, where column
+23 is the room's right wall and the pipe's last cell sits correctly at
+(41,24) pointing west. Ran out of session budget before isolating it.
+
+State to resume from: `alexey-memory-narrow40.man` (40x46, 7/7, live-equal
+score), plus this routing:
+
+    OUT: (40,24) east to col 38, north col 38 to row 4, west into (3,37)
+    IN : (1,37) east to col 39, south col 39 to row 41, west into (41,24)
+    then delete rows 43-45
+
+If the shortened pipes turn out to break capacity (63->53 and 87->58), pad
+them with a serpentine in the free columns 25-38, which is where the room
+trim left room to do it.
