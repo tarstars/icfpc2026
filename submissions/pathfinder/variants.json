@@ -45,7 +45,18 @@
           "result": "all frame streams exact"
         }
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "f55011a1-3c3d-43ca-be41-85fca46133da",
+        "status": "done",
+        "casesPassed": 15,
+        "casesTotal": 18,
+        "width": 452,
+        "height": 2034,
+        "failure": "3 private step-cap cases",
+        "createdAt": "2026-07-25T19:53:53.253Z",
+        "updatedAt": "2026-07-25T19:54:17.344Z",
+        "fullResponse": "submissions/pathfinder/pathfinder_00-submit.json"
+      }
     }
   ],
   "standingsSnapshot": {
