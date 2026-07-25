@@ -95,6 +95,7 @@ from .sim import Machine, Room as SimRoom, wrap64
 
 DISPLAY = 16                     # matches llm.py's DISPLAY: the frame is always 16x16
 NCELLS = DISPLAY * DISPLAY        # 256: the fixed, addressable CELL ring size
+DELTA_END = -1                    # EXEC -> DELTA_DRAW frame delimiter
 
 # Clockwise heading order N -> E -> S -> W, identical to llm.py's `_CW`.
 _CW = [(-1, 0), (0, 1), (1, 0), (0, -1)]
@@ -619,8 +620,9 @@ class Executor:
         k = q_tick.get()
         for _ in range(k):
             if self.halted():
-                return
+                break
             self._step(q_delta)
+        q_delta.put(DELTA_END)
 
     def _color_at(self, addr: int, men_positions: set[int]) -> int:
         if addr in men_positions:
@@ -728,15 +730,18 @@ class Executor:
 class DeltaDraw:
     """DELTA_DRAW: DELTA queue -> ADDR/DATA pairs + SWAP=1.
 
-    Drains every currently-queued delta record (one round's worth, since
-    the pipeline drains this queue fully every round before EXEC produces
-    the next batch), forwards each as an (address, color) pair, then
-    commits the round's frame with ``q_swap.put(1)``.
+    Reads one explicitly delimited frame, forwards each nonnegative record
+    as an (address, color) pair, then commits with ``q_swap.put(1)``.
+    Queue emptiness is deliberately irrelevant: in the physical machine a
+    temporarily empty pipe cannot mean end-of-frame.
     """
 
     def run(self, q_delta: Q, q_addr: Q, q_data: Q, q_swap: Q) -> None:
-        while not q_delta.empty():
-            addr, color = unpack_delta(q_delta.get())
+        while True:
+            rec = q_delta.get()
+            if rec == DELTA_END:
+                break
+            addr, color = unpack_delta(rec)
             q_addr.put(addr)
             q_data.put(color)
         q_swap.put(1)

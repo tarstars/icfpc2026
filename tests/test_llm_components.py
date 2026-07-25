@@ -16,8 +16,8 @@ from pathlib import Path
 import pytest
 
 from littleman.llm import LLM, program_grid
-from littleman.llm_components import LLMPipeline, Q
-from littleman.llm_fuzz import corpus
+from littleman.llm_components import DELTA_END, LLMPipeline, Q
+from littleman.llm_fuzz import corpus, program_tokens
 
 ROOT = Path(__file__).resolve().parents[1]
 LLM_PROBLEM = json.loads((ROOT / "data/small/problems/little-little-man.json").read_text())
@@ -111,3 +111,39 @@ def test_trace_retrieval_and_determinism():
     assert trace1 == trace2  # deterministic across two independent runs
 
     assert trace1["delta"], "EXEC -> DELTA_DRAW stream should be nonempty (the man moves)"
+
+
+def split_delta_frames(stream: list[int]) -> list[list[int]]:
+    frames = []
+    current = []
+    for token in stream:
+        if token == DELTA_END:
+            frames.append(current)
+            current = []
+        else:
+            assert token >= 0
+            current.append(token)
+    assert current == []
+    return frames
+
+
+def test_delta_stream_is_self_delimiting_per_later_round():
+    case = next(c for c in LLM_CASES if c["name"] == "first steps")
+    pipeline = LLMPipeline(trace=True)
+    pipeline.run_case(case["rounds"])
+    frames = split_delta_frames(pipeline.traces()["delta"])
+    assert len(frames) == len(case["rounds"]) - 1
+
+
+def test_halted_followup_round_still_emits_a_delta_delimiter():
+    rows = ["+----+", "|@H  |", "|    |", "+----+"]
+    rounds = [
+        {"in": [str(v) for v in program_tokens(rows)]},
+        {"in": ["1"]},
+        {"in": ["7"]},
+    ]
+    pipeline = LLMPipeline(trace=True)
+    pipeline.run_case(rounds)
+    frames = split_delta_frames(pipeline.traces()["delta"])
+    assert len(frames[0]) == 2
+    assert frames[1] == []
