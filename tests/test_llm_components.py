@@ -94,6 +94,23 @@ def test_delta_grammar_is_byte_exact_with_lllm_draw(addr, color):
     assert unpack_delta(token) == (addr, color)
 
 
+@pytest.mark.parametrize("case", LLLM_CASES, ids=lambda c: c["name"])
+def test_runtime_world_records_are_byte_exact_with_lllm_fetch(case):
+    from littleman.lllm_loader import reference_stream
+
+    rows = program_grid([int(v) for v in case["rounds"][0]["in"]])
+    packed = list(reference_stream(program_tokens(rows)))[:64]
+    expected = []
+    for token in packed:
+        for _ in range(4):
+            expected.append(token & 8191)
+            token >>= 13
+
+    pipeline = LLMPipeline(trace=True)
+    pipeline.run_case(case["rounds"])
+    assert pipeline.traces()["cell_final_exec"] == expected
+
+
 def test_every_queue_in_a_real_run_carried_only_int():
     case = next(c for c in LLM_CASES if c["name"] == "first steps")
     pipeline = LLMPipeline(trace=True)

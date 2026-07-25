@@ -100,6 +100,21 @@ DELTA_END = -1                    # EXEC -> DELTA_DRAW frame delimiter
 # Clockwise heading order N -> E -> S -> W, identical to llm.py's `_CW`.
 _CW = [(-1, 0), (0, 1), (1, 0), (0, -1)]
 
+# Final EXEC records deliberately extend the accepted LLLM 13-bit grammar.
+# Classes 0..8 are byte-identical; LLM adds send/receive in the two next
+# values, carrying the statically selected pipe id in the value nibble.
+CLASS_SPACE = 0
+CLASS_WALL = 1
+CLASS_HEADING = 2
+CLASS_DIGIT = 3
+CLASS_M = 4
+CLASS_ADD = 5
+CLASS_SUB = 6
+CLASS_BRANCH = 7
+CLASS_HALT = 8
+CLASS_SEND = 9
+CLASS_RECV = 10
+
 
 # --------------------------------------------------------------------- Q
 class Q:
@@ -150,8 +165,9 @@ class Q:
 
 
 # ------------------------------------------------------------- record layouts
-# CELL record -- travels on: cell_loader, cell_geom, cell_pipetrace,
-# cell_final_init, cell_final_exec. One int per grid address (address =
+# Setup CELL record -- travels through LOADER/GEOM/PIPETRACE/BIND and into
+# INIT_FRAME.  BIND converts the EXEC copy to the separate 13-bit grammar.
+# One int per grid address (address =
 # r * DISPLAY + c, the 16x16 canvas is always fully populated, real program
 # columns/rows beyond the actual W/H are padded with space):
 #
@@ -180,6 +196,44 @@ def unpack_cell(rec: int) -> tuple[int, int, int, int, int]:
     pipe = (rec >> 13) & 0x1
     bind = (rec >> 14) & 0x3
     return char, color, wall, pipe, bind
+
+
+def pack_exec_cell(cls: int, value: int, color: int, wall: int) -> int:
+    """The shared LLM/LLLM 13-bit runtime-world record."""
+    return (
+        (color & 0xF)
+        | ((cls & 0xF) << 4)
+        | ((value & 0xF) << 8)
+        | ((wall & 0x1) << 12)
+    )
+
+
+def unpack_exec_cell(rec: int) -> tuple[int, int, int, int]:
+    return (rec >> 4) & 0xF, (rec >> 8) & 0xF, rec & 0xF, (rec >> 12) & 0x1
+
+
+def exec_record(char: int, color: int, wall: int, pipe: int, bind: int) -> int:
+    """Classify one finalized setup record for the runtime FETCH ring."""
+    ch = chr(char)
+    if wall:
+        cls, value = CLASS_WALL, 0
+    elif pipe:
+        cls, value = CLASS_SPACE, 0
+    elif ch in HEADINGS:
+        cls, value = CLASS_HEADING, _CW.index(HEADINGS[ch])
+    elif ch.isdigit():
+        cls, value = CLASS_DIGIT, int(ch)
+    else:
+        cls, value = {
+            "M": (CLASS_M, 0),
+            "+": (CLASS_ADD, 0),
+            "-": (CLASS_SUB, 0),
+            "X": (CLASS_BRANCH, 0),
+            "H": (CLASS_HALT, 0),
+            "s": (CLASS_SEND, bind),
+            "r": (CLASS_RECV, bind),
+        }.get(ch, (CLASS_SPACE, 0))
+    return pack_exec_cell(cls, value, color, wall)
 
 
 # ROOM record -- travels on: rooms, rooms_relay. One int per room rectangle
@@ -443,9 +497,9 @@ class Bind:
     ``q_rooms_in`` (rectangles, relayed by PIPETRACE), ``q_pipes_in``
     (PIPE descriptors, from PIPETRACE).
 
-    Produces ``q_cell_out_init``, ``q_cell_out_exec`` -- 256 CELL records
-    each (fan-out), identical to the input except the bind field is now
-    set for every 's'/'r' address (0 if no matching pipe exists).
+    Produces ``q_cell_out_init`` as 256 annotated setup records for the
+    initial frame, and ``q_cell_out_exec`` as 256 13-bit runtime records
+    using the accepted LLLM FETCH grammar plus send/receive classes.
     """
 
     def run(
@@ -502,7 +556,15 @@ class Bind:
                         bind_id = candidates[0][3] + 1
             rec = pack_cell(chars[addr], colors[addr], walls[addr], pipe_flags[addr], bind_id)
             q_cell_out_init.put(rec)
-            q_cell_out_exec.put(rec)
+            q_cell_out_exec.put(
+                exec_record(
+                    chars[addr],
+                    colors[addr],
+                    walls[addr],
+                    pipe_flags[addr],
+                    bind_id,
+                )
+            )
 
 
 # ----------------------------------------------------------- 5. INIT_FRAME
@@ -561,14 +623,14 @@ class Executor:
     count) and executes up to ``k`` ticks (fewer if the program halts or
     freezes on a wall first), reproducing `LLM.step`'s tick order exactly:
     pipes shift, every man executes the op under him (using the
-    precomputed ``bind`` id instead of `LLM._nearest`), then every
+    precomputed binding in the op-value nibble instead of `LLM._nearest`),
+    then every
     non-blocked man advances one cell against a live occupancy map. A
     wall freezes everything, but only after the tick completes in full.
 
-    It never calls `LLM.step`/`LLM.render`; the state below (``char``,
-    ``static_color``, ``wall``, ``bind``, ``pipe_cells``, ``pipe_values``,
-    ``men``) is this component's own reimplementation, driven only by what
-    arrived on its queues.
+    It never calls `LLM.step`/`LLM.render`; runtime classes/values, static
+    colors, walls, pipe cells/values, and men are this component's own
+    reimplementation, driven only by what arrived on its queues.
 
     Produces ``q_delta``: for every tick, every address whose display
     color changed (a pipe cell's occupancy flipped 6<->14, or a man
@@ -580,16 +642,16 @@ class Executor:
     """
 
     def setup(self, q_cell: Q, q_pipes: Q, q_pipe_cells: Q, q_men: Q) -> None:
-        self.char = [0] * NCELLS
+        self.op_class = [0] * NCELLS
+        self.op_value = [0] * NCELLS
         self.static_color = [0] * NCELLS
         self.wall = [False] * NCELLS
-        self.bind = [0] * NCELLS
         for addr in range(NCELLS):
-            char, color, wall, _pipe, bind = unpack_cell(q_cell.get())
-            self.char[addr] = char
+            cls, value, color, wall = unpack_exec_cell(q_cell.get())
+            self.op_class[addr] = cls
+            self.op_value[addr] = value
             self.static_color[addr] = color
             self.wall[addr] = bool(wall)
-            self.bind[addr] = bind
 
         npipes = q_pipes.get()
         self.pipe_cells: list[list[int]] = []
@@ -648,34 +710,35 @@ class Executor:
             if man.halted or man.on_wall:
                 continue
             addr = addr_of(man.r, man.c)
-            ch = chr(self.char[addr])
-            if ch == "H":
+            cls = self.op_class[addr]
+            value = self.op_value[addr]
+            if cls == CLASS_HALT:
                 man.halted = True
                 continue
-            if ch in HEADINGS:
-                man.heading = HEADINGS[ch]
-            elif ch.isdigit():
-                man.A = int(ch)
-            elif ch == "M":
+            if cls == CLASS_HEADING:
+                man.heading = _CW[value]
+            elif cls == CLASS_DIGIT:
+                man.A = value
+            elif cls == CLASS_M:
                 man.B = man.A
-            elif ch == "+":
+            elif cls == CLASS_ADD:
                 man.A = wrap64(man.A + man.B)
-            elif ch == "-":
+            elif cls == CLASS_SUB:
                 man.A = wrap64(man.A - man.B)
-            elif ch == "X":
+            elif cls == CLASS_BRANCH:
                 if man.A:
                     turn = 1 if man.A > 0 else -1
                     man.heading = _CW[(_CW.index(man.heading) + turn) % 4]
-            elif ch == "s":
-                pid = self.bind[addr]
+            elif cls == CLASS_SEND:
+                pid = value
                 if pid == 0:
                     continue
                 pvals = self.pipe_values[pid - 1]
                 if pvals[0] is not None:
                     continue
                 pvals[0] = man.A
-            elif ch == "r":
-                pid = self.bind[addr]
+            elif cls == CLASS_RECV:
+                pid = value
                 if pid == 0:
                     continue
                 pvals = self.pipe_values[pid - 1]
