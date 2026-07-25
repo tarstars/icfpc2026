@@ -9,3 +9,8 @@ derive Bresenham constants, paired test/update rooms circulate the error
 state, an address room applies step codes, and three small display rooms plot
 and commit each frame. Its deliberately roomy generated layout is suitable
 for later geometry-only compaction.
+
+`plotter_01.man` preserves that protocol while tightening only generated-room
+padding and vertical pipe clearances. It occupies 388×441 instead of 394×535,
+passes the public and deterministic oracle suites locally, and improves the
+measured local score by 32.98%. It has not been submitted.

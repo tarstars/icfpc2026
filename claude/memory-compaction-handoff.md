@@ -1,4 +1,11 @@
-# Memory compaction handoff (in progress)
+# Memory compaction handoff (completed; historical)
+
+Status update, 2026-07-25: this handoff is no longer active.
+`memory_01` was repaired, preserved, and submitted successfully. It passed
+24/24 live at 46x47 and score 91,372,247.625. See
+`reports/2026-07-24-memory-compaction.md` for the final implementation and
+validation. The material below is retained only as experiment history; do not
+resume from its blocker.
 
 Goal: geometry-only compaction of the Memory machine as variant
 `memory_01`. Same logic, tighter layout. Current submitted memory is

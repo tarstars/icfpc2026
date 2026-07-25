@@ -14,6 +14,7 @@ driver sketch.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from itertools import pairwise
 
 from .canvas import Canvas
@@ -65,6 +66,59 @@ SWAP_ZONES = {
     "input": 0,
     "swap": 30,
 }
+
+
+@dataclass(frozen=True)
+class PlotterLayout:
+    """Vertical clearances and compiler padding for the Plotter pipeline."""
+
+    stream_step: int = 12
+    error_room_step: int = 18
+    error_return_depth: int = 5
+    address_step: int = 18
+    address_relay_step: int = 8
+    relay_router_step: int = 12
+    router_drivers_step: int = 16
+    router_swap_depth: int = 6
+    display_step: int = 20
+    fsm_right_padding: int = 3
+
+    def validate(self) -> None:
+        if self.stream_step < 6:
+            raise ValueError("stream rooms need five rows for their connecting pipe")
+        if self.error_room_step < 6:
+            raise ValueError("error rooms need five rows for their connecting pipes")
+        if self.error_return_depth < 2:
+            raise ValueError("error return route must clear the update room")
+        if self.address_step < max(6, self.error_return_depth + 2):
+            raise ValueError("address room must clear the error return route")
+        if self.address_relay_step < 2:
+            raise ValueError("relay must not touch the address room")
+        if self.relay_router_step < 2:
+            raise ValueError("router must not touch the relay")
+        if self.router_swap_depth < 2:
+            raise ValueError("swap route must clear the router")
+        if self.router_drivers_step < max(5, self.router_swap_depth + 2):
+            raise ValueError("driver rooms must clear their incoming routes")
+        if self.display_step < 7:
+            raise ValueError("display must clear the plot data route")
+        if self.fsm_right_padding < 0:
+            raise ValueError("FSM right padding cannot be negative")
+
+
+BASELINE_LAYOUT = PlotterLayout()
+COMPACT_LAYOUT = PlotterLayout(
+    stream_step=6,
+    error_room_step=6,
+    error_return_depth=2,
+    address_step=6,
+    address_relay_step=2,
+    relay_router_step=2,
+    router_drivers_step=5,
+    router_swap_depth=2,
+    display_step=7,
+    fsm_right_padding=0,
+)
 
 
 def bresenham_addresses(x0: int, y0: int, x1: int, y1: int) -> list[int]:
@@ -398,9 +452,9 @@ def build_swap_fsm() -> Fsm:
     return fsm
 
 
-def _compile_streams() -> list[CompiledRoom]:
+def _compile_streams(right_padding: int = 3) -> list[CompiledRoom]:
     return [
-        compile_fsm(builder(), STREAM_ZONES)
+        compile_fsm(builder(), STREAM_ZONES, right_padding=right_padding)
         for builder in (
             build_setup_one_fsm,
             build_setup_two_fsm,
@@ -437,14 +491,18 @@ def _display_rows() -> list[str]:
     ]
 
 
-def build_plotter() -> str:
-    streams = _compile_streams()
-    error_test = compile_fsm(build_error_test_fsm(), ETEST_ZONES)
-    error_update = compile_fsm(build_error_update_fsm(), EUPD_ZONES)
-    address = compile_fsm(build_address_fsm(), ADDRESS_ZONES)
-    router = compile_fsm(build_router_fsm(), ROUTER_ZONES)
-    plot = compile_fsm(build_plot_fsm(), PLOT_ZONES)
-    swap = compile_fsm(build_swap_fsm(), SWAP_ZONES)
+def build_plotter(layout: PlotterLayout = BASELINE_LAYOUT) -> str:
+    layout.validate()
+    padding = layout.fsm_right_padding
+    streams = _compile_streams(padding)
+    error_test = compile_fsm(build_error_test_fsm(), ETEST_ZONES, right_padding=padding)
+    error_update = compile_fsm(
+        build_error_update_fsm(), EUPD_ZONES, right_padding=padding
+    )
+    address = compile_fsm(build_address_fsm(), ADDRESS_ZONES, right_padding=padding)
+    router = compile_fsm(build_router_fsm(), ROUTER_ZONES, right_padding=padding)
+    plot = compile_fsm(build_plot_fsm(), PLOT_ZONES, right_padding=padding)
+    swap = compile_fsm(build_swap_fsm(), SWAP_ZONES, right_padding=padding)
 
     canvas = Canvas()
     left = 20
@@ -457,7 +515,7 @@ def build_plotter() -> str:
     for room in streams:
         canvas.put(top, left, room.rows)
         placed_streams.append((top, room))
-        top += room.height + 12
+        top += room.height + layout.stream_step
 
     first_top, _first = placed_streams[0]
     canvas.pipe([(3, input_x), (first_top - 1, input_x)])
@@ -483,7 +541,7 @@ def build_plotter() -> str:
         left + error_test.zones["setup"],
     )
 
-    eupd_top = etest_top + error_test.height + 18
+    eupd_top = etest_top + error_test.height + layout.error_room_step
     canvas.put(eupd_top, left, error_update.rows)
     etest_bottom = etest_top + error_test.height + 1
     eupd_bottom = eupd_top + error_update.height + 1
@@ -507,15 +565,15 @@ def build_plotter() -> str:
     canvas.pipe(
         [
             (eupd_bottom + 1, return_source_x),
-            (eupd_bottom + 5, return_source_x),
-            (eupd_bottom + 5, return_x),
+            (eupd_bottom + layout.error_return_depth, return_source_x),
+            (eupd_bottom + layout.error_return_depth, return_x),
             (etest_top - 4, return_x),
             (etest_top - 4, return_destination_x),
             (etest_top - 1, return_destination_x),
         ]
     )
 
-    address_top = eupd_bottom + 18
+    address_top = eupd_bottom + layout.address_step
     canvas.put(address_top, left, address.rows)
     _vertical_pipe(
         canvas,
@@ -527,7 +585,7 @@ def build_plotter() -> str:
     address_bottom = address_top + address.height + 1
 
     # Three-value address state ring through a small relay to the left.
-    relay_top = address_bottom + 8
+    relay_top = address_bottom + layout.address_relay_step
     relay_left = 0
     canvas.put(relay_top, relay_left, RELAY)
     ring_source_x = left + address.zones["ring_out"]
@@ -549,7 +607,7 @@ def build_plotter() -> str:
         ]
     )
 
-    router_top = relay_top + len(RELAY) + 12
+    router_top = relay_top + len(RELAY) + layout.relay_router_step
     canvas.put(router_top, left, router.rows)
     _vertical_pipe(
         canvas,
@@ -560,7 +618,7 @@ def build_plotter() -> str:
     )
     router_bottom = router_top + router.height + 1
 
-    drivers_top = router_bottom + 16
+    drivers_top = router_bottom + layout.router_drivers_step
     plot_left = left
     swap_left = plot_left + plot.width + 20
     canvas.put(drivers_top, plot_left, plot.rows)
@@ -578,15 +636,15 @@ def build_plotter() -> str:
     canvas.pipe(
         [
             (router_bottom + 1, swap_source_x),
-            (router_bottom + 6, swap_source_x),
-            (router_bottom + 6, swap_destination_x),
+            (router_bottom + layout.router_swap_depth, swap_source_x),
+            (router_bottom + layout.router_swap_depth, swap_destination_x),
             (drivers_top - 1, swap_destination_x),
         ]
     )
 
     plot_bottom = drivers_top + plot.height + 1
     swap_bottom = drivers_top + swap.height + 1
-    display_top = max(plot_bottom, swap_bottom) + 20
+    display_top = max(plot_bottom, swap_bottom) + layout.display_step
     address_x = plot_left + plot.zones["address"]
     display_left = address_x - 10
     display_bottom = display_top + 25
@@ -625,3 +683,9 @@ def build_plotter() -> str:
         ]
     )
     return canvas.render()
+
+
+def build_plotter_compact() -> str:
+    """Build the geometry-only compact successor to ``plotter_00``."""
+
+    return build_plotter(COMPACT_LAYOUT)

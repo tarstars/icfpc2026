@@ -7,12 +7,17 @@ import random
 from itertools import pairwise
 from pathlib import Path
 
+import pytest
+
 from littleman.canvas import Canvas
 from littleman.codex_plotter import (
+    BASELINE_LAYOUT,
+    COMPACT_LAYOUT,
     _compile_streams,
     _vertical_pipe,
     bresenham_addresses,
     build_plotter,
+    build_plotter_compact,
     setup_constants,
 )
 from littleman.judge import judge_case, judge_problem
@@ -21,6 +26,7 @@ REPO = Path(__file__).resolve().parent.parent
 PROBLEM = json.loads(
     (REPO / "data" / "small" / "problems" / "plotter.json").read_text()
 )
+SUBMISSIONS = REPO / "submissions" / "plotter"
 
 
 def _setup_pipeline_harness() -> str:
@@ -88,7 +94,18 @@ def test_plotter_passes_public_cases():
     assert report.cases_passed == report.cases_total == 6, report.case_results
 
 
-def test_plotter_matches_reference_for_twenty_deterministic_segments():
+def test_checked_in_candidates_match_their_generators():
+    assert (SUBMISSIONS / "plotter_00.man").read_text() == build_plotter()
+    assert (SUBMISSIONS / "plotter_01.man").read_text() == build_plotter_compact()
+
+
+def test_compact_plotter_passes_public_cases():
+    report = judge_problem(build_plotter_compact(), PROBLEM)
+    assert report.cases_passed == report.cases_total == 6, report.case_results
+
+
+@pytest.mark.parametrize("layout", [BASELINE_LAYOUT, COMPACT_LAYOUT])
+def test_plotter_matches_reference_for_twenty_deterministic_segments(layout):
     rng = random.Random(20260724)
     segments = [
         (0, 0, 0, 0),
@@ -113,5 +130,5 @@ def test_plotter_matches_reference_for_twenty_deterministic_segments():
         {"in": list(segment), "frames": [_frame_for_segment(segment)]}
         for segment in segments
     ]
-    result = judge_case(build_plotter(), rounds, max_ticks=5_000_000)
+    result = judge_case(build_plotter(layout), rounds, max_ticks=5_000_000)
     assert result.passed, result

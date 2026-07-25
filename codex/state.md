@@ -1,6 +1,6 @@
 # Codex State
 
-Updated: 2026-07-24
+Updated: 2026-07-25
 
 ## Objective
 
@@ -69,6 +69,18 @@ solutions.
   padding, and vertical bands while preserving `gradebook_00` exactly. The
   454×450 `gradebook_01` improves local score 16.00% and passed all 20 live
   cases at server score 104,303,579,599.6, a 15.97% live improvement.
+- Integrated the completed `tcp_01` experiment from current `main`: its
+  offset-window architecture passed 20/20 live at 62×62 and score 52,747,175,
+  worse than `tcp_00`. Exhaustive local provenance checks could not recover
+  the source or UUID behind the team's separate counted 5,981,625.6 score.
+- Added `littleman.server_compat`, which rejects the server-invalid
+  shared-wall geometry accepted by the base parser and judges final wall steps
+  with the server's output-draining semantics.
+- Parameterized Plotter room clearances while preserving `plotter_00` exactly.
+  The geometry-only 388×441 `plotter_01` passes all public and deterministic
+  oracle cases locally and improves measured local score 32.98%.
+- Refreshed shared and Claude handoff state to show all twelve graded problems
+  solved and retired the completed Memory handoff.
 
 ## Blockers
 
@@ -76,6 +88,9 @@ solutions.
 
 ## Next steps
 
-1. Evaluate compact geometry or faster protocols for other preserved
+1. Recover the exact source and UUID behind the counted 5,981,625.6 Packet
+   Reassembly score from the contest web submission history.
+2. Submit `plotter_01` only with explicit user authorization and after the
+   mandatory freshness checks.
+3. Evaluate compact geometry or faster protocols for the other weak-rank
    footprint-tick baselines.
-2. Support Claude with live problem retrieval, submission, and result polling.

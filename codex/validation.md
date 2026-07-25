@@ -1,6 +1,6 @@
 # Codex Validation
 
-Updated: 2026-07-24
+Updated: 2026-07-25
 
 ## Environment observations
 
@@ -218,6 +218,34 @@ Updated: 2026-07-24
   1.2083333333 points.
 - `gradebook_00.man` still reproduces its accepted SHA-256 exactly after the
   layout parameters were introduced.
+- Freshened `main` to `b2f8b58`, integrating the preserved `tcp_01` source,
+  generator, model, live response, and handoff. Its exact artifact passed all
+  six public cases locally at 62×62 and local score 34,380,095.3; its recorded
+  live result is 20/20 at score 52,747,175.
+- Queried live Packet Reassembly and Plotter standings. The final pre-commit
+  Plotter response at `2026-07-25T06:22:56.768Z` unexpectedly contained an
+  empty `rows` array while reporting `frozen=false`; no current team score was
+  inferred from that response. A direct authenticated read of the preserved
+  `plotter_00` submission confirmed 20/20 and score 75,794,498,065.
+- `littleman.server_compat` rejected the known server-invalid shared-wall
+  `triangle_03`, accepted the server-valid final-wall `triangle_04`, and
+  judged its six public cases at 13 ticks and score 832.
+- Audited every nonempty saved `.man` artifact: 27 passed the compatibility
+  layout check, `triangle_03` produced the expected shared-wall rejection, and
+  the previously rejected `history_00` independently retained its known
+  invalid-literal load error.
+- `plotter_00.man` still reproduces exactly at SHA-256
+  `13a1322961d8985bc165fd03f93070640dc4ee4b653c49c1d9f1dd4588bf8e03`.
+- Exact `plotter_01.man` has SHA-256
+  `d2a42d508ba6c7907b98cac3ffb26228e1fd12cd596030d22fddf8165d6ebe77`,
+  is 83,127 bytes, parses as 14 rooms, 18 pipes, and 12 men, and occupies
+  388×441.
+- `plotter_01` passed all six public cases at ticks
+  `[89188, 212274, 5659, 135808, 308359, 322576]`. Its local score is
+  34,807,690,764, 32.98% below `plotter_00`.
+- The deterministic 20-segment Plotter frame oracle at seed `20260724` passed
+  for both layouts; the compact candidate completed at tick 1,037,213.
+- `uv run pytest -q` — 142 tests passed in 64.56 seconds.
 - Exact-file benchmarking measured `gradebook_01` at 454×450, footprint
   206,116, SHA-256
   `f159eaf92ea37d9df9e66f814e8248c9ce10bb23eb9dbec591fc58f10f98c91f`,

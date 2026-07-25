@@ -1,6 +1,6 @@
 # Current State
 
-Updated: 2026-07-24
+Updated: 2026-07-25
 
 ## Objective
 
@@ -32,20 +32,27 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   API client.
 - `uv run icfpc-api` provides JSON problem reads and guarded submission/polling
   commands; local credentials remain in the ignored `.env`.
+- All 12 graded problems are solved. In the standings snapshot updated at
+  `2026-07-25T05:56:56Z`, every counted result passed all private cases; the
+  weakest ranks were Sudoku 42/46, Plotter 37/43, Subset Sum 29/35, and
+  Matrix Multiply 24/36.
 - Before committing any solution version, agents must pull and integrate the
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
   `AGENTS.md`.
-- Three submitted Sort variants passed all 25 server cases. The current best is
-  the 27×24 shrinking-ring `sort_02`, with server score 3,460,708.8. The
-  earlier pipeline variants and their geometry-only optimization are preserved
-  under `submissions/sort/`; their experiment is summarized in
-  `reports/2026-07-24-sort-pipeline.md`.
+- The current Sort best is the 19×19 shrinking-ring `sort_03`; it passed all
+  25 server cases at score 1,455,739.72. Earlier pipeline and ring variants
+  are preserved under `submissions/sort/`.
 - The server-safe 89×89 History Lesson program passed 1/1 with footprint score
-  7,921 and is tied at rank 7 in its recorded standings snapshot.
-- The submitted 38×41 Packet Reassembly paired-value ring passed all 20 server
-  cases with score 20,028,106.4; the immutable source and properties are under
-  `submissions/tcp/`.
+  7,921.
+- Packet Reassembly `tcp_00` passed 20/20 at 38×41 and score 20,028,106.4.
+  The offset-window `tcp_01` experiment also passed 20/20 at 62×62 and score
+  52,747,175, proving its architecture but losing on ticks. The standings
+  snapshot shows a much better counted team score of 5,981,625.6 whose exact
+  source and submission UUID are not recoverable from repository history or
+  the API; recover it manually from the contest web submission history before
+  any further TCP submission. Details are in
+  `reports/2026-07-25-action-execution.md`.
 - Grade Book `gradebook_01` compacts the accepted four-worker baseline from
   494×462 to 454×450 without changing its protocols. It passed all 20 live
   cases and improved the server score 15.97%, from 124,123,713,433.2 to
@@ -69,14 +76,18 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   are in `reports/2026-07-24-memory-compaction.md`.
 - Plotter is solved by a generated symmetric-Bresenham pipeline. The first
   correctness baseline passed all 20 live cases at 394×535 and score
-  75,794,498,065. Its exact source and private-test-oriented validation are
-  documented in `reports/2026-07-24-plotter.md`.
+  75,794,498,065. A geometry-only 388×441 successor, `plotter_01`, passes all
+  public and deterministic oracle cases locally and improves the measured
+  local score by 32.98%; it has not been submitted.
 - Subset Sum is solved by a generated meet-in-the-middle machine with two
   1,024-stage systolic sorters. Its compact 3,646×3,029 artifact passed all
   20 live cases at score 91,769,596,778,389.8. The exact Git-LFS source,
   variant properties, and validation are documented under
   `submissions/subset-sum/` and in
   `reports/2026-07-24-subset-sum.md`.
+- `littleman.server_compat` is the pre-submission judge for the two confirmed
+  parser differences: it rejects locally accepted shared-wall rooms and
+  permits a final wall step after a send while the output pipe drains.
 
 ## Storage
 

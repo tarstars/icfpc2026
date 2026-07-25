@@ -86,3 +86,26 @@ one-cell corridor between workers, the minimum one-cell external pipe
 clearance, one separating row between parser and workers, and no unused
 interior column beyond the rightmost control track. Reject parameters that
 would place routes on walls or make rooms touch.
+
+## 2026-07-25 — Make confirmed server differences one submission gate
+
+Keep the shared simulator semantics stable, but expose
+`littleman.server_compat` as the pre-submission judge. Reject layouts whenever
+two locally parsed rooms share border cells, since the server fails to load
+that geometry. Delegate execution to the wall-tolerant judge, since the server
+halts a man after a final wall step while continuing to drain output already
+in flight.
+
+Use a coordinate-owner index rather than pairwise room intersections so the
+check remains practical for the 2,121-room Subset Sum artifact.
+
+## 2026-07-25 — Compact Plotter through explicit layout parameters
+
+Do not change the validated symmetric-Bresenham state machines. Parameterize
+the inter-room pipe clearances and compiler right padding, preserve the former
+constants as `BASELINE_LAYOUT`, and define a separate `COMPACT_LAYOUT` at the
+smallest values that keep routes disjoint and pipe parsing unchanged.
+
+Preserve both generated artifacts and reject a geometry candidate unless it
+matches the public cases, the deterministic 20-segment frame oracle, and the
+server-compatibility layout check.
