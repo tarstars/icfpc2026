@@ -1,21 +1,19 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T14:13:05Z
-- State: working
-- Role: integrator, adversarial reviewer, and Pathfinder builder
-- Current task: `20260725-claude-adversarial-review`
-- Branch: `main`
-- Head: `47c4fa20780d908699a43cbc811543aa37d51e33`
-- Write set: Codex messages/bookkeeping, `docs/architecture/codex_*.md`,
-  `docs/TOOLS.md`, and the requested cookbook corrections
-- Last concrete progress UTC: 2026-07-25T14:13:05Z
-- Evidence: five immutable technical review messages plus one adoption
-  message; 35 LLM, 5 fuzz, 94 IR, 7 effects, and 18 main-tool focused tests
-  passed in isolated or main worktrees
+- Updated UTC: 2026-07-25T14:57:58Z
+- State: completed
+- Role: integrator and policy reconciler
+- Current task: `20260725-yt-five-minute-preference`
+- Branch: `agent/codex-yt-policy`
+- Head: `bccc9f9b0eaa34626d4bc08781201cdba5858d9b`
+- Write set: `AGENTS.md`, `docs/storage-and-compute.md`,
+  `codex/instructions.md`, Codex task/status/message bookkeeping
+- Last concrete progress UTC: 2026-07-25T14:57:58Z
+- Evidence: user clarified five minutes is a YT preference; both
+  authoritative policy files and the instruction audit now use that meaning
 - Running job: none
-- Latest verified result: confirmed IR `R`/`U` priority loss and effects
-  `q` probe flaw; confirmed LLM timing and Semester 4 frame preflight path
-- Next checkpoint: synchronize with fresh `origin/main`, validate the scoped
-  integration, commit, and push; then return to Pathfinder
+- Latest verified result: no remaining one-hour/five-minute policy conflict
+- Next checkpoint: publish and integrate the policy-only change; then return
+  to Pathfinder
 - Blockers: none
-- Submission controller: yes; this review performed no contest mutation
+- Submission controller: yes; this audit performed no contest mutation

@@ -54,10 +54,13 @@ virtual environments, raw run outputs, and bulk datasets do not belong in Git.
 - The canonical remote root is
   `//home/delivery_ml/research/tarstars/icfpc2026`.
 - Use local compute for unit tests, smoke tests, payload preparation, quick
-  inspection, and work comfortably below one hour.
-- Evaluate YT first for independent CPU work expected to exceed roughly one
-  hour: search shards, simulation, Monte Carlo, corpus generation, dedupe, or
-  large evaluation matrices.
+  inspection, interactive work, and work comfortably below roughly five
+  minutes.
+- For independent CPU work expected to exceed roughly five minutes locally,
+  prefer evaluating YT first: search shards, simulation, Monte Carlo, corpus
+  generation, dedupe, or large evaluation matrices. This is a scheduling
+  preference, not a hard cutoff; keep work local when YT packaging or startup
+  would dominate.
 - Use YT GPU jobs for training-scale neural workloads only after a small local
   or YT smoke test establishes functional parity.
 - Treat YT Cypress nodes as scarce. Prefer consolidated native tables with
