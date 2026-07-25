@@ -91,3 +91,46 @@ def test_runaway_loop_hits_the_step_cap():
 def test_mark_notes_are_retained_for_join_invariants():
     g = parse("(mark K :A dead :B mask) 1 H")
     assert g["K"].notes == {"A": "dead", "B": "mask"}
+
+
+# --- timing-sensitive ops: q, R, U -----------------------------------------
+# q and R read the ENVIRONMENT (occupancy, arrival) without changing control
+# flow; only U branches. All three make behaviour depend on timing rather than
+# on token sequences, which is what breaks latency-insensitive composition.
+
+
+def test_q_reads_occupancy_into_bp_without_branching():
+    st = run(
+        parse("(mark m) q H", allow_timing_ops=True), occupancy=lambda: 5
+    )
+    assert st.BP == 5 and st.A == 0
+
+
+def test_recv_any_is_a_data_read_not_a_branch():
+    st = run(
+        parse("(mark m) R H", allow_timing_ops=True),
+        recv_any=lambda: (1, 42),
+    )
+    assert st.A == 42
+
+
+def test_if_recv_branches_on_which_pipe_delivered():
+    src = """
+    (mark m) (if-recv left right)
+    (mark left) 1 H
+    (mark right) 2 H
+    """
+    g = parse(src, allow_timing_ops=True)
+    assert run(g, "m", recv_any=lambda: (0, 7)).A == 1
+    assert run(g, "m", recv_any=lambda: (1, 7)).A == 2
+
+
+def test_if_recv_requires_at_least_one_target():
+    with pytest.raises(BlockGraphError, match="at least one target"):
+        parse("(mark m) (if-recv)", allow_timing_ops=True)
+
+
+def test_timing_ops_are_rejected_by_default():
+    for src in ("(mark m) q H", "(mark m) R H"):
+        with pytest.raises(BlockGraphError, match="quarantined"):
+            parse(src)

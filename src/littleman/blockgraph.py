@@ -16,6 +16,7 @@ literals are written ```123```. Control forms:
 ``(if N Z P)``       ``X`` -- targets for A<0, A==0, A>0
 ``(if-bp T S)``      ``d``/``a`` -- BP>0 taken, else straight
 ``(if-par O E)``     ``x`` -- BP low bit 1 / 0
+``(if-recv A B..)``  ``U`` -- receive from any ready pipe, branch on which
 ``H``                halt
 ===================  =====================================================
 
@@ -33,7 +34,10 @@ from dataclasses import dataclass, field
 
 from .sim import wrap64
 
-CONTROL = {"goto": 1, "if": 3, "if-bp": 2, "if-par": 2}
+# `if-recv` is `U`: receive from any ready pipe, then branch on WHICH pipe
+# delivered. Its arity is the room's incoming-pipe count, so it is checked
+# against the targets given rather than a fixed number.
+CONTROL = {"goto": 1, "if": 3, "if-bp": 2, "if-par": 2, "if-recv": None}
 
 
 class BlockGraphError(ValueError):
@@ -103,9 +107,13 @@ def parse(text: str, *, allow_timing_ops: bool = False) -> dict[str, Block]:
                 raise BlockGraphError(f"{tok!r} before any (mark ...)")
             if current.kind:
                 raise BlockGraphError(f"block {current.name!r} terminated twice")
-            if len(rest) != CONTROL[head]:
+            arity = CONTROL[head]
+            if arity is None:
+                if not rest:
+                    raise BlockGraphError("'if-recv' needs at least one target")
+            elif len(rest) != arity:
                 raise BlockGraphError(
-                    f"{head!r} takes {CONTROL[head]} targets, got {len(rest)}"
+                    f"{head!r} takes {arity} targets, got {len(rest)}"
                 )
             current.kind, current.targets = head, tuple(rest)
             continue
@@ -159,6 +167,8 @@ def run(
     *,
     recv=None,
     send=None,
+    occupancy=None,
+    recv_any=None,
     max_steps: int = 1_000_000,
     state: State | None = None,
 ) -> State:
@@ -218,6 +228,14 @@ def run(
                 if recv is None:
                     raise BlockGraphError("'r' with no recv callback")
                 st.A = recv()
+            elif op == "q":
+                if occupancy is None:
+                    raise BlockGraphError("'q' with no occupancy callback")
+                st.BP = occupancy()
+            elif op == "R":
+                if recv_any is None:
+                    raise BlockGraphError("'R' with no recv_any callback")
+                st.A = recv_any()[1]
             elif op in "sS":
                 if send is None:
                     raise BlockGraphError("'s' with no send callback")
@@ -234,5 +252,10 @@ def run(
             name = block.targets[0 if st.A < 0 else 1 if st.A == 0 else 2]
         elif block.kind == "if-bp":
             name = block.targets[0 if st.BP > 0 else 1]
+        elif block.kind == "if-recv":      # U: branch on WHICH pipe delivered
+            if recv_any is None:
+                raise BlockGraphError("'if-recv' with no recv_any callback")
+            index, st.A = recv_any()
+            name = block.targets[index]
         else:                              # if-par
             name = block.targets[0 if st.BP & 1 else 1]
