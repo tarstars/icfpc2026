@@ -99,12 +99,7 @@ def test_runtime_world_records_are_byte_exact_with_lllm_fetch(case):
     from littleman.lllm_loader import reference_stream
 
     rows = program_grid([int(v) for v in case["rounds"][0]["in"]])
-    packed = list(reference_stream(program_tokens(rows)))[:64]
-    expected = []
-    for token in packed:
-        for _ in range(4):
-            expected.append(token & 8191)
-            token >>= 13
+    expected = list(reference_stream(program_tokens(rows)))[:64]
 
     pipeline = LLMPipeline(trace=True)
     pipeline.run_case(case["rounds"])
@@ -163,6 +158,7 @@ def test_delta_stream_is_self_delimiting_per_later_round():
     pipeline.run_case(case["rounds"])
     frames = split_delta_frames(pipeline.traces()["delta"])
     assert len(frames) == len(case["rounds"]) - 1
+    assert all(len(frame) == 256 for frame in frames)
 
 
 def test_halted_followup_round_still_emits_a_delta_delimiter():
@@ -175,5 +171,5 @@ def test_halted_followup_round_still_emits_a_delta_delimiter():
     pipeline = LLMPipeline(trace=True)
     pipeline.run_case(rounds)
     frames = split_delta_frames(pipeline.traces()["delta"])
-    assert len(frames[0]) == 2
-    assert frames[1] == []
+    assert [len(frame) for frame in frames] == [256, 256]
+    assert frames[1] == frames[0]

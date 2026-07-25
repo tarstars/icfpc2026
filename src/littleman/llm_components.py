@@ -498,8 +498,9 @@ class Bind:
     (PIPE descriptors, from PIPETRACE).
 
     Produces ``q_cell_out_init`` as 256 annotated setup records for the
-    initial frame, and ``q_cell_out_exec`` as 256 13-bit runtime records
-    using the accepted LLLM FETCH grammar plus send/receive classes.
+    initial frame, and ``q_cell_out_exec`` as 64 tokens of four packed
+    13-bit runtime records: the accepted LLLM FETCH storage grammar plus
+    send/receive classes.
     """
 
     def run(
@@ -514,6 +515,7 @@ class Bind:
         colors = [0] * NCELLS
         walls = [0] * NCELLS
         pipe_flags = [0] * NCELLS
+        exec_records = []
         for addr in range(NCELLS):
             char, color, wall, pipe, _bind = unpack_cell(q_cell_in.get())
             chars[addr] = char
@@ -556,7 +558,7 @@ class Bind:
                         bind_id = candidates[0][3] + 1
             rec = pack_cell(chars[addr], colors[addr], walls[addr], pipe_flags[addr], bind_id)
             q_cell_out_init.put(rec)
-            q_cell_out_exec.put(
+            exec_records.append(
                 exec_record(
                     chars[addr],
                     colors[addr],
@@ -564,6 +566,10 @@ class Bind:
                     pipe_flags[addr],
                     bind_id,
                 )
+            )
+        for base in range(0, NCELLS, 4):
+            q_cell_out_exec.put(
+                sum(exec_records[base + i] << (13 * i) for i in range(4))
             )
 
 
@@ -632,13 +638,10 @@ class Executor:
     colors, walls, pipe cells/values, and men are this component's own
     reimplementation, driven only by what arrived on its queues.
 
-    Produces ``q_delta``: for every tick, every address whose display
-    color changed (a pipe cell's occupancy flipped 6<->14, or a man
-    entered/vacated a cell) is pushed at most once, packed via
-    :func:`pack_delta`. Candidates are exactly the addresses claude_07
-    bounds the frame delta by: all pipe cells (<= 20) plus every man's
-    pre- and post-tick address (<= 3 men, <= 6 addresses) -- nothing else
-    can change color in one tick.
+    Produces one correctness-first full frame per input round: 256 packed
+    DRAW records in address order, followed by :data:`DELTA_END`.  This
+    deliberately spends bounded output bandwidth to avoid carrying a dirty
+    set across interpreted ticks; 30 maximum rounds mean only 7,680 records.
     """
 
     def setup(self, q_cell: Q, q_pipes: Q, q_pipe_cells: Q, q_men: Q) -> None:
@@ -646,8 +649,14 @@ class Executor:
         self.op_value = [0] * NCELLS
         self.static_color = [0] * NCELLS
         self.wall = [False] * NCELLS
-        for addr in range(NCELLS):
-            cls, value, color, wall = unpack_exec_cell(q_cell.get())
+        records = []
+        for _ in range(NCELLS // 4):
+            token = q_cell.get()
+            for _ in range(4):
+                records.append(token & 8191)
+                token >>= 13
+        for addr, rec in enumerate(records):
+            cls, value, color, wall = unpack_exec_cell(rec)
             self.op_class[addr] = cls
             self.op_value[addr] = value
             self.static_color[addr] = color
@@ -670,9 +679,6 @@ class Executor:
         self.men = [_ManState(*divmod(q_men.get(), DISPLAY)) for _ in range(nmen)]
         self.over = False
 
-        men_positions = {addr_of(m.r, m.c) for m in self.men}
-        self._last_color = [self._color_at(addr, men_positions) for addr in range(NCELLS)]
-
     def halted(self) -> bool:
         return self.over or all(m.halted or m.on_wall for m in self.men)
 
@@ -681,7 +687,10 @@ class Executor:
         for _ in range(k):
             if self.halted():
                 break
-            self._step(q_delta)
+            self._step()
+        men_positions = {addr_of(m.r, m.c) for m in self.men}
+        for addr in range(NCELLS):
+            q_delta.put(pack_delta(addr, self._color_at(addr, men_positions)))
         q_delta.put(DELTA_END)
 
     def _color_at(self, addr: int, men_positions: set[int]) -> int:
@@ -694,15 +703,13 @@ class Executor:
                 return COLOR_PIPE_FULL
         return self.static_color[addr]
 
-    def _step(self, q_delta: Q) -> None:
+    def _step(self) -> None:
         # 1. pipes shift one cell toward their destination, if free.
         for vals in self.pipe_values:
             for i in range(len(vals) - 1, 0, -1):
                 if vals[i] is None and vals[i - 1] is not None:
                     vals[i] = vals[i - 1]
                     vals[i - 1] = None
-
-        old_positions = [addr_of(m.r, m.c) for m in self.men]
 
         # 2. every man executes the op under him.
         moving: list[_ManState] = []
@@ -775,16 +782,6 @@ class Executor:
                 man.on_wall = True
                 self.over = True
 
-        new_positions = [addr_of(m.r, m.c) for m in self.men]
-        men_position_set = set(new_positions)
-        candidates = list(self._all_pipe_addrs)
-        candidates.extend(old_positions)
-        candidates.extend(new_positions)
-        for addr in candidates:
-            color = self._color_at(addr, men_position_set)
-            if color != self._last_color[addr]:
-                self._last_color[addr] = color
-                q_delta.put(pack_delta(addr, color))
 
 
 # ---------------------------------------------------------- 7. DELTA_DRAW
