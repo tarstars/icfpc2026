@@ -98,3 +98,40 @@ heading east — left copy relative to east = north):
    subset-sum and gradebook by footprint slack; sudoku by worker
    symmetry) — before generic composer polishing, since a successful
    Y-rebuild dwarfs geometry-only gains.
+
+## RESOLVED: die-semantics confirmed in the official editor (user experiment)
+
+2026-07-25 ~15:2xZ, the user built and ran this map in the contest editor
+(the organizers' own simulator, the same implementation that animates the
+/split demo):
+
+```
++-------------------+
+|     >     v       |
+|                   |
+| >   Y             |
+|                   |
+|     >          v  |
+|@Y<                |
+|  ^             <  |
+|                   |
+|                   |
+|                   |
+| >         ^       |
++-------------------+
+```
+
+Observed: the man divides at `Y`, copies travel the arrow loops, meet, and
+**annihilate — both die when they meet** (removed, program continues), and
+a copy reaching the second `Y` reproduces again. This matches /split's
+death rule and contradicts the reference's stale "both stop".
+
+Evidence level: Observed in the official client simulator by the user.
+Residual risk that the server-side judge differs is small and is covered
+by probe 1 (Y acceptance in the judge pipeline); probe 2 (collision
+discrimination) is now OPTIONAL — the question it was built to answer is
+answered.
+
+Consequence: our simulator's Y implementation should adopt /split
+wholesale: die-not-stop removal, same-cell and swap-through detection,
+spawn-conflict deaths, creation-order insertion, 65536 cap.
