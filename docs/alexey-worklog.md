@@ -589,3 +589,38 @@ Where the headroom actually is, by places gained per unit of score
 (rank 28→6, densest field in the contest), reverse-a-list −50% → +18,
 memory −75% → +34, sort −50% → +11. All four need algorithm work, not
 geometry.
+
+### brackets repacked: 7,473,269 → 3,669,188 (2.04x), live 26/26
+
+I had estimated this at 15-20% and was wrong — it is 2x, because **short
+pipes buy ticks as well as footprint**. Footprint 2500 → 1764 (−29%) and
+avgTicks 1506 → 1080 locally (−28%); the two multiply.
+
+No machine logic touched. The three rooms are used verbatim, trimmed only
+of provably empty edges: classify 19×20 → 19×18 (two empty right columns),
+close 10×32 → 9×30 (two empty columns plus one empty interior row), open
+unchanged. Trims only remove cells beyond the last used column/row, so each
+walk is identical apart from being a few ticks shorter, and every port keeps
+its offset relative to its own room — which is why nearest-pipe resolution
+inside the rooms needed no re-derivation at all.
+
+**Room order is what makes the routing planar.** Two pipes must cross the
+whole layout: close-bottom → open-top and open-bottom → close-top. With
+open in the middle (as brackets_00 had it) both wraps are long and fight for
+the same corridor rows — I spent several attempts failing to route them past
+each other, each time blocked by a vertical run cutting a horizontal one.
+Putting **close** in the middle turns one wrap into a two-row hop and leaves
+a single long pipe, which then owns the east columns (35, 36) and the bottom
+row uncontested. brackets_00's 92-cell perimeter wrap becomes 89 cells of
+much straighter routing, and the 45-cell one becomes 16.
+
+Generator: `src/littleman/alexey_brackets_compact.py`, reproduces
+`brackets_01.man` byte-for-byte.
+
+Remaining headroom is small: height 42 binds against width 37, and all
+three inter-room gaps are already minimal (3 rows between classify and
+close for the bottom port, pipe 2 and pipe 6; 2 rows each elsewhere).
+Moving open beside classify instead computes to exactly the same fp 1764.
+
+Session total across the two geometry rounds: sort 1,455,740 → 1,367,454
+and brackets 7,473,269 → 3,669,188.

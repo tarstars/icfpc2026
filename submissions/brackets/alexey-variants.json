@@ -1,0 +1,43 @@
+{
+ "schemaVersion": 1,
+ "note": "Alexey research line for brackets. brackets_01 is the current best at 3,669,188 -- 2.04x better than brackets_00's 7,473,269. Pure geometry: same three machine rooms, trimmed of empty edges and re-placed.",
+ "problem": {
+  "id": "5977822a-7bab-4fc5-9fe8-f79583113072",
+  "slug": "brackets",
+  "scoring": "footprint-tick"
+ },
+ "variants": [
+  {
+   "version": "brackets_01",
+   "label": "repacked: rooms stacked classify/close/open, pipes shortened",
+   "parent": "brackets_00",
+   "changeType": "geometry",
+   "architecture": "Machine rooms used verbatim, only trimmed of provably empty edges (classify 19x20->19x18, close 10x32->9x30, open unchanged), then stacked vertically instead of classify-beside-open. Ports keep their offsets relative to each room, so nearest-pipe resolution inside the rooms is untouched. Room ORDER is what makes the routing planar: with close in the middle, one of the two cross-layout wraps becomes a two-row hop and only one long pipe remains, owning the east columns and the bottom row.",
+   "source": {
+    "path": "submissions/brackets/brackets_01.man",
+    "generator": "src/littleman/alexey_brackets_compact.py (reproduces byte-for-byte)",
+    "width": 37,
+    "height": 42,
+    "footprint": 1764
+   },
+   "localValidation": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "avgTicksLocal": 1079.6,
+    "comparedTo": "brackets_00 local: fp 2500, avgTicks 1505.8"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 26,
+    "casesTotal": 26,
+    "width": 37,
+    "height": 42,
+    "area2": 1764,
+    "avgTicks": 2080.04,
+    "score": 3669188,
+    "fullResponse": "submissions/brackets/alexey-brackets_01-submit.json"
+   },
+   "verdict": "TEAM BEST for brackets. Footprint 29% better AND ticks 28% better -- the tick gain was unplanned and comes from the long pipes shrinking. Remaining geometry headroom is small: height 42 binds against width 37, and the three inter-room gaps are already at their minimum of 2-3 rows each."
+  }
+ ]
+}
