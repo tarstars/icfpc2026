@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "note": "Alexey research line. tcp_02 (marker-free ring) is the current best at 8,554,029 -- 2.34x better than tcp_00's 20,028,106. tcp_01 proved the tag-through-ring architecture but lost on ticks; kept for the record.",
+ "note": "Alexey research line. tcp_04 is the current best at 5,981,626 -- 3.35x better than tcp_00's 20,028,106. Progression: tcp_00 20.0M -> tcp_02 8.55M (marker deleted) -> tcp_03 7.69M (second count moved to the V pipe) -> tcp_04 5.98M (packed to 38x38). Generator src/littleman/alexey_tcp_v3.py reproduces tcp_04.man byte-for-byte.",
  "problem": {
   "id": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
   "slug": "tcp",
@@ -8,6 +8,68 @@
   "scoring": "footprint-tick"
  },
  "variants": [
+  {
+   "version": "tcp_04",
+   "label": "marker-free ring packed to 38x38",
+   "parent": "tcp_03",
+   "changeType": "geometry",
+   "architecture": "Same algorithm as tcp_02/03. Splitter moved to cols 25-37, O relocated into the routing band (rows 23-25) and fed from the forwarder's TOP wall alongside RIN (column-split zone rule re-audited), I moved to cols 33-35. Width 43->38 with height already 38, so the footprint becomes a square.",
+   "source": {
+    "path": "submissions/tcp/tcp_04.man",
+    "generator": "src/littleman/alexey_tcp_v3.py (reproduces byte-for-byte)",
+    "width": 38,
+    "height": 38,
+    "footprint": 1444
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "stress": "46/46",
+    "avgTicksLocal": 2516,
+    "maxTicks": 4440
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 38,
+    "height": 38,
+    "area2": 1444,
+    "avgTicks": 4142.4,
+    "score": 5981625.6,
+    "fullResponse": "submissions/tcp/alexey-tcp_04-submit.json"
+   },
+   "verdict": "TEAM BEST for tcp. Remaining headroom: 14 relays/packet x 8 ticks = 112 ticks is the algorithmic floor for d>=1; the pump still spends ~20 ticks/packet blocked on the S pipe (42 cells) and the pump room could lose ~3 sparse rows."
+  },
+  {
+   "version": "tcp_03",
+   "label": "second loop count moved onto the V pipe",
+   "parent": "tcp_02",
+   "changeType": "protocol",
+   "architecture": "Splitter sends seq on S and (15-seq, val) on V, so both of the pump's mid-packet reads sit in the V zone. Removes the mid-packet walk to the S zone and the D0 discard trip; the two return paths merge into one lane at col 4.",
+   "source": {
+    "path": "submissions/tcp/tcp_03.man",
+    "width": 43,
+    "height": 38,
+    "footprint": 1849
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "stress": "46/46",
+    "avgTicksLocal": 2534
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "area2": 1849,
+    "avgTicks": 4160.9,
+    "score": 7693504.1,
+    "fullResponse": "submissions/tcp/alexey-tcp_03-submit.json"
+   },
+   "verdict": "Superseded by tcp_04 (same machine, packed)."
+  },
   {
    "version": "tcp_02",
    "label": "marker-free ring, w0 implicit (v3 architecture)",
@@ -43,7 +105,7 @@
     "score": 8554028.7,
     "fullResponse": "submissions/tcp/alexey-tcp_02-submit.json"
    },
-   "verdict": "TEAM BEST for tcp. 2.34x better than tcp_00. Remaining headroom: width 43 is the binding dimension (height only 38) -- repacking the splitter/O to width 38 would give fp 1444 (-22%); ticks 4626 still carry a per-packet transit of ~30 cells between the S, V and RIN zones."
+   "verdict": "Superseded by tcp_03/tcp_04; kept as the step that introduced the marker-free ring."
   },
   {
    "version": "tcp_01",

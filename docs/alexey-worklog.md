@@ -489,3 +489,32 @@ pump's nine `r` cells resolve correctly on the first audit.
 
 Remaining headroom: width 43 binds the footprint while height is only 38;
 repacking to width 38 gives fp 1444 (−22%).
+
+### Same day, two more rounds: 8.55M → 5.98M
+
+**tcp_03 (7,693,504).** The tick profile of tcp_02 showed 54 ticks per
+packet spent *walking* between the S zone and the V zone — the pump read
+seq on the left, relayed in the middle, fetched val on the right, then
+walked back left for 15-seq. Fixed in the splitter, not the pump: it now
+sends `seq` on the S pipe and **`15-seq, val` on the V pipe**, so both
+mid-packet reads land in the same zone. The D0 path stops needing an S
+read at all, and both return paths merge into one lane. −11% ticks.
+
+**tcp_04 (5,981,626).** Footprint was bound by width 43 against height 38.
+Moved the splitter to cols 25-37, relocated O into the routing band, and
+fed it from the forwarder's TOP wall next to RIN — re-auditing the
+column-split zone rule first, which still separates the four `s` cells
+cleanly. 38×38, a square: fp 1849 → 1444.
+
+**Cumulative: 20,028,106 → 5,981,626, a 3.35x improvement**, all four
+submissions 20/20 on the server.
+
+Fourth trap paid for this session: a pipe cell whose *backward* neighbour
+is a room wall starts a NEW pipe there. Routing one column clear of
+foreign rooms avoids it — this is the same phantom-pipe failure as before,
+but triggered by a room I moved rather than a route I drew.
+
+Where the remaining time would go: 14 relays × 8 ticks = 112 ticks/packet
+is the algorithmic floor for d≥1 packets; on top of that the pump still
+idles ~20 ticks/packet waiting on the 42-cell S pipe, and the pump room
+carries ~3 rows that hold a single cell each.
