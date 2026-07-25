@@ -706,3 +706,36 @@ one of the big programs the slack that remains sits in the NON-binding
 dimension. matmul, gradebook and sudoku are width-bound with their spare
 space in rows; plotter and memory are height-bound with theirs in columns.
 That is why the remaining headroom needs re-placement, not deletion.
+
+### Follow-up: per-room edge trimming — measured, and it is already spent
+
+Re-checked the specific idea "each room has empty edge rows/columns that can
+be trimmed", on the current (post-squeeze) submissions. Result, per program,
+counting the trim available along the vertical chain (rows) and the
+horizontal chain (columns), and the footprint that would result **after**
+re-placing the rooms to close the gaps:
+
+| problem | binds | row slack | col slack | gain if re-placed |
+|---|---|---|---|---|
+| reverse, sort, tcp, brackets, memory, sudoku | — | 0 | 0-11 | **1.00x** |
+| gradebook | H | 2 | 377 | 1.01x |
+| plotter | H | 2 | 8 | 1.01x |
+| matmul | H | 5 | 13 | 1.03x |
+
+**The idea is sound but already harvested.** Before the squeeze sweep these
+same rooms had real edge slack — memory 6+2 columns, sudoku 13-18 per room,
+plotter 30 per room. The whole-program squeeze removed it, because rooms in
+these layouts are column-aligned, so a room's empty edge column usually *is*
+blank across the entire program and the global pass takes it.
+
+What is left sits in the wrong dimension. gradebook still carries **377**
+trimmable columns along its horizontal chain — and gains nothing from them,
+because it binds on height (423 against 386). Same for plotter and sudoku.
+The only program with real row slack is matmul (5 rows, 13 columns, 1.03x),
+and that is precisely the one the global squeeze could not process.
+
+One trap found while measuring: plotter contains a room whose interior is
+entirely blank and which looks like free space — it is the **LM-75 display**,
+walled in `=` and `:` rather than `-` and `|`. Its blankness is the drawing
+surface. The squeeze leaves it alone automatically (`:` is not in `' |'`),
+but any hand-written trimmer must special-case it.
