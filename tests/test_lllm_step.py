@@ -229,13 +229,106 @@ def test_integration_rig_with_real_fetch():
         )
 
 
-def test_build_step_room_reports_its_blocker():
-    from littleman.lllm_step import build_step_room
+# --------------------------------------------------- phase 2: the STEP room
+from littleman.lllm_step import (  # noqa: E402
+    STEP_AT, STEP_COLS, STEP_ROWS, Tape, build_step_rig, build_step_room,
+)
+from littleman.sim import Machine  # noqa: E402
 
-    if _module("lllm_fetch") is not None:
-        pytest.skip("claude_11a landed: transcription is now unblocked")
-    with pytest.raises(NotImplementedError, match="lllm_fetch"):
-        build_step_room()
+RIG = build_step_rig()
+SR, SC = STEP_AT
+# Every r/s cell in the STEP room and the port it is declared to reach.
+INTENT = {
+    (2, 11): "REQ", (4, 22): "REQ", (6, 15): "RESP", (17, 10): "LOAD",
+    (18, 18): "DRAW", (18, 46): "SCR", (18, 47): "SCR_OUT", (19, 14): "DRAW",
+    (19, 17): "DRAW", (21, 9): "LOAD", (21, 46): "SCR_OUT",
+}
+PORTS = {
+    (SR + 2, SC - 1): "REQ", (SR + 20, SC - 1): "DRAW", (SR + 21, SC - 1): "LOAD",
+    (SR - 1, SC + 8): "RESP", (SR + 30, SC + 74): "SCR_OUT",
+    (SR + 33, SC + 74): "SCR",
+}
+
+
+def test_rig_layout_gates():
+    from littleman import alexey_pipecheck, server_compat
+
+    machine = Machine.parse(RIG)
+    assert len(machine.rooms) == 6 and len(machine.pipes) == 8
+    assert server_compat.validate_layout(RIG) is None
+    assert alexey_pipecheck.check(RIG) is None
+
+
+def test_rig_is_deterministic():
+    assert build_step_rig() == RIG
+    assert build_step_room().render() == build_step_room().render()
+
+
+def test_binding_audit_is_engine_true():
+    """Every s/r resolves to its declared port (ir_export map, no hand math)."""
+    from littleman.ir_export import machine_ir
+
+    ir = machine_ir(RIG)
+    seen = {}
+    for key, entry in ir["resolution"].items():
+        r, c = (int(v) for v in key.split(","))
+        if not (SR < r < SR + STEP_ROWS + 1 and SC < c < SC + STEP_COLS + 1):
+            continue
+        cells = ir["pipes"][entry["pipe"]]["cells"]
+        end = cells[0] if entry["op"] == "s" else cells[-1]
+        seen[(r - SR, c - SC)] = PORTS[tuple(end)]
+    assert seen == INTENT
+
+
+def test_binding_margins():
+    """room_ports margin: how far a port may slide before a binding flips."""
+    from littleman.room_ports import Op, audit
+
+    machine = Machine.parse(RIG)
+    step = next(r for r in machine.rooms if (r.top, r.left) == (SR, SC))
+    ops = [
+        Op((SR + r, SC + c), port, port in ("REQ", "DRAW", "SCR_OUT"))
+        for (r, c), port in INTENT.items()
+    ]
+    report = audit(machine, step, ops)
+    assert report["satisfied"]
+    assert report["margin"] >= 2, report["margin"]
+
+
+@pytest.mark.parametrize("case", CASES, ids=[c["name"] for c in CASES])
+def test_rig_round_one_matches_model(case):
+    """The real FETCH station drives the room to a byte-exact first frame."""
+    rows = rows_of(case)
+    res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
+    assert res.output == run_case(rows, []).deltas
+
+
+def test_rig_round_one_matches_model_on_fuzz():
+    bad = [
+        i for i, case in enumerate(FUZZ[:30])
+        if Machine.parse(RIG).run(
+            max_ticks=300_000, inputs=loader_stream(rows_of(case))
+        ).output != run_case(rows_of(case), []).deltas
+    ]
+    assert bad == []
+
+
+def test_tick_interpreter_not_transcribed_yet():
+    """Explicit: the room halts after round 1's sentinel (see build_step_room)."""
+    rows = rows_of(CASES[1])
+    res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
+    assert len(res.output) == 258 and res.output[-1] == -1
+
+
+def test_tape_snakes_and_reverses_literals():
+    from littleman.lllm_fetch import Room
+
+    room = Room(4, 12)
+    Tape(room, 1, 5, 5, 11).emit("M", "#256", "+", "#16", "s")
+    grid = room.render()
+    assert "`256`" in grid[1]                    # left-to-right lap
+    assert "`61`" in grid[2]                     # digits reversed walking west
+    assert "v" in grid[1] and "<" in grid[2]     # the lap turned at the edge
 
 
 def test_class_table_is_the_frozen_one():

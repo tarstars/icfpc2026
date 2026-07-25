@@ -362,17 +362,257 @@ class ReferenceFetch:
         return list(self._fetch(self.world, [token]))
 
 
-def build_step_room() -> str:
-    """The STEP room as littleman ASCII -- phase 2, not yet transcribed.
+# ------------------------------------------------------------ STEP layout
+# Six ports (the scratch loop is a real pipe pair, so 3 in / 3 out -- the
+# work order's 2-in/2-out count omits it).  Nearest-pipe resolution is made
+# tractable by a strict Voronoi split: the two scratch ports sit on the
+# RIGHT wall and the four external ones on the LEFT, separated vertically
+# into a top zone (LOAD in / DRAW out) and a bottom zone (RESP in / REQ
+# out).  Every r/s cell therefore lives in exactly one of three regions.
+STEP_ROWS, STEP_COLS = 60, 72
 
-    Blocked by design, not by effort: the integration rig this transcription
-    is validated against needs ``littleman.lllm_fetch`` (claude_11a), which
-    is absent.  :class:`StepModel` is the finished, gate-passing spec of
-    what this room must do.
+# The hot path is the per-tick FETCH transaction, so REQ and RESP share the
+# TOP zone; LOAD (once a round) and DRAW (twice a round) share the BOTTOM.
+REQ_ROW = 2         # left wall,  outgoing -> FETCH
+# RESP takes the TOP wall: two pipes running in opposite directions between
+# the same pair of rooms on the same side always cross, and the parser
+# rejects that.  Top-wall entry also puts RESP's Voronoi region exactly over
+# the tick loop, where every response is read.
+RESP_COL = 8        # top wall,   incoming <- FETCH
+DRAW_ROW = 20       # left wall,  outgoing -> DRAW
+LOAD_ROW = 21       # left wall,  incoming <- LOADER
+SCR_OUT_ROW = 30    # right wall, outgoing -> scratch relay
+SCR_IN_ROW = 33     # right wall, incoming <- scratch relay
+
+
+def build_step_relay():
+    """The scratch loop's relay: 6 ticks per token (memory_04 pattern)."""
+    from .lllm_fetch import Room
+
+    room = Room(2, 4)
+    room.put(1, 1, "@>rv")
+    room.put(2, 2, "^s<")
+    return room
+
+
+def _step_setup(room) -> None:
+    """SETUP: relay the 64 world tokens LOADER -> FETCH, verbatim.
+
+    The relay straddles both left-wall zones -- ``r`` sits low (row 17, in
+    LOAD's region) and ``s`` high (row 2, in REQ's) -- so one lap is a tall
+    round trip.  64 laps cost ~2.3k ticks, paid once.
     """
-    raise NotImplementedError(
-        "phase 2 not reached: src/littleman/lllm_fetch.py (claude_11a) absent"
-    )
+    # The prologue descends column 3 OFF the lap, seeding BP from a VERTICAL
+    # literal, and rejoins the lap at its `r` -- the one cell every lap also
+    # enters heading east, so no prologue cell is ever re-executed.
+    room.put(1, 1, "@ v")
+    for r, ch in zip(range(2, 7), "`64`b"):
+        room.put(r, 3, ch)
+    for r in range(7, 17):
+        room.put(r, 3, "v")
+    room.put(17, 3, ">")
+    room.put(17, 9, ">r ^")              # LOAD read, then back up
+    room.put(2, 9, "ams<")               # return row: count, send, turn down
+    for r in range(3, 17):               # down-leg and up-leg
+        room.put(r, 9, "v")
+        room.put(r, 12, "^")
+    room.put(2, 2, "v")                  # BP exhausted: fall out of the lap
+    for r in range(3, 21):
+        room.put(r, 2, "v")
+    room.put(21, 2, ">")
+
+
+def _step_round1(room) -> None:
+    """ROUND 1: man_addr into the ring, FETCH ``-1``, then 257 pixels.
+
+    The pixel counter rides in ``B``: ``r + s`` emits ``p + colour`` and
+    ```16` + M`` re-forms ``B = p + 16``, so the whole 256-pixel
+    loop needs no ring access at all -- man_addr simply parks in the scratch
+    loop while it runs.
+    """
+    room.put(21, 9, "r")                 # man_addr from LOADER
+    room.put(21, 46, "s")                # park it in the scratch loop
+    room.put(21, 60, "^")
+    for r in range(5, 21):
+        room.put(r, 60, "^")
+    room.put(4, 60, "<")
+    room.put(4, 13, "vb`652`M0s N1<")    # BP=256, B=0, send -1 to FETCH
+    room.put(5, 13, ">v")
+    room.put(6, 14, ">r+v")              # colour -> p+colour, then south
+    for r in range(7, 18):
+        room.put(r, 17, "v")
+        room.put(r, 26, "^")
+    room.put(5, 26, "<")
+    room.put(18, 17, ">s`16`+Mma")       # emit, p += 16, count, loop up
+    # 257th pixel: the man, then the commit sentinel.
+    room.put(18, 46, "rsM`16`*M9+v")
+    room.put(19, 13, "HsN1s")            # man pixel, then commit (walked west)
+    room.put(19, 57, "<")
+
+
+SCR_COL = 51        # first column whose r/s provably binds the scratch loop
+
+
+class Tape:
+    """A boustrophedon opcode tape: straight-line code that snakes in place.
+
+    The interpreter is mostly straight-line register choreography, and laying
+    that out by hand is where littleman rooms go wrong.  A tape takes a list
+    of tokens -- a one-character opcode, or ``"#N"`` for the literal ``N`` --
+    and places them, reversing literal digits on right-to-left laps and
+    stepping around the vertical-backtick-pairing rule automatically.
+    """
+
+    def __init__(self, room, row: int, col: int, lo: int, hi: int):
+        self.room, self.row, self.col, self.lo, self.hi = room, row, col, lo, hi
+        self.dir = 1
+
+    def _cells(self, token: str) -> str:
+        if not token.startswith("#"):
+            return token
+        digits = str(token[1:])
+        return "`" + (digits if self.dir > 0 else digits[::-1]) + "`"
+
+    def _backtick_clash(self, text: str, col: int) -> bool:
+        start = col if self.dir > 0 else col - len(text) + 1
+        for i, ch in enumerate(text):
+            if ch != "`":
+                continue
+            c = start + i
+            if any(k[1] == c and v == "`" for k, v in self.room.cells.items()):
+                return True
+        return False
+
+    def _turn(self) -> None:
+        """Drop one row and reverse: `v` at the edge, then the new heading."""
+        self.room.put(self.row, self.col, "v")
+        self.dir = -self.dir
+        self.row += 1
+        self.room.put(self.row, self.col, ">" if self.dir > 0 else "<")
+        self.col += self.dir
+
+    def emit(self, *tokens: str) -> "Tape":
+        for token in tokens:
+            text = self._cells(token)
+            while True:
+                end = self.col + self.dir * (len(text) - 1)
+                if self.lo <= end <= self.hi and not self._backtick_clash(
+                    text, self.col
+                ):
+                    break
+                if not (self.lo <= end <= self.hi):
+                    self._turn()
+                    text = self._cells(token)
+                else:                       # backtick column clash: shift on
+                    self.col += self.dir
+            start = self.col if self.dir > 0 else self.col - len(text) + 1
+            self.room.put(self.row, start, text)
+            self.col += self.dir * len(text)
+        return self
+
+
+def build_step_room():
+    """The STEP station as a :class:`lllm_fetch.Room`.
+
+    Transcribed and rig-verified against :class:`StepModel`: SETUP (the 64
+    world tokens relayed LOADER -> FETCH) and ROUND 1 (FETCH ``-1``, 256
+    static pixels, the man pixel, the commit sentinel) -- byte-exact on all
+    ten public cases through the real claude_11a station.
+
+    The per-round tick interpreter is NOT transcribed yet; the room halts
+    after round 1's sentinel.  Its design is fixed and recorded in
+    :data:`RING_ORDER` / :func:`_step_main_plan`, and :class:`Tape` is the
+    layout tool it is written with.
+    """
+    from .lllm_fetch import Room
+
+    room = Room(STEP_ROWS, STEP_COLS)
+    _step_setup(room)
+    _step_round1(room)
+    return room
+
+
+# The six-slot scratch loop the tick interpreter runs on.  Six, not the
+# model's five: `K` (the round's remaining tick count) cannot stay in BP,
+# because BP is what decodes the op class (`b` then an `m`/`d` staircase),
+# and that decode is the only way to branch nine ways while leaving `value`
+# untouched in B.  Head slot at the start of every tick is CTRL.
+RING_ORDER = ("CTRL", "ADDR", "BI", "AI", "OLD", "K")
+
+
+def _step_main_plan() -> dict[str, str]:
+    """The tick interpreter's register choreography, phase by phase.
+
+    Each value is the opcode tape for that phase (``#N`` = literal N),
+    written against :data:`RING_ORDER` with the head slot named in the key.
+    Kept as data so the transcription is reviewable before it is placed.
+    """
+    return {
+        "seed[-]": "r M #1 s W s #0 s s s s",
+        "round-in[CTRL]": "r M | rs rs rs rs rs | r W s"
+                          " | rs | r M s | rs rs | r W s | rs",
+        "tick-halt[CTRL]": "r s M #4 W - X",          # <0 live, >=0 frozen
+        "tick-fetch[ADDR]": "r s ->REQ s | <-RESP r | M #16 W /",
+        "class[.]": "b, then an m/d staircase, one row per class 0..8",
+        "space[BI]": "",
+        "wall/halt[BI]": "rs rs rs rs | r M #4 + s | rs rs rs rs rs",
+        "heading[BI]": "rs rs rs rs | r W s | rs rs rs rs rs",
+        "digit[BI]": "rs | r W s | rs rs",
+        "M[BI]": "r r s s | rs rs",
+        "add[BI]": "r M s r + s | rs rs",
+        "sub[BI]": "r M s r - s | rs rs",
+        "branchX[BI]": "rs | r s | rs rs | X | r M #1 + M #4 W % s | rs rs rs rs rs",
+        "move[CTRL]": "r s b | staircase 0..3 | r M #16N|#1|#16|#1N + s | rs rs rs rs",
+        "kcount[CTRL]": "rs rs rs rs rs | r M #1 W - s X",
+        "emit[CTRL]": "rs rs rs rs | r s | rs | M #256 + ->REQ s"
+                      " | #16 * M <-RESP r + ->DRAW s"
+                      " | rs | r s | rs rs rs rs | M #16 * M #9 + s | #1 N s",
+    }
+
+
+# Canvas placement: FETCH on top with its ring relay, STEP below it, the two
+# scratch pipes off STEP's right wall, and the four left-wall corridors in
+# four dedicated columns (9 = REQ, 7 = RESP, 5 = DRAW, 3 = LOAD) so no two
+# ever cross.
+STEP_AT = (28, 14)
+FETCH_AT = (0, 20)
+
+
+def build_step_rig() -> str:
+    """I -> STEP <-> FETCH+RELAY, STEP -> O capturing the delta stream."""
+    from .canvas import Canvas
+    from .lllm_fetch import build_fetch, build_relay
+
+    cv = Canvas()
+    sr, sc = STEP_AT
+    fr, fc = FETCH_AT
+    cv.put(fr, fc, build_fetch().render())
+    cv.put(sr, sc, build_step_room().render())
+    cv.put(fr + 20, fc + 50, build_relay().render())          # FETCH's ring
+    cv.put(sr + SCR_OUT_ROW - 1, sc + 80, build_step_relay().render())
+    orow, irow = sr + DRAW_ROW - 6, sr + LOAD_ROW + 3
+    cv.put(irow - 1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(orow - 1, 0, ["+-+", "|O|", "+-+"])
+
+    left, right = sc - 1, sc + STEP_COLS + 2
+    fleft = fc - 1
+    cv.pipe([(sr + REQ_ROW, left), (sr + REQ_ROW, 9), (fr + 2, 9), (fr + 2, fleft)])
+    cv.pipe([(fr + 13, fleft), (fr + 13, fleft - 1), (sr - 1, fleft - 1),
+             (sr - 1, sc + RESP_COL)])
+    cv.cells[(sr - 1, sc + RESP_COL)] = "v"   # terminal bend (cookbook 4)
+    cv.pipe([(sr + DRAW_ROW, left), (sr + DRAW_ROW, 5), (orow, 5), (orow, 3)])
+    cv.pipe([(irow, 3), (irow, 4), (sr + LOAD_ROW, 4), (sr + LOAD_ROW, left)])
+    # FETCH's ring, same shape as build_fetch_rig, shifted with the room.
+    cv.pipe([(fr + 2, fc + 47), (fr + 2, fc + 67), (fr + 21, fc + 67),
+             (fr + 21, fc + 56)])
+    cv.pipe([(fr + 21, fc + 49), (fr + 21, fc + 48), (fr + 5, fc + 48),
+             (fr + 5, fc + 47)])
+    # STEP's scratch loop: two short legs, so read-after-write latency stays
+    # near the relay lap rather than dominating every ring rotation.
+    cv.pipe([(sr + SCR_OUT_ROW, right), (sr + SCR_OUT_ROW, sc + 79)])
+    cv.pipe([(sr + SCR_OUT_ROW + 1, sc + 86), (sr + SCR_OUT_ROW + 1, sc + 87),
+             (sr + SCR_IN_ROW, sc + 87), (sr + SCR_IN_ROW, right)])
+    return cv.render()
 
 
 def oracle_frames(rows: list[str], ks: list[int]) -> list[list[str]]:
