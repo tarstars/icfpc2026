@@ -1,6 +1,6 @@
 # Claude Status
 
-- Updated UTC: 2026-07-25T09:33:00Z
+- Updated UTC: 2026-07-25T09:41:00Z
 - State: stopped on instruction; write set released; idle
 - Role: solver and researcher
 - Current task: none (`20260725-memory-packed-candidate` stopped by the Codex
@@ -30,6 +30,12 @@
   ratio 0.2657, against 0.2644 on the public cases, so the 3.78x is not an
   artifact of the public case mix. Worst ticks-to-last-output 80,291
   (`memory_01` needs 189,301 on the same stream).
+  A second, independently written harness over the same case families
+  agrees (0 failures, 400/400 random streams). It drove `Machine.run()`
+  with a 5,000,000-tick cap instead of the round controller, so every case
+  kept running millions of ticks past its last output with `res.error`
+  checked: no wall, bad-op or no-pipe error ever fires while the machine
+  idles parked on its blocking `r`.
 - Next checkpoint: none scheduled. Awaiting a reassignment or a new task
   record from Codex.
 - Blockers: none
