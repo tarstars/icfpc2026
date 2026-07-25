@@ -11,10 +11,11 @@ Input columns are packed in reverse bit order (x maps to bit 15-x).  This
 lets the setup loader build a row with the compact recurrence
 ``row = 2*row + is_path``.  It does not affect the four-neighbour dilation.
 
-Each BFS wave is four ring passes (left, right, down, up).  A small update
-service receives ``contribution, word, word`` and atomically clears new cells
-from the low plane while adding them to the selected modulo plane.  The
-robot is then walked by querying modulo planes in up/right/down/left order.
+Each BFS wave is one streaming pass over the fourteen non-border rows.  For
+each row the controller sends the left, right, previous-row, and next-row
+frontiers to a small update service, which atomically clears new cells from
+the low plane while adding them to the selected modulo plane.  The robot is
+then walked by querying modulo planes in up/right/down/left order.
 
 Display commands use one stream:
 
@@ -608,6 +609,156 @@ def _add_vertical_up_pass(
     )
 
 
+def _add_vertical_pass(
+    fsm: Fsm,
+    prefix: str,
+    *,
+    source_mod: int,
+    target_mod: int,
+    target: str,
+    increment_distance: bool = False,
+) -> None:
+    """Dilate all four neighbours in one 14-row streaming pass."""
+
+    update_out = "update_out"
+    update_in = "update_in"
+    # Commands 3..5 select the vertical streaming protocol for target mod 0..2.
+    fsm.go(
+        f"{prefix}_start",
+        "logic",
+        str(target_mod + 3),
+        f"{prefix}_mod_s",
+    )
+    fsm.go(f"{prefix}_mod_s", update_out, "s", f"{prefix}_service_count")
+    fsm.go(
+        f"{prefix}_service_count",
+        "logic",
+        f"{_lit(14)}",
+        f"{prefix}_service_count_s",
+    )
+    fsm.go(
+        f"{prefix}_service_count_s",
+        update_out,
+        "s",
+        f"{prefix}_count",
+    )
+    fsm.go(f"{prefix}_count", "logic", f"{_lit(14)}b", f"{prefix}_border_r")
+
+    # Row 0 is a guaranteed wall row.  Forward it unchanged and seed the
+    # service's previous-frontier register with its (zero) source plane.
+    fsm.go(f"{prefix}_border_r", "ring_in", "r", f"{prefix}_border_s")
+    fsm.go(f"{prefix}_border_s", "ring_out", "s", f"{prefix}_prev_frontier")
+    fsm.go(
+        f"{prefix}_prev_frontier",
+        "logic",
+        _extract_plane(PLANE_OFFSET[source_mod]),
+        f"{prefix}_prev_frontier_s",
+    )
+    fsm.go(
+        f"{prefix}_prev_frontier_s",
+        update_out,
+        "s",
+        f"{prefix}_current_r",
+    )
+    fsm.go(f"{prefix}_current_r", "ring_in", "r", f"{prefix}_current_save")
+
+    # Keep three copies of current.  Two form its horizontal contribution;
+    # the third is put back before next, producing scratch order
+    # [current, next] for the update and the next loop iteration.
+    fsm.go(f"{prefix}_current_save", "scratch_out", "sss", f"{prefix}_left_r")
+    fsm.go(f"{prefix}_left_r", "scratch_in", "r", f"{prefix}_left")
+    fsm.go(
+        f"{prefix}_left",
+        "logic",
+        _extract_plane(PLANE_OFFSET[source_mod]) + _shift_one("left"),
+        f"{prefix}_left_s",
+    )
+    fsm.go(f"{prefix}_left_s", update_out, "s", f"{prefix}_right_r")
+    fsm.go(f"{prefix}_right_r", "scratch_in", "r", f"{prefix}_right")
+    fsm.go(
+        f"{prefix}_right",
+        "logic",
+        _extract_plane(PLANE_OFFSET[source_mod]) + _shift_one("right"),
+        f"{prefix}_right_s",
+    )
+    fsm.go(f"{prefix}_right_s", update_out, "s", f"{prefix}_current_requeue")
+    fsm.go(
+        f"{prefix}_current_requeue",
+        "scratch_in",
+        "r",
+        f"{prefix}_current_requeue_s",
+    )
+    fsm.go(
+        f"{prefix}_current_requeue_s",
+        "scratch_out",
+        "s",
+        f"{prefix}_next_r",
+    )
+    fsm.go(f"{prefix}_next_r", "ring_in", "r", f"{prefix}_next_save")
+    fsm.go(f"{prefix}_next_save", "scratch_out", "s", f"{prefix}_next_frontier")
+    fsm.go(
+        f"{prefix}_next_frontier",
+        "logic",
+        _extract_plane(PLANE_OFFSET[source_mod]),
+        f"{prefix}_next_frontier_s",
+    )
+    fsm.go(
+        f"{prefix}_next_frontier_s",
+        update_out,
+        "s",
+        f"{prefix}_current_back",
+    )
+    fsm.go(
+        f"{prefix}_current_back",
+        "scratch_in",
+        "r",
+        f"{prefix}_current_ss",
+    )
+    fsm.go(f"{prefix}_current_ss", update_out, "ss", f"{prefix}_updated_r")
+    fsm.go(f"{prefix}_updated_r", update_in, "r", f"{prefix}_updated_s")
+    fsm.go(
+        f"{prefix}_updated_s",
+        "ring_out",
+        "s",
+        f"{prefix}_current_frontier",
+    )
+    fsm.go(
+        f"{prefix}_current_frontier",
+        "logic",
+        _extract_plane(PLANE_OFFSET[source_mod]),
+        f"{prefix}_current_frontier_s",
+    )
+    fsm.go(
+        f"{prefix}_current_frontier_s",
+        update_out,
+        "s",
+        f"{prefix}_dec",
+    )
+    fsm.bp(
+        f"{prefix}_dec",
+        "logic",
+        "m",
+        zero=f"{prefix}_last_r",
+        positive=f"{prefix}_current_pending_r",
+    )
+
+    # The scratch head is now border row 15, also guaranteed to be a wall.
+    fsm.go(
+        f"{prefix}_current_pending_r",
+        "scratch_in",
+        "r",
+        f"{prefix}_current_save",
+    )
+    fsm.go(f"{prefix}_last_r", "scratch_in", "r", f"{prefix}_last_s")
+    fsm.go(f"{prefix}_last_s", "ring_out", "s", f"{prefix}_robot_r")
+    _add_copy_metadata(
+        fsm,
+        prefix,
+        target=target,
+        increment_distance=increment_distance,
+    )
+
+
 def _add_reset_pass(fsm: Fsm, target: str) -> None:
     prefix = "reset"
     fsm.go(f"{prefix}_start", "logic", f"{_lit(16)}b", f"{prefix}_word_r")
@@ -1013,7 +1164,7 @@ def build_controller_fsm() -> Fsm:
         f"{_lit(DISTANCE_TAG)}N",
         "seed_distance_s",
     )
-    fsm.go("seed_distance_s", "ring_out", "s", "wave1_horizontal_start")
+    fsm.go("seed_distance_s", "ring_out", "s", "wave1_vertical_start")
 
     # Three modulo wave cycles.
     for target_mod, source_mod in ((1, 0), (2, 1), (0, 2)):
@@ -1021,23 +1172,9 @@ def build_controller_fsm() -> Fsm:
         if next_wave == 0:
             next_wave = 0
         base = f"wave{target_mod}"
-        _add_horizontal_pass(
+        _add_vertical_pass(
             fsm,
-            f"{base}_horizontal",
-            source_mod=source_mod,
-            target_mod=target_mod,
-            target=f"{base}_down_start",
-        )
-        _add_vertical_down_pass(
-            fsm,
-            f"{base}_down",
-            source_mod=source_mod,
-            target_mod=target_mod,
-            target=f"{base}_up_start",
-        )
-        _add_vertical_up_pass(
-            fsm,
-            f"{base}_up",
+            f"{base}_vertical",
             source_mod=source_mod,
             target_mod=target_mod,
             target=f"check{target_mod}_count",
@@ -1047,19 +1184,19 @@ def build_controller_fsm() -> Fsm:
     _add_wave_check(
         fsm,
         1,
-        not_reached="wave2_horizontal_start",
+        not_reached="wave2_vertical_start",
         reached="move1_up_start",
     )
     _add_wave_check(
         fsm,
         2,
-        not_reached="wave0_horizontal_start",
+        not_reached="wave0_vertical_start",
         reached="move2_up_start",
     )
     _add_wave_check(
         fsm,
         0,
-        not_reached="wave1_horizontal_start",
+        not_reached="wave1_vertical_start",
         reached="move0_up_start",
     )
 
@@ -1097,9 +1234,32 @@ def build_relay_room() -> CompiledRoom:
 
 def build_update_room() -> CompiledRoom:
     fsm = Fsm()
-    fsm.go("mod", "in", "@rb", "dispatch0")
+    fsm.go("mod", "in", "@rb", "mode_test")
+    fsm.sign(
+        "mode_test",
+        "logic",
+        "M3W-",
+        negative="dispatch0",
+        zero="vertical_adjust",
+        positive="vertical_adjust",
+    )
     fsm.bp("dispatch0", "logic", "", zero="init0", positive="dispatch1")
     fsm.bp("dispatch1", "logic", "m", zero="init1", positive="init2")
+    fsm.go("vertical_adjust", "logic", "mmm", "vertical_dispatch0")
+    fsm.bp(
+        "vertical_dispatch0",
+        "logic",
+        "",
+        zero="vertical_init0",
+        positive="vertical_dispatch1",
+    )
+    fsm.bp(
+        "vertical_dispatch1",
+        "logic",
+        "m",
+        zero="vertical_init1",
+        positive="vertical_init2",
+    )
     for mod in range(3):
         factor = UPDATE_FACTOR[mod]
         fsm.go(f"init{mod}", "in", "rb", f"contribution{mod}")
@@ -1119,6 +1279,44 @@ def build_update_room() -> CompiledRoom:
             "m",
             zero="mod",
             positive=f"contribution{mod}",
+        )
+
+        fsm.go(f"vertical_init{mod}", "in", "rb", f"vertical_prev{mod}")
+        fsm.go(f"vertical_prev{mod}", "in", "rM", f"vertical_left{mod}")
+        fsm.go(f"vertical_left{mod}", "in", "r|M", f"vertical_right{mod}")
+        fsm.go(f"vertical_right{mod}", "in", "r|M", f"vertical_next{mod}")
+        fsm.go(f"vertical_next{mod}", "in", "r|M", f"vertical_word{mod}")
+        fsm.go(f"vertical_word{mod}", "in", "rW&", f"vertical_delta{mod}")
+        fsm.go(
+            f"vertical_delta{mod}",
+            "logic",
+            f"M{_lit(factor)}W*M",
+            f"vertical_word_again{mod}",
+        )
+        fsm.go(
+            f"vertical_word_again{mod}",
+            "in",
+            "r+",
+            f"vertical_send{mod}",
+        )
+        fsm.go(
+            f"vertical_send{mod}",
+            "out",
+            "s",
+            f"vertical_frontier{mod}",
+        )
+        fsm.go(
+            f"vertical_frontier{mod}",
+            "in",
+            "rM",
+            f"vertical_dec{mod}",
+        )
+        fsm.bp(
+            f"vertical_dec{mod}",
+            "logic",
+            "m",
+            zero="mod",
+            positive=f"vertical_left{mod}",
         )
     return _compile_literal_safe(fsm, SERVICE_ZONES, min_width=150)
 
