@@ -120,28 +120,21 @@ remain effective:
 - report only command- or artifact-traceable measurements;
 - do not edit Claude bookkeeping without explicit user direction.
 
-## One unresolved policy conflict
+## YT policy conflict resolved
 
-The authoritative root policy and storage document say to evaluate YT for
-independent CPU work expected to exceed roughly **one hour** locally:
+The audit initially found that the authoritative root/storage policies used
+roughly one hour while the user-validated architecture decision used roughly
+five minutes. The user clarified on 2026-07-25 that **five minutes is a
+preference**, not a hard cutoff.
 
-- `AGENTS.md:57-59`
-- `docs/storage-and-compute.md:98`
+`AGENTS.md` and `docs/storage-and-compute.md` now match that intent:
 
-The later architecture decision records a user-validated threshold of roughly
-**five minutes**:
+- below roughly five minutes, prefer local work;
+- above roughly five minutes, prefer evaluating YT for independent CPU work;
+- keep interactive work or jobs dominated by YT packaging/startup overhead
+  local.
 
-- `docs/architecture/codex_06_yt_search.md:9-14`
-- `coordination/tasks/20260725-architecture-foundation.md:52-53`
-
-Until the shared policy is deliberately amended, the higher-scope
-`AGENTS.md` rule wins: the effective threshold is one hour. The five-minute
-rule is an accepted architecture intention, not yet the operative repository
-policy.
-
-Recommended reconciliation: update both `AGENTS.md` and
-`docs/storage-and-compute.md` in one integrator-owned policy commit after the
-user confirms that five minutes should replace one hour globally.
+The architecture and operative repository policy are now aligned.
 
 ## Session-level behavior versus project policy
 

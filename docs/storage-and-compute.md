@@ -95,7 +95,9 @@ of copying them.
 
 Use map/sort/reduce for large independent CPU batches. Use vanilla GPU
 operations for training-scale neural work after smoke validation. An expected
-local wall time of roughly one hour is the default point to evaluate YT.
+local wall time above roughly five minutes is the preferred point to evaluate
+YT. This is a scheduling preference, not a hard cutoff: keep interactive work
+or jobs dominated by YT packaging/startup overhead local.
 
 The local launcher credential and remote worker credential are separate roles.
 Use a least-privilege worker token delivered through YT secure vault. Never
