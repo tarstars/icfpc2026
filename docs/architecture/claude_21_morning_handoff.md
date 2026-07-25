@@ -4,14 +4,20 @@ What changed overnight, what to trust, and what to do next.
 
 ## Headline: LLLM is solved
 
-`submissions/lllm/lllm_02.man` passes **21/21** on the server, score
-**139,039,110,268** (submission `c1c0cd92-ca29-45be-8848-2b8ec73206c9`).
-It scored **zero for the entire contest** until 04:40Z.
+`submissions/lllm/lllm_03.man` passes **21/21** on the server, score
+**22,187,469,586** (submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d`).
+It scored **zero for the entire contest** until 04:40Z; it first passed
+21/21 at 139,039,110,268 as `lllm_02.man`, then a geometry press cut the
+score 6.27x at 05:20Z.
 
 The same artifact submitted to **LLM** passes **2/28**
-(`16857f51-da6f-4f69-97a2-1d3c88211db2`), because LLLM is a strict subset
+(`e57fd7d2-352d-4929-a474-2009a6af4fd0`), because LLLM is a strict subset
 of LLM. LLM's remaining cases need pipes and multiple men, which this
 machine does not implement.
+
+**The live artifact is `lllm_03.man`.** `lllm_00.man` is the file
+`scripts/build_lllm.py` overwrites on every run — do not submit it
+assuming it is the pressed one.
 
 ## Board
 
