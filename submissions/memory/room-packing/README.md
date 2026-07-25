@@ -45,3 +45,29 @@ Moving a room means redrawing **every** pipe attached to it. The tell when you
 miss one is that the parsed pipe count silently drops, and the machine then
 fails instantly rather than deadlocking. Block 4 has four pipes; that is why
 raising it is still open.
+
+## `alexey-memory-zig4.man` — blocks 3 and 4 joined, rows 17-18 gone
+
+The last gap in the chain. Block 4 rises two rows (18-32 -> 16-30, columns
+unchanged) and is entered at **its own top port, column 7** — that port cannot
+move, because block 4 has two pipes each way. The flipped herringbone is what
+makes it reachable: block 3 sits at columns 8-33, so column 7 is clear
+underneath it, and block 3's outgoing pipe leaves through its LEFT wall,
+drops down column 6 and turns back east into column 7:
+
+    (14,7) < -> (14,6) v -> (15,6) > -> (15,7) v   into block4's top wall at (16,7)
+
+Four cells. Moving that port was safe because all five of block 3's `s` cells
+resolve to the same outgoing pipe — checked, not assumed.
+
+**All four of block 4's pipes were redrawn at once**, with a collision assert
+on every cell, which is what finally made this work after two failed attempts
+at redrawing them piecemeal.
+
+One real catch: the 4->5 pipe came out at 12 cells against its original 26,
+and the machine deadlocked. Length is capacity. Padding it back to 28 with a
+serpentine in the free columns 29-35 fixed it — 7/7, ticks 4,145.6.
+
+Footprint stays 1,296: the layout is 36x33 and **width binds**. The two rows
+this freed are in the middle; the `O` room still holds the bottom at rows
+30-32, so it has to follow before the height can actually drop.
