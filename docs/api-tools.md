@@ -32,6 +32,7 @@ take precedence over `.env`. Never pass the key on the command line, commit
 | --- | --- | --- |
 | `uv run icfpc-api problems` | List released problems. Use this to map a slug to the `problemId` required by submission and to reject `practice` targets. | None |
 | `uv run icfpc-api problem <slug>` | Fetch the statement, I/O contract, scoring rule, and public test data for one released problem. | None |
+| `uv run python scripts/sync_problem_specs.py [slug ...]` | Attach selected released problem specifications and refresh `data/small/problems/index.json`; with no slugs, attach every locally missing release. | None |
 | `uv run icfpc-api clock` | Fetch contest timing, submission closure, and scoreboard-freeze state. | None |
 | `uv run icfpc-api standings <problem-id>` | Fetch the current public standings snapshot and live scores for one graded problem. Use this before committing a new solution version. | None |
 | `uv run icfpc-api submission <id>` | Read one submission owned by this team once. | Bearer key |
@@ -50,11 +51,10 @@ Use `--compact` before the subcommand for JSON-lines-style output:
 uv run icfpc-api --compact problems
 ```
 
-Redirect standard output to save a response while keeping status messages
-visible:
+Attach newly released problems and refresh the complete index:
 
 ```bash
-uv run icfpc-api problem <slug> > data/small/problems/<slug>.json
+uv run python scripts/sync_problem_specs.py
 ```
 
 ## Submission safety
