@@ -1114,3 +1114,33 @@ plotter and gradebook. I had been treating them as current. Before optimising
 anything, confirm the baseline from the submit responses — and ask the team
 what is live but uncommitted, because a machine can be on the server with no
 copy in git at all.
+
+### memory_05: offset-stacking removes the gap entirely — 27.8M -> 26,272,620
+
+Alexey's idea, and it beats the rule I thought was a floor. I had concluded
+that two stacked rooms need a 2-row gap: they cannot share a wall (1 row) and
+a pipe cannot be shorter than 2 cells (a second row). Both premises hold; the
+conclusion does not.
+
+**Offset the lower room horizontally.** Then its top wall and the upper
+room's bottom wall sit on ADJACENT rows and share no cell, which is legal —
+and the pipe leaves through the overhang, where the upper room has columns
+the lower one does not, then turns into the lower room's SIDE wall:
+
+    block1 rows 0-4  cols 6-34
+    block2 rows 5-8  cols 8-36     (down 2, right 2 -- walls adjacent, no shared cell)
+    pipe   (5,6) v -> (6,6) > -> (6,7) >  into block2's left wall at (6,8)
+
+Zero gap rows, 3-cell pipe. Works because both blocks have exactly one
+incoming and one outgoing pipe, so their ports are free to move.
+
+    fp 1,369 -> 1,296   (37x37 -> 36x36)   live 24/24   27.8M -> 26,272,620
+
+One trap: moving a room means re-routing BOTH its pipes. Redrawing only the
+incoming one left the outgoing pipe dangling at the old port and the machine
+failed instantly (0/7, 2 ticks) — the pipe count silently dropped from 7 to
+6, which is the tell.
+
+Only blocks 1-2 are joined so far. Blocks 3, 4 and 5 are still on 2-row gaps
+and each has exactly one pipe in and one out, so the same move applies; each
+should give another row or two.
