@@ -233,6 +233,10 @@ def test_integration_rig_with_real_fetch():
 from littleman.lllm_step import (  # noqa: E402
     CLASS_JOIN_COL,
     CLASS_JOIN_ROW,
+    EMIT_START_COL,
+    EMIT_START_ROW,
+    MOVE_JOIN_COL,
+    MOVE_JOIN_ROW,
     STEP_AT,
     STEP_COLS,
     STEP_ROWS,
@@ -349,8 +353,8 @@ def test_tick_interpreter_not_transcribed_yet():
     assert len(res.output) == 258 and res.output[-1] == -1
 
 
-def test_space_arm_reaches_normalized_class_join():
-    """The common space op runs through the selector to the shared join."""
+def test_space_move_and_countdown_reach_emit_boundary():
+    """A k=1 space tick advances East and leaves canonical K=0 state."""
     rows = rows_of(CASES[1])
     machine = Machine.parse(RIG)
     res = machine.run(
@@ -361,11 +365,38 @@ def test_space_arm_reaches_normalized_class_join():
         if (m.room.top, m.room.left) == (SR, SC)
     )
     assert res.output == run_case(rows, []).deltas
-    assert (man.r - SR, man.c - SC) == (CLASS_JOIN_ROW, CLASS_JOIN_COL)
+    assert (man.r - SR, man.c - SC) == (EMIT_START_ROW, EMIT_START_COL)
     assert machine.grid[man.r][man.c] == "H"
     assert man.halted
+    scratch = next(
+        p for p in machine.pipes
+        if p.dest is man.room and len(p.cells) == 17
+    )
+    travelling = [v for v in scratch.values if v is not None]
+    assert list(reversed(travelling)) == [1, 18, 0, 0, 17, 0]
     for row, col in ((10, 60), (11, 60), (11, 65)):
         assert machine.grid[SR + row][SC + col] == " "
+
+
+def test_positive_countdown_loops_into_heading_tick():
+    """k=2 returns through the blank crossings and executes the `v` arm."""
+    rows = rows_of(CASES[1])
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=300_000, inputs=loader_stream(rows) + [2]
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, []).deltas
+    assert (man.r - SR, man.c - SC) == (EMIT_START_ROW, EMIT_START_COL)
+    scratch = next(
+        p for p in machine.pipes
+        if p.dest is man.room and len(p.cells) == 17
+    )
+    travelling = [v for v in scratch.values if v is not None]
+    assert list(reversed(travelling)) == [2, 34, 0, 0, 17, 0]
 
 
 @pytest.mark.parametrize(
@@ -407,6 +438,36 @@ def test_straight_class_tapes_restore_canonical_ring(cls, value, expected):
         else:
             raise AssertionError(op)
     assert queue == expected
+
+
+@pytest.mark.parametrize(
+    ("heading", "expected_addr"),
+    [(0, 1), (1, 18), (2, 33), (3, 16)],
+)
+def test_move_tapes_restore_canonical_ring(heading, expected_addr):
+    from littleman.lllm_step import _move_tokens
+    from littleman.sim import wrap64
+
+    queue = [17, 7, 5, 17, 1, heading]  # physical head ADDR
+    A = B = 0
+    for op in _move_tokens(heading):
+        if op == "r":
+            A = queue.pop(0)
+        elif op == "s":
+            queue.append(A)
+        elif op == "M":
+            B = A
+        elif op == "N":
+            A = wrap64(-A)
+        elif op == "+":
+            A = wrap64(A + B)
+        elif op.startswith("#"):
+            A = int(op[1:])
+        elif op.isdigit():
+            A = int(op)
+        else:
+            raise AssertionError(op)
+    assert queue == [heading, expected_addr, 7, 5, 17, 1]
 
 
 def test_round_loop_tapes_place_without_collision():

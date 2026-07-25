@@ -369,7 +369,7 @@ class ReferenceFetch:
 # RIGHT wall and the four external ones on the LEFT, separated vertically
 # into a top zone (LOAD in / DRAW out) and a bottom zone (RESP in / REQ
 # out).  Every r/s cell therefore lives in exactly one of three regions.
-STEP_ROWS, STEP_COLS = 160, 72
+STEP_ROWS, STEP_COLS = 240, 72
 
 # The hot path is the per-tick FETCH transaction, so REQ and RESP share the
 # TOP zone; LOAD (once a round) and DRAW (twice a round) share the BOTTOM.
@@ -626,6 +626,15 @@ CLASS_FIRST_COL = 13
 CLASS_SPAN = 8      # rows reserved per class arm
 CLASS_JOIN_COL = 69
 CLASS_JOIN_ROW = 122
+MOVE_FIRST_ROW = 125
+MOVE_FIRST_COL = 13
+MOVE_SPAN = 6
+MOVE_JOIN_COL = 68
+MOVE_JOIN_ROW = 158
+COUNT_X_ROW = 162
+COUNT_X_COL = 50
+EMIT_START_ROW = COUNT_X_ROW + 1
+EMIT_START_COL = TAPE_LO
 
 
 def _step_fetch(room) -> None:
@@ -699,7 +708,92 @@ def _step_class_dispatch(room) -> None:
         tape.emit(*tokens)
         _leave_tape(room, tape, CLASS_JOIN_COL, CLASS_JOIN_ROW)
 
-    room.put(CLASS_JOIN_ROW, CLASS_JOIN_COL, "H")  # TODO: shared move phase
+    _step_move(room)
+
+
+def _move_tokens(heading: int) -> tuple[str, ...]:
+    """Update ADDR for one heading and restore canonical head CTRL."""
+    relay2 = ("r", "s")
+    delta = {
+        0: ("#16", "N"),
+        1: ("1",),
+        2: ("#16",),
+        3: ("1", "N"),
+    }[heading]
+    return ("r", "M", *delta, "+", "s") + relay2 * 4
+
+
+def _step_move(room) -> None:
+    """Move a live interpreted man, or normalize a newly frozen one."""
+    room.put(CLASS_JOIN_ROW, CLASS_JOIN_COL, "<")
+    room.put(CLASS_JOIN_ROW, TAPE_LO - 1, "v")
+    room.put(CLASS_JOIN_ROW + 1, TAPE_LO - 1, ">")
+    init = Tape(
+        room, CLASS_JOIN_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI
+    )
+    init.emit("r", "s", "b")             # CTRL -> BP; head ADDR
+    room.put(init.row, 50, "v")
+    room.put(init.row + 1, 50, "<")
+    room.put(init.row + 1, MOVE_FIRST_COL - 1, "v")
+    room.put(MOVE_FIRST_ROW, MOVE_FIRST_COL - 1, ">")
+
+    for heading in range(4):
+        row = MOVE_FIRST_ROW + heading * MOVE_SPAN
+        col = MOVE_FIRST_COL + heading * 2
+        room.put(row, col, "d")
+        room.put(row + 1, col, "m")
+        if heading < 3:
+            room.put(row + MOVE_SPAN, col, ">")
+
+        tape = _class_tape(room, row)
+        tape.emit(*_move_tokens(heading))
+        _leave_tape(room, tape, MOVE_JOIN_COL, MOVE_JOIN_ROW)
+
+    # CTRL >= 4 takes the turned arm of the final rung: head is still ADDR.
+    frozen_row = MOVE_FIRST_ROW + 4 * MOVE_SPAN
+    frozen_col = MOVE_FIRST_COL + 3 * 2
+    room.put(frozen_row, frozen_col, ">")
+    frozen = _class_tape(room, frozen_row)
+    frozen.emit(*("r", "s") * 5)          # ADDR -> canonical CTRL
+    _leave_tape(room, frozen, MOVE_JOIN_COL, MOVE_JOIN_ROW)
+
+    _step_countdown(room)
+
+
+def _loop_crossing_rows() -> set[int]:
+    """Rows whose horizontal paths cross the tick-loop return column."""
+    rows = {CLASS_ROW, CLASS_JOIN_ROW + 2}
+    rows.update(CLASS_FIRST_ROW + cls * CLASS_SPAN for cls in range(9))
+    rows.update(MOVE_FIRST_ROW + heading * MOVE_SPAN for heading in range(4))
+    rows.add(MOVE_FIRST_ROW + 4 * MOVE_SPAN)
+    return rows
+
+
+def _step_countdown(room) -> None:
+    """Decrement K; positive loops to the tick entry, zero enters emit."""
+    room.put(MOVE_JOIN_ROW, MOVE_JOIN_COL, "<")
+    room.put(MOVE_JOIN_ROW, TAPE_LO - 1, "v")
+    room.put(MOVE_JOIN_ROW + 1, TAPE_LO - 1, ">")
+    tape = Tape(room, MOVE_JOIN_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+    tape.emit(*("r", "s") * 5, "r", "M", "1", "W", "-", "s")
+    tape.down_at(64, COUNT_X_ROW)
+    room.put(COUNT_X_ROW, 64, "<")
+    room.put(COUNT_X_ROW, COUNT_X_COL, "X")
+
+    # K-1 > 0 turns north, then west to a dedicated return column.  Its
+    # blank crossings preserve both the northbound loop and earlier
+    # horizontal setup/class/move paths.
+    room.put(COUNT_X_ROW - 1, COUNT_X_COL, "<")
+    room.put(COUNT_X_ROW - 1, 30, "^")
+    blank = _loop_crossing_rows()
+    for row in range(36, COUNT_X_ROW - 1):
+        if row not in blank:
+            room.put(row, 30, "^")
+    room.put(35, 30, ">")                # row 35's existing c62 v re-enters
+
+    # K-1 == 0 continues west into the emit boundary.
+    room.put(COUNT_X_ROW, TAPE_LO - 1, "v")
+    room.put(EMIT_START_ROW, TAPE_LO - 1, ">H")  # TODO: emit phase
 
 
 def build_step_room():
