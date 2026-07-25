@@ -87,7 +87,7 @@ incidents.
 | 2 | `R`/`U` priority is spatial (reading order), not temporal | killed a delay-line design (cookbook §4) |
 | 3 | `q` counts only parked values; in-flight values are invisible | reverse needed a delay corridor sized > round trip |
 | 4 | Display processes ADDR -> DATA -> SWAP within one tick | pixel-lands-wrong race (cookbook §8); Semester 4 machines rely on the exact order |
-| 5 | Literals read by walking direction; vertical backtick pairing is strict | `history_00` parses on the server, rejected locally; the fixed-slot width formula's `+5` term |
+| 5 | Literals read by walking direction; vertical backtick pairing is strict | `history_00` parses on the server, rejected locally; the fixed-slot width formula's `+5` term. **2026-07-25 spec update formalized pairing exactly as our sim implements it (`claude/spec-update-20260725.md`); the divergence is probably historical.** |
 | 6 | Shared cells execute for every crosser | brackets re-seeded state every lap until prologue moved off-loop |
 | 7 | Two men colliding stop both (mover stays put) | unreachable in LLM (1 man/room) but implemented in `llm.py` after Codex's review |
 | 8 | Rooms sharing wall cells: server rejects, parser accepts | `server_compat.validate_layout` exists because of it |

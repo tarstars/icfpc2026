@@ -57,7 +57,7 @@ hand-listed gates, which is exactly the duplication a registry removes.
 
 | Tool | Path | Status | Mandatory-on | Gate / evidence | Displaces |
 |---|---|---|---|---|---|
-| Exact simulator + parser | `littleman/sim.py` | **gold** | all execution/parsing | golden corpus; server-corroborated (B-survival via brackets_00 experiment) | any ad-hoc interpreter |
+| Exact simulator + parser | `littleman/sim.py` | **gold** | all execution/parsing | golden corpus; server-corroborated (B-survival via brackets_00); literal pairing now spec-exact per the 2026-07-25 reference update | any ad-hoc interpreter |
 | Round-controller judge | `littleman/judge.py` | **gold** | all timing/scoring | bare `run()` proven meaningless on server machines (twice) | timing via `Machine.run` |
 | Server-compat gates | `littleman/server_compat.py` | **gold** | pre-submission | shared-wall + final-wall divergences, confirmed live | trusting the plain parser |
 | Two-cell pipe check | `littleman/alexey_pipecheck.py` | **gold** | pre-submission | killed artifacts sort_05, reverse_02 | eyeballing pipe lengths |
