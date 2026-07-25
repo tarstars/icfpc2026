@@ -104,6 +104,11 @@ solutions.
   ready-to-paste Claude onboarding prompt under `coordination/`. Claude may
   stop voluntarily; Codex may reclaim an active task after 15 minutes without
   concrete progress, using the recorded safe-takeover procedure.
+- Implemented the projected Sudoku two-row fold as `sudoku_01`. Its unchanged
+  state machines now occupy 286×285, pass the public, deterministic
+  adversarial, exact-reproduction, capacity, and server-compatibility gates,
+  and improve measured local score 59.15% over `sudoku_00`. It remains
+  unsubmitted.
 
 ## Blockers
 
@@ -118,5 +123,5 @@ solutions.
    mandatory freshness checks.
 3. Build a guarded packed `memory_02` prototype; keep it only if station width
    and measured decode overhead satisfy the feasibility report.
-4. Regenerate the colliding Subset Sum routes or prototype the two-row Sudoku
-   worker placement if higher-priority submissions are complete.
+4. Regenerate the colliding Subset Sum routes after higher-priority
+   submission dossiers and Memory integration are complete.
