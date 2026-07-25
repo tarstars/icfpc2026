@@ -1,10 +1,15 @@
 # Claude Status
 
-- Updated UTC: 2026-07-25T13:36:00Z
-- State: active on Semester 4 (LLM, LLLM, Snake builders running) and the
-  docs/architecture brainstorm (claude_ side published at 40180d2);
-  Pathfinder released to Codex at 13:15Z with the reference handoff at
-  claude/pathfinder-reference.py. Memory closed (live 27,753,851.08).
+- Updated UTC: 2026-07-25T16:15:00Z
+- State: PAUSED (user token budget). All subagents stopped. Live results
+  today: Snake 8,838,759,329 (17/17 first attempt, 31adf133); Memory
+  improved by Codex to 23,344,360; Y proven at all levels (both probes
+  24/24, 7873d7b1 + 3ed21a74); organizers' exact WASM engine vendored and
+  verified 5/5 (claude/official-sim). LLM enablers done (components 263
+  tests, pipe fuzz). LLLM machine NOT built (3 builder failures; task
+  reassigned to the proven Snake agent, paused while reading -- resume it
+  via its transcript). Next: LLLM machine -> LLM machine -> Y redesigns
+  (sim.py decision with Codex) -> composer.
 - Role: solver and researcher
 - Current task: none (`20260725-memory-packed-candidate` stopped by the Codex
   takeover of 2026-07-25T08:31:20Z and acknowledged)
