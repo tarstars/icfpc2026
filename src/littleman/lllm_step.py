@@ -460,7 +460,7 @@ TAPE_LO, TAPE_HI = 42, 60   # the scratch-loop tape zone (rows 22+)
 HW = dict(live=71, split=70, tick=69, frozen=68, arm=67, move=66,
           loop=65, emit=64, round=63)
 SEED_ROW, ROUND_ROW = 23, 30
-TICK_ROW = 36
+TICK_ROW = 33
 SCR_COL = 42        # first column whose r/s binds the scratch loop (rows 22+)
 REQ_MAX_ROW = 11    # last row whose left-wall s reaches REQ rather than DRAW
 
@@ -594,8 +594,63 @@ def _step_round_in(room) -> None:
     tape = Tape(room, ROUND_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
     tape.emit(*"rs" * 5, "r", "W", "s")                    # K = k
     tape.emit(*"rs", "r", "M", "s", *"rs" * 2, "r", "W", "s", *"rs")
-    _leave_tape(room, tape, HW["tick"], TICK_ROW)
-    room.put(TICK_ROW, HW["tick"], "H")   # TODO: tick loop starts here
+    _leave_tape(room, tape, 62, TICK_ROW)
+    _step_tick_halt(room)
+
+
+def _step_tick_halt(room) -> None:
+    """Start of a tick: split the frozen man from the live one.
+
+    ``r s M #4 W -`` leaves ``A = CTRL - 4`` (CTRL = 4*halted + heading), so
+    one X separates live (A < 0) from frozen (A >= 0), and the ring is left
+    rotated by one with ADDR at the head.
+    """
+    room.put(TICK_ROW, 62, "<")
+    room.put(TICK_ROW, TAPE_LO - 1, "v")
+    room.put(TICK_ROW + 1, TAPE_LO - 1, ">")
+    tape = Tape(room, TICK_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+    tape.emit("r", "s", "M", "#4", "W", "-")
+    tape.down_at(64, TICK_ROW + 3)
+    room.put(TICK_ROW + 3, 64, "<")
+    room.put(TICK_ROW + 3, 50, "X")       # west: A<0 -> south, A>0 -> north
+    # Frozen (A >= 0): the north arm and the A==0 straight arm converge on
+    # column 49 and drop to the countdown; the man does not move this tick.
+    room.put(TICK_ROW + 2, 50, "<")
+    room.put(TICK_ROW + 2, 49, "v")
+    room.put(TICK_ROW + 3, 49, "v")
+    room.put(TICK_ROW + 4, 49, ">")
+    room.put(TICK_ROW + 4, 67, "v")
+    # Live (A < 0): drop a row, then east to the northbound fetch highway.
+    room.put(TICK_ROW + 5, 50, ">")
+    room.put(TICK_ROW + 5, 65, "^")
+    for r in range(11, TICK_ROW + 5):
+        room.put(r, 65, "^")
+    _step_fetch(room)
+
+
+CLASS_ROW = 44      # first rung of the op-class staircase
+
+
+def _step_fetch(room) -> None:
+    """Op fetch and class decode, on row 11 -- the only band that reaches
+    both FETCH ports.
+
+    Walked WEST: read ADDR from the ring and put it straight back, send it
+    to FETCH, block on the response, then ``M `16` W /`` splits the frozen
+    ``class<<4 | value`` into ``A = class`` and ``B = value``.  ``b`` moves
+    the class into BP so the staircase can branch nine ways while `value`
+    stays untouched in B for the heading and digit arms.
+    """
+    room.put(10, 65, "<")
+    room.put(10, 52, "sr")               # walked west: r(ADDR) then s(ADDR)
+    room.put(10, 37, "rs")               # walked west: s(REQ) then r(RESP)
+    room.put(10, 29, "b/W`61`M")         # walked west: M `16` W / b
+    room.put(10, 28, "v")
+    room.put(11, 28, ">")
+    room.put(11, 66, "v")
+    for r in range(12, CLASS_ROW):
+        room.put(r, 66, "v")
+    room.put(CLASS_ROW, 66, "H")          # TODO: class staircase goes here
 
 
 def build_step_room():
