@@ -13,13 +13,13 @@ SETUP_END = -1000
 
 
 def pack_reference(tokens: list[int]) -> list[int]:
-    """Emit 64 big-endian words, negative man events, then the relay."""
+    """Emit 64 little-endian words, negative man events, then the relay."""
     cells, tail = tokens[:CELLS], tokens[CELLS + 1 :]
     words = []
     men = []
     acc = 0
     for addr, cell in enumerate(cells):
-        acc = acc * RAW_BASE + cell
+        acc += cell * RAW_BASE ** (addr % 4)
         if cell == AT:
             men.append(-(addr + 1))
         if addr % 4 == 3:
@@ -36,9 +36,9 @@ def unpack_words(stream: list[int]) -> tuple[list[int], list[int]]:
         raise ValueError(f"expected {WORDS} packed words, got {len(words)}")
     cells = []
     for word in words:
-        group = [0] * 4
-        for i in range(3, -1, -1):
-            group[i] = word % RAW_BASE
+        group = []
+        for _ in range(4):
+            group.append(word % RAW_BASE)
             word //= RAW_BASE
         cells.extend(group)
     men = [-(token + 1) for token in prefix[WORDS:]]
@@ -91,7 +91,7 @@ def _add_pack(fsm: _Fsm, addr: int, target: str) -> None:
     """Accumulate one raw cell while preserving the four metadata slots."""
     state = f"pack_{addr}"
     fsm.go(state, "right", "+", f"pack_mul_{addr}_0")
-    multiplications = 3 - addr % 4
+    multiplications = addr % 4
     for index in range(multiplications):
         next_state = (
             f"pack_mul_{addr}_{index + 1}"
