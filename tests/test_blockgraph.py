@@ -134,3 +134,54 @@ def test_timing_ops_are_rejected_by_default():
     for src in ("(mark m) q H", "(mark m) R H"):
         with pytest.raises(BlockGraphError, match="quarantined"):
             parse(src)
+
+
+# --- coverage gaps found by auditing against the language reference ---------
+
+
+def test_named_ports_distinguish_pipes_in_one_room():
+    """`s`/`r`/`q` bind to the NEAREST pipe, so a two-pipe room must say which."""
+    sent: list[tuple[int, str]] = []
+    values = {"cmd": iter([7]), "ring": iter([9])}
+    st = run(
+        parse("(mark m) (r cmd) (s ring) (r ring) (s out) H"),
+        recv=lambda port=None: next(values[port]),
+        send=lambda v, port=None: sent.append((v, port)),
+    )
+    assert sent == [(7, "ring"), (9, "out")] and st.A == 9
+
+
+def test_bare_port_ops_still_mean_the_only_pipe():
+    out: list[int] = []
+    run(parse("(mark m) 5 s H"), send=out.append)
+    assert out == [5]
+
+
+def test_broadcast_S_is_not_a_plain_send():
+    with pytest.raises(BlockGraphError, match="broadcast"):
+        run(parse("(mark m) 1 S H"), send=[].append)
+    seen: list[int] = []
+    run(parse("(mark m) 3 (S) H"), send_all=seen.append)
+    assert seen == [3]
+
+
+def test_bare_U_is_rejected_because_it_is_control_flow():
+    with pytest.raises(BlockGraphError, match="quarantined|unknown op"):
+        parse("(mark m) U H", allow_timing_ops=True)
+
+
+def test_uppercase_V_heading_is_accepted():
+    assert parse("(mark m) V H")["m"].ops == ["V"]
+
+
+def test_wall_is_a_distinct_error_terminator():
+    g = parse("(mark m) (if a a a) (mark a) (wall)")
+    with pytest.raises(BlockGraphError, match="wall"):
+        run(g, "m")
+
+
+def test_port_form_arity_is_checked():
+    with pytest.raises(BlockGraphError, match="at most one port"):
+        parse("(mark m) (r a b) H")
+    with pytest.raises(BlockGraphError, match="takes no port"):
+        parse("(mark m) (S x) H")

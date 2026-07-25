@@ -79,3 +79,41 @@ it. Same for `d`/`a` (taken = a turn, straight = fallthrough) and `x`.
 block graphs (A/B/BP + pipe callbacks, `sim.wrap64` semantics) so an
 algorithm can be written and tested with zero geometry — then handed to
 the assembler for layout.
+
+
+## Coverage audit against the full language reference (2026-07-25)
+
+Checked every op and structure in `docs/language-reference.md`.
+
+**Covered exactly**: `0-9`, literals (value only — walk direction is the
+compiler's problem), `M W + - * / % N & | ~ { }`, `b m ]`, `.`, `@`,
+headings `< > ^ v V`, `H`, `s r S R q`, and the four branch ops as
+control forms (`X`->`if`, `d`/`a`->`if-bp`, `x`->`if-par`, `U`->`if-recv`).
+
+**Four defects found and fixed by this audit**:
+
+1. **Ports (the serious one).** `s`/`r`/`q` bind to the NEAREST pipe by
+   geometry, so a room with two outgoing pipes needs to name which —
+   `memory_04`'s station has four pipes and could not be expressed at
+   all. Added `(s PORT)`, `(r PORT)`, `(q PORT)`; bare forms still mean
+   "the room's only pipe of that direction".
+2. `S` (broadcast to ALL outgoing, blocking unless all are free) was
+   being treated as a plain send. Now `(S)` with its own `send_all`
+   callback.
+3. Bare `U` parsed and silently did nothing. It is control flow only;
+   now rejected, use `(if-recv ...)`.
+4. Uppercase `V` (heading south) was missing.
+
+**Deliberately out of scope** (not defects):
+
+- **`Y`** — one man per graph by construction; splitting yields multiple
+  men and needs the network layer plus death semantics.
+- **Multiple men / rooms** — a machine is N graphs + a netlist; that is
+  `blocknet.py`, not the notation.
+- **Geometry-only facts** — literal walk direction, shared cells,
+  corridor crossings, footprint. Correctly absent: that is the whole
+  point of the split.
+- **Tick counts** — `State.ticks` counts ops, not machine ticks (movement
+  and turn cells are geometry). Use the simulator for ticks.
+- **Display semantics** — ADDR/DATA/SWAP are ordinary ports here; cursor
+  and buffer behaviour belong to the environment.

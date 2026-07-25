@@ -37,7 +37,12 @@ from .sim import wrap64
 # `if-recv` is `U`: receive from any ready pipe, then branch on WHICH pipe
 # delivered. Its arity is the room's incoming-pipe count, so it is checked
 # against the targets given rather than a fixed number.
-CONTROL = {"goto": 1, "if": 3, "if-bp": 2, "if-par": 2, "if-recv": None}
+CONTROL = {"goto": 1, "if": 3, "if-bp": 2, "if-par": 2, "if-recv": None,
+           "wall": 0}
+# Non-terminator forms that name a PORT. `s`/`r`/`q` bind to the NEAREST pipe
+# by geometry, so a room with two outgoing pipes needs to say which one; bare
+# `s`/`r`/`q` mean "the room's only pipe of that direction".
+PORT_OPS = {"s", "r", "q", "S", "R"}
 
 
 class BlockGraphError(ValueError):
@@ -101,6 +106,17 @@ def parse(text: str, *, allow_timing_ops: bool = False) -> dict[str, Block]:
                 current = Block(name=name, notes=notes)
                 blocks[name] = current
                 continue
+            if head in PORT_OPS:
+                if current is None:
+                    raise BlockGraphError(f"{tok!r} before any (mark ...)")
+                if current.kind:
+                    raise BlockGraphError(f"op {tok!r} after terminator")
+                if head in ("S", "R") and rest:
+                    raise BlockGraphError(f"{head!r} takes no port")
+                if head in ("s", "r", "q") and len(rest) > 1:
+                    raise BlockGraphError(f"{head!r} takes at most one port")
+                current.ops.append(tok)
+                continue
             if head not in CONTROL:
                 raise BlockGraphError(f"unknown form {tok!r}")
             if current is None:
@@ -148,7 +164,9 @@ def check(blocks: dict[str, Block], *, allow_timing_ops: bool = False) -> None:
                 raise BlockGraphError(
                     f"quarantined op {op!r} in {block.name!r} (timing-sensitive)"
                 )
-            elif op not in "0123456789@.MW+-*/%N&|~{}bm]qsrSRU<>^v":
+            elif op.startswith("("):
+                pass          # port form, validated at parse
+            elif op not in "0123456789@.MW+-*/%N&|~{}bm]qsrSR<>^vV":
                 raise BlockGraphError(f"unknown op {op!r} in {block.name!r}")
 
 
@@ -169,6 +187,7 @@ def run(
     send=None,
     occupancy=None,
     recv_any=None,
+    send_all=None,
     max_steps: int = 1_000_000,
     state: State | None = None,
 ) -> State:
@@ -185,6 +204,10 @@ def run(
         st.trace.append(name)
         for op in block.ops:
             st.ticks += 1
+            port = None
+            if op.startswith("("):
+                head, *rest = op[1:-1].split()
+                port, op = (rest[0] if rest else None), head
             if op.startswith("`"):
                 st.A = int(op[1:-1].replace(" ", "") or 0)
             elif op.isdigit():
@@ -227,25 +250,32 @@ def run(
             elif op == "r":
                 if recv is None:
                     raise BlockGraphError("'r' with no recv callback")
-                st.A = recv()
+                st.A = recv(port) if port else recv()
             elif op == "q":
                 if occupancy is None:
                     raise BlockGraphError("'q' with no occupancy callback")
-                st.BP = occupancy()
+                st.BP = occupancy(port) if port else occupancy()
             elif op == "R":
                 if recv_any is None:
                     raise BlockGraphError("'R' with no recv_any callback")
                 st.A = recv_any()[1]
-            elif op in "sS":
+            elif op == "s":
                 if send is None:
                     raise BlockGraphError("'s' with no send callback")
-                send(st.A)
-            elif op in "@.<>^v":
+                send(st.A, port) if port else send(st.A)
+            elif op == "S":
+                if send_all is None:
+                    raise BlockGraphError("'S' (broadcast) with no send_all callback")
+                send_all(st.A)
+            elif op in "@.<>^vV":
                 pass                      # spawn marker, nop, headings
             if st.ticks > max_steps:
                 raise BlockGraphError(f"step cap in block {block.name!r}")
         if block.kind == "H":
             return st
+        if block.kind == "wall":
+            st.trace.append("__wall")
+            raise BlockGraphError("stepped into a wall (error terminator)")
         if block.kind == "goto":
             name = block.targets[0]
         elif block.kind == "if":
