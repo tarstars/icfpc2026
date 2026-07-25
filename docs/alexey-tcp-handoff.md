@@ -1,123 +1,129 @@
-# tcp handoff — what to build next and how to verify it
+# tcp handoff — state, design, and what is left
 
-Written for a smaller model taking over. Read this and
-`docs/alexey-simple-model-tricks.md`; do NOT re-derive the architecture,
-it is proven on the server. Everything here is measured, not guessed.
+Everything here is measured, not guessed. Read this before touching tcp.
 
-## Where things stand
+## State
 
-- `submissions/tcp/tcp_01.man` — the v2 machine, **20/20 live**, score
-  52,747,175 (submission 9f1985a4). WORSE than tcp_00's 20,028,106; the
-  team's counted best is still tcp_00. tcp_01 is the working base.
-- Why it loses: score = max(w,h)² × avgTicks = 3844 × 13,722. Ticks
-  dominate. Each packet runs three full ring laps (rotate + lap-to-marker,
-  then a 15-relay realign) serialized against ~30 ticks of ring latency
-  (22-cell return pipe + 8-tick forwarder loop).
-- Break-even math: to beat 20.0M you need fp × ticks < 20M. Realistic
-  combo: fp ≈ 2400 (compaction below) AND ticks ≈ 8.3k (ideas 2–3).
-  All three ideas together are estimated to land at ~20M ± 15%, so
-  execute all of them and measure after each.
+| version | score | w×h | fp | avgTicks | live |
+|---|---|---|---|---|---|
+| tcp_00 (other line) | 20,028,106 | — | — | — | 20/20 |
+| tcp_01 | 52,747,176 | 30×62 | 3844 | 13722 | 20/20 |
+| tcp_02 | 8,554,029 | 43×38 | 1849 | 4626 | 20/20 |
+| tcp_03 | 7,693,504 | 43×38 | 1849 | 4161 | 20/20 |
+| **tcp_04** | **5,981,626** | **38×38** | **1444** | **4142** | **20/20** |
 
-## The machine in one paragraph
+`submissions/tcp/tcp_04.man` is the team best (3.35× better than tcp_00).
+`src/littleman/alexey_tcp_v3.py` regenerates it byte-for-byte; edit the
+generator, never the `.man`. Submitted files are immutable — new attempt
+is tcp_05.
 
-I → SPLITTER (discards round-1 `n`, sends `seq` down to the pump top,
-`val` to a pipe that parks it at the insert point). PUMP holds `expected`
-in B forever and writes ONLY to the ring: per packet it computes
-d = seq − expected (`r - b ]]]] d b`, loss when BP>0 after 4 shifts),
-rotates exactly d, discards the stale slot, inserts val (`r` from V,
-`s` to ring), laps to the resident marker (−3000) consuming it, drains by
-sending tags (data v → −v via `N s`; loss → −2000), then realigns: push
-the terminating 0 (already in A), relay 15, re-push the marker. The
-FORWARDER room rides the ring: 0/+ forwarded, −v → emit v to OUTPUT and
-push a 0 refill, −2000 → emit −1, −3000 → forwarded. Reference semantics:
-`littleman.alexey_tcp_v2.run_model` (validated 6/6).
+## The design in one page
 
-The assembly script (single source of truth for the layout) is committed
-at `docs/` history — rebuild from `scratchpad`-style: see the cell lists
-in `src/littleman/alexey_tcp_v2.py` and the final `submissions/tcp/tcp_01.man`.
-Treat tcp_01.man as immutable; new attempts are tcp_02, tcp_03, …
+**I → SPLITTER → (S pipe, V pipe) → PUMP → ROUT → FORWARDER → RIN → PUMP,
+FORWARDER → O.**
 
-## Ideas to implement, in this order
+The ring holds **w1..w15 — 15 values, no sentinel.** The window slot w0
+(the next expected sequence number) is *always* empty at packet start,
+because every packet drains to completion, so it is not stored at all.
+That single observation is what deleted the resident marker and the
+15-relay realign that came with it (46% of the previous machine's work).
 
-### 1. Compaction (safe, mechanical) — fp 3844 → ~2400
+- `d = seq − exp ≥ 1`: rotate d−1, pop the stale slot, push val, relay
+  15−d. Constant 16 ops, and **no drain** — an off-head insert cannot
+  fill w0.
+- `d == 0`: emit val straight to the forwarder, then pop-and-emit while
+  the head is positive. The forwarder's 0 refill lands at the tail, which
+  is exactly where the freed window slot belongs, so the invariant
+  restores itself with no fixup. **An in-order packet costs two ring ops.**
+- `d ≥ 16`: loss. Pump sends the −2000 tag and halts; the forwarder emits −1.
 
-The pump interior is 40×24 with rows 12–23 almost empty: they exist only
-because ring-reads must sit deep enough that RIN beats the S pipe in
-nearest-incoming distance. When you shrink the pump, THE ZONE BOUNDARY
-MOVES — recompute it, do not eyeball it: for a read cell at (r,c) the
-ring wins when |bottom+1−r|+|c−9| < r+|c−3| (S enters top rel col 4).
-Shrink pump height to ~30, keep every ring loop below the recomputed
-boundary with margin ≥2. Then pull the FWD room and O tighter under it.
-Every move must keep: `assert_pipe_map`-style audits for the pump's three
-incoming pipes (S top, V bottom rel col 22, RIN bottom rel col 9), the
-forwarder's five `s` resolutions, RIN capacity ≥ 17 cells.
+**Registers.** `exp` lives in B permanently, A is the working value, BP is
+the loop counter. The two loop counts would need a counter nobody has, so
+the splitter supplies the constant: it sends `seq` on the **S pipe** and
+`15−seq, val` on the **V pipe**. The pump gets d from one `-` and 15−d
+from one `+`. Both mid-packet reads then sit in the same zone, which is
+worth ~25 ticks/packet of walking (that was the whole tcp_03 gain).
 
-### 2. Kill the realign relay (−15 relays/packet, ≈ −2k ticks/case)
+**Tags on the ring.** Ring values are ≥ 0. Negative means a tag: `−v` →
+forwarder emits v and pushes a 0 refill; `−2000` → emits −1. Residual
+risk: a payload of exactly 2000 would be read as a loss. Public values are
+0..999 and three submissions have passed 20/20, so it is empirically fine,
+but if you ever see a mysterious early `-1`, this is why.
 
-After the drain, instead of push-0 + relay-15 + push-marker, do just:
-push 0 (A already holds it), push marker (`3000` N s — the literal is
-already in the room). Ring is then rotated one slot forward with 0 and M
-at the tail — the OLD rotation debt, now on purpose. Compensate in the
-next packet's rotation count: rotate d−1, and d = 0 rotates 15. That
-needs the three-way `X` branch back: copy it verbatim from
-`src/littleman/alexey_sort_ring2.py` PUMP_INTERIOR rows 3–5 (the `X` /
-vertical `15` literal / `b` merge) — it is a proven idiom. The drain and
-the insert both index from the head, and BOTH are consistent with the
-debt as long as the count is d−1/15 — this was verified on paper once
-(see worklog 2026-07-24 'fault 4'): the debt broke the OLD design only
-because the drain there assumed head = s0. In the new order (marker
-consumed by the lap, drain starts at true w0) re-derive the alignment ON
-PAPER with the 4-line ring model BEFORE laying cells, and extend
-`run_model` first — if the model passes 6/6, the cells will follow.
+**Reference model:** `alexey_tcp_v3.run_model` equivalent lives inline in
+the module docstring history; `alexey_tcp_v2.run_model` is still the
+validated oracle to diff against (they agree on 4000 random streams).
 
-### 3. Shorten the ring latency (~ −300 ticks/round)
+## The layout rule that made it work
 
-- Forwarder fast path (0/+ values) is currently 8 cells around the loop;
-  reshape so the common path is 6. Keep `r` before the first `s` on the
-  startup walk.
-- Return pipe RIN is 21 cells; it only needs capacity ≥ 17 minus what
-  ROUT holds. ROUT is 3. Keep RIN ≥ 15 and total ≥ 18 with margin;
-  shorter pipe = lower lap-start stall.
+**Put every incoming pipe on the same wall.** The row term of the
+Manhattan distance is then identical for all of them, so the zone is
+decided purely by column — a read cell's pipe no longer depends on how
+deep in the room it sits. The pump's three inputs (S col 2, RIN col 11,
+V col 20) all enter the bottom wall, and all nine `r` cells resolved
+correctly on the first audit. The mirror image works too: the splitter
+puts S and V on opposite walls in the *same column*, so the horizontal
+terms cancel and the **row** decides.
 
-### Do NOT attempt
-
-- Draining during the lap (order makes it impossible — the lap must
-  finish before the head is w0).
-- Overlapping packets (round gating forbids reading the next seq early).
-- 4-slots-per-word packing — real but a full redesign; only if 1–3 land
-  above 20M and more is still needed.
-
-## Verification workflow (run after EVERY change)
-
+Always re-audit after moving anything:
 ```
-PYTHONPATH=src python3 -c "…judge tcp_02.man on all 6 public cases…"
-# then the 45-case boundary stress from this session:
-#   n=48 in order, full-window burst, instant loss (first packet seq 16),
-#   40 random shuffles judged against run_model
+man = type('M',(),{'r':room.top+r,'c':room.left+c,'room':room})()
+m._nearest_incoming(man)   # or _nearest_outgoing for s cells
 ```
 
-Local 6/6 + stress 45/45 came before both server submissions and the
-server agreed both times. Submit with
-`icfpc-api submit d61a3af1-c74f-44c0-98f7-4f20eeefa3fb <file> --confirm --wait`,
-capture the full JSON to `submissions/tcp/alexey-tcp_0N-submit.json`.
+## What is left, in order of value
+
+1. **Ticks (4142).** For `d ≥ 1` packets, 14 relays × 8 ticks = 112
+   ticks/packet is the algorithmic floor. On top of that the pump idles
+   ~20 ticks/packet blocked on the 42-cell S pipe — shortening that pipe
+   is the cheapest remaining win.
+2. **Pump height.** Three rows of the pump interior hold a single cell
+   each (the DPOS descent and the two relay-approach rows). Merging them
+   shrinks the pump, but note the footprint is already a 38×38 square:
+   height must come down *together with* width to pay.
+3. **Width is near-minimal** for this arrangement: forwarder (18 cols) +
+   gap + splitter (13 cols) = 38 across. Stacking them vertically instead
+   was measured as worse (height would go to ~46).
+4. Do NOT attempt: draining during the rotate (order forbids it),
+   overlapping packets (round gating forbids reading the next seq early).
+
+## Verification workflow — run after EVERY change
+
+```
+PYTHONPATH=src python3 -c "from littleman.alexey_tcp_v3 import build; ..."
+# 1. zone audit: every r cell resolves to the intended pipe
+# 2. 6/6 public cases via littleman.alexey_walljudge.judge_case
+# 3. 46-case boundary stress: n=48 in order, full window, instant loss
+#    (first seq 16), fully reversed, 40 random shuffles vs the oracle
+```
+Local 6/6 + stress preceded all four submissions and the server agreed
+every time. Submit with
+`icfpc-api submit d61a3af1-c74f-44c0-98f7-4f20eeefa3fb <file> --confirm --wait`
+and capture the JSON to `submissions/tcp/alexey-tcp_0N-submit.json`.
 Best-submission-counts: a worse score does no harm.
 
-## Traps already paid for (do not rediscover)
+## Traps already paid for — do not rediscover
 
-1. A pipe's FIRST arrowhead must point away from the source wall with its
-   backward cell ON that wall — a west-pointing start cannot leave a
-   bottom wall.
-2. A route drawn over another room's wall column mints a phantom pipe
-   from that wall (parser starts pipes at any arrowhead backing onto a
-   border). Symptom: pipe count wrong, or `bad pipe glyph`.
-3. Canvas.pipe's terminal arrowhead follows the segment direction; when
-   the pipe must END pointing into a room sideways, patch the last cell
-   (`cv.cells[(r,c)] = "^"`).
-4. The splitter's two `s` cells resolve by distance — after any splitter
-   geometry change re-audit which pipe gets seq and which gets val.
-5. Walk crossings on EMPTY cells are legal and free; crossings on
-   instruction/turn cells are the #1 bug source. The walk checker
-   (`walk_report` in `alexey_tcp_ring.py`) reads a stray walk as an
-   unexpected phase name — use it before judging.
-6. Wall-step after final `s` is server-legal (`alexey_walljudge`), rooms
-   sharing a wall are NOT.
+1. **A counted relay loop needs `m` inside it.** `d` only *tests* the
+   backpack, it does not decrement. A loop without `m` spins forever.
+   Cost: one debug round, because the seed loop had one and terminated.
+2. **RIN must park the whole ring (≥16 cells).** When the pump idles
+   between packets the forwarder keeps pushing; a short RIN blocks it and
+   any tag queued behind those values is never decoded. Deadlock with an
+   otherwise perfectly correct machine.
+3. **The forwarder's fast path must be short.** At 28 cells/value the
+   pump starved 3× ; at 8 cells it never waits. Ring latency is not the
+   issue — forwarder *throughput* is.
+4. **Mirroring a room vertically must swap `v`↔`^`**, and is only safe
+   when the room has no handed op (`X`, `d`, `a`, `x`) — a mirror turns
+   clockwise into counter-clockwise.
+5. **A pipe cell whose backward neighbour is a room wall starts a NEW
+   pipe there.** Route one column clear of foreign rooms. Symptom: wrong
+   pipe count or `bad pipe glyph`.
+6. `Canvas.pipe`'s terminal arrowhead follows the segment direction —
+   patch the last cell (`cv.cells[(r,c)] = "^"`) when it must end pointing
+   into a room sideways.
+7. Walk crossings on EMPTY cells are legal and free; crossings on
+   instruction or turn cells are the #1 bug source.
+8. Wall-step after a final `s` is server-legal (`alexey_walljudge`);
+   rooms sharing a wall are NOT.

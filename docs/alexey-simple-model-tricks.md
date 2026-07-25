@@ -7,9 +7,15 @@ Full semantics live in `docs/language-reference.md` — open it only for
 exact edge cases (tick order, pipe targeting, literal parsing).
 
 **If you are here to work on tcp:** read `docs/alexey-tcp-handoff.md`
-first — it contains the ranked, measured plan (compaction, realign fold,
-ring-latency cut), the verification workflow, and the traps already paid
-for. Do not redesign the machine; tcp_01 is proven 20/20 on the server.
+first. tcp is in good shape — tcp_04 scores 5,981,626 (3.35x better than
+tcp_00), 20/20 live, 38x38. The doc has the design, the measured list of
+what is left, and eight traps already paid for. Do not redesign it.
+
+**Layout rule worth reusing anywhere:** put every incoming pipe of a room
+on the SAME wall. The row term of the Manhattan distance then cancels, so
+nearest-pipe zones are decided purely by column — a read cell's pipe stops
+depending on how deep in the room it sits. Same trick mirrored (two pipes
+in the same column on opposite walls) makes the ROW decide instead.
 
 **Companion (read it too, it is authoritative):**
 `docs/littleman-cookbook.md`, written by a teammate — register discipline
