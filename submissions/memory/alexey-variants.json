@@ -2,6 +2,36 @@
  "schemaVersion": 1,
  "variants": [
   {
+   "version": "memory_03",
+   "label": "top room trimmed, right-edge pipes slid in, bottom room's ports moved to its right wall",
+   "parent": "memory_02",
+   "changeType": "geometry",
+   "architecture": "Three steps. (1) The top room's six empty right columns are trimmed; the one read this broke -- row 4 column 24, which preferred the I pipe by a single step -- is fixed by bringing the I pipe in through the BOTTOM wall at column 14 instead of the left wall (solving the room's six reads as distance inequalities gives a feasible window of columns 12-24). (2) The two right-edge pipes, left 6 cells longer by the trim, have their verticals slid into the freed columns: width 46 -> 40 and both pipes end up SHORTER than they began (91->87, 67->63). (3) The bottom room has exactly one incoming and one outgoing pipe, so resolution is trivial and the wall is free to choose: both are re-routed through its RIGHT wall into the freed columns, which deletes rows 43-45 entirely.",
+   "source": {
+    "path": "submissions/memory/memory_03.man",
+    "width": 40,
+    "height": 43,
+    "footprint": 1849
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "avgTicksLocal": 9760.1
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "width": 40,
+    "height": 43,
+    "area2": 1849,
+    "avgTicks": 41008,
+    "score": 75823407,
+    "fullResponse": "submissions/memory/alexey-memory_03-submit.json"
+   },
+   "verdict": "TEAM BEST for memory: 87,493,514 -> 75,823,407 (1.15x), footprint 2,116 -> 1,849."
+  },
+  {
    "version": "memory_02",
    "label": "mechanical squeeze of empty rows/columns",
    "changeType": "geometry",
@@ -21,5 +51,5 @@
    "verdict": "TEAM BEST for memory: 91,372,248 -> 87,493,514 (1.04x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
   }
  ],
- "note": "Alexey research line for memory."
+ "note": "Alexey research line for memory. memory_03 is the current best at 75,823,407 (40x43), down from the 87,493,514 baseline."
 }

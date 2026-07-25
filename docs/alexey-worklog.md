@@ -1059,3 +1059,31 @@ score), plus this routing:
 If the shortened pipes turn out to break capacity (63->53 and 87->58), pad
 them with a serpentine in the free columns 25-38, which is where the room
 trim left room to do it.
+
+### memory_03 shipped: 87,493,514 -> 75,823,407 (1.15x), live 24/24
+
+The tracing bug was mine, not the parser's: the outgoing pipe ran east to
+column 38 and its last horizontal cell pointed straight into the incoming
+pipe's vertical at column 39, so the two merged. Turning north one column
+earlier fixes it. With that, all three steps land:
+
+    trim the top room's six empty columns   (needs the I port moved to the bottom wall)
+    slide the right-edge verticals inward   width  46 -> 40, pipes 91->87 and 67->63
+    both bottom-room ports to its right wall  height 46 -> 43, rows 43-45 deleted
+
+    footprint 2,116 -> 1,849      score 87,493,514 -> 75,823,407      7/7 local, 24/24 live
+
+The shortened pipes (63->53, 87->58) turned out not to need the serpentine
+padding I had prepared — capacity was not binding here.
+
+**The three ideas that made it work, in the order they matter:**
+
+1. A room with exactly ONE incoming and ONE outgoing pipe can put its ports
+   on any wall — resolution is trivial when there is nothing to choose
+   between. This is what freed three whole rows.
+2. When a trim flips one read, solve the room's reads as distance
+   inequalities and move the *port*, not the room. An endpoint is pinned to
+   the wall it enters, so moving the source room does nothing.
+3. After trimming a room, the pipes that were attached grow; sliding their
+   long runs into the freed columns makes them shorter than they started and
+   takes the bounding box with them.
