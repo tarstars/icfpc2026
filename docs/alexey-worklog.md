@@ -840,3 +840,41 @@ Two things worth keeping from this:
 
 plotter across the session: 75,794,498,065 → 16,905,772,730 (squeeze) →
 9,367,793,668 (trim + move) = **8.1x**.
+
+### Attempted: BIG2 and BIG3 side by side — blocked by a forced pipe crossing
+
+Tried the biggest remaining lever on plotter: put BIG2 (37 wide) and BIG3
+(49 wide) side by side instead of stacked, which fits the 113-column budget
+and saves 80 rows. Also relocated r265 (5×5) into the east corridor to keep
+its two connections short.
+
+**The geometry works: footprint 106,276 → 60,025, 1.77x.** The plumbing does
+not, and the reason is structural rather than fiddly:
+
+* BIG2's output port is on its **bottom** wall at column 17 (west side).
+* BIG3's two input ports are on its **top** wall. Row 92 — the only row
+  between the BIG1 band and the BIG2 band — is blocked at columns 25, 30 and
+  44 by three existing pipes, so those ports can only be reached from the
+  **east**.
+* Therefore the BIG2→BIG3 pipe has to run the full width of the layout in
+  the band below BIG2, from column 17 out to the east corridor.
+* BIG3's output ports are on its **bottom** wall, and their targets (r271 and
+  the rest of the bottom block) sit below that same band. Those pipes must
+  descend **across** the horizontal run.
+
+A horizontal run spanning columns 17-96 and a vertical run at column 46 or 85
+intersect no matter which rows they use — adding routing rows cannot separate
+them, because the vertical span brackets the horizontal one. Escapes checked
+and rejected: routing the horizontal below the whole bottom block needs a
+column free from row 92 to row 251, and there is none (BIG3, the display and
+the 103-112 room between them cover every candidate); routing it over the top
+needs rows 0-2, which are already full.
+
+Fixing it means relocating r271 as well, and r271 is 23 wide against 18
+columns of remaining corridor. So this needs a wider restructuring than a
+move, and plotter_04 stands at 9,367,793,668.
+
+Worth keeping: **check whether two pipes' spans bracket each other before
+planning a move.** The previous block move worked because its single external
+pipe had nothing to cross; this one fails on exactly that test, and the test
+is cheap to run first.
