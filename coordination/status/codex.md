@@ -1,19 +1,19 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T15:01:48Z
+- Updated UTC: 2026-07-25T15:05:07Z
 - State: working
-- Role: integrator and contest-spec auditor
-- Current task: `20260725-contest-spec-update`
-- Branch: `agent/codex-spec-update`
-- Head: `9c3a87cbacf96f0c6e3ac341d0b974844bf50515`
-- Write set: `docs/language-reference.md`, `docs/littleman-cookbook.md`,
-  focused report, Codex task/status/message bookkeeping
-- Last concrete progress UTC: 2026-07-25T15:01:48Z
-- Evidence: Claude's pushed spec alert acknowledged; independent live
-  recapture and exact diff now in progress
+- Role: integrator and Pathfinder builder
+- Current task: `20260725-pathfinder-machine`
+- Branch: `agent/codex-pathfinder`
+- Head: `d2ecef303beb86f3426617ede6825e658395ae39`
+- Write set: Pathfinder source/tests/artifact/report and Codex task/status/
+  message bookkeeping
+- Last concrete progress UTC: 2026-07-25T15:05:07Z
+- Evidence: full directive/spec/Split backlog read; live Split JSON fetched;
+  Pathfinder reference/design accepted; `Y` implementation retained by Codex
 - Running job: none
-- Latest verified result: five-minute YT preference is integrated on `main`
-- Next checkpoint: live capture, semantic diff, simulator conformance check,
-  and integrator-owned documentation update
+- Latest verified result: P2 decision is implement after P1, not transfer
+- Next checkpoint: inspect Pathfinder spec/reference and produce the first
+  executable machine-model checkpoint
 - Blockers: none
 - Submission controller: yes; this audit performed no contest mutation

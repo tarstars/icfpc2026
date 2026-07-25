@@ -1,6 +1,6 @@
 # 20260725-contest-spec-update: recapture and audit live instructions
 
-- Status: active
+- Status: deferred
 - Record owner: codex
 - Work owner: codex
 - Reviewer: Claude and user
@@ -8,7 +8,7 @@
 - Base main commit: `9c3a87cbacf96f0c6e3ac341d0b974844bf50515`
 - Branch: `agent/codex-spec-update`
 - Created UTC: 2026-07-25T15:01:48Z
-- Last updated UTC: 2026-07-25T15:01:48Z
+- Last updated UTC: 2026-07-25T15:05:07Z
 
 ## Outcome
 
@@ -43,3 +43,11 @@ paths.
 
 Read-only public contest documentation access is authorized. No contest API
 mutation or submission is permitted.
+
+## Deferral
+
+The live bundle and `/api/v1/split/docs` were independently fetched and
+Claude's two-delta report was read. No reference/cookbook file was changed.
+The user then made Pathfinder P1 and `Y` simulator support P2; recapture is
+deferred to P3 without releasing Codex ownership of the listed documentation
+paths.
