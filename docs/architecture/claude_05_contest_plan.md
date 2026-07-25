@@ -1,9 +1,21 @@
-# Claude: the contest-first plan (awaiting user validation)
+# Claude: the contest-first plan (VALIDATED)
 
-Status: Proposed 2026-07-25T13:50Z under the user's decision
-**contest-first — the platform must pay by Sunday 12:00Z**. Supersedes the
-tier table in `claude_00` with concrete timeboxes. ~46h remain; final
-freeze Sun 10:00Z, submissions close 12:00Z.
+Status: Proposed 2026-07-25T13:50Z; **validated by the user
+2026-07-25T14:0xZ** on all four items:
+
+1. Re-weighting (composer over factory; Rust conditional): **yes**.
+2. P0 authority: **standing authorization** for Semester 4 candidates that
+   pass every gate.
+3. P1 authority: **"submit everything you want"** — standing authorization
+   for any candidate; Claude keeps preflight + exact judge as its own
+   mandatory gate regardless.
+4. YT: **only for CPU-heavy experiments exceeding ~5 minutes locally.** The
+   local box is multi-core; searches are written multiprocess-first
+   (measured: 16 cores available), YT is the overflow tier, not the default.
+
+Contest-first — the platform must pay by Sunday 12:00Z. Supersedes the
+tier table in `claude_00` with concrete timeboxes. Final freeze Sun
+10:00Z, submissions close 12:00Z.
 
 ## The one structural change from the review
 
@@ -68,12 +80,15 @@ Stretch backlog if P0+P1 land early, in order: history dictionary machine
 (projected 81x81 = 6,561 vs live 7,921, encoding verified byte-exact,
 ~3-6h hand build); reverse ring-capacity rebalance; tcp_02 slice.
 
-## YT under contest-first
+## Compute policy (validated)
 
-Optional, not on the critical path: the composer's annealing fits
-overnight on the local box (1e3-1e5 evals/problem at ~0.1-0.5s each).
-YT becomes worth wiring only for massive-restart placement search or the
-fuzz farm — user's call, zero contest dependency.
+Local multiprocess first: the box has 16 cores, and every search in this
+plan (composer annealing, fuzz corpora, parametric sweeps) is written with
+a worker-pool driver from the start. The threshold the user set: anything
+exceeding ~5 minutes locally is a YT candidate; below that, YT overhead
+buys nothing. Expected reality: composer runs are minutes-scale per
+problem at check-don't-simulate costs, so YT stays unused unless factory
+v1 sweeps or the fuzz farm scale past the local pool overnight.
 
 ## Timeline (UTC)
 
