@@ -369,7 +369,7 @@ class ReferenceFetch:
 # RIGHT wall and the four external ones on the LEFT, separated vertically
 # into a top zone (LOAD in / DRAW out) and a bottom zone (RESP in / REQ
 # out).  Every r/s cell therefore lives in exactly one of three regions.
-STEP_ROWS, STEP_COLS = 96, 72
+STEP_ROWS, STEP_COLS = 240, 72
 
 # The hot path is the per-tick FETCH transaction, so REQ and RESP share the
 # TOP zone; LOAD (once a round) and DRAW (twice a round) share the BOTTOM.
@@ -435,7 +435,11 @@ def _step_round1(room) -> None:
     room.put(20, 47, "v")                # jog to row 21 for the run east, so
     room.put(21, 47, ">")                # column 3 stays blank at rows 20-22
     room.put(21, 60, "^")
+    # Rows 10/11 are later crossed horizontally by FETCH.  Blank cells are
+    # intentional: both traversals already carry their required heading.
     for r in range(5, 21):
+        if r in (8, 10, 11):
+            continue
         room.put(r, 60, "^")
     room.put(4, 60, "<")
     room.put(4, 13, "vb`652`M0s N1<")    # BP=256, B=0, send -1 to FETCH
@@ -460,7 +464,8 @@ TAPE_LO, TAPE_HI = 42, 60   # the scratch-loop tape zone (rows 22+)
 HW = dict(live=71, split=70, tick=69, frozen=68, arm=67, move=66,
           loop=65, emit=64, round=63)
 SEED_ROW, ROUND_ROW = 23, 30
-TICK_ROW = 33
+# ROUND-IN's tape wraps through row 33, so the tick must start below it.
+TICK_ROW = 36
 SCR_COL = 42        # first column whose r/s binds the scratch loop (rows 22+)
 REQ_MAX_ROW = 11    # last row whose left-wall s reaches REQ rather than DRAW
 
@@ -523,35 +528,22 @@ class Tape:
         return self
 
     def down_at(self, col: int, row: int) -> "Tape":
-        """Leave the tape: walk on to ``col``, then descend to ``row``."""
+        """Leave the tape at ``col`` and descend to a strictly lower row."""
         while (col - self.col) * self.dir < 0:
             self._turn()
+        if row <= self.row:
+            raise ValueError(
+                f"tape reached row {self.row}; cannot descend to {row}"
+            )
         for r in range(self.row, row):
             self.room.put(r, col, "v")
         self.row, self.col, self.dir = row, col, 1
         return self
 
 
-# ---------------------------------------------------------------- BLOCKER
-# The round loop below is register-correct (its tape drives the ring to
-# exactly [CTRL=1, ADDR=man_addr, BI=0, AI=0, OLD=man_addr, K=k], verified
-# in the rig) but CANNOT YET BE PLACED, for a purely geometric reason:
-#
-#   * ROUND 1's man_addr walkway occupies row 21, columns 2..60, so no
-#     vertical corridor may cross row 21 anywhere in that span; and
-#   * its ascent back to row 4 occupies column 60, rows 5..21, so no
-#     horizontal run in rows 5..20 may cross column 60.
-#
-# Together those leave no path from the ROUND 1 finish (rows 18-19, columns
-# <= 57) down to rows 23+: reaching a column > 60 at row 21 requires a
-# horizontal run that must first cross column 60.  Every variant tried --
-# exit on row 19, on row 20, ascent moved to columns 27/45/47/62, walkway
-# moved to row 22 -- reproduces the same crossing under a different name.
-#
-# THE FIX, for whoever picks this up: re-lay `_step_round1`'s post-pixel
-# path so the man_addr park and ascent live entirely inside the highway
-# band (columns 61..71), leaving rows 19..22 clear across columns 1..60.
-# Then `_step_seed` places unchanged and `HW` wires the rest.
+# The phase corridors deliberately share blank cells where one traversal is
+# horizontal and another vertical.  With one STEP man, the phases cannot
+# collide; retaining the incoming heading makes each blank a safe crossing.
 def _highway(room, col: int, top: int, bottom: int) -> None:
     """Fill one vertical highway segment (exclusive of ``bottom``)."""
     for r in range(top, bottom):
@@ -623,12 +615,27 @@ def _step_tick_halt(room) -> None:
     # Live (A < 0): drop a row, then east to the northbound fetch highway.
     room.put(TICK_ROW + 5, 50, ">")
     room.put(TICK_ROW + 5, 65, "^")
-    for r in range(11, TICK_ROW + 5):
-        room.put(r, 65, "^")
+    for r in range(12, TICK_ROW + 5):
+        if r != ROUND_ROW:
+            room.put(r, 65, "^")
     _step_fetch(room)
 
 
-CLASS_ROW = 44      # first rung of the op-class staircase
+CLASS_ROW = 44      # route from FETCH into the op-class staircase
+CLASS_FIRST_ROW = 45
+CLASS_FIRST_COL = 13
+CLASS_SPAN = 8      # rows reserved per class arm
+CLASS_JOIN_COL = 69
+CLASS_JOIN_ROW = 122
+MOVE_FIRST_ROW = 125
+MOVE_FIRST_COL = 13
+MOVE_SPAN = 6
+MOVE_JOIN_COL = 68
+MOVE_JOIN_ROW = 158
+COUNT_X_ROW = 162
+COUNT_X_COL = 50
+EMIT_START_ROW = COUNT_X_ROW + 1
+EMIT_START_COL = TAPE_LO
 
 
 def _step_fetch(room) -> None:
@@ -649,8 +656,246 @@ def _step_fetch(room) -> None:
     room.put(11, 28, ">")
     room.put(11, 66, "v")
     for r in range(12, CLASS_ROW):
-        room.put(r, 66, "v")
-    room.put(CLASS_ROW, 66, "H")          # TODO: class staircase goes here
+        if r != ROUND_ROW:
+            room.put(r, 66, "v")
+    _step_class_dispatch(room)
+
+
+def _class_tape(room, row: int) -> Tape:
+    """Turn a selected class east into the scratch-bound tape zone."""
+    room.put(row, TAPE_LO - 1, "v")
+    room.put(row + 1, TAPE_LO - 1, ">")
+    return Tape(room, row + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+
+
+def _class_tokens(cls: int) -> tuple[str, ...] | None:
+    """Ring choreography for one class, from head BI back to head CTRL."""
+    relay2 = ("r", "s")
+    if cls == CLASS_SPACE:
+        return relay2 * 4
+    if cls in (CLASS_WALL, CLASS_HALT):
+        return relay2 * 4 + ("r", "M", "4", "+", "s") + relay2 * 5
+    if cls == CLASS_HEADING:
+        return relay2 * 4 + ("r", "W", "s") + relay2 * 5
+    if cls == CLASS_DIGIT:
+        return relay2 + ("r", "W", "s") + relay2 * 2
+    if cls == CLASS_M:
+        return ("r", "r", "s", "s") + relay2 * 2
+    if cls == CLASS_ADD:
+        return ("r", "M", "s", "r", "+", "s") + relay2 * 2
+    if cls == CLASS_SUB:
+        return ("r", "M", "s", "r", "-", "s") + relay2 * 2
+    return None                         # X gets its sign fork separately
+
+
+def _branch_update_tokens(delta: int) -> tuple[str, ...]:
+    """Replace live CTRL by ``(CTRL + delta) % 4`` and normalize the ring."""
+    return (
+        "r", "M", str(delta), "+", "M", "4", "W", "%", "s",
+        *("r", "s") * 5,
+    )
+
+
+def _step_branch_arm(room, tape: Tape) -> None:
+    """Implement interpreted X while restoring the canonical CTRL head.
+
+    The prefix saves interpreted AI in host B, relays OLD/K, then swaps AI
+    back into A.  Native X splits it three ways.  Positive and negative
+    each use one otherwise-free horizontal tape; zero preserves CTRL
+    unchanged.  All three enter the existing class-join highway.
+    """
+    tape.emit("r", "s", "r", "s", "M", "r", "s", "r", "s", "W")
+    room.put(tape.row, tape.col, "^")
+    room.put(tape.row - 1, tape.col, "^")
+    x_row, x_col = tape.row - 2, 62
+    room.put(x_row, tape.col, ">")
+    room.put(x_row, x_col, "X")
+
+    # Negative: north from X, west on row 99, then east along row 98.
+    room.put(x_row - 1, x_col, "<")
+    room.put(x_row - 1, TAPE_LO - 1, "^")
+    room.put(x_row - 2, TAPE_LO - 1, ">")
+    Tape(
+        room, x_row - 2, TAPE_LO, TAPE_LO, TAPE_HI
+    ).emit(*_branch_update_tokens(3))
+
+    # Positive: south from X, jog around the prefix, then east on row 104.
+    room.put(x_row + 1, x_col, "<")
+    room.put(x_row + 1, x_col - 1, "v")
+    room.put(x_row + 3, x_col - 1, "<")
+    room.put(x_row + 3, TAPE_LO - 1, "v")
+    room.put(x_row + 4, TAPE_LO - 1, ">")
+    Tape(
+        room, x_row + 4, TAPE_LO, TAPE_LO, TAPE_HI
+    ).emit(*_branch_update_tokens(1))
+
+
+def _step_class_dispatch(room) -> None:
+    """Decode BP=class with a decrement staircase and normalize each arm."""
+    room.put(CLASS_ROW, 66, "<")
+    room.put(CLASS_ROW, CLASS_FIRST_COL - 1, "v")
+    room.put(CLASS_FIRST_ROW, CLASS_FIRST_COL - 1, ">")
+
+    for cls in range(CLASS_HALT + 1):
+        row = CLASS_FIRST_ROW + cls * CLASS_SPAN
+        col = CLASS_FIRST_COL + cls * 2
+        room.put(row, col, "d")          # zero -> east arm; positive -> south
+        if cls < CLASS_HALT:
+            room.put(row + 1, col, "m")
+            room.put(row + CLASS_SPAN, col, ">")
+
+        tape = _class_tape(room, row)
+        tokens = _class_tokens(cls)
+        if tokens is None:
+            _step_branch_arm(room, tape)
+            continue
+        tape.emit(*tokens)
+        _leave_tape(room, tape, CLASS_JOIN_COL, CLASS_JOIN_ROW)
+
+    _step_move(room)
+
+
+def _move_tokens(heading: int) -> tuple[str, ...]:
+    """Update ADDR for one heading and restore canonical head CTRL."""
+    relay2 = ("r", "s")
+    delta = {
+        0: ("#16", "N"),
+        1: ("1",),
+        2: ("#16",),
+        3: ("1", "N"),
+    }[heading]
+    return ("r", "M", *delta, "+", "s") + relay2 * 4
+
+
+def _step_move(room) -> None:
+    """Move a live interpreted man, or normalize a newly frozen one."""
+    room.put(CLASS_JOIN_ROW, CLASS_JOIN_COL, "<")
+    room.put(CLASS_JOIN_ROW, TAPE_LO - 1, "v")
+    room.put(CLASS_JOIN_ROW + 1, TAPE_LO - 1, ">")
+    init = Tape(
+        room, CLASS_JOIN_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI
+    )
+    init.emit("r", "s", "b")             # CTRL -> BP; head ADDR
+    room.put(init.row, 50, "v")
+    room.put(init.row + 1, 50, "<")
+    room.put(init.row + 1, MOVE_FIRST_COL - 1, "v")
+    room.put(MOVE_FIRST_ROW, MOVE_FIRST_COL - 1, ">")
+
+    for heading in range(4):
+        row = MOVE_FIRST_ROW + heading * MOVE_SPAN
+        col = MOVE_FIRST_COL + heading * 2
+        room.put(row, col, "d")
+        room.put(row + 1, col, "m")
+        if heading < 3:
+            room.put(row + MOVE_SPAN, col, ">")
+
+        tape = _class_tape(room, row)
+        tape.emit(*_move_tokens(heading))
+        _leave_tape(room, tape, MOVE_JOIN_COL, MOVE_JOIN_ROW)
+
+    # CTRL >= 4 takes the turned arm of the final rung: head is still ADDR.
+    frozen_row = MOVE_FIRST_ROW + 4 * MOVE_SPAN
+    frozen_col = MOVE_FIRST_COL + 3 * 2
+    room.put(frozen_row, frozen_col, ">")
+    frozen = _class_tape(room, frozen_row)
+    frozen.emit(*("r", "s") * 5)          # ADDR -> canonical CTRL
+    _leave_tape(room, frozen, MOVE_JOIN_COL, MOVE_JOIN_ROW)
+
+    _step_countdown(room)
+
+
+def _loop_crossing_rows() -> set[int]:
+    """Rows whose horizontal paths cross the tick-loop return column."""
+    rows = {CLASS_ROW, CLASS_JOIN_ROW + 2}
+    rows.update(CLASS_FIRST_ROW + cls * CLASS_SPAN for cls in range(9))
+    rows.update(MOVE_FIRST_ROW + heading * MOVE_SPAN for heading in range(4))
+    rows.add(MOVE_FIRST_ROW + 4 * MOVE_SPAN)
+    return rows
+
+
+def _step_countdown(room) -> None:
+    """Decrement K; positive loops to the tick entry, zero enters emit."""
+    room.put(MOVE_JOIN_ROW, MOVE_JOIN_COL, "<")
+    room.put(MOVE_JOIN_ROW, TAPE_LO - 1, "v")
+    room.put(MOVE_JOIN_ROW + 1, TAPE_LO - 1, ">")
+    tape = Tape(room, MOVE_JOIN_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+    tape.emit(*("r", "s") * 5, "r", "M", "1", "W", "-", "s")
+    tape.down_at(64, COUNT_X_ROW)
+    room.put(COUNT_X_ROW, 64, "<")
+    room.put(COUNT_X_ROW, COUNT_X_COL, "X")
+
+    # K-1 > 0 turns north, then west to a dedicated return column.  Its
+    # blank crossings preserve both the northbound loop and earlier
+    # horizontal setup/class/move paths.
+    room.put(COUNT_X_ROW - 1, COUNT_X_COL, "<")
+    room.put(COUNT_X_ROW - 1, 30, "^")
+    blank = _loop_crossing_rows()
+    for row in range(36, COUNT_X_ROW - 1):
+        if row not in blank:
+            room.put(row, 30, "^")
+    room.put(35, 30, ">")                # row 35's existing c62 v re-enters
+
+    # K-1 == 0 continues west into the emit boundary.
+    room.put(COUNT_X_ROW, TAPE_LO - 1, "v")
+    room.put(EMIT_START_ROW, TAPE_LO - 1, ">")
+    _step_emit(room)
+
+
+EMIT_CONT_ROW = 180
+EMIT_DRAW_ROW = 185
+EMIT_RETURN_ROW = 186
+
+
+def _step_emit(room) -> None:
+    """Restore OLD, draw ADDR, commit, then wait for the next round's k."""
+    # Preserve OLD in host B while K is relayed, restoring canonical CTRL
+    # head before the FETCH request.
+    prefix = Tape(
+        room, EMIT_START_ROW, EMIT_START_COL, TAPE_LO, TAPE_HI
+    )
+    prefix.emit(
+        *("r", "s") * 4,
+        "r", "s", "M",
+        "r", "s", "W", "M",
+    )
+    room.put(prefix.row, 71, "^")
+    for row in range(9, prefix.row):
+        room.put(row, 71, "^")
+    room.put(8, 71, "<")
+
+    # Walked west: OLD+256 -> FETCH; response colour completes OLD*16+colour.
+    room.put(8, 39, "`652`")
+    room.put(8, 37, "s+")
+    room.put(8, 33, "`61`")
+    room.put(8, 29, "+rM*")
+    room.put(8, 27, "v")
+    room.put(22, 27, ">")
+    room.put(22, 38, "s")
+    room.put(22, 40, "v")
+
+    # The old-cell DRAW token descends through blank crossings to the new
+    # address formatter.
+    room.put(EMIT_CONT_ROW, 40, ">")
+    new = Tape(room, EMIT_CONT_ROW, TAPE_LO, TAPE_LO, TAPE_HI)
+    new.emit(
+        "r", "s", "r", "s", "M",
+        *("r", "s") * 4, "W", "M",
+        "#16", "*", "M", "9", "+",
+    )
+    new.down_at(31, EMIT_DRAW_ROW)
+    room.put(EMIT_DRAW_ROW, 31, "<")
+    room.put(EMIT_DRAW_ROW, 28, "s")
+    room.put(EMIT_DRAW_ROW, 24, "sN1")   # walked west: 1, N, send -1
+    room.put(EMIT_DRAW_ROW, 22, "v")
+    room.put(EMIT_RETURN_ROW, 22, ">")
+    room.put(EMIT_RETURN_ROW, 70, "^")
+
+    # Return to ROUND-IN.  Row 163 is the one horizontal crossing of this
+    # highway; the northbound man retains its heading through the blank.
+    for row in range(31, EMIT_RETURN_ROW):
+        if row != EMIT_START_ROW:
+            room.put(row, 70, "^")
+    room.put(ROUND_ROW, 70, "<")
 
 
 def build_step_room():
