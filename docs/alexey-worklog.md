@@ -1314,3 +1314,25 @@ Built from **sudoku_02, not from tarstars' sudoku_03**. Their repack is the
 better starting point on its own (16.1B vs 25.5B) but leaves fewer
 globally-empty rows once the staircase is folded — 39204 against 36864. Worth
 checking both bases whenever a teammate has repacked the same program.
+
+## 2026-07-25 — gradebook_04: 81,914,188,255 -> 54,422,867,494 (20/20, 386x313)
+
+Same staircase fold again, on the biggest program we have. All five big
+rooms pass `ports_are_single_walled`; R2-R5 fold completely, 7/7 each time.
+
+**R1 does not, and the failure is one merge wide.** Folding R1 alone drops
+to 5/7, but of the 35 merges available there the first 34 are all safe --
+found by a binary search over the merge prefix, six judge runs. So the merge
+condition in `alexey_stairfold` is *nearly* sufficient, not provably so: it
+checks column monotonicity and collisions, but a deleted west leg can also
+be the landing spot of a vertical fall belonging to some other branch, and
+nothing in the static check sees that.
+
+**Therefore: always drive the fold with the judge.** Fold room by room and
+keep only what passes; when a room fails, binary-search the safe prefix.
+That is cheap (a handful of judge runs) and it is the only thing standing
+between this transformation and a silent wrong answer.
+
+110 rows removed, ticks down 21%. Width 386 now binds — four 94-wide rooms
+side by side, columns frozen by zone resolution — so further row folding
+here is banked, not cashed.
