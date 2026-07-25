@@ -112,3 +112,43 @@ def test_pipe_values_are_animated_cell_by_cell():
                         assert frame[r][c] == expected
                         seen_full |= expected == "e"
     assert seen_full, "expected to observe at least one value in flight"
+
+
+# ------------------------------------------------------------------- LLLM
+# LLLM is a strict subset of LLM, so the same interpreter must reproduce it.
+LLLM_PROBLEM = json.loads(
+    (
+        Path(__file__).resolve().parents[1]
+        / "data/small/problems/little-little-little-man.json"
+    ).read_text()
+)
+
+
+@pytest.mark.parametrize(
+    "case", LLLM_PROBLEM["publicTestData"], ids=lambda c: c["name"]
+)
+def test_lllm_cases_are_reproduced_by_the_llm_interpreter(case):
+    for index, got, expected in replay(case):
+        assert got == expected, f"round {index}"
+
+
+def test_every_lllm_room_is_the_outer_rectangle():
+    """LLLM walls are just the perimeter, so no geometry parsing is needed.
+
+    This is what makes a LLLM renderer cheap: `+` and `-` are also ops, so a
+    cell cannot be classified as wall by its character, but it can be
+    classified by position. Measured over the public data, not promised by
+    the spec, so it is asserted here to catch the day it stops holding.
+    """
+    for case in LLLM_PROBLEM["publicTestData"]:
+        rows = program_grid([int(v) for v in case["rounds"][0]["in"]])
+        machine = LLM.parse(rows)
+        height, width = len(rows), max(len(r) for r in rows)
+        assert len(machine.rooms) == 1, case["name"]
+        room = machine.rooms[0]
+        assert (room.top, room.left, room.bottom, room.right) == (
+            0,
+            0,
+            height - 1,
+            width - 1,
+        ), case["name"]
