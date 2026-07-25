@@ -58,3 +58,28 @@ Before committing this WIP:
   `2026-07-25T19:50:45.751Z` and contained no `wheezards` row.
 
 No submission had been created at this freshness checkpoint.
+
+## Live baseline and compact candidate
+
+`pathfinder_00` was submitted as
+`f55011a1-3c3d-43ca-be41-85fca46133da`.  It passed 15/18: all public
+cases and 8/11 private cases, with the other three reaching the step cap.
+This confirmed that the remaining risk was tick throughput, not loading,
+geometry, or frames.
+
+`pathfinder_01` shortens the ring pipes only as far as their required setup
+capacity permits, reduces scratch/update pipes to three cells, and compacts
+the operation zones in every hot room.  The algorithm and token protocols
+are unchanged.  Its final preflight result is:
+
+| Metric | pathfinder_00 | pathfinder_01 |
+| --- | ---: | ---: |
+| occupied bounds | 452x2034 | 187x1957 |
+| footprint | 4,137,156 | 3,829,849 |
+| bytes | 967,231 | 500,984 |
+| average public ticks | 8,078,941.714 | 3,355,635.571 |
+| local score | 33,423,842,186,907.43 | 12,851,577,537,600.14 |
+
+The worst public case is now 5,284,281 ticks instead of 12,769,742.
+`pathfinder_01` is `READY TO SUBMIT`; its SHA-256 is
+`a6351f2a16f8985b5177dcf560bdc824549a748c4452d498a867b3a056163dac`.

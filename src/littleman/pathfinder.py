@@ -78,18 +78,18 @@ class Rooms:
 
 CONTROLLER_ZONES = {
     "logic": 0,
-    "input": 10,
-    "display": 30,
-    "ring_out": 60,
-    "ring_in": 100,
-    "scratch_out": 180,
-    "scratch_in": 220,
-    "update_out": 300,
-    "update_in": 340,
+    "input": 5,
+    "display": 0,
+    "ring_out": 20,
+    "ring_in": 25,
+    "scratch_out": 60,
+    "scratch_in": 65,
+    "update_out": 100,
+    "update_in": 105,
 }
 
-SERVICE_ZONES = {"in": 0, "out": 40, "logic": 80}
-DRIVER_ZONES = {"in": 0, "data": 40, "addr": 80, "swap": 120, "logic": 160}
+SERVICE_ZONES = {"in": 0, "out": 5, "logic": 10}
+DRIVER_ZONES = {"in": 0, "data": 20, "addr": 40, "swap": 60, "logic": 80}
 
 
 def _compile_fast_fsm(
@@ -1409,7 +1409,7 @@ def build_relay_room() -> CompiledRoom:
     fsm = Fsm()
     fsm.go("recv", "in", "@r", "send")
     fsm.go("send", "out", "s", "recv")
-    return compile_fsm(fsm, SERVICE_ZONES, min_width=110)
+    return compile_fsm(fsm, SERVICE_ZONES, min_width=35)
 
 
 def build_update_room() -> CompiledRoom:
@@ -1498,7 +1498,7 @@ def build_update_room() -> CompiledRoom:
             zero="mod",
             positive=f"vertical_left{mod}",
         )
-    return _compile_literal_safe(fsm, SERVICE_ZONES, min_width=150)
+    return _compile_literal_safe(fsm, SERVICE_ZONES, min_width=60)
 
 
 def build_display_driver() -> CompiledRoom:
@@ -1518,7 +1518,7 @@ def build_display_driver() -> CompiledRoom:
     fsm.go("addr_send", "addr", "s", "recv")
     fsm.go("swap_value", "logic", "1", "swap_send")
     fsm.go("swap_send", "swap", "s", "recv")
-    return compile_fsm(fsm, DRIVER_ZONES, min_width=210)
+    return compile_fsm(fsm, DRIVER_ZONES, min_width=110)
 
 
 def build_rooms() -> Rooms:
@@ -1526,7 +1526,7 @@ def build_rooms() -> Rooms:
         controller=_compile_literal_safe(
             build_controller_fsm(),
             CONTROLLER_ZONES,
-            min_width=410,
+            min_width=170,
             right_padding=8,
         ),
         ring_relay=build_relay_room(),
@@ -1554,13 +1554,18 @@ def build_pathfinder() -> str:
     def controller_col(zone: str) -> int:
         return controller_left + rooms.controller.zones[zone]
 
-    service_top = controller_bottom + 80
+    service_tops = {
+        "ring": controller_bottom + 11,
+        "scratch": controller_bottom + 4,
+        "update": controller_bottom + 4,
+    }
     placed: list[tuple[str, CompiledRoom, int, int, str, str]] = []
     for name, room, out_zone, in_zone in (
         ("ring", rooms.ring_relay, "ring_out", "ring_in"),
         ("scratch", rooms.scratch_relay, "scratch_out", "scratch_in"),
         ("update", rooms.update, "update_out", "update_in"),
     ):
+        service_top = service_tops[name]
         left = controller_col(out_zone) - room.zones["in"]
         cv.put(service_top, left, room.rows)
         placed.append((name, room, service_top, left, out_zone, in_zone))
@@ -1588,7 +1593,8 @@ def build_pathfinder() -> str:
 
     # Input room below the controller, feeding upward.
     input_col = controller_col("input")
-    input_top = service_top + max(len(room.rows) for _, room, *_ in placed) + 20
+    services_bottom = max(top + len(room.rows) - 1 for _, room, top, *_ in placed)
+    input_top = services_bottom + 20
     cv.put(input_top, input_col - 1, ["+-+", "|I|", "+-+"])
     cv.pipe([(input_top - 1, input_col), (controller_bottom + 1, input_col)])
 
