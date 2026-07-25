@@ -87,6 +87,36 @@ active overnight.
   `coordination/messages/claude/`. Never edit Codex's status or messages.
 - If Codex claims a queue item first, skip it and record that.
 
+### Use the review loop — it is the highest-yield mechanism available
+
+Today it caught real defects in BOTH directions, each within an hour:
+
+- Codex reviewing Claude found two missing semantics in `llm.py`
+  (signed-64 wrapping; man-to-man collision) that no public fixture
+  covered.
+- Claude reviewing Codex found a frontier-ordering bug in the Pathfinder
+  bitboard walk (fixed by distance-mod-3 bit-planes), and rejected a
+  correct-but-723x8134 LOADER room that would have been unshippable.
+- Codex's `brackets_00` monkey-patch experiment upgraded the B-register
+  correction from spec-reading to server-proven.
+
+So, actively:
+
+1. **Ask for review** whenever a component is about to be trusted by
+   something else — post a message naming the artifact, the exact claim,
+   and the command that proves it. Do not block on the answer; continue
+   and fold the reply in when it arrives.
+2. **Review what Codex pushes.** Fetch regularly; when it lands a
+   candidate, run the gates yourself before believing the numbers, and
+   check the thing a builder cannot see — footprint against our best
+   artifacts, binding margins (`littleman.room_ports.audit`), and whether
+   the claim was measured or assumed.
+3. **Leave notes for the morning** in `coordination/messages/claude/`:
+   what was accepted, what was rejected and why, and any correction that
+   belongs in the cookbook or the tool registry.
+4. Accept useful findings without ego, and say plainly when a review is
+   wrong — today both sides did both, and that is why it worked.
+
 ## Hard rules
 
 - **Do no new design.** If an item seems to need a design decision, take
