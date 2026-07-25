@@ -807,3 +807,36 @@ entirely free: 57 wide by 261 tall**. The six trimmed rooms are now at most
 That is the "can we move it" step, and it needs about twelve pipes
 re-routed. Tool: `src/littleman/alexey_trimrooms.py`, reproduces
 plotter_03.man byte-for-byte.
+
+### plotter_04: the move — 16.9B → 9.37B (1.80x), 8.1x across the session
+
+Moved the top block into the band that the plotter_03 trim opened. Live
+20/20 at **9,367,793,668**, fp 148,225 → 106,276, ticks 114,065 → 88,146.
+
+**It is one edit, not twelve.** The five small rooms plus I form a linear
+chain — I → A → B → C → D → E → BIG1 — joined by 2- and 3-cell pipes, and
+every one of those is *internal* to the block. Exactly one pipe leaves it:
+E's bottom port into BIG1's top port at column 17. So the block translates
+rigidly (+62 rows, +69 columns) with its plumbing intact and only that
+single connection is re-drawn. Checking the pipe topology before planning
+the move turned an estimated twelve re-routes into one.
+
+The new route is long — rows 59-61 are blocked at columns 46-69 by another
+pipe, so it cannot cut across and has to climb a corridor at column 82, run
+west along row 1 and come back down column 17. That should have cost ticks.
+
+**It saved them.** Straight runs are drawn with segment glyphs (`|`, `-`)
+instead of arrowheads, so `alexey_squeeze` can still see through them; it
+then deleted 59 rows and 25 columns, which shortened *every* pipe crossing
+those rows, not only the new one. Ticks fell 23%.
+
+Two things worth keeping from this:
+
+* **Re-run the squeeze after moving anything.** The move alone was
+  fp 148,225 → 147,456; the squeeze after it did the real work.
+* **Draw straight pipe runs as segments, not arrowheads**, or the squeeze is
+  blinded — my first attempt wrote `^`/`v` in every cell and collapsed one
+  row instead of fifty-nine.
+
+plotter across the session: 75,794,498,065 → 16,905,772,730 (squeeze) →
+9,367,793,668 (trim + move) = **8.1x**.

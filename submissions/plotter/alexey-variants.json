@@ -2,6 +2,38 @@
  "schemaVersion": 1,
  "variants": [
   {
+   "version": "plotter_04",
+   "label": "top block relocated into the free band, then squeezed",
+   "parent": "plotter_03",
+   "changeType": "geometry",
+   "architecture": "The five small rooms plus I form a linear chain I->A->B->C->D->E->BIG1 whose pipes are all internal except ONE (E's bottom port into BIG1's top port at column 17). So the block is translated rigidly (+62 rows, +69 cols) into the 57x261 band that the plotter_03 trim freed beside the three big rooms, and only that single connection is re-drawn. Rows 59-61 are blocked at columns 46-69, so the new route climbs a corridor at column 82, runs west along row 1 and comes back down column 17. Straight runs are drawn with segment glyphs ('|','-') rather than arrowheads so alexey_squeeze can still see through them; it then removed 59 rows and 25 columns.",
+   "source": {
+    "path": "submissions/plotter/plotter_04.man",
+    "generator": "src/littleman/alexey_plotter_move.py (reproduces byte-for-byte)",
+    "width": 113,
+    "height": 326,
+    "footprint": 106276
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "avgTicksLocal": 60293.8,
+    "comparedTo": "plotter_02 local: fp 148225, avgTicks 78072"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 113,
+    "height": 326,
+    "area2": 106276,
+    "avgTicks": 88146,
+    "score": 9367793668,
+    "fullResponse": "submissions/plotter/alexey-plotter_04-submit.json"
+   },
+   "verdict": "TEAM BEST for plotter: 16,905,772,730 -> 9,367,793,668 (1.80x), and 8.1x against the 75.8B this line started from. The long re-route was expected to cost ticks and instead SAVED them (114,065 -> 88,146), because the squeeze that followed shortened every pipe crossing the 59 deleted rows, not just this one."
+  },
+  {
    "version": "plotter_03",
    "label": "every room shrunk to its content (empty edge rows/columns dropped)",
    "parent": "plotter_02",
@@ -45,5 +77,5 @@
    "verdict": "TEAM BEST for plotter: 75,794,498,065 -> 16,905,772,730 (4.48x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
   }
  ],
- "note": "Alexey research line for plotter."
+ "note": "Alexey research line for plotter. plotter_04 is the current best at 9,367,793,668 -- 8.1x better than the 75,794,498,065 this line started from. Chain: plotter_02 (mechanical squeeze) -> plotter_03 (rooms trimmed to content, a deliberate no-op) -> plotter_04 (top block relocated into the band the trim freed)."
 }
