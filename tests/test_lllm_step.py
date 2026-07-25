@@ -355,6 +355,19 @@ def test_physical_step_matches_all_public_rounds(case):
     assert res.output == run_case(rows, ks).deltas
 
 
+def test_physical_step_matches_50_fuzz_cases():
+    """The physical interpreter remains exact beyond the public programs."""
+    bad = []
+    for i, case in enumerate(FUZZ[:50]):
+        rows, ks, _ = case_rounds(case)
+        res = Machine.parse(RIG).run(
+            max_ticks=500_000, inputs=loader_stream(rows) + ks
+        )
+        if res.output != run_case(rows, ks).deltas or res.error:
+            bad.append((i, res.error))
+    assert bad == []
+
+
 def test_no_later_input_parks_after_round_one():
     """Without a k token, STEP parks at the later-round input as intended."""
     rows = rows_of(CASES[1])
