@@ -71,3 +71,34 @@ serpentine in the free columns 29-35 fixed it — 7/7, ticks 4,145.6.
 Footprint stays 1,296: the layout is 36x33 and **width binds**. The two rows
 this freed are in the middle; the `O` room still holds the bottom at rows
 30-32, so it has to follow before the height can actually drop.
+
+## `alexey-memory-zig5.man` — `O` magnetised to block 4
+
+`O` rises two rows (30-32 -> 28-30) and sits against block 4's left wall.
+Block 4's exit stays exactly where it was — its left wall, row 29, which it
+must, since block 4 has two pipes each way — and the pipe collapses from four
+cells to **two**:
+
+    (29,4) < -> (29,3) <   into O's right wall at (29,2)
+
+7/7, ticks 4,143.6. Layout **36 x 32**.
+
+Footprint is still 1,296: width 36 binds against height 32, so every row won
+here is banked rather than cashed. What now holds the last row is the 5->4
+pipe, whose horizontal run sits on row 31 — block 5's outgoing port is on its
+BOTTOM wall, so the pipe is forced one row below the rooms. Block 5 has one
+pipe each way, so that port is free to move; but its natural alternative (the
+left wall) points straight at block 4's right wall, which would terminate the
+pipe at the wrong port. That is the next thing to solve.
+
+### State of the chain
+
+    block1 rows  0-4   cols  5-33
+    block2 rows  5-8   cols  3-31    herringbone left
+    block3 rows  9-15  cols  8-33    herringbone right
+    block4 rows 16-30  cols  5-28    joined, entered at its own top port
+    block5 rows 26-29  cols 30-35
+    I      rows  1-3   cols  0-2
+    O      rows 28-30  cols  0-2     magnetised
+
+    37x37 (memory_04) -> 36x36 (memory_05, submitted) -> 36x33 -> 36x32
