@@ -112,3 +112,19 @@ the record rather than the builder's argument.
   (`_step_main_plan()` + the `Tape` layout tool) and a prioritised arm
   order, so a subset-capable machine can still be assembled if the full
   9-way dispatch does not fit the night.
+
+### 2026-07-25T20:15Z — SCAN done; LOADER split validated end to end
+
+SCAN: 306x82, 58 tests, prologue 1065 ticks (size-independent). Design
+avoids per-cell coordinate tests entirely: state rides a 5-slot scratch
+ring `[ADDR, MAN, W, NPAD, RC]` and each row is four COUNTED segments
+driven by BP countdowns derived from W, so B stays free for constant
+folds.
+
+**The split is vindicated**: Codex's monolith was 723x8134; the two
+halves are 306x82 and 185x86. Same frozen interface, ~26x less height.
+
+**New press target (post-assembly)**: SCAN's 306 rows and CLASSIFY's 185
+will dominate the assembled box. Assembly first — LLLM scores zero
+today and correctness beats footprint — but a geometry press on these
+two is the obvious next win, exactly as snake_01 (5.6x) was.
