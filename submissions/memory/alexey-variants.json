@@ -2,6 +2,37 @@
  "schemaVersion": 1,
  "variants": [
   {
+   "version": "memory_06",
+   "label": "full room-packing pass: herringbone stacking plus I and O pressed flat",
+   "parent": "memory_04",
+   "changeType": "geometry",
+   "architecture": "Pure geometry on the packed-storage machine. Blocks 1-4 stacked with zero gap rows using herringbone offsets (each room offset sideways so its wall sits on the row adjacent to its neighbour's, sharing no cell, with the pipe leaving through the resulting overhang into a side wall). O pressed flat against block 4's left wall, reached through the overhang below it. I moved right 2 and up 1 so its right wall abuts block 1, its pipe leaving through the overhang beneath it -- which freed columns 0-1 entirely.",
+   "source": {
+    "path": "submissions/memory/memory_06.man",
+    "width": 34,
+    "height": 32,
+    "footprint": 1156
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "avgTicksLocal": 4143.6,
+    "comparedTo": "memory_04 local: fp 1369, ticks 4159"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "width": 34,
+    "height": 32,
+    "area2": 1156,
+    "avgTicks": 20194,
+    "score": 23344360,
+    "fullResponse": "submissions/memory/alexey-memory_06-submit.json"
+   },
+   "verdict": "TEAM BEST for memory: 27.8M -> 23,344,360. Footprint 1,369 -> 1,156 with the machine untouched."
+  },
+  {
    "version": "memory_04",
    "label": "packed-storage machine (teammate's; recovered from a paste, was not in the repo)",
    "parent": null,
@@ -75,5 +106,5 @@
    "verdict": "SUPERSEDED by memory_04 (~27.8M). This was the pipeline-ring line; the geometry work on it was correct but applied to a baseline already beaten 3x."
   }
  ],
- "note": "CORRECTION 2026-07-25: the real memory baseline is memory_04 at ~27.8M live, a packed-storage machine that is NOT the pipeline-ring line. Everything below it (memory_01/02/03) is that older, weaker line -- my geometry work took memory_01's 91.4M down to 75.8M, but memory_04 was already 3x better. Geometry has nothing to give on memory_04: it is a tight 37x37 square, and squeeze/trim-rooms both return it unchanged (fp 1369, 7/7, ticks 4159)."
+ "note": "Alexey research line for memory. memory_06 is the current best at 23,344,360 (34x32), reached from memory_04 (37x37, ~27.8M) purely by room packing -- no machine logic touched. Intermediates in submissions/memory/room-packing/."
 }

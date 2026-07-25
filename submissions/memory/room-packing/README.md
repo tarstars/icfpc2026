@@ -121,3 +121,21 @@ port anywhere because it has one incoming pipe and nothing else.
 
 Columns 0-1 are now free at rows 26-28; only the `I` room (rows 1-3) still
 holds them, so the left edge is one repack away from moving in.
+
+## `memory_06.man` — SUBMITTED, 23,344,360
+
+`I` moves right two columns and up one (1-3/0-2 -> 0-2/2-4), so its right wall
+abuts block 1's left wall. Its pipe leaves through the overhang **below** it,
+which is free because block 1 starts at column 5:
+
+    (3,4) v -> (4,4) >   into block 1's left wall at (4,5)
+
+Two cells. Block 1's incoming port simply moves down its left wall from row 2
+to row 4 — free to do, since block 1 has one pipe each way.
+
+That empties columns 0-1 completely and the squeeze takes them:
+
+    34 x 32,  footprint 1,156,  7/7 local,  24/24 live,  **23,344,360**
+
+Against `memory_04` (37x37, fp 1,369, ~27.8M) — **no machine logic touched at
+any point**, only where the rooms sit and which wall each pipe uses.
