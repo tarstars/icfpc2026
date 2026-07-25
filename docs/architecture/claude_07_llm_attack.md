@@ -316,3 +316,64 @@ geometric meaning is absent from the DSL and owned by a checked layer
 below; everything with semantic meaning is present with machine-exact
 behavior. The model can therefore be wrong only in ways the trace tests
 catch, and the transcription can be wrong only in ways the gates catch.
+
+## Position as program counter: the correspondence, and why `goto` becomes `state`
+
+The machine's program counter IS the man's (cell, heading) pair — control
+flow is movement. The DSL's program counter is its position in the call
+sequence. The correspondence:
+
+- Each semantic DSL call transcribes to one glyph cell; the interpreter
+  "standing at a call" corresponds to the man standing on that glyph.
+  Geometry adds semantically-empty cells between them (spaces, arrows,
+  merge cells) — the walked path visits them, the model does not, and
+  that is fine because they are no-ops by definition.
+- The precise CFG node is **(cell, heading)**, not cell: one physical cell
+  crossed by two paths in different headings is two nodes. Shared-cell
+  layout may map two call sites onto one side-effect-compatible cell — a
+  transcription compression that leaves model semantics untouched.
+- The operational check of the correspondence is trace equality: same
+  port-consumption and emission order = same walk, up to no-op cells.
+
+**Is the machine goto-shaped? Yes.** Arrows are unconditional jumps,
+`X`/`d`/`x` conditional ones; the native CFG is arbitrary, including
+irreducible flow. The structured DSL covers a subset. So the user's
+instinct is right that something goto-like is needed — but raw `goto X`
+is the wrong construct:
+
+- validation collapses: with goto, every label needs a full dataflow
+  analysis; the join-invariant discipline that makes arms checkable
+  locally is exactly what goto dissolves;
+- transcription collapses: structured constructs map to a small pattern
+  library; arbitrary jump graphs turn single-room layout into a general
+  graph-drawing problem;
+- and empirically the winners are structurally simple: every shipped room
+  is straight lines, a few loops, one or two branches — the shipped
+  cleverness lives in encodings and in layout, not in control flow.
+
+**The right construct is `state` — goto with obligations.** A component
+body may be declared as an explicit FSM: named states, each with a
+straight-line (or lightly branched) DSL body, each with a **mandatory
+entry invariant** (what A/B/BP mean, what is in flight on each port), and
+explicit transitions naming which test moves where. That recovers the
+machine's full flow (including irreducible graphs) while keeping checking
+local: a transition is valid iff the source's exit state satisfies the
+target's invariant — dataflow reduced to per-edge assertions.
+
+This is not invented here twice over: codex_02's implementation-language
+sketch is exactly this (`state idle: ... goto idle` with `assert at
+loop_head` blocks), and the Grade Book machine proved rooms-generated-
+from-FSMs at scale before any of this vocabulary existed (its FSM-room
+compiler produced the machine that a later geometry pass improved 15.97%).
+
+The construct also captures the machine's position-as-information idioms
+honestly: Snake's "the man's corridor IS the flag" — one bit stored in
+*which corridor the man walks*, costing zero registers — is, in DSL
+terms, simply two states with different continuations. Position-as-state
+= FSM state; the trick stops being folklore and becomes a declared state
+with an invariant.
+
+Boundary honestly stated: the DSL (with `state`) is for authoring new
+components. Existing hand-written rooms are not decompiled into it; they
+enter the library as `external` implementations (grid + evidence), per
+codex_01's escape hatch.
