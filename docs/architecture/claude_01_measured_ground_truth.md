@@ -22,10 +22,12 @@ consequences:
 - **Design debt: real.** Every "needs three live values" rejection
   (two are recorded in `reports/2026-07-25-memory-packed.md`'s alternatives
   section) was argued from a false premise and deserves re-examination.
-- **Evidence gap: real.** No live submission has ever exercised
-  B-through-arithmetic, because we always re-saved. First component to rely
-  on it ships with a cheap live validation. (Label: Observed locally +
-  spec-confirmed; server-unexercised.)
+- **Evidence gap: CLOSED (2026-07-25T13:5xZ).** The Snake builder proved
+  the server implements B-survival: monkey-patching `Machine._execute` to
+  zero B after every `+ - * % N & | ~ { }` drops `brackets_00.man` — live
+  26/26 on the server — from 9/9 to 3/9 locally. A machine that scored on
+  the server therefore *relies* on B surviving arithmetic. (Label:
+  Observed, server-corroborated by a live artifact.)
 
 Platform rule derived: `effects.json` {reads, writes, blocks, turns,
 clobbers} per opcode is *generated* from `sim.py` and diffed against the
