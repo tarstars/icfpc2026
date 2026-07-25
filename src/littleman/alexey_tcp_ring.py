@@ -58,8 +58,22 @@ from .sim import Machine
 #       cells another phase owns. The pump gained two columns and the init
 #       now descends col 17, which no phase occupies. Traced clean: BP stays
 #       16 the whole way down.
-# TODO: run a packet end to end and diff against alexey_tcp_model, then
-#       submit as tcp_01 and compact the room.
+# TODO: FOUND. Diffed against alexey_tcp_model on the shortest stream: the
+#       machine matches the model exactly through init (ring seeded, BP
+#       16->0), the prologue (seq=0, d=0), the X into the d==0 arm (BP=15)
+#       and the -1 marker injection. It then spins forever in the rotate
+#       loop, steps 262..899, BP pinned at 15:
+#
+#         (15,11)'>' -> (15,14)'d' -> (16,14)'<' -> (16,13)'r'
+#                    -> (16,12)'s' -> (16,11)'^' -> back
+#
+#       The body is `^ s r <` -- turn, read, send, return -- with no `m`.
+#       A test-first loop only runs BP times if the body decrements BP.
+#       The fix is not a character: the body already runs from col 14 down
+#       to col 11 and the drain's return sits to its left, so the loop has
+#       to move somewhere with five free cells in a row (rows 18-19 have a
+#       run at cols 4-14, but the init's westward leg crosses row 19 and
+#       must move first).
 #
 #       Worth adding: a walk checker that runs the man and flags every cell
 #       he executes that belongs to a different phase. Grid only guards
