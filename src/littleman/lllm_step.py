@@ -493,6 +493,7 @@ SEED_ROW, ROUND_ROW = 23, 30
 TICK_ROW = 140
 SCR_COL = 42        # first column whose r/s binds the scratch loop (rows 22+)
 REQ_MAX_ROW = 11    # last row whose left-wall s reaches REQ rather than DRAW
+FROZEN_COL = 67     # frozen tick -> MOVE: clear of every wire below row 44
 
 
 class Tape:
@@ -662,8 +663,15 @@ def _step_tick_halt(room) -> None:
         room.put(r, 49, "v")
     # The frozen arm crosses BELOW the live arm's ascent, so it must leave on
     # a row the ascent no longer occupies -- hence TICK_ROW + 6, not + 4.
+    # ... and rejoins the round at MOVE, not after it: the tick-halt tape
+    # already leaves ADDR at the head, which is exactly what MOVE's align tape
+    # wants, and MOVE's rung 4 (no ``a``) is the catch-all every frozen CTRL
+    # falls through without moving.  The climb is a BLANK corridor: column
+    # FROZEN_COL is crossed by five MOVE arms and by kcount, and a man keeps
+    # his heading over empty floor, so only the two turns are drawn.
     room.put(TICK_ROW + 6, 49, ">")
-    room.put(TICK_ROW + 6, HW["arm"], "v")
+    room.put(TICK_ROW + 6, FROZEN_COL, "^")
+    room.put(MOVE_ROW, FROZEN_COL, "<")
     # Live (A < 0): east to the northbound fetch highway, which is the LAST
     # column before the wall so no eastward run can be cut short by it.
     room.put(TICK_ROW + 5, 50, ">")
@@ -738,7 +746,7 @@ _R = list("rs")             # one ring relay
 # on from the staircase's head (BI), i.e. with ADDR at the head, because MOVE's
 # align tape is shared and starts from there.  ``value`` rides in B untouched.
 ARM_SPEC = {
-    0: (42, 69, _R * 5),                                  # space (and wall)
+    0: (42, 69, []),                                      # space AND wall
     1: (43, 67, _R * 4 + ["r", "W", "s"]),                # heading: CTRL=value
     2: (44, 65, _R + ["r", "W", "s"] + _R * 3),           # digit:   AI=value
     3: (45, 63, list("rrss") + _R * 3),                   # M:  BI=AI, AI=AI
@@ -764,12 +772,34 @@ def _step_arms(room) -> None:
         room.put(arm_row, col, ">")
         if tokens:
             Tape(room, arm_row, col + 1, col + 1, ARM_HI).emit(*tokens)
-        else:
+        elif rung:
             _step_branch(room, arm_row, col + 1)
+        else:
+            _step_wall(room, arm_row, col + 1)
     for r in range(min(s[1] for s in ARM_SPEC.values()), MOVE_ROW):
         room.put(r, ARM_MERGE, "v")
     room.put(MOVE_ROW, ARM_MERGE, "<")    # west, on to MOVE's own merge
     _step_move(room)
+
+
+def _step_wall(room, row: int, col: int) -> None:
+    """Rung 0 carries TWO classes -- 0 (space) and 1 (wall) -- so it splits.
+
+    ``b``/``m``/``a`` never touch A, so A is still the class here; ``N`` makes
+    it 0 or -1 and one ``X`` separates them.  Negated deliberately: rung 0 is
+    the DEEPEST arm, so the spare row is the one ABOVE it, and only a negative
+    A turns an eastbound man north.
+
+    Wall is the LLLM freeze: the man has already been moved onto the wall cell
+    by the previous tick's blind step, so setting the halt bit is the whole of
+    it -- he stays drawn there, on the wall, in every later frame.
+    """
+    room.put(row, col, "N")                   # A = -class
+    room.put(row, col + 1, "X")
+    room.put(row, col + 2, "rs" * 5)          # class 0: a bare lap, no write
+    room.put(row - 1, col + 1, ">")           # class 1: north onto the spare
+    room.put(row - 1, col + 2, "rs" * 4)      # row, then CTRL |= 4 as class 8
+    room.put(row - 1, col + 10, "rM4+s")
 
 
 def _step_branch(room, row: int, col: int) -> None:
