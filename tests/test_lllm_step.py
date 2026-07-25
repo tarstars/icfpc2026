@@ -231,7 +231,14 @@ def test_integration_rig_with_real_fetch():
 
 # --------------------------------------------------- phase 2: the STEP room
 from littleman.lllm_step import (  # noqa: E402
-    STEP_AT, STEP_COLS, STEP_ROWS, Tape, build_step_rig, build_step_room,
+    CLASS_JOIN_COL,
+    CLASS_JOIN_ROW,
+    STEP_AT,
+    STEP_COLS,
+    STEP_ROWS,
+    Tape,
+    build_step_rig,
+    build_step_room,
 )
 from littleman.sim import Machine  # noqa: E402
 
@@ -342,8 +349,8 @@ def test_tick_interpreter_not_transcribed_yet():
     assert len(res.output) == 258 and res.output[-1] == -1
 
 
-def test_tick_skeleton_reaches_class_stub():
-    """The round-in, halt check, FETCH, and three blank crossings are live."""
+def test_space_arm_reaches_normalized_class_join():
+    """The common space op runs through the selector to the shared join."""
     rows = rows_of(CASES[1])
     machine = Machine.parse(RIG)
     res = machine.run(
@@ -354,11 +361,52 @@ def test_tick_skeleton_reaches_class_stub():
         if (m.room.top, m.room.left) == (SR, SC)
     )
     assert res.output == run_case(rows, []).deltas
-    assert (man.r - SR, man.c - SC) == (44, 66)
+    assert (man.r - SR, man.c - SC) == (CLASS_JOIN_ROW, CLASS_JOIN_COL)
     assert machine.grid[man.r][man.c] == "H"
     assert man.halted
     for row, col in ((10, 60), (11, 60), (11, 65)):
         assert machine.grid[SR + row][SC + col] == " "
+
+
+@pytest.mark.parametrize(
+    ("cls", "value", "expected"),
+    [
+        (0, 0, [1, 17, 7, 5, 17, 1]),
+        (1, 0, [5, 17, 7, 5, 17, 1]),
+        (2, 3, [3, 17, 7, 5, 17, 1]),
+        (3, 3, [1, 17, 7, 3, 17, 1]),
+        (4, 0, [1, 17, 5, 5, 17, 1]),
+        (5, 0, [1, 17, 7, 12, 17, 1]),
+        (6, 0, [1, 17, 7, -2, 17, 1]),
+        (8, 0, [5, 17, 7, 5, 17, 1]),
+    ],
+)
+def test_straight_class_tapes_restore_canonical_ring(cls, value, expected):
+    from littleman.lllm_step import _class_tokens
+    from littleman.sim import wrap64
+
+    # FETCH has rotated canonical CTRL-headed order twice, so class arms
+    # enter with BI at the physical head.
+    queue = [7, 5, 17, 1, 1, 17]
+    A, B = 0, value
+    for op in _class_tokens(cls):
+        if op == "r":
+            A = queue.pop(0)
+        elif op == "s":
+            queue.append(A)
+        elif op == "M":
+            B = A
+        elif op == "W":
+            A, B = B, A
+        elif op == "+":
+            A = wrap64(A + B)
+        elif op == "-":
+            A = wrap64(A - B)
+        elif op.isdigit():
+            A = int(op)
+        else:
+            raise AssertionError(op)
+    assert queue == expected
 
 
 def test_round_loop_tapes_place_without_collision():

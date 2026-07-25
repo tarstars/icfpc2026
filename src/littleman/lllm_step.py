@@ -369,7 +369,7 @@ class ReferenceFetch:
 # RIGHT wall and the four external ones on the LEFT, separated vertically
 # into a top zone (LOAD in / DRAW out) and a bottom zone (RESP in / REQ
 # out).  Every r/s cell therefore lives in exactly one of three regions.
-STEP_ROWS, STEP_COLS = 96, 72
+STEP_ROWS, STEP_COLS = 160, 72
 
 # The hot path is the per-tick FETCH transaction, so REQ and RESP share the
 # TOP zone; LOAD (once a round) and DRAW (twice a round) share the BOTTOM.
@@ -620,7 +620,12 @@ def _step_tick_halt(room) -> None:
     _step_fetch(room)
 
 
-CLASS_ROW = 44      # first rung of the op-class staircase
+CLASS_ROW = 44      # route from FETCH into the op-class staircase
+CLASS_FIRST_ROW = 45
+CLASS_FIRST_COL = 13
+CLASS_SPAN = 8      # rows reserved per class arm
+CLASS_JOIN_COL = 69
+CLASS_JOIN_ROW = 122
 
 
 def _step_fetch(room) -> None:
@@ -642,7 +647,59 @@ def _step_fetch(room) -> None:
     room.put(11, 66, "v")
     for r in range(12, CLASS_ROW):
         room.put(r, 66, "v")
-    room.put(CLASS_ROW, 66, "H")          # TODO: class staircase goes here
+    _step_class_dispatch(room)
+
+
+def _class_tape(room, row: int) -> Tape:
+    """Turn a selected class east into the scratch-bound tape zone."""
+    room.put(row, TAPE_LO - 1, "v")
+    room.put(row + 1, TAPE_LO - 1, ">")
+    return Tape(room, row + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+
+
+def _class_tokens(cls: int) -> tuple[str, ...] | None:
+    """Ring choreography for one class, from head BI back to head CTRL."""
+    relay2 = ("r", "s")
+    if cls == CLASS_SPACE:
+        return relay2 * 4
+    if cls in (CLASS_WALL, CLASS_HALT):
+        return relay2 * 4 + ("r", "M", "4", "+", "s") + relay2 * 5
+    if cls == CLASS_HEADING:
+        return relay2 * 4 + ("r", "W", "s") + relay2 * 5
+    if cls == CLASS_DIGIT:
+        return relay2 + ("r", "W", "s") + relay2 * 2
+    if cls == CLASS_M:
+        return ("r", "r", "s", "s") + relay2 * 2
+    if cls == CLASS_ADD:
+        return ("r", "M", "s", "r", "+", "s") + relay2 * 2
+    if cls == CLASS_SUB:
+        return ("r", "M", "s", "r", "-", "s") + relay2 * 2
+    return None                         # X gets its sign fork separately
+
+
+def _step_class_dispatch(room) -> None:
+    """Decode BP=class with a decrement staircase and normalize each arm."""
+    room.put(CLASS_ROW, 66, "<")
+    room.put(CLASS_ROW, CLASS_FIRST_COL - 1, "v")
+    room.put(CLASS_FIRST_ROW, CLASS_FIRST_COL - 1, ">")
+
+    for cls in range(CLASS_HALT + 1):
+        row = CLASS_FIRST_ROW + cls * CLASS_SPAN
+        col = CLASS_FIRST_COL + cls * 2
+        room.put(row, col, "d")          # zero -> east arm; positive -> south
+        if cls < CLASS_HALT:
+            room.put(row + 1, col, "m")
+            room.put(row + CLASS_SPAN, col, ">")
+
+        tape = _class_tape(room, row)
+        tokens = _class_tokens(cls)
+        if tokens is None:
+            tape.emit("H")               # branch-X arm is the next checkpoint
+            continue
+        tape.emit(*tokens)
+        _leave_tape(room, tape, CLASS_JOIN_COL, CLASS_JOIN_ROW)
+
+    room.put(CLASS_JOIN_ROW, CLASS_JOIN_COL, "H")  # TODO: shared move phase
 
 
 def build_step_room():
