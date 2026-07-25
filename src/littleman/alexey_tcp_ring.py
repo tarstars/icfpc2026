@@ -194,88 +194,158 @@ def assert_pipe_map(text: str | None = None) -> None:
             assert outg == "RING-OUT", f"write at {(r, c)} reaches {outg}, wanted RING-OUT"
 
 
-# --- layout helper -------------------------------------------------------
+# --- layout helpers ------------------------------------------------------
 class Grid:
-    """1-based pump interior with collision detection.
+    """Pump interior with collision detection, cell ownership and highways.
 
-    Every layout mistake in this build so far was a silent overwrite: a
-    horizontal `put` running across cells another phase already owned, or a
-    vertical literal written as a string. `put` refuses to overwrite, and
-    `col` writes downward, so those fail loudly at build time.
+    Three guards, one per class of bug this build actually produced:
+
+    * `put`/`col` refuse to overwrite — catches a phase written across
+      cells another phase already owns.
+    * `reserve_row`/`reserve_col` mark cells as routing-only. Placing a
+      phase there raises, and routing outside them is visible in the
+      ownership map. Routes threaded through whatever happened to be free
+      is what produced four of the five faults in this machine.
+    * `owner` records which phase owns each cell, so `walk_report` can say
+      whose cell the man just executed.
     """
+
+    ROUTE = "route"
 
     def __init__(self, h: int = PUMP_H, w: int = PUMP_W):
         self.h, self.w = h, w
         self.g = [[" "] * (w + 2) for _ in range(h + 2)]
+        self.owner: dict[tuple[int, int], str] = {}
+        self.reserved: set[tuple[int, int]] = set()
 
-    def put(self, r: int, c: int, text: str) -> None:
+    # -- highways ---------------------------------------------------------
+    def reserve_row(self, r: int) -> None:
+        self.reserved.update((r, c) for c in range(1, self.w + 1))
+
+    def reserve_col(self, c: int) -> None:
+        self.reserved.update((r, c) for r in range(1, self.h + 1))
+
+    def free_rows(self) -> list[int]:
+        return [r for r in range(1, self.h + 1) if (r, 1) not in self.reserved]
+
+    # -- placement --------------------------------------------------------
+    def _place(self, r: int, c: int, ch: str, phase: str) -> None:
+        if ch == " ":
+            return
+        if self.g[r][c] != " ":
+            raise AssertionError(
+                f"{phase}: collision at {(r, c)} with "
+                f"{self.owner.get((r, c), '?')}'s {self.g[r][c]!r}"
+            )
+        if (r, c) in self.reserved and phase != self.ROUTE:
+            raise AssertionError(
+                f"{phase}: {(r, c)} is a reserved highway cell; "
+                f"place phases off the highways"
+            )
+        if (r, c) not in self.reserved and phase == self.ROUTE:
+            raise AssertionError(
+                f"route cell {(r, c)} lies outside the reserved highways"
+            )
+        self.g[r][c] = ch
+        self.owner[(r, c)] = phase
+
+    def put(self, r: int, c: int, text: str, phase: str = "?") -> None:
         for i, ch in enumerate(text):
-            if ch == " ":
-                continue
-            if self.g[r][c + i] != " ":
-                raise AssertionError(
-                    f"collision at {(r, c + i)}: {self.g[r][c + i]!r} vs {ch!r}"
-                )
-            self.g[r][c + i] = ch
+            self._place(r, c + i, ch, phase)
 
-    def col(self, r: int, c: int, text: str) -> None:
+    def col(self, r: int, c: int, text: str, phase: str = "?") -> None:
         """Write downward — vertical literals and branch arms."""
         for i, ch in enumerate(text):
-            if ch == " ":
-                continue
-            if self.g[r + i][c] != " ":
-                raise AssertionError(
-                    f"collision at {(r + i, c)}: {self.g[r + i][c]!r} vs {ch!r}"
-                )
-            self.g[r + i][c] = ch
+            self._place(r + i, c, ch, phase)
 
     def rows(self) -> list[str]:
         return ["".join(self.g[r][1:self.w + 1]) for r in range(1, self.h + 1)]
 
 
-def build_wip() -> str:
-    """All ten nodes placed. Builds and parses; still hits the tick cap.
+def walk_report(text: str, grid: Grid, inputs: list[int], max_ticks: int = 3000):
+    """Run the pump man and report which phase owns each cell he executes.
 
-    Faults found and fixed here, one trace each:
-      1. init descended col 9 and stepped on the prologue's ']' (BP 16->8)
-         and on the drain's 's'. Fixed: two spare columns, descend col 17.
-      2. the rotate loop body was `^ s r <`, no decrement, so it spun with
-         BP pinned. Fixed: moved to rows 23-24 (the only run of five free
-         cells) with the body `^ m s r <`.
-      3. the path from the insert to the lap entry ran along row 21 and
-         stepped on (21,12), the lap loop's own exit, which threw the man
-         north into the branch tail. Fixed: that path now uses row 20 and
-         the lap exit climbs col 12 to row 14, then west into the drain.
-
-    Faults 1 and 3 are the same shape: a WALK crossing a cell another phase
-    owns. Grid guards placement, not routing — a walk checker is still the
-    missing tool.
-
-    Cells are placed by explicit coordinate on purpose. Three of the bugs
-    in this build were off-by-one space counts inside padded strings.
+    Returns (steps, phase_sequence). `steps` is one tuple per executed cell
+    that carries an instruction: (tick, row, col, char, phase, A, B, BP).
+    `phase_sequence` collapses runs, so a walk that strays into another
+    phase shows up as that phase appearing where it does not belong —
+    the fault that Grid cannot see, because nothing was overwritten.
     """
+    machine = Machine.parse(text)
+    lines = [list(line) for line in text.split("\n")]
+    pump = [r for r in machine.rooms if r.contains_interior(1, PUMP_LEFT + 1)][0]
+    man = [m for m in machine.men if m.room is pump][0]
+    steps: list[tuple] = []
+    original = machine._execute
+
+    def traced(walker):
+        if walker is man:
+            ch = lines[walker.r][walker.c]
+            if ch.strip():
+                steps.append((
+                    len(steps), walker.r, walker.c - PUMP_LEFT, ch,
+                    grid.owner.get((walker.r, walker.c - PUMP_LEFT), "?"),
+                    walker.A, walker.B, walker.BP,
+                ))
+        return original(walker)
+
+    machine._execute = traced
+    machine.run(max_ticks=max_ticks, inputs=list(inputs))
+    sequence: list[str] = []
+    for step in steps:
+        if not sequence or sequence[-1] != step[4]:
+            sequence.append(step[4])
+    return steps, sequence
+# Highways: nothing but routing goes here, and routing goes nowhere else.
+# Four of the five faults in this build were a walk crossing a cell some
+# phase owned; reserving the lanes up front makes that impossible rather
+# than unlikely.
+HIGHWAY_COLS = (1, 11, 18)
+HIGHWAY_ROWS = (5, 13, 18, 21)
+
+
+def new_grid() -> Grid:
     g = Grid()
+    for c in HIGHWAY_COLS:
+        g.reserve_col(c)
+    for r in HIGHWAY_ROWS:
+        g.reserve_row(r)
+    return g
+
+
+def place_phases(g: Grid) -> None:
+    """Phases only, each inside one block between highways.
+
+    Blocks, and why each phase sits where it does (see the zone map at the
+    top of the file): rows 1-4 read INPUT, rows 15-24 read RING, rows 1-9
+    write OUTPUT, rows 20-24 write RING, and rows 15-17 are the only band
+    that reads RING and writes OUTPUT at once -- which is why the drain
+    lives there and nowhere else.
+    """
     at = g.put
-    # init: read n, A=0, BP=16, seed the ring. Descends col 17 because no
-    # phase owns it (the prologue fills row 3, the drain fills row 16).
-    at(1, 1, "@r`16`b0"); at(1, 17, "v"); at(19, 17, "<"); at(19, 3, "v")
-    at(20, 3, ">   d"); at(21, 3, "^ ms<"); at(20, 8, "^")
-    at(2, 8, "<"); at(2, 2, "v")
-    # prologue and the three arms
-    at(3, 2, ">r-b]]]]dX"); g.col(3, 12, "v`15`b<")
-    g.col(4, 11, "bm"); at(9, 11, "v"); g.col(4, 10, "1N<"); at(6, 2, "Hs")
-    g.col(10, 11, "1Ns")                       # inject the -1 marker
-    at(18, 11, "<"); at(18, 2, "v"); at(23, 2, ">")
-    at(23, 6, "d"); at(24, 2, "^msr<")          # rotate loop, with its `m`
-    at(23, 7, "v"); at(24, 7, ">"); at(24, 16, "^"); at(17, 16, "r")
-    # val: up col 16 to the input zone, back down col 14 to the insert
-    at(2, 15, "r"); at(2, 16, "<"); at(2, 14, "v")
-    at(13, 14, "s"); at(14, 14, "<"); at(14, 13, "v")
-    at(20, 13, "<"); at(20, 10, "v")            # row 20, clear of the lap exit
-    at(22, 10, ">rX v"); at(23, 10, "^s<<"); at(21, 12, "^")
-    at(14, 12, "<"); at(14, 2, "v")             # lap exit -> row 14 -> drain
-    # drain: rows 15-17 are the only band reading RING and writing OUTPUT
-    at(15, 2, ">rX>s^"); at(16, 4, "s1+M0s")
-    at(16, 10, "v"); at(17, 10, "<"); at(17, 2, "^")
-    at(4, 7, "<"); at(4, 2, "^")
+    at(1, 2, "@r`16`b0", "init")            # rows 1-4 x cols 2-10
+    at(3, 2, ">r-b]]]]d", "prologue")       # d = seq - expected, delay test
+    at(2, 12, "r", "val")                   # rows 1-4 x cols 12-17
+    for i, ch in enumerate("1Ns"):
+        at(6 + i, 3, ch, "marker")          # inject the -1 marker
+    for i, ch in enumerate("1NsH"):
+        at(6 + i, 12, ch, "loss")           # emit -1 and halt
+    at(15, 2, ">rX>s", "drain"); at(16, 3, "s1+M0s", "drain")
+    at(15, 13, "r", "discard")
+    at(19, 2, ">   d", "rotate"); at(20, 2, "^msr<", "rotate")
+    at(22, 2, ">rX v", "lap"); at(23, 2, "^s<<", "lap")
+
+
+def build_wip() -> str:
+    """Phases placed under the highway discipline; routes not yet threaded.
+
+    `place_phases` raises if any phase lands on a highway, and Grid raises
+    if a route is drawn off one, so the next step -- connecting the phases
+    -- cannot reintroduce the fault class that cost this build three
+    rounds. Run `walk_report` once the routes are in: it names the phase
+    owning every cell the man executes, so a stray walk reads as an
+    unexpected phase in the sequence instead of a tick-cap.
+    """
+    g = new_grid()
+    place_phases(g)
     return build_skeleton(g.rows())
