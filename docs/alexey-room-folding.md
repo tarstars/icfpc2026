@@ -310,48 +310,86 @@ from littleman.alexey_squeeze  import squeeze         # 3. free rows/cols
 4. `alexey_squeeze` is **not** unconditionally safe; if the column pass
    breaks cases, fall back to rows-only.
 
-## The next target, already surveyed: plotter's staircase rooms
+## 7. The staircase fold — the big one
 
-`plotter` is 113×326 and the height is three rooms — 87, 91 and 76 rows —
-with instruction densities of 0.01–0.02. Their shape is a boustrophedon that
-spends **two rows per instruction**:
+Three of our programs were spending **two rows on every instruction**:
 
 ```
-row A:   .....v(16) ................. <(36)     <- westbound, no instructions
-row B:   .....>(16) r(17) ........... v(36)     <- eastbound, ONE instruction
-row C:   ...............v(29) ....... <(36)
-row D:   ...............>(29) s(30) .. v(36)
+row A:   .....v(p) ................. <(q)     west leg, carries nothing
+row B:   .....>(p) INSTR ........... v(q)     east leg, ONE instruction
 ```
 
-Two facts make this foldable, and both are already verified:
+The man falls into the west leg at column `q`, walks west to `p`, drops into
+the east leg, walks east executing whatever is there, and drops out at `q`
+again. The west leg is a carriage return and nothing else.
 
-1. **Rows are free, columns are not.** Each of these rooms has two incoming
-   and two outgoing pipes, and every `r` splits between the two inbound and
-   every `s` between the two outbound — so the columns carry meaning. But
-   room(3,7)'s inbound pipes both land on **row 2** (cols 17 and 21) and its
-   outbound pipes both leave on **row 90** (cols 25 and 30). Same wall each
-   way ⇒ the row term cancels ⇒ **zone is decided by column alone.** An
-   instruction may be moved to any row as long as it keeps its column.
-2. Consecutive instructions whose columns increase can share one eastbound
-   row: rows B and D above collapse to `>(16) r(17) ... s(30) ... v(36)`.
-   The `>` at col 29 was only a turn glyph and is not needed.
+Two consecutive east legs share one row whenever their instruction columns
+increase across the join. `src/littleman/alexey_stairfold.py` does it:
 
-The prologue of room(3,7) walks
-`r@17 b r@17 s@30 r@17 s@25 r@17 s@25 r@17 s@25 r@17 s@30 r@17 s@30 r@17
-s@30 d ...` — alternating left-zone reads and right-zone writes, which is
-exactly the increasing-column pattern that collapses. Expect roughly a 2×
-fold on the linear stretches.
+```python
+from littleman.alexey_stairfold import fold_room, ports_are_single_walled
+text, freed = fold_room(text, room_index)
+```
 
-**Why it was not done on 2026-07-25.** Deleting the freed rows *globally*
-is not available: rows 8-61 also carry five small rooms at cols 59-92, which
-a whole-program row delete would destroy. So the fold has to be room-local —
-shrink the room, then move everything below it up and re-route the pipes
-that cross. That is the matmul job again, at three times the size. The
-router is in place for it; budget a session, not an hour.
+Results, all live, all 20/20:
 
-`sudoku` (25.5B, rooms 82×87, 82×90 and 96×104 at density 0.01) and
-`gradebook` (81.9B, four rooms of 199×94 at density 0.02) are the same shape
-of problem and the same order of payoff.
+| problem | before | after | footprint | ticks |
+|---|---|---|---|---|
+| plotter | 3,076,834,345 | **1,668,891,820** | 34225 → 24025 | −21% |
+| sudoku | 25,480,732,026 | **11,307,342,643** | 61504 → 36864 | −26% |
+| gradebook | 81,914,188,255 | **54,422,867,494** | 178929 → 148996 | −21% |
+
+It pays twice: fewer rows *and* fewer ticks, because the man stops walking
+the carriage returns.
+
+### The precondition, and why the column pass is forbidden
+
+`ports_are_single_walled(machine, room)` — every inbound pipe lands on one
+wall and every outbound one leaves through the opposite wall. Then the row
+term of the Manhattan distance cancels, the zone is decided by column alone,
+and **rows are free while columns are frozen**. Every big room in plotter,
+sudoku and gradebook satisfies it.
+
+The freed rows come out with a **rows-only** squeeze. Running the column
+pass as well drops plotter to 1/6 — exactly what the frozen-columns half of
+the rule predicts. Do not run it.
+
+Vertical fall-throughs survive the fold: branches in these rooms are
+compiled as long empty columns the man falls down, and a deleted leg pair is
+blank at every column a fall uses.
+
+### Drive it with the judge — the static check is not sufficient
+
+gradebook's R1 is the counterexample. Folding it whole drops to 5/7; of the
+35 merges available there **the first 34 are all safe** and only the last is
+not. A deleted west leg can be the landing spot of a fall belonging to some
+*other* branch, and the static condition (column monotonicity, no collision)
+cannot see that.
+
+So the procedure is: fold room by room, judge each one, and when a room
+fails, binary-search the largest safe prefix of its merges. Six judge runs
+found gradebook's boundary. Never ship a fold that has not been judged.
+
+### What is left in the staircase
+
+After folding, the rooms still carry one empty west leg per blocked join —
+21 of them in plotter's R0, 24 in sudoku's R13. A join is blocked exactly
+when a high-column write is followed by a low-column read. Those could be
+unblocked by *re-choosing columns within the zone* — a write that targets
+the nearer pipe may sit at any low column, which would make the chain
+increase again — but that is a re-lay with column assignment, not a merge,
+and it has to respect the fall columns. Roughly another 1.4× on sudoku if it
+works.
+
+## Still open
+
+`gradebook` is now width-bound: four 94-wide rooms side by side make 386,
+and their columns are frozen by zone resolution, so folding more rows there
+is banked, not cashed. Re-arranging the four into a 2x2 block was measured
+as worse (width 192, height ~440).
+
+`sudoku` at 184x192 and `plotter` at 155x145 are both close to square, so
+the next row saved is worth something on sudoku and nothing on plotter.
 
 ## What does not work — do not re-derive
 

@@ -333,3 +333,39 @@ the cases still pass.
 Live scores from this line after the 2026-07-25 geometry session:
 memory **20,491,008** (24/24), matmul **20,042,330,424** (20/20),
 tcp 5,655,750, brackets 3,494,864, sort 1,367,454, triangle 832.
+
+## The staircase fold (added 2026-07-25) — biggest single win of the session
+
+If a room spends two rows per instruction:
+
+```
+row A:   .....v(p) ................. <(q)     west leg, carries nothing
+row B:   .....>(p) INSTR ........... v(q)     east leg, ONE instruction
+```
+
+then two consecutive east legs share a row whenever their instruction
+columns increase across the join:
+
+```python
+from littleman.alexey_stairfold import fold_room, ports_are_single_walled
+m = Machine.parse(text)
+for i, r in enumerate(m.rooms):
+    if ports_are_single_walled(m, r) and r.bottom - r.top >= 8:
+        text, freed = fold_room(text, i)
+        # JUDGE HERE. If it fails, binary-search the safe merge prefix.
+squeezed, dr, dc = squeeze(text, rows=True, cols=False)   # rows ONLY
+```
+
+Live results, all 20/20: plotter 3.08B → **1.67B**, sudoku 25.5B → **11.3B**,
+gradebook 81.9B → **54.4B**.
+
+Three rules:
+
+1. **Precondition** — `ports_are_single_walled`: all inbound pipes on one
+   wall, all outbound on the opposite. Then rows are free and columns are
+   frozen.
+2. **Rows-only squeeze.** The column pass drops plotter to 1/6 because
+   columns are what decide which pipe an `r`/`s` talks to.
+3. **Judge every room.** The merge condition is nearly sufficient, not
+   provably so — gradebook's R1 has 35 merges of which exactly the last one
+   is unsafe. Binary-search the prefix when a room fails.
