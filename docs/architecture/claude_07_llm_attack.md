@@ -1,8 +1,15 @@
 # Claude: attacking LLM by component decomposition (the user's factory, applied)
 
-Status: Proposed 2026-07-25T14:2xZ, after the user clarified the intent of
-the "component factory" bullet. Corrects the scope of `claude_04` §3 and
-revises the `claude_00` claim that the LLM machine is out of reach.
+Status: **WORKING HYPOTHESES** as of 2026-07-25T14:45Z. The user accepts
+the arguments provisionally while recording doubts — in particular around
+the DSL sections (restricted subset, branch selectors, position/state
+correspondence). Nothing below is a decided method: every section is a
+hypothesis to be confirmed or retired by the first stream-B results (the
+component refactor and the first transcribed component), and the doubts
+stand until then. Originally proposed 2026-07-25T14:2xZ after the user
+clarified the "component factory" intent; corrects the scope of
+`claude_04` §3 and revises the `claude_00` claim that the LLM machine is
+out of reach.
 
 ## The correction
 
