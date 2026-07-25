@@ -6,6 +6,11 @@ Maintained by the assistant; append new tricks as they are discovered.
 Full semantics live in `docs/language-reference.md` — open it only for
 exact edge cases (tick order, pipe targeting, literal parsing).
 
+**If you are here to work on tcp:** read `docs/alexey-tcp-handoff.md`
+first — it contains the ranked, measured plan (compaction, realign fold,
+ring-latency cut), the verification workflow, and the traps already paid
+for. Do not redesign the machine; tcp_01 is proven 20/20 on the server.
+
 **Companion (read it too, it is authoritative):**
 `docs/littleman-cookbook.md`, written by a teammate — register discipline
 (which ops destroy B, `/` giving quotient+remainder, BP being write-only),
