@@ -1216,3 +1216,36 @@ forces the first step. Also: a pipe may not attach to a room's *corner*.
 
 Ticks fell too (avg 4143.6 -> 4109.9 locally) because block 4 lost three
 columns the man was walking across.
+
+## 2026-07-25 — matmul_03: 33,286,994,352 -> 21,478,654,512 (20/20, 143x147)
+
+**The rooms were never the problem.** matmul's twelve rooms fit inside
+109x144. The 183x185 bounding box was made by three pipes -- 268, 334 and
+106 cells -- that wandered out to column 182 and row 184, plus the `O` room
+parked at cols 180-182 with nothing near it.
+
+Erased those three, moved `O` next to the body, and re-routed all three with
+`alexey_piperoute` **at their exact original cell counts** (268/334/106). A
+pipe's length is its buffer, and on this machine it is also its delay, so
+the counts are not negotiable -- and because they were preserved, the tick
+counts came out identical in all seven local cases.
+
+The hard part was not routing, it was **lane assignment**. All three leave
+the bottom wall of adjacent rooms at cols 77, 85, 91 and two of them have to
+end up west of col 77. Pipes cannot cross, so the pipe exiting furthest west
+must take the shallowest lane and each one further east must go deeper. Zone
+blocks: p16 rows 145-150 cols 24-84, p17 the left pocket cols 0-23 plus row
+151, p18 everything east of col 91.
+
+Also learned: `(134,74)` was reachable only through the two-column gap
+between two rooms -- three-cell pipes at cols 76, 84 and 90 seal rows
+134-136 completely. Printing a free-cell map before routing is worth the
+thirty seconds.
+
+**Two traps paid for, both now fixed in the router:**
+
+* Inflation must never touch the first or last step. A `+2` detour inserted
+  at the start replaces the arrow that makes the parser recognise the pipe,
+  and the machine then loads and runs with one pipe silently missing.
+* `Router.text()` dropped trailing blank rows, so a padded canvas shrank
+  between passes and the route could not use the row it had been given.
