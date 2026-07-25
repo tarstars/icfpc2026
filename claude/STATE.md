@@ -1,6 +1,6 @@
 # STATE — read this first after any context flush
 
-Updated: 2026-07-24 late (contest day 1 of 3).
+Updated: 2026-07-25 morning (contest day 2 of 3).
 
 ## Read order for a fresh session
 
@@ -20,14 +20,16 @@ Updated: 2026-07-24 late (contest day 1 of 3).
 
 ## Active WIP (hand-off ready)
 
-- Memory compaction (memory_01, geometry-only ~2x win): IN PROGRESS,
-  blocked on one pipe collision. Full continue-from-here instructions in
-  `claude/memory-compaction-handoff.md`. Code is in
-  src/littleman/memory.py:build_memory_compact (renders 47x46 but
-  parse fails 'bad pipe glyph at (3,45)' — two wrap pipes cross; the
-  handoff gives the exact fix to try).
-- Plotter: drivers built + ADDRDRV validated; worker spec in
-  claude/plotter-worker.md. Separate track.
+- Packet Reassembly: `tcp_01` is complete and passed 20/20 live at
+  52,747,175. It proves the offset-window architecture but is worse than
+  `tcp_00`; the ranked next steps are in `docs/alexey-tcp-handoff.md`.
+  Separately, the current standings show a team best of 5,981,625.6 whose
+  source and submission UUID are absent from Git and cannot be listed through
+  the API. Recover that exact artifact in the web UI before another TCP
+  submission.
+- Plotter: `plotter_01` is a geometry-only 388x441 candidate. It passes all
+  public cases and the deterministic 20-segment oracle locally, improving
+  local score 32.98% over `plotter_00`; it has not been submitted.
 
 ## Contest clock
 
@@ -37,20 +39,24 @@ Lightning round ends 2026-07-25 12:00 UTC (scoreboard frozen 10:00–
 
 ## Board (graded problems, best live submission)
 
-| problem   | status | live score | ours? | notes |
-|-----------|--------|-----------|-------|-------|
-| triangle  | 19/19  | 1053      | claude | at proven floor, done |
-| memory    | 24/24  | 43.8M     | claude | v1; compaction is the biggest single win available (footprint 4489 = 67²; ~40-wide target ≈ 2.8× better) |
-| reverse   | 25?/   | 1.95M     | claude | shrinking ring; fine |
-| sort      | 25/25  | 3.46M     | claude | sort_02 ring; teammate's pipeline superseded |
-| brackets  | 26/26  | 7.47M     | claude | packed base-3 stack |
-| tcp       | 20/20  | 20.0M     | codex  | paired-value ring |
-| history   | 1/1    | 7921      | codex  | footprint-only |
-| plotter   | UNSOLVED | —       | —     | display infra DONE; machine spec ready in plotter-plan.md; plotter.py = broken sketch, rewrite |
-| gradebook | UNSOLVED | —       | —     | ring of (subject,student,grade)? read spec first |
-| matmul    | UNSOLVED | —       | —     | ring storage + nested loops; big |
-| sudoku    | UNSOLVED | —       | —     | 81 values, 27 group-sum/set checks; bitmask-in-64bit per group looks right |
-| subset-sum| UNSOLVED | —       | —     | n small? 15M tick cap hints brute-force enumeration via binary counter + x-loop |
+Snapshot updated `2026-07-25T05:56:56Z`; every problem below passed all
+private cases. Ranks are included because several earlier rank notes are now
+stale.
+
+| problem | live score | rank | notes |
+|---|---:|---:|---|
+| triangle | 832 | 1/189 | `triangle_04`; server-valid final wall step |
+| memory | 91,372,247.625 | 42/109 | compact 46x47 `memory_01` |
+| reverse | 472,345.6 | 52/104 | shrinking ring |
+| sort | 1,455,739.72 | 26/71 | 19x19 `sort_03` |
+| brackets | 7,473,269.23 | 38/61 | packed base-3 stack |
+| tcp | 5,981,625.6 | 19/48 | counted artifact provenance missing; do not overwrite blindly |
+| history | 7,921 | 27/94 | footprint-only |
+| plotter | 75,794,498,065 | 37/43 | `plotter_00`; compact local candidate ready |
+| gradebook | 104,303,579,599.6 | 25/37 | compact four-worker layout |
+| matmul | 33,286,994,352 | 24/36 | compact nested ring |
+| sudoku | 105,335,908,125.2 | 42/46 | parallel mask rings |
+| subset-sum | 91,769,596,778,389.8 | 29/35 | meet-in-the-middle systolic sorters |
 
 Practice: max-element solved (10/10, no submission possible).
 
@@ -66,21 +72,26 @@ Practice: max-element solved (10/10, no submission possible).
   `data/small/problems/*.json`.
 - Versioning: .man files immutable; new attempt = `<slug>_NN.man` +
   variants.json entry. See any submissions/*/README.md.
-- Simulator is trustworthy: 7 problems went to the server on first
-  try after local green. If sim and server ever disagree, STOP and
-  fix the sim first.
+- Use `littleman.server_compat` for pre-submission judging. The base simulator
+  is too permissive for shared-wall rooms and too strict for a final wall step
+  after `s`; both differences are confirmed against the server.
 
-## In progress
+## Completed since the previous state
 
-Plotter: infra (display parse/semantics/frame-judge) merged and
-green (72 tests). Machine not started beyond broken sketches.
-Next concrete step = step 1 of plotter-plan.md build order.
+- All twelve graded problems are solved.
+- Memory `memory_01` passed 24/24 live and improved the accepted score to
+  91,372,247.625. `claude/memory-compaction-handoff.md` is historical.
+- Plotter, Grade Book, Matrix Multiply, Sudoku Auditor, and Subset Sum all
+  have preserved accepted implementations and reports under `reports/`.
+- Triangle `triangle_04` reached score 832 and rank 1 in the recorded
+  standings snapshot.
 
 ## Priorities (my recommendation, in order)
 
-1. Plotter via plotter-plan.md (2 points at stake, plan is ready).
-2. Sudoku Auditor / Grade Book (likely ring + streaming compare,
-   reuse cookbook idioms; read specs).
-3. Memory compaction (known ~2.5-3× score win, pure layout work).
-4. Subset Sum (needs algorithm thought; 15M cap).
-5. Matmul last (biggest machine).
+1. Recover the exact 5,981,625.6 TCP artifact before making another TCP
+   submission.
+2. Submit the validated `plotter_01` geometry candidate after the mandatory
+   pull and live-score check, if the user authorizes submission.
+3. Optimize the weakest current ranks: Sudoku, Plotter, Subset Sum, and
+   Matrix Multiply.
+4. Continue TCP only from the measured plan in `docs/alexey-tcp-handoff.md`.

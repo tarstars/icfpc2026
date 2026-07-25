@@ -57,6 +57,50 @@
         "updatedAt": "2026-07-24T21:39:13.872Z",
         "fullResponse": "submissions/plotter/plotter_00-submit.json"
       }
+    },
+    {
+      "version": "plotter_01",
+      "label": "compact vertical clearances",
+      "parent": "plotter_00",
+      "changeType": "geometry",
+      "architecture": "unchanged symmetric Bresenham protocol; minimum validated inter-room pipe clearances and zero compiler right padding",
+      "source": {
+        "path": "submissions/plotter/plotter_01.man",
+        "generator": "src/littleman/codex_plotter.py:build_plotter_compact",
+        "sha256": "d2a42d508ba6c7907b98cac3ffb26228e1fd12cd596030d22fddf8165d6ebe77",
+        "bytes": 83127,
+        "width": 388,
+        "height": 441,
+        "maxDimension": 441,
+        "footprint": 194481
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": {
+          "main diagonal": 89188,
+          "three rounds": 212274,
+          "one pixel": 5659,
+          "both ways": 135808,
+          "around the border": 308359,
+          "octant fan": 322576
+        },
+        "averageTicks": 178977.33333333334,
+        "score": 34807690764.0,
+        "adversarial": {
+          "seed": 20260724,
+          "segments": 20,
+          "ticks": 1037213,
+          "coverage": "same oracle corpus as plotter_00"
+        }
+      },
+      "comparisonToParent": {
+        "maxDimensionReductionPercent": 17.570093457943926,
+        "footprintReductionPercent": 32.05310507467901,
+        "averageTicksReductionPercent": 1.3569273843598777,
+        "scoreReductionPercent": 32.975095098742926
+      },
+      "liveSubmission": null
     }
   ],
   "standingsSnapshot": {

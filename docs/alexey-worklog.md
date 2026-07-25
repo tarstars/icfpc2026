@@ -518,3 +518,23 @@ Where the remaining time would go: 14 relays × 8 ticks = 112 ticks/packet
 is the algorithmic floor for d≥1 packets; on top of that the pump still
 idles ~20 ticks/packet waiting on the 42-cell S pipe, and the pump room
 carries ~3 rows that hold a single cell each.
+
+### Numbering note (2026-07-25 merge)
+
+A teammate independently recovered these four machines from the contest
+platform and committed them under numbers assigned by discovery order, so
+**repo numbering is not build order** and two names collided in the merge:
+
+| repo file | built as | score |
+|---|---|---|
+| tcp_01, tcp_05 (byte-identical) | tcp_01 | 52,747,176 |
+| tcp_04 | tcp_02 | 8,554,029 |
+| tcp_03 | tcp_03 | 7,693,504 |
+| **tcp_02** | tcp_04 | **5,981,626** ← team best |
+
+Resolved by taking the teammate's numbering for the `.man` files (their
+content is byte-identical to mine, so nothing was lost, and their names
+were already published and referenced), and folding my authoritative
+server responses — ids, scores, tick counts — into `alexey-variants.json`,
+which their copy lacked. Every entry now carries `alexeyNumbering`.
+**Match these machines by score or sha256, never by file number.**

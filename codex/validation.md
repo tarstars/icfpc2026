@@ -1,6 +1,6 @@
 # Codex Validation
 
-Updated: 2026-07-24
+Updated: 2026-07-25
 
 ## Environment observations
 
@@ -218,6 +218,34 @@ Updated: 2026-07-24
   1.2083333333 points.
 - `gradebook_00.man` still reproduces its accepted SHA-256 exactly after the
   layout parameters were introduced.
+- Freshened `main` to `b2f8b58`, integrating the preserved `tcp_01` source,
+  generator, model, live response, and handoff. Its exact artifact passed all
+  six public cases locally at 62×62 and local score 34,380,095.3; its recorded
+  live result is 20/20 at score 52,747,175.
+- Queried live Packet Reassembly and Plotter standings. The final pre-commit
+  Plotter response at `2026-07-25T06:22:56.768Z` unexpectedly contained an
+  empty `rows` array while reporting `frozen=false`; no current team score was
+  inferred from that response. A direct authenticated read of the preserved
+  `plotter_00` submission confirmed 20/20 and score 75,794,498,065.
+- `littleman.server_compat` rejected the known server-invalid shared-wall
+  `triangle_03`, accepted the server-valid final-wall `triangle_04`, and
+  judged its six public cases at 13 ticks and score 832.
+- Audited every nonempty saved `.man` artifact: 27 passed the compatibility
+  layout check, `triangle_03` produced the expected shared-wall rejection, and
+  the previously rejected `history_00` independently retained its known
+  invalid-literal load error.
+- `plotter_00.man` still reproduces exactly at SHA-256
+  `13a1322961d8985bc165fd03f93070640dc4ee4b653c49c1d9f1dd4588bf8e03`.
+- Exact `plotter_01.man` has SHA-256
+  `d2a42d508ba6c7907b98cac3ffb26228e1fd12cd596030d22fddf8165d6ebe77`,
+  is 83,127 bytes, parses as 14 rooms, 18 pipes, and 12 men, and occupies
+  388×441.
+- `plotter_01` passed all six public cases at ticks
+  `[89188, 212274, 5659, 135808, 308359, 322576]`. Its local score is
+  34,807,690,764, 32.98% below `plotter_00`.
+- The deterministic 20-segment Plotter frame oracle at seed `20260724` passed
+  for both layouts; the compact candidate completed at tick 1,037,213.
+- `uv run pytest -q` — 142 tests passed in 64.56 seconds.
 - Exact-file benchmarking measured `gradebook_01` at 454×450, footprint
   206,116, SHA-256
   `f159eaf92ea37d9df9e66f814e8248c9ce10bb23eb9dbec591fc58f10f98c91f`,
@@ -239,6 +267,66 @@ Updated: 2026-07-24
 - The unfrozen Grade Book standings snapshot updated at
   `2026-07-25T01:14:57.234Z` placed `wheezards` 21st of 31 rows with
   1.3333333333 points.
+- Recovered TCP hashes are fixed at
+  `61613871dc69…` (`tcp_02`), `8962e6f2eaa2…` (`tcp_03`),
+  `7868665ea88c…` (`tcp_04`), and `e5e45693b594…` (`tcp_05`);
+  `tcp_05` is byte-identical to `tcp_01`.
+- `build_tcp_recovered_best()` reproduces `tcp_02.man` byte-for-byte at
+  38×38 and footprint 1,444. All four recovered sources pass six public
+  cases, the server-layout gate, and 45 deterministic boundary cases. Their
+  maximum boundary ticks are 9,720, 9,730, 10,900, and 30,306 respectively.
+- Exact `sort_05` is 342 bytes, SHA-256
+  `e8df587d0edfc47198051df54293e9ce48205d7c8b3dbbab92feb2fdd3d0d379`,
+  and reproduces from `build_sort_count_token()`. It occupies 18×18 and
+  passes seven public cases at ticks
+  `[1038, 854, 1080, 758, 1388, 3302, 8390]`, average 2,412, and local score
+  778,062.8571428572.
+- `sort_05` passed eight worst-shape and 300 seeded randomized workloads; the
+  maximum observed completion time was 18,920 ticks. Its layout passes
+  `server_compat`.
+- Exact `reverse_02` is 233 bytes, SHA-256
+  `7ae75df4daa28e173f3f018e80fa98b57ea3babbe55f59ae240ffb6a3124957a`,
+  and reproduces from `build_reverse3()`. It occupies 15×15, retains a
+  17-cell return FIFO, and passes eight public cases at ticks
+  `[331, 515, 563, 969, 429, 165, 1801, 4521]`, local score 261,393.75.
+- `reverse_02` passed ten worst-shape and 250 seeded randomized workloads and
+  the server-layout gate.
+- The corrected Memory packing model charges 12,000 ticks for its default
+  `40 ticks/op × 300 ops` assumption. Twenty-six focused tests pass; the
+  proven capacity reduction is 100 values to 34 words, while the conservative
+  score projection is explicitly estimated at 75,666,269.22 (17.19% lower).
+- `uv run pytest -q tests/test_tcp_recovered.py
+  tests/test_alexey_sort_ring3.py` — 14 tests passed in 11.23 seconds.
+- `uv run pytest -q tests/test_alexey_reverse3.py` — 3 tests passed in
+  1.61 seconds.
+- `uv run pytest -q tests/test_memory_packing_model.py` — 26 tests passed in
+  0.37 seconds.
+- `uv run pytest -q` — 185 tests passed in 78.88 seconds after integrating
+  recovered TCP, Sort/Reverse candidates, the Memory model, and transfer
+  audits.
+- Mandatory pre-commit freshness gate: `git pull --ff-only` reported current
+  `main` already up to date. Exact standings updated at
+  `2026-07-25T07:18:57.240Z` showed Packet Reassembly 20/20 at score
+  5,981,625.6 (rank 20), Sort 25/25 at score 1,455,739.72 (rank 29), and
+  Reverse 20/20 at score 472,345.6 (rank 54). Direct authenticated reads
+  reconfirmed live `sort_03`, `reverse_01`, `tcp_00`, and `tcp_01`.
+- Two-agent protocol artifact audit — all 11 Markdown artifacts under
+  `coordination/` exist; the task base and Codex status head match
+  `832ce90022da9010c299901df2748c9743c5845f`; no `.env` or `claude/` change
+  is present; all direct protocol entry-point paths exist.
+- `git diff --check` — passed after adding the concurrent-work policy,
+  normative protocol, initial status/task records, templates, peer prompt, and
+  bookkeeping links.
+- Claude workspace observation before adding the liveness policy —
+  `/home/tarstars/prj/icfpc2026-claude` was a clean `agent/claude` worktree at
+  onboarding commit `97b94990e910f157de28323c5e0048ac65c00ac5`; no files in
+  that worktree were changed by Codex.
+- Two-agent liveness-policy audit — the 15-minute concrete-progress lease,
+  voluntary-stop behavior, stop/takeover acknowledgement, evidence
+  definition, branch preservation, and exclusive-owner reassignment appear in
+  `AGENTS.md`, the normative protocol, Claude prompt, templates, durable
+  decision record, and a sender-owned policy message.
+- `git diff --check` — passed for the liveness-policy update.
 
 ## Pending validation
 

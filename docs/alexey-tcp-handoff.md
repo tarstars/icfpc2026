@@ -4,18 +4,23 @@ Everything here is measured, not guessed. Read this before touching tcp.
 
 ## State
 
-| version | score | w×h | fp | avgTicks | live |
-|---|---|---|---|---|---|
-| tcp_00 (other line) | 20,028,106 | — | — | — | 20/20 |
-| tcp_01 | 52,747,176 | 30×62 | 3844 | 13722 | 20/20 |
-| tcp_02 | 8,554,029 | 43×38 | 1849 | 4626 | 20/20 |
-| tcp_03 | 7,693,504 | 43×38 | 1849 | 4161 | 20/20 |
-| **tcp_04** | **5,981,626** | **38×38** | **1444** | **4142** | **20/20** |
+**Repo numbering is not build order.** A teammate recovered these sources
+from the contest platform and numbered them by discovery, so the file
+names below differ from the order the machines were built. Match by score
+or sha256, never by number; `alexey-variants.json` records both.
 
-`submissions/tcp/tcp_04.man` is the team best (3.35× better than tcp_00).
+| repo file | built as | score | w×h | fp | avgTicks | live |
+|---|---|---|---|---|---|---|
+| tcp_00 (other line) | — | 20,028,106 | — | — | — | 20/20 |
+| tcp_01, tcp_05 (identical) | tcp_01 | 52,747,176 | 30×62 | 3844 | 13722 | 20/20 |
+| tcp_04 | tcp_02 | 8,554,029 | 43×38 | 1849 | 4626 | 20/20 |
+| tcp_03 | tcp_03 | 7,693,504 | 43×38 | 1849 | 4161 | 20/20 |
+| **tcp_02** | tcp_04 | **5,981,626** | **38×38** | **1444** | **4142** | **20/20** |
+
+`submissions/tcp/tcp_02.man` is the team best (3.35× better than tcp_00).
 `src/littleman/alexey_tcp_v3.py` regenerates it byte-for-byte; edit the
-generator, never the `.man`. Submitted files are immutable — new attempt
-is tcp_05.
+generator, never the `.man`. Submitted files are immutable — the next
+free number is tcp_06.
 
 ## The design in one page
 

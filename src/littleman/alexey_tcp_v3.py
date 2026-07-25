@@ -1,7 +1,14 @@
-"""tcp_04 -- marker-free ring, packed to 38x38. Live 20/20, score 5,981,626.
+"""tcp_02.man -- marker-free ring, 38x38. Live 20/20, score 5,981,626.
 
-Progression from this line: tcp_00 20,028,106 -> tcp_02 8,554,029 ->
-tcp_03 7,693,504 -> tcp_04 5,981,626 (3.35x).
+NUMBERING: this generator produces submissions/tcp/tcp_02.man, the team
+best. Repo numbering is NOT build order -- a teammate recovered these
+sources from the contest platform independently and numbered them by
+discovery. Build order was tcp_02(8.55M) -> tcp_03(7.69M) -> tcp_04(5.98M);
+in the repo those are tcp_04, tcp_03, tcp_02 respectively. Each entry in
+alexey-variants.json carries `alexeyNumbering` with the build-order name.
+
+Progression: tcp_00 20,028,106 -> 8,554,029 -> 7,693,504 -> 5,981,626
+(3.35x).
 
 ALGORITHM (unchanged since tcp_02). Slot w0 -- the next expected sequence
 number -- is ALWAYS empty at packet start, because every packet drains to

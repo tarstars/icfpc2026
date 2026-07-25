@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "note": "Alexey research line. tcp_04 is the current best at 5,981,626 -- 3.35x better than tcp_00's 20,028,106. Progression: tcp_00 20.0M -> tcp_02 8.55M (marker deleted) -> tcp_03 7.69M (second count moved to the V pipe) -> tcp_04 5.98M (packed to 38x38). Generator src/littleman/alexey_tcp_v3.py reproduces tcp_04.man byte-for-byte.",
+ "note": "Alexey research line, merged with the platform-recovered lineage on 2026-07-25. REPO NUMBERING IS AUTHORITATIVE here and differs from the order the machines were built: tcp_02 is the best (5,981,626 -- 3.35x better than tcp_00's 20,028,106), then tcp_03 (7,693,504), then tcp_04 (8,554,029); tcp_05 is byte-identical to tcp_01. Each entry carries alexeyNumbering with the build-order name. Live scores and submission ids below are from the actual server responses in submissions/tcp/alexey-tcp_0N-submit.json. Generator src/littleman/alexey_tcp_v3.py reproduces tcp_02.man byte-for-byte.",
  "problem": {
   "id": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
   "slug": "tcp",
@@ -8,105 +8,6 @@
   "scoring": "footprint-tick"
  },
  "variants": [
-  {
-   "version": "tcp_04",
-   "label": "marker-free ring packed to 38x38",
-   "parent": "tcp_03",
-   "changeType": "geometry",
-   "architecture": "Same algorithm as tcp_02/03. Splitter moved to cols 25-37, O relocated into the routing band (rows 23-25) and fed from the forwarder's TOP wall alongside RIN (column-split zone rule re-audited), I moved to cols 33-35. Width 43->38 with height already 38, so the footprint becomes a square.",
-   "source": {
-    "path": "submissions/tcp/tcp_04.man",
-    "generator": "src/littleman/alexey_tcp_v3.py (reproduces byte-for-byte)",
-    "width": 38,
-    "height": 38,
-    "footprint": 1444
-   },
-   "localValidation": {
-    "casesPassed": 6,
-    "casesTotal": 6,
-    "stress": "46/46",
-    "avgTicksLocal": 2516,
-    "maxTicks": 4440
-   },
-   "liveSubmission": {
-    "status": "done",
-    "casesPassed": 20,
-    "casesTotal": 20,
-    "width": 38,
-    "height": 38,
-    "area2": 1444,
-    "avgTicks": 4142.4,
-    "score": 5981625.6,
-    "fullResponse": "submissions/tcp/alexey-tcp_04-submit.json"
-   },
-   "verdict": "TEAM BEST for tcp. Remaining headroom: 14 relays/packet x 8 ticks = 112 ticks is the algorithmic floor for d>=1; the pump still spends ~20 ticks/packet blocked on the S pipe (42 cells) and the pump room could lose ~3 sparse rows."
-  },
-  {
-   "version": "tcp_03",
-   "label": "second loop count moved onto the V pipe",
-   "parent": "tcp_02",
-   "changeType": "protocol",
-   "architecture": "Splitter sends seq on S and (15-seq, val) on V, so both of the pump's mid-packet reads sit in the V zone. Removes the mid-packet walk to the S zone and the D0 discard trip; the two return paths merge into one lane at col 4.",
-   "source": {
-    "path": "submissions/tcp/tcp_03.man",
-    "width": 43,
-    "height": 38,
-    "footprint": 1849
-   },
-   "localValidation": {
-    "casesPassed": 6,
-    "casesTotal": 6,
-    "stress": "46/46",
-    "avgTicksLocal": 2534
-   },
-   "liveSubmission": {
-    "status": "done",
-    "casesPassed": 20,
-    "casesTotal": 20,
-    "area2": 1849,
-    "avgTicks": 4160.9,
-    "score": 7693504.1,
-    "fullResponse": "submissions/tcp/alexey-tcp_03-submit.json"
-   },
-   "verdict": "Superseded by tcp_04 (same machine, packed)."
-  },
-  {
-   "version": "tcp_02",
-   "label": "marker-free ring, w0 implicit (v3 architecture)",
-   "parent": "tcp_01",
-   "changeType": "algorithm+geometry",
-   "architecture": "Ring holds only w1..w15 (15 values, no sentinel); w0 is implicit because it is always empty at packet start. d>=1: rotate d-1, pop stale, push val, relay 15-d (16 ops, no drain). d==0: emit val directly then pop-and-emit while head>0; the forwarder's 0 refill lands exactly where the freed slot belongs, so the invariant self-restores (2 ops for an in-order packet). Splitter sends seq AND 15-seq so both loop counts come from one `-` and one `+` with exp held in B. Forwarder fast path 8 cells.",
-   "source": {
-    "path": "submissions/tcp/tcp_02.man",
-    "generator": "src/littleman/alexey_tcp_v3.py (reproduces byte-for-byte)",
-    "sha256": "7868665ea88cb9f888b68f1385efa0a717f915f2b6e93b5ab199d60a83c5b0c2",
-    "bytes": 1161,
-    "width": 43,
-    "height": 38,
-    "footprint": 1849
-   },
-   "localValidation": {
-    "casesPassed": 6,
-    "casesTotal": 6,
-    "stress": "46/46 synthetic incl. n=48, full window, instant loss, fully reversed",
-    "avgTicksLocal": 2798,
-    "ringOpsPublic": 1075,
-    "ringOpsV2": 3204
-   },
-   "liveSubmission": {
-    "id": "12a6926b-0791-416b-bcf7-454cdc89c2b3",
-    "status": "done",
-    "casesPassed": 20,
-    "casesTotal": 20,
-    "width": 43,
-    "height": 38,
-    "area2": 1849,
-    "avgTicks": 4626.3,
-    "score": 8554028.7,
-    "fullResponse": "submissions/tcp/alexey-tcp_02-submit.json"
-   },
-   "verdict": "Superseded by tcp_03/tcp_04; kept as the step that introduced the marker-free ring."
-  },
   {
    "version": "tcp_01",
    "label": "offset-addressed window, tag-through-ring (v2 architecture)",
@@ -130,7 +31,6 @@
    },
    "liveSubmission": {
     "id": "9f1985a4-5a0d-41eb-8e6d-7a5148bcb3cc",
-    "status": "done",
     "casesPassed": 20,
     "casesTotal": 20,
     "width": 30,
@@ -138,9 +38,188 @@
     "area2": 3844,
     "avgTicks": 13721.95,
     "score": 52747175.8,
+    "status": "done",
     "fullResponse": "submissions/tcp/alexey-tcp_01-submit.json"
    },
-   "verdict": "WORKS BUT LOSES: ticks dominate. Three full ring laps per packet (rotate+lap, then realign) serialize against ~30 ticks of ring latency (RIN 22 cells + FWD 8-tick loop). To beat 20M at 13.7k ticks the footprint would need <1458 (38x38), unreachable with a 42-row pump. The win requires the tick pass: drop the realign lap (fold the +1 offset into the next rotate), shorten the forwarder loop and the return pipe. Estimated 3-4x ticks available there."
+   "verdict": "WORKS BUT LOSES: ticks dominate. Three full ring laps per packet (rotate+lap, then realign) serialize against ~30 ticks of ring latency (RIN 22 cells + FWD 8-tick loop). To beat 20M at 13.7k ticks the footprint would need <1458 (38x38), unreachable with a 42-row pump. The win requires the tick pass: drop the realign lap (fold the +1 offset into the next rotate), shorten the forwarder loop and the return pipe. Estimated 3-4x ticks available there.",
+   "alexeyNumbering": "tcp_01"
+  },
+  {
+   "version": "tcp_05",
+   "label": "recovered duplicate of tcp_01",
+   "parent": "tcp_01",
+   "changeType": "duplicate",
+   "architecture": "splitter (seq->pump top, val parked at insert), pump writes only to the ring, drain emits tags (-v data, -2000 loss, -3000 marker), forwarder room decodes tags to OUTPUT and refills emitted slots with zeros; per packet: rotate exactly d, discard, insert, lap to marker, drain, realign(+15 relay)",
+   "source": {
+    "path": "submissions/tcp/tcp_05.man",
+    "generator": null,
+    "sha256": "e5e45693b5949c17c1ef9c70965efb32d2b1f3be273445163aef62da76e06ae1",
+    "bytes": 1759,
+    "width": 30,
+    "height": 62,
+    "footprint": 3844,
+    "provenance": "Downloaded from the contest platform by the user on 2026-07-25."
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "stress": "45/45 synthetic incl. n=48, full window, instant loss",
+    "avgTicksLocal": 8944
+   },
+   "verdict": "WORKS BUT LOSES: ticks dominate. Three full ring laps per packet (rotate+lap, then realign) serialize against ~30 ticks of ring latency (RIN 22 cells + FWD 8-tick loop). To beat 20M at 13.7k ticks the footprint would need <1458 (38x38), unreachable with a 42-row pump. The win requires the tick pass: drop the realign lap (fold the +1 offset into the next rotate), shorten the forwarder loop and the return pipe. Estimated 3-4x ticks available there.",
+   "liveSubmission": {
+    "id": "9f1985a4-5a0d-41eb-8e6d-7a5148bcb3cc",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 30,
+    "height": 62,
+    "area2": 3844,
+    "avgTicks": 13721.95,
+    "score": 52747175.8,
+    "status": "done",
+    "fullResponse": "submissions/tcp/alexey-tcp_05-submit.json"
+   },
+   "alexeyNumbering": "tcp_01"
+  },
+  {
+   "version": "tcp_04",
+   "label": "recovered no-realignment tag ring",
+   "parent": "tcp_01",
+   "changeType": "algorithm",
+   "architecture": "Ring holds only w1..w15 (15 values, no sentinel); w0 is implicit because it is always empty at packet start. d>=1: rotate d-1, pop stale, push val, relay 15-d (16 ops, no drain). d==0: emit val directly then pop-and-emit while head>0; the forwarder's 0 refill lands exactly where the freed slot belongs, so the invariant self-restores (2 ops for an in-order packet). Splitter sends seq AND 15-seq so both loop counts come from one `-` and one `+` with exp held in B. Forwarder fast path 8 cells.",
+   "source": {
+    "path": "submissions/tcp/tcp_04.man",
+    "generator": null,
+    "sha256": "7868665ea88cb9f888b68f1385efa0a717f915f2b6e93b5ab199d60a83c5b0c2",
+    "bytes": 1161,
+    "width": 43,
+    "height": 38,
+    "footprint": 1849,
+    "provenance": "Downloaded from the contest platform by the user on 2026-07-25."
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "stress": "46/46 synthetic incl. n=48, full window, instant loss, fully reversed",
+    "avgTicksLocal": 2798,
+    "ringOpsPublic": 1075,
+    "ringOpsV2": 3204
+   },
+   "verdict": "Superseded by tcp_03/tcp_04; kept as the step that introduced the marker-free ring.",
+   "liveSubmission": {
+    "id": "12a6926b-0791-416b-bcf7-454cdc89c2b3",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 43,
+    "height": 38,
+    "area2": 1849,
+    "avgTicks": 4626.3,
+    "score": 8554028.7,
+    "status": "done",
+    "fullResponse": "submissions/tcp/alexey-tcp_04-submit.json"
+   },
+   "alexeyNumbering": "tcp_02"
+  },
+  {
+   "version": "tcp_03",
+   "label": "recovered split phase/final-drain paths",
+   "parent": "tcp_04",
+   "changeType": "control-flow",
+   "architecture": "Same room/pipe geometry as tcp_04, with separate ordinary-packet and final-drain paths that remove redundant ring work.",
+   "source": {
+    "path": "submissions/tcp/tcp_03.man",
+    "generator": null,
+    "sha256": "8962e6f2eaa2fecb9e6b64e18fa3302c8d6742d0a723eba2c36caec317c51f86",
+    "bytes": 1161,
+    "width": 43,
+    "height": 38,
+    "footprint": 1849,
+    "provenance": "Downloaded from the contest platform by the user on 2026-07-25."
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "caseTicks": [
+     649,
+     1787,
+     3304,
+     2762,
+     184,
+     6517
+    ],
+    "avgTicksLocal": 2533.8333333333335,
+    "score": 4685057.833333334,
+    "stress": "45/45 deterministic boundary cases; max 9730 ticks"
+   },
+   "verdict": "9.45% local score reduction from control-flow changes alone; superseded by tcp_02 geometry.",
+   "liveSubmission": {
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 43,
+    "height": 38,
+    "area2": 1849,
+    "avgTicks": 4160.9,
+    "score": 7693504.1,
+    "status": "done",
+    "fullResponse": "submissions/tcp/alexey-tcp_03-submit.json"
+   },
+   "alexeyNumbering": "tcp_03"
+  },
+  {
+   "version": "tcp_02",
+   "label": "recovered 38x38 winning tag ring",
+   "parent": "tcp_03",
+   "changeType": "geometry",
+   "architecture": "Byte-for-byte room logic from tcp_03, repacked into a 38x38 square with shorter routes and no shared walls.",
+   "source": {
+    "path": "submissions/tcp/tcp_02.man",
+    "generator": "src/littleman/alexey_tcp_recovered.py:build_tcp_recovered_best",
+    "sha256": "61613871dc69a02257008e7c653f801b84d784ca32a0880e1223a409d59467e4",
+    "bytes": 1101,
+    "width": 38,
+    "height": 38,
+    "footprint": 1444,
+    "provenance": "Downloaded from the contest platform by the user on 2026-07-25; structural generator restored and checked byte-for-byte."
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "caseTicks": [
+     624,
+     1712,
+     3304,
+     2762,
+     184,
+     6512
+    ],
+    "avgTicksLocal": 2516.3333333333335,
+    "score": 3633585.3333333335,
+    "stress": "45/45 deterministic boundary cases; max 9720 ticks"
+   },
+   "liveEvidence": {
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 38,
+    "height": 38,
+    "footprint": 1444,
+    "avgTicks": 4142.4,
+    "score": 5981625.6,
+    "submissionId": null,
+    "identification": "The displayed score and 38x38 footprint imply an integer total of 82848 ticks over 20 cases, uniquely matching this recovered geometry among the five downloaded sources."
+   },
+   "verdict": "Current identified live winner and recovered source of truth.",
+   "liveSubmission": {
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 38,
+    "height": 38,
+    "area2": 1444,
+    "avgTicks": 4142.4,
+    "score": 5981625.6,
+    "status": "done",
+    "fullResponse": "submissions/tcp/alexey-tcp_02-submit.json"
+   },
+   "alexeyNumbering": "tcp_04"
   }
  ]
 }

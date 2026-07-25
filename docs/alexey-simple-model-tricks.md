@@ -203,12 +203,15 @@ They apply to any room whose man loops forever over a branch tree.
 
 - **Rooms may NOT share a wall.** `+-+-+ / |I|O| / +-+-+` parses locally
   as two rooms; the server never sees the second one and the pipe aimed
-  at it fails to load. Give every room its own wall.
+  at it fails to load. Give every room its own wall. Run candidates
+  through `littleman.server_compat`, which rejects this layout before
+  judging it.
 - **A man MAY walk into a wall right after his final `s`.** The value
   already in the output pipe drains and the round passes. The simulator
   ends the program on that step instead, so such a design reads as a
   'wall' failure locally while scoring on the server. Judge it with
-  `littleman.alexey_walljudge` (same API as `littleman.judge`).
+  `littleman.server_compat` (same API as `littleman.judge`); it combines
+  the tolerant final-wall behavior with the stricter shared-wall check.
 
 That second one is a geometry lever, not a nicety: **you do not need a
 spare cell or an `H` after `s`**. A walk may fill every interior cell and
