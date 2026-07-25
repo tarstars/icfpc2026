@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "b5e48adc-317d-480d-88a4-e2edc659453a",
+    "slug": "subset-sum",
+    "name": "Subset Sum",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "subset_sum_00",
+      "label": "meet-in-the-middle systolic sort",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "two ten-bit subset generators; opposite-order 1,024-stage systolic pair sorters; two-pointer merge; maximum-mask reducer; ordered-value selector",
+      "source": {
+        "path": "submissions/subset-sum/subset_sum_00.man",
+        "generator": "src/littleman/subset_sum.py:build_subset_sum",
+        "sha256": "cd1000a2b5b944e6905e991022116f5b6a6daf7729c4a93bd13f72a683c65d77",
+        "bytes": 9743784,
+        "width": 3646,
+        "height": 3029,
+        "maxDimension": 3646,
+        "footprint": 13293316
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "tiny warm up": 6640497,
+          "multiple solutions, lex pin": 7199445,
+          "no solution": 6718443,
+          "single-element subset": 7274629,
+          "last-index-required": 6468694,
+          "duplicate values": 7263957,
+          "near-total-sum, 20 values": 7378811
+        },
+        "averageTicks": 6992068.0,
+        "score": 92947769417488.0
+      },
+      "liveSubmission": {
+        "id": "edda50dc-411e-49b6-83eb-0e895d4c1f7e",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 3646,
+        "height": 3029,
+        "area2": 13293316,
+        "averageTicks": 6903439.05,
+        "score": 91769596778389.8,
+        "createdAt": "2026-07-25T00:52:12.234Z",
+        "updatedAt": "2026-07-25T00:56:54.143Z",
+        "fullResponse": "submissions/subset-sum/subset_sum_00-submit.json"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-25T00:56:57.514Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 20,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "score": 91769596778389.8,
+    "passPoints": 1.0,
+    "rankPoints": 0.20833333333333334,
+    "points": 1.2083333333333333,
+    "rows": 26
+  }
+}

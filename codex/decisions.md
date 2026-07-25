@@ -51,3 +51,25 @@ letting an any-pipe receive consume future contest input.
 Generate the control rooms from an explicit finite-state graph. Keep the
 correctness-first state machine independent from geometry, then compact bands
 and edge tracks mechanically.
+
+## 2026-07-24 — Use meet-in-the-middle streams for Subset Sum
+
+Split the at-most-20 inputs into fixed ten-slot halves, enumerate 1,024
+sum/mask pairs per half, sort the halves in opposite sum order, and merge
+against the target. Encode earlier input indices as more-significant mask bits
+so selecting the greatest matching combined mask implements the required
+lexicographic tie-break directly.
+
+Use systolic insertion stages instead of multi-pass radix routing. Keep
+missing input slots as zero-valued generator stages that forcibly clear their
+mask bits. Preserve the first accepted program as `subset_sum_00` with
+machine-readable geometry, local ticks, hash, and live result.
+
+## 2026-07-24 — Make sparse long-machine simulation event-driven
+
+Maintain occupied pipe runs in addition to the canonical per-cell values,
+shift only active pipes, suspend workers blocked on pipe I/O, and wake them
+when the relevant pipe changes. Cache nearest-port lookups and maintain room
+occupancy incrementally. Preserve tick ordering and the cell representation
+as the semantics oracle, with deterministic randomized equivalence tests for
+the run index.
