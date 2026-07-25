@@ -17,6 +17,12 @@ provisional until promoted into neutral decision records.
 4. `claude_03_factory_composer_yt.md` — characterizer as simulator-driven
    testbench, three factory rungs, composer formulation with two proof
    slices, YT job families, falsifiable done-criteria.
+5. `claude_04_brief_review.md` — critical review of the user's brief:
+   what holds, what to re-weight, what is missing (verification, the
+   knowledge pipeline, multi-agent ops), and the contest-first vs
+   foundation-first decision only the user can make.
+6. `claude_effects.json` — generated opcode effects table (see
+   `scripts/gen_effects.py`); the first falsifiable artifact of the set.
 
 ## Method note
 
