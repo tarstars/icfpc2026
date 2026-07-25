@@ -17,7 +17,7 @@ machine does not implement.
 
 | problem | cases | was | now | factor |
 |---|---|---|---|---|
-| **LLLM** | **21/21** | — (zero) | 139,039,110,268 | new |
+| **LLLM** | **21/21** | — (zero) | **22,187,469,586** | new |
 | **LLM** | **2/28** | — (zero) | partial | new |
 | snake | 17/17 | 8,838,759,329 | 1,576,985,655 | 5.6x |
 | plotter | 20/20 | 9,367,793,668 | 3,076,834,345 | 3.04x |
@@ -39,11 +39,18 @@ triangle, history — all still at 100% of cases.
    interpreter core already works. It needs: up to 3 rooms, up to 2 pipes
    (<= 20 pipe cells), several men, and the `s`/`r` ops. This is the
    single largest block of unclaimed points left.
-3. **LLLM geometry press** — at 141x775 the footprint is 600,625 and the
-   height is 5.5x the width. Now that it is a full pass, the score sets
-   our rank. (A press was in flight at the deadline; see RESULTS in
-   `claude_19` for whether it landed.)
-4. Subset Sum — see the caveat below.
+3. Subset Sum — see the caveat below.
+
+The LLLM press LANDED at 05:20Z: 141x775 -> 307x312, footprint
+600,625 -> 97,344, score **139,039,110,268 -> 22,187,469,586 (6.27x)**,
+still 21/21 (`efce1ac1-ece0-4557-a08e-4d34edd9dd4d`). Occupancy was 49.6%
+by room box but only **9.62% of cells non-blank** — almost all air. All
+four clusters moved rigidly into three column bands instead of four row
+bands; only the 3 inter-cluster spine pipes were re-routed, so all 13
+rooms stayed byte-identical with 0 pipe-role diffs and STEP's margins
+unchanged at s=2/r=3. One constraint worth remembering: STEP's DRAW-out
+(row 54) and LOAD-in (row 55) are on adjacent west-wall rows, so the
+outgoing pipe cannot cross the incoming one locally.
 
 ## Things that will cost you time if you do not know them
 
@@ -132,3 +139,29 @@ ticks ⇒ traversed once per pixel, so its 233 cells were kept exact). The
 snake press earlier found the public cases never stress the ring at all,
 and needed a purpose-built 48-cell maximal-growth game to justify a
 change.
+
+## Closing board, 2026-07-26T05:30Z
+
+| problem | cases | box | live score |
+|---|---|---|---|
+| subset-sum | 20/20 | 3646x3029 | 91,769,596,778,390 |
+| gradebook | 20/20 | 390x404 | 74,257,771,460 |
+| **lllm** | **21/21** | 307x312 | 22,187,469,586 |
+| matmul | 20/20 | 128x145 | 20,898,177,200 |
+| sudoku-validity | 20/20 | 198x194 | 16,126,208,644 |
+| plotter | 20/20 | 155x185 | 3,076,834,345 |
+| snake | 17/17 | 153x154 | 1,576,985,655 |
+| memory | 24/24 | 34x32 | 23,344,360 |
+| tcp | 20/20 | 37x37 | 5,655,750 |
+| brackets | 26/26 | 37x41 | 3,494,864 |
+| sort | 25/25 | 19x18 | 1,367,454 |
+| reverse-a-list | 20/20 | 16x16 | 472,346 |
+| triangle | 19/19 | 9x9 | 891 |
+| **llm** | **2/28** | 307x312 | partial |
+
+**13.07 of 14** test-case points across the problems we have touched;
+**pathfinder** is the only graded problem never attempted.
+
+Six submissions went live overnight, every one verified here before
+submitting (own pytest run, own judge run, own preflight) rather than on
+the agent's report: sudoku, plotter, gradebook, matmul, LLLM x3, LLM x3.
