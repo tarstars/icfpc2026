@@ -739,3 +739,43 @@ entirely blank and which looks like free space — it is the **LM-75 display**,
 walled in `=` and `:` rather than `-` and `|`. Its blankness is the drawing
 surface. The squeeze leaves it alone automatically (`:` is not in `' |'`),
 but any hand-written trimmer must special-case it.
+
+### plotter: found the real slack, and why it is reachable
+
+Followed the "compress the rooms" idea into plotter and it leads somewhere
+concrete. plotter_02 is 138×385 — height-bound — and three rooms account for
+248 of those 385 rows:
+
+| room | rows | instructions | rows carrying an instruction | **pure return rows** |
+|---|---|---|---|---|
+| r62-148 | 85 | 48 | 39 | **46** |
+| r152-242 | 89 | 65 | 43 | **46** |
+| r247-322 | 74 | 49 | 35 | **39** |
+
+**131 of those 248 rows contain no instruction at all** — they are the
+westbound return legs of a serpentine that carries work only on its
+eastbound legs. The rooms are 4% filled.
+
+The width, by contrast, is NOT waste: a cell's column selects which pipe an
+`r`/`s` resolves to. Measured in r62-148: `r` at room-col 10 takes the pipe
+ending (61,17), `r` at col 39 takes (61,46); `s` at col 43 takes (149,50),
+`s` at col 48 takes (149,55). So the rooms are wide on purpose and columns
+must be preserved.
+
+**But the rows are free.** Every incoming pipe of each of the three rooms
+lands on its top wall and every outgoing pipe leaves from its bottom wall —
+one row each. The row term of the Manhattan distance is therefore identical
+for all candidates and cancels: resolution depends on the column alone.
+(Same property I engineered deliberately into tcp; here it is already true.)
+
+So instructions may be moved freely between rows as long as each keeps its
+column and the sequence order is preserved. Putting work on the westbound
+legs too would reclaim most of those 131 rows: height 385 → ~254, footprint
+148,225 → ~64,500, i.e. **~2.3x**, on top of the 4.48x already taken.
+
+Why I stopped short of doing it: the three rooms hold 4, 2 and 2 branches
+(`X`), and in a serpentine a branch's target is a geometric neighbour — CW
+lands on the return row, CCW on the row above. Re-flowing the walk means
+rebuilding the control-flow graph, not moving cells. That is a compiler-level
+job on generated code, and worth doing as its own piece of work rather than
+tacked onto a geometry pass.
