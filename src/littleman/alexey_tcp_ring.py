@@ -300,6 +300,22 @@ def walk_report(text: str, grid: Grid, inputs: list[int], max_ticks: int = 3000)
 # Four of the five faults in this build were a walk crossing a cell some
 # phase owned; reserving the lanes up front makes that impossible rather
 # than unlikely.
+#
+# NOT YET SOLVED -- route vs route. Highways stop a phase and a route from
+# colliding, but ten connections share three highway columns, so they
+# collide with each other. First full routing attempt walked
+#   init -> route -> marker -> route -> drain
+# instead of
+#   init -> route -> seed -> route -> prologue -> route -> marker -> ...
+# because init's descent down col 11 stepped on (5,11), a cell belonging
+# to the prologue->marker connection, and rode it west.
+#
+# The fix is lane allocation, not more highways: a lane is a (column,
+# row-range) segment owned by ONE connection, and Grid should refuse a
+# second connection any cell inside it. Same shape as the phase guard, one
+# level down. Until that exists, every added connection can silently break
+# an earlier one -- which is exactly what the walk checker now surfaces in
+# one line instead of a tick-cap.
 HIGHWAY_COLS = (1, 11, 18)
 HIGHWAY_ROWS = (5, 13, 18, 21)
 
