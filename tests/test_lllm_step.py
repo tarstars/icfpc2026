@@ -349,9 +349,7 @@ def test_round_loop_tapes_place_without_collision():
     from littleman.lllm_step import STEP_COLS, STEP_ROWS, _step_seed
 
     room = Room(STEP_ROWS, STEP_COLS)
-    room.put(19, 13, "v")
-    for r in range(20, 23):
-        room.put(r, 61, "v")
+    room.put(23, 3, ">")
     _step_seed(room)
     grid = room.render()
     assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads

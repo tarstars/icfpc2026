@@ -417,9 +417,9 @@ def _step_setup(room) -> None:
         room.put(r, 9, "v")
         room.put(r, 12, "^")
     room.put(2, 2, "v")                  # BP exhausted: fall out of the lap
-    for r in range(3, 21):
+    for r in range(3, 20):
         room.put(r, 2, "v")
-    room.put(21, 2, ">")
+    room.put(20, 2, ">")
 
 
 def _step_round1(room) -> None:
@@ -430,8 +430,10 @@ def _step_round1(room) -> None:
     loop needs no ring access at all -- man_addr simply parks in the scratch
     loop while it runs.
     """
-    room.put(21, 9, "r")                 # man_addr from LOADER
-    room.put(21, 46, "s")                # park it in the scratch loop
+    room.put(20, 5, "r")                 # man_addr from LOADER
+    room.put(20, 46, "s")                # park it in the scratch loop
+    room.put(20, 47, "v")                # jog to row 21 for the run east, so
+    room.put(21, 47, ">")                # column 3 stays blank at rows 20-22
     room.put(21, 60, "^")
     for r in range(5, 21):
         room.put(r, 60, "^")
@@ -447,7 +449,8 @@ def _step_round1(room) -> None:
     # 257th pixel: the man, then the commit sentinel.
     room.put(18, 46, "rsM`16`*M9+v")
     room.put(19, 14, "sN1s")             # man pixel, then commit (walked west)
-    room.put(19, 13, "H")                # TODO: round loop entry (see notes)
+    room.put(19, 3, "v")                 # exit: column 3 is blank at rows
+    room.put(SEED_ROW, 3, ">")           # 20..22, so it crosses both walkways
     room.put(19, 57, "<")
 
 
@@ -576,7 +579,7 @@ def _step_seed(room) -> None:
     five relays to write ``K = k``, then holds ADDR in B to write
     ``OLD = ADDR``; both exploit B surviving r/s.
     """
-    seed = _enter_tape(room, 61, SEED_ROW)
+    seed = Tape(room, SEED_ROW, TAPE_LO, TAPE_LO, TAPE_HI)
     seed.emit("r", "M", "#1", "s", "W", "s", "#0", "s", "s", "s", "s")
     _leave_tape(room, seed, HW["round"], ROUND_ROW)
     _step_round_in(room)
@@ -613,6 +616,7 @@ def build_step_room():
     room = Room(STEP_ROWS, STEP_COLS)
     _step_setup(room)
     _step_round1(room)
+    _step_seed(room)
     return room
 
 
