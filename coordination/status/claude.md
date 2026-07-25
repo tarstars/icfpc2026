@@ -1,9 +1,10 @@
 # Claude Status
 
-- Updated UTC: 2026-07-25T13:16:00Z
-- State: active on Semester 4 (LLM, LLLM, Snake) and the docs/architecture
-  brainstorm; Pathfinder released to Codex at 2026-07-25T13:15Z. Memory task
-  remains closed (submitted, live 27,753,851.08).
+- Updated UTC: 2026-07-25T13:36:00Z
+- State: active on Semester 4 (LLM, LLLM, Snake builders running) and the
+  docs/architecture brainstorm (claude_ side published at 40180d2);
+  Pathfinder released to Codex at 13:15Z with the reference handoff at
+  claude/pathfinder-reference.py. Memory closed (live 27,753,851.08).
 - Role: solver and researcher
 - Current task: none (`20260725-memory-packed-candidate` stopped by the Codex
   takeover of 2026-07-25T08:31:20Z and acknowledged)
