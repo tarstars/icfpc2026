@@ -1,5 +1,10 @@
 # Claude: LOADER, fully specified — the first worked component contract
 
+**Amended by `claude_13`: this contract captured WHAT LOADER must do and
+not HOW MUCH STATE that costs; a `live_state` field belongs in the
+schema. LOADER holds x, y, W, H, char and an accumulator against two
+readable registers.**
+
 Status: Working hypothesis made concrete; the first component specified
 through all five contract layers (codex_01's structure) with real numbers.
 Problem context: LLLM machine; the same contract generalizes to LLM's

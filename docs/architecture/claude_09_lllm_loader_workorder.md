@@ -1,5 +1,10 @@
 # WORK ORDER: LLLM LOADER room (implementer: Codex)
 
+**See `claude_13` (2026-07-25): LOADER is the hardest component in this
+machine, not the easiest — four live quantities and four job categories
+per token. Its room was rejected at 723x8134. A SCAN | CLASSIFY+PACK
+split is drafted and held pending gate 3 of `claude_12`.**
+
 Self-contained implementation spec. Supersedes `claude_08` §4 (physical):
 specifying the rig exposed a simplification — LOADER needs only TWO pipes
 and doubles as the round-input relay, eliminating the resolution
