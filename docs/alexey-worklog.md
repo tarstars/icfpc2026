@@ -339,3 +339,53 @@ worth twice height: the longest three-segment walk is 2*width + height - 2.
 So 960 is the ceiling for a single-room 8x8 triangle, and the rotated
 3x5 interior is strictly worse than 5x3 — a narrow, tall room wastes the
 eastward start.
+
+## 2026-07-25 — triangle 832: the trailing cell was never required
+
+Alexey proposed this compute room, and it turned out to be the whole
+answer:
+
+    +------+
+    |@rM*+v|
+    |s}W1M<|
+    +------+
+
+Interior 2x6, every cell on the walk, `s` on the last interior cell. The
+man executes `s` on tick 12 and then steps straight into the wall on the
+same tick. Our simulator calls that an error and ends the program one
+tick before the value reaches the end of the output pipe, so it judges
+0/6 with reason 'wall'. **The server does not**: submission c9cf76d1
+returned 19/19, 8x8, avgTicks 13, **score 832**.
+
+Wired into 8x8 as `submissions/triangle/triangle_04.man`: the 4-row band
+under the room lets I sit at rows 4-6 and O at rows 5-7 — offset, which
+is exactly what lets both pipes be 2-cell L-shapes.
+
+### Why this was worth more than it looks
+
+Requiring a cell after `s` was not a tidiness detail, it was a geometric
+constraint that propagated: a spare cell forces a bigger interior, a
+bigger interior needs more turns to cover, and every turn is a tick. All
+the analysis above (the 2w + h - 2 walk bound, the "8x8 tops out at 960",
+the search that found only shared-wall layouts for a 3x6 interior) was
+correct *given that assumption* and wrong without it.
+
+### Two server rules our simulator gets wrong, in opposite directions
+
+1. **Shared walls**: sim accepts, server rejects (0eec139b failed to
+   load). Sim is too permissive — a local pass can still fail to load.
+2. **Wall step after the final `s`**: sim rejects, server accepts
+   (c9cf76d1 scored). Sim is too strict — a local failure can still be a
+   winning program.
+
+`src/littleman/alexey_walljudge.py` handles case 2: same API as
+`littleman.judge`, but a man who walks into a wall is halted instead of
+killing the run, so the output pipe drains. Programs that pass the strict
+judge also pass this one.
+
+### Follow-up worth doing
+
+Every program of ours that spends a cell on `H` or on a trailing cell
+after its last `s` may be able to drop it, which can shrink the room and
+therefore the footprint. Candidates: sort_03, reverse_01, tcp_00,
+brackets_00, memory, max_00.

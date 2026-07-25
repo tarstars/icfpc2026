@@ -103,7 +103,11 @@
   ],
   "provenBounds": [
     "The arithmetic needs 7 compute ops (9 instructions with r and s): BFS over all of M W + - * N % / & | ~ { } and digits finds nothing at depth 6 and exactly two sequences at depth 7 (`M * + M 1 W }`, `M * + M 2 W /`).",
-    "In an 8x8 box the largest compute room connectable to I and O is a 3x5 interior (exhaustive search over room placements and legal pipe paths).",
-    "Reaching the leaders' 832 needs 13 ticks, i.e. `s` on step 12, i.e. a 12-cell 3-segment walk, i.e. a 3x6 interior -- which does not fit in 8x8 in any layout this search found. Alexey's adjacent I/O rooms showed the model of legal layouts was incomplete once already, so this bound is 'not found', not 'impossible'."
+    "13 ticks means `s` on walk step 12, i.e. @ + 9 instructions + exactly 2 turn cells, i.e. a 12-cell three-segment walk. A 2x6 interior holds exactly that with every cell used -- but only because the walk may END on `s` at the wall (see below).",
+    "SUPERSEDED: the earlier bound 'a 3x6 interior is needed, and it does not fit in 8x8' assumed a spare cell was required after `s`. The server does not require it. With that assumption dropped, a 4x8 room (2x6 interior) fits easily and leaves a 4-row band, so I and O can sit at offset rows and both pipes are 2 cells."
+  ],
+  "serverRules": [
+    "Rooms may NOT share a wall (submission 0eec139b: loadError, the shared-wall room was never detected). Our simulator accepts this -- it is more permissive than the server here.",
+    "A little man MAY step into a wall right after his final `s`: the value already in the output pipe still drains and the round passes (submission c9cf76d1, 19/19). Our simulator ends the program on that step -- it is stricter than the server here. Use littleman.alexey_walljudge to validate such programs."
   ]
 }
