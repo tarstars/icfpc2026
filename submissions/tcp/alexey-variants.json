@@ -1,0 +1,47 @@
+{
+ "schemaVersion": 1,
+ "note": "Alexey research line. tcp_01 proves the tag-through-ring architecture end to end on the server but scores WORSE than tcp_00 (52.7M vs 20.0M); best-submission-counts means the team result is unharmed. Kept as the working base for the tick-reduction pass.",
+ "problem": {
+  "id": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
+  "slug": "tcp",
+  "name": "Packet Reassembly",
+  "scoring": "footprint-tick"
+ },
+ "variants": [
+  {
+   "version": "tcp_01",
+   "label": "offset-addressed window, tag-through-ring (v2 architecture)",
+   "parent": "tcp_00",
+   "changeType": "algorithm",
+   "architecture": "splitter (seq->pump top, val parked at insert), pump writes only to the ring, drain emits tags (-v data, -2000 loss, -3000 marker), forwarder room decodes tags to OUTPUT and refills emitted slots with zeros; per packet: rotate exactly d, discard, insert, lap to marker, drain, realign(+15 relay)",
+   "source": {
+    "path": "submissions/tcp/tcp_01.man",
+    "generator": "src/littleman/alexey_tcp_v2.py + scratch assembly (to be moved in)",
+    "sha256": "e5e45693b5949c17c1ef9c70965efb32d2b1f3be273445163aef62da76e06ae1",
+    "bytes": 1759,
+    "width": 30,
+    "height": 62,
+    "footprint": 3844
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "stress": "45/45 synthetic incl. n=48, full window, instant loss",
+    "avgTicksLocal": 8944
+   },
+   "liveSubmission": {
+    "id": "9f1985a4-5a0d-41eb-8e6d-7a5148bcb3cc",
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 30,
+    "height": 62,
+    "area2": 3844,
+    "avgTicks": 13721.95,
+    "score": 52747175.8,
+    "fullResponse": "submissions/tcp/alexey-tcp_01-submit.json"
+   },
+   "verdict": "WORKS BUT LOSES: ticks dominate. Three full ring laps per packet (rotate+lap, then realign) serialize against ~30 ticks of ring latency (RIN 22 cells + FWD 8-tick loop). To beat 20M at 13.7k ticks the footprint would need <1458 (38x38), unreachable with a 42-row pump. The win requires the tick pass: drop the realign lap (fold the +1 offset into the next rotate), shorten the forwarder loop and the return pipe. Estimated 3-4x ticks available there."
+  }
+ ]
+}

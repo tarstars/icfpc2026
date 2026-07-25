@@ -405,3 +405,35 @@ byte, so this is timing, not a wiring slip.
 entirely, with the ring size circulating as a value in the ring itself —
 the same redesign tcp needs, not a quick edit. Recorded so nobody retries
 the two-row corridor.
+
+## 2026-07-25 — tcp_01: the v2 architecture works on the server, loses on ticks
+
+Built and submitted the tag-through-ring rebuild: **20/20 live**
+(submission 9f1985a4), after 6/6 public and 45/45 boundary stress locally.
+The three architectural moves all held up:
+
+- splitter feeds `seq` to the pump top and parks `val` in a pipe at the
+  insert point (no register, no highway);
+- the pump writes ONLY to the ring — the drain emits tags (−v data,
+  −2000 loss, −3000 marker) and a forwarder room on the ring decodes
+  them to OUTPUT and refills emitted slots with zeros;
+- with no OUTPUT zone in the pump, phases lay out in execution order and
+  the four-round routing stall never reappeared. One found bug — a
+  missing `N` in the loss arm — cost one cell to fix.
+
+**Score: 52.7M — worse than tcp_00's 20.0M.** Best-submission-counts, so
+the team result is unharmed. The loss is arithmetic: 3844 footprint ×
+13,722 server ticks. Ticks dominate: each packet runs three full ring
+laps (rotate+lap, then the 15-relay realign) serialized against ~30
+ticks of ring latency (22-cell return pipe + 8-tick forwarder loop). At
+13.7k ticks no footprint under 38×38 breaks even against 20M.
+
+The tick pass is the known next step: fold the realign's +1 offset into
+the next packet's rotation count (drops a third of all relays), shorten
+the forwarder loop and the return pipe. 3-4× is available there, and the
+footprint has another ~2× of slack after that.
+
+Also this session's plumbing lessons, now paid for twice: a pipe's first
+arrowhead must back onto the source wall (a west-pointing start cannot
+leave a bottom wall), and a route drawn over another room's wall column
+mints a phantom pipe from that wall.
