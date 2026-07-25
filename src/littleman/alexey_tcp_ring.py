@@ -49,12 +49,16 @@ from .sim import Machine
 
 # --- build state -------------------------------------------------------
 # DONE: algorithm (alexey_tcp_model, 6/6 public, 258 ring ops/case), the room
-#       and pipe skeleton, the pipe-zone map with assertions, and the layout
-#       of init + packet prologue + the three-way branch (see LAYOUT below).
-# TODO: insert, the lap-to-marker loop, the drain loop, and the column-16
-#       highway that carries the man up to rows 1-4 to read `val` (it must be
-#       read after the rotation, because the rotation's `r` would clobber A).
-#       Then judge against alexey_tcp_model and submit as tcp_01.
+#       and pipe skeleton, the pipe-zone map with assertions, and all ten
+#       layout nodes (build_wip) -- it builds, parses and holds the zones.
+# TODO: it loops instead of finishing a packet. Debug with a trace filtered
+#       to the PUMP man, fix the routing, judge against alexey_tcp_model,
+#       then submit as tcp_01 and compact the room.
+#
+# The drain is the one node with a real constraint behind its placement:
+# it must both read the ring and write the output, and rows 15-17 at low
+# columns are the only band where `nearest` gives RING for reads and OUTPUT
+# for writes at the same time.
 #
 # Estimated landing: ~750k at this room size, against tcp_00's 20,028k and
 # the best known 593k. Compaction comes after it is correct.
@@ -179,34 +183,38 @@ class Grid:
 
 
 def build_wip() -> str:
-    """Everything laid out so far. Parses; does not yet run a full packet.
+    """All ten nodes placed. Parses; does not yet run to completion.
 
-    Placed: init with the 16-zero seed loop, the packet prologue, the three
-    branch arms with their merge, the marker injection, the rotate loop, the
-    discard of the empty slot, and the highway that carries the man up col 16
-    to read `val` in the input zone.
-
-    Missing: the insert `s` on the way back down, the lap-to-marker loop and
-    the drain loop. See the build-state note at the top of the file.
+    Status: the machine builds, the four pipes resolve, and the zone
+    assertions hold, but a packet run hits the tick cap — the man loops
+    somewhere. Next step is a per-man trace (the pump man only; `m.men`
+    also holds the relay man, and mixing the two makes the trace
+    unreadable — that cost time once already).
     """
     g = Grid()
-    g.put(1, 1, "@r`16`b0v")                 # read n and drop it; A=0, BP=16
-    g.put(19, 3, "v"); g.put(19, 9, "<")      # walk west, then into the loop
-    g.put(20, 3, ">   d")                     # seed loop: entry, test
-    g.put(21, 3, "^ ms<")                     # body: m, s (ring write)
-    g.put(20, 8, "^")                         # exit north to the prologue
+    # init: read n and drop it, A=0, BP=16, then seed the ring with zeros
+    g.put(1, 1, "@r`16`b0v")
+    g.put(19, 3, "v"); g.put(19, 9, "<")
+    g.put(20, 3, ">   d"); g.put(21, 3, "^ ms<"); g.put(20, 8, "^")
     g.put(2, 8, "<"); g.put(2, 2, "v")
-    g.put(3, 2, ">r-b]]]]dX")                 # r seq, d = seq-expected, tests
-    g.col(3, 12, "v`15`b<")                   # d==0 arm: vertical literal, BP=15
-    g.col(4, 11, "bm")                        # d>0 arm: BP=d-1
-    g.put(9, 11, "v")                         # merge
-    g.col(4, 10, "1N<")                       # loss arm: A=-1
-    g.put(6, 2, "Hs")                         # emit -1 (output zone) and halt
-    g.col(10, 11, "1Ns")                      # inject the -1 marker
-    g.put(15, 11, ">  d")                     # rotate loop: entry, test
-    g.put(16, 11, "^sr<")                     # body: r then s, both ring
-    g.put(15, 15, "v")
-    g.put(17, 15, "r")                        # discard the empty slot
-    g.put(18, 15, ">^")                       # highway north up col 16
-    g.put(2, 15, "r"); g.put(2, 16, "<")      # read val in the input zone
+    # packet prologue: d = seq - expected, then the delay and zero tests
+    g.put(3, 2, ">r-b]]]]dX")
+    g.col(3, 12, "v`15`b<")           # d == 0 -> BP = 15 (vertical literal)
+    g.col(4, 11, "bm"); g.put(9, 11, "v")   # d > 0 -> BP = d-1, then merge
+    g.col(4, 10, "1N<"); g.put(6, 2, "Hs")  # loss: emit -1 and halt
+    g.col(10, 11, "1Ns")              # inject the -1 marker
+    # rotate BP slots, then discard the empty one
+    g.put(15, 11, ">  d"); g.put(16, 11, "^sr<"); g.put(15, 15, "v")
+    g.put(17, 15, "r"); g.put(18, 15, ">^")
+    # val: up the col-16 highway into the input zone, back down col 14
+    g.put(2, 15, "r"); g.put(2, 16, "<"); g.put(2, 14, "v")
+    g.put(13, 14, "s")                # INSERT
+    g.put(14, 14, "<"); g.put(14, 12, "v")
+    # lap on until the marker returns, dropping it
+    g.put(22, 10, ">rX v"); g.put(23, 10, "^s<<"); g.put(21, 12, "^")
+    # drain: rows 15-17 read RING and write OUTPUT, the one place both work
+    g.put(15, 2, ">rX>s^")
+    g.put(16, 4, "s1+M0s")            # emit, then 1 + M bumps expected
+    g.put(16, 10, "v"); g.put(17, 10, "<"); g.put(17, 2, "^")
+    g.put(4, 7, "<"); g.put(4, 2, "^")
     return build_skeleton(g.rows())
