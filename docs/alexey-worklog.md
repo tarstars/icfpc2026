@@ -1272,3 +1272,34 @@ room's left wall: **both rooms claim that cell**, and the parser emitted a
 spurious 1-cell pipe from room0 straight into O. Entering through the top
 wall instead fixed it. Rule: never terminate a pipe in a one-cell gap
 between two rooms.
+
+## 2026-07-25 — plotter_06: 3,076,834,345 -> 1,668,891,820 (20/20, 155x145)
+
+Layered on tarstars' plotter_05 repack, and orthogonal to it: they moved
+rooms, this folds what is inside them.
+
+plotter's three tall rooms spent **two rows on every instruction** --
+
+```
+row A:   .....v(p) ................. <(q)     west leg, carries nothing
+row B:   .....>(p) INSTR ........... v(q)     east leg, ONE instruction
+```
+
+-- and the west leg is nothing but a carriage return.
+`src/littleman/alexey_stairfold.py` merges two consecutive east legs
+whenever their instruction columns increase across the join, deleting the
+west leg between them. 82 rows freed; a rows-only squeeze then took 40 of
+them out globally. Ticks fell 21% too, because the man stops walking the
+carriage returns.
+
+**Why it is legal, and the same reason the column pass is forbidden:** every
+inbound pipe of these rooms lands on the top wall and every outbound one
+leaves through the bottom, so the row term of the Manhattan distance cancels
+and the zone is decided by column alone. Rows are free; **columns are
+frozen**. Running the column squeeze drops it to 1/6, exactly as that rule
+predicts. `alexey_stairfold.ports_are_single_walled` checks the
+precondition.
+
+Branches in these rooms are compiled as long empty columns that the man
+falls down. Deleting whole leg pairs preserves them -- the deleted rows are
+blank at every column a fall uses.
