@@ -1,0 +1,344 @@
+{
+  "generated_by": "scripts/gen_effects.py",
+  "seeds_per_op": 400,
+  "engine": "littleman.sim.Machine._execute",
+  "headline": {
+    "B_written_only_by": [
+      "/",
+      "M",
+      "W"
+    ],
+    "BP_written_by": [
+      "]",
+      "b",
+      "m",
+      "q"
+    ]
+  },
+  "ops": {
+    "%": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "&": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "*": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "+": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "-": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    ".": {
+      "writes": [],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "/": {
+      "writes": [
+        "A",
+        "B"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "0": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "1": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "2": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "3": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "4": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "5": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "6": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "7": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "8": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "9": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "<": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    ">": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "H": {
+      "writes": [],
+      "turns": false,
+      "halts": true,
+      "may_block": false
+    },
+    "M": {
+      "writes": [
+        "B"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "N": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "R": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": true
+    },
+    "S": {
+      "writes": [],
+      "turns": false,
+      "halts": false,
+      "may_block": true
+    },
+    "U": {
+      "writes": [
+        "A"
+      ],
+      "turns": true,
+      "halts": false,
+      "may_block": true
+    },
+    "W": {
+      "writes": [
+        "A",
+        "B"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "X": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "]": {
+      "writes": [
+        "BP"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "^": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "a": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "b": {
+      "writes": [
+        "BP"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "d": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "m": {
+      "writes": [
+        "BP"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "q": {
+      "writes": [
+        "BP"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false
+    },
+    "r": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": true
+    },
+    "s": {
+      "writes": [],
+      "turns": false,
+      "halts": false,
+      "may_block": true
+    },
+    "v": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "x": {
+      "writes": [],
+      "turns": true,
+      "halts": false,
+      "may_block": false
+    },
+    "{": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "|": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "}": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    },
+    "~": {
+      "writes": [
+        "A"
+      ],
+      "turns": false,
+      "halts": false,
+      "may_block": false,
+      "A_depends_on_B": true
+    }
+  }
+}
