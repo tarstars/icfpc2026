@@ -1,19 +1,19 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T14:57:58Z
-- State: completed
-- Role: integrator and policy reconciler
-- Current task: `20260725-yt-five-minute-preference`
-- Branch: `agent/codex-yt-policy`
-- Head: `bccc9f9b0eaa34626d4bc08781201cdba5858d9b`
-- Write set: `AGENTS.md`, `docs/storage-and-compute.md`,
-  `codex/instructions.md`, Codex task/status/message bookkeeping
-- Last concrete progress UTC: 2026-07-25T14:57:58Z
-- Evidence: user clarified five minutes is a YT preference; both
-  authoritative policy files and the instruction audit now use that meaning
+- Updated UTC: 2026-07-25T15:05:07Z
+- State: working
+- Role: integrator and Pathfinder builder
+- Current task: `20260725-pathfinder-machine`
+- Branch: `agent/codex-pathfinder`
+- Head: `d2ecef303beb86f3426617ede6825e658395ae39`
+- Write set: Pathfinder source/tests/artifact/report and Codex task/status/
+  message bookkeeping
+- Last concrete progress UTC: 2026-07-25T15:05:07Z
+- Evidence: full directive/spec/Split backlog read; live Split JSON fetched;
+  Pathfinder reference/design accepted; `Y` implementation retained by Codex
 - Running job: none
-- Latest verified result: no remaining one-hour/five-minute policy conflict
-- Next checkpoint: publish and integrate the policy-only change; then return
-  to Pathfinder
+- Latest verified result: P2 decision is implement after P1, not transfer
+- Next checkpoint: inspect Pathfinder spec/reference and produce the first
+  executable machine-model checkpoint
 - Blockers: none
 - Submission controller: yes; this audit performed no contest mutation
