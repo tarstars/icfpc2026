@@ -962,3 +962,229 @@ height and both trims are columns. Broken for the reason already recorded
 against memory's column squeeze: deleting a column changes Manhattan
 distances, and memory has reads whose margin between two candidate pipes is
 a single step. Not submitted; memory_02 stands at 87,493,514.
+
+### memory: the top room's six empty columns ARE trimmable — after moving one port
+
+The trim broke the machine (7/7 -> 2/7) for one cell only. Found it:
+
+    read at row 4, absolute column 24 (the `r` in `srs%W`001`MN-<`)
+      to the I pipe,    ending (3,5)   : 1 + 19 = 20
+      to the right pipe, ending (3,44) : 1 + 20 = 21   -> I pipe wins by ONE
+      to the right pipe, ending (3,38) : 1 + 14 = 15   -> flips after the trim
+
+Moving the I *room* cannot fix it: a pipe's endpoint is pinned to the wall
+it enters, not to where the source room sits. Moving the *port* can. Solving
+the six reads of that room as inequalities gives a window: bring the I pipe
+in through the BOTTOM wall at column 12-24. Column 14 leaves a margin of 3
+instead of 1, and row 6 is clear west of column 16, so the route is
+`I bottom -> (5,1) -> east along row 6 -> (6,14) north into the wall`.
+
+Result, all six reads correct and **7/7**:
+
+    (1,9) (1,11) (3,11) (4,24) -> I pipe        (now 15 cells)
+    (1,30) (3,35)             -> right pipe     (73 cells)
+
+Footprint stays 2,116 and ticks are flat (9,750 vs 9,750), because memory is
+a 46x46 square bound by its HEIGHT: taking six columns off gives 40x46 and
+max(w,h) does not move. But the step unlocks what was previously impossible
+— the column squeeze now runs clean, dropping 6 columns at 7/7, where before
+it broke 5 of 7 cases.
+
+Kept as `submissions/memory/alexey-memory-trimmed-top.man` (not submitted:
+same score). To turn it into a gain the height must come down from 46;
+memory's rooms occupy 36 of those rows and 11 are gaps, which is where the
+jog trick validated on plotter applies — slide the lower room one column so
+a 3-cell pipe fits a 2-row gap. 40 wide x 44 tall would be fp 1,936.
+
+**General rule worth keeping:** when a trim breaks a machine, do not conclude
+the trim is impossible. Find the single cell whose resolution flipped, write
+the room's reads as distance inequalities, and solve for a port position that
+satisfies all of them. Here the feasible window was 13 columns wide.
+
+### memory, continued: width 46 -> 40, pipes shorter than the original
+
+Following the trim of the top room, the two pipes along the right edge were
+6 cells longer than before (91->97, 67->73), and their long vertical runs
+sat in columns 44-45 while columns 39-43 held only the horizontal stubs.
+Squeezing those columns slides the verticals left, which shortens both pipes
+past their original length and takes the file's width with them:
+
+    width      46 -> 40
+    pipe A     91 -> 87
+    pipe B     67 -> 63
+    judge      7/7, pipe minimum respected
+
+Kept as `submissions/memory/alexey-memory-narrow40.man`. Not submitted: the
+footprint is still 2,116 because memory is now 40 wide by 46 tall and
+**height binds**. Width is no longer the constraint at all — 6 columns of
+slack now sit unused.
+
+What is left is height, and it is tight: the three gaps are 2, 3 and 2 rows
+against a minimum of 2 each, so gap compression yields at most **one** row.
+That one row is worth having now that width is 40 — 40x45 is fp 2,025
+against 2,116, a 4.3% gain — but the 3-row gap holds a horizontal pipe run
+on its middle row (26 cells), so collapsing it needs the ports on either
+side realigned, not just a sideways nudge.
+
+Beyond that, height 46 is 39 rows of rooms plus 7 of gaps; reaching 40 would
+need six rows out of the rooms themselves.
+
+### memory: bottom room's ports belong on the right wall — 12.6% is there, one bug away
+
+The bottom room (rows 38-42, cols 5-23 in `alexey-memory-narrow40.man`) has
+**exactly one incoming and one outgoing pipe**. With one pipe of each
+direction, nearest-pipe resolution is trivial — every `r` takes the only
+incoming, every `s` the only outgoing — so **the wall those ports use is
+free to choose**. That is the observation that unlocks this.
+
+Both pipes currently leave through the left and bottom walls and loop
+through rows 43-45, which is why those three rows exist at all. Routing both
+through the RIGHT wall instead, into the six columns freed by the earlier
+trim, removes them:
+
+    46 rows -> 43 rows,  footprint 2,116 -> 1,849   (-12.6%)
+
+Geometry confirmed by construction. Not finished: the incoming pipe's
+terminal cell fails to trace — `bad pipe glyph '|' at (41,23)`, where column
+23 is the room's right wall and the pipe's last cell sits correctly at
+(41,24) pointing west. Ran out of session budget before isolating it.
+
+State to resume from: `alexey-memory-narrow40.man` (40x46, 7/7, live-equal
+score), plus this routing:
+
+    OUT: (40,24) east to col 38, north col 38 to row 4, west into (3,37)
+    IN : (1,37) east to col 39, south col 39 to row 41, west into (41,24)
+    then delete rows 43-45
+
+If the shortened pipes turn out to break capacity (63->53 and 87->58), pad
+them with a serpentine in the free columns 25-38, which is where the room
+trim left room to do it.
+
+### memory_03 shipped: 87,493,514 -> 75,823,407 (1.15x), live 24/24
+
+The tracing bug was mine, not the parser's: the outgoing pipe ran east to
+column 38 and its last horizontal cell pointed straight into the incoming
+pipe's vertical at column 39, so the two merged. Turning north one column
+earlier fixes it. With that, all three steps land:
+
+    trim the top room's six empty columns   (needs the I port moved to the bottom wall)
+    slide the right-edge verticals inward   width  46 -> 40, pipes 91->87 and 67->63
+    both bottom-room ports to its right wall  height 46 -> 43, rows 43-45 deleted
+
+    footprint 2,116 -> 1,849      score 87,493,514 -> 75,823,407      7/7 local, 24/24 live
+
+The shortened pipes (63->53, 87->58) turned out not to need the serpentine
+padding I had prepared — capacity was not binding here.
+
+**The three ideas that made it work, in the order they matter:**
+
+1. A room with exactly ONE incoming and ONE outgoing pipe can put its ports
+   on any wall — resolution is trivial when there is nothing to choose
+   between. This is what freed three whole rows.
+2. When a trim flips one read, solve the room's reads as distance
+   inequalities and move the *port*, not the room. An endpoint is pinned to
+   the wall it enters, so moving the source room does nothing.
+3. After trimming a room, the pipes that were attached grow; sliding their
+   long runs into the freed columns makes them shorter than they started and
+   takes the bounding box with them.
+
+## CORRECTION: memory's real baseline is ~27.8M, not 87M
+
+A teammate's packed-storage memory machine scores ~27.8M live and **was not
+in the repository** — it existed only on the contest server. Committed now as
+`submissions/memory/memory_04.man`.
+
+    memory_04 (theirs)   37x37   fp 1,369   ticks 4,159 local
+    memory_03 (mine)     40x43   fp 1,849   ticks 9,760 local
+
+So the whole memory thread — 91.4M -> 87.5M -> 75.8M — was geometry applied
+to the pipeline-ring line, which had already been beaten threefold by a
+different algorithm. The work was sound and the techniques it produced are
+reusable, but it moved a number that no longer mattered.
+
+**Geometry has nothing to give on memory_04**: squeeze (rows, columns, both)
+and the per-room edge trim all return it byte-identical. It has no empty row,
+no empty column, no trimmable room edge, and it is a perfect 37x37 square, so
+both dimensions bind at once.
+
+Process lesson, and the expensive one: **the public standings lag badly.**
+They still showed 91,372,248 for memory while two better submissions of mine
+were already live, and they still show pre-squeeze numbers for sudoku,
+plotter and gradebook. I had been treating them as current. Before optimising
+anything, confirm the baseline from the submit responses — and ask the team
+what is live but uncommitted, because a machine can be on the server with no
+copy in git at all.
+
+### memory_05: offset-stacking removes the gap entirely — 27.8M -> 26,272,620
+
+Alexey's idea, and it beats the rule I thought was a floor. I had concluded
+that two stacked rooms need a 2-row gap: they cannot share a wall (1 row) and
+a pipe cannot be shorter than 2 cells (a second row). Both premises hold; the
+conclusion does not.
+
+**Offset the lower room horizontally.** Then its top wall and the upper
+room's bottom wall sit on ADJACENT rows and share no cell, which is legal —
+and the pipe leaves through the overhang, where the upper room has columns
+the lower one does not, then turns into the lower room's SIDE wall:
+
+    block1 rows 0-4  cols 6-34
+    block2 rows 5-8  cols 8-36     (down 2, right 2 -- walls adjacent, no shared cell)
+    pipe   (5,6) v -> (6,6) > -> (6,7) >  into block2's left wall at (6,8)
+
+Zero gap rows, 3-cell pipe. Works because both blocks have exactly one
+incoming and one outgoing pipe, so their ports are free to move.
+
+    fp 1,369 -> 1,296   (37x37 -> 36x36)   live 24/24   27.8M -> 26,272,620
+
+One trap: moving a room means re-routing BOTH its pipes. Redrawing only the
+incoming one left the outgoing pipe dangling at the old port and the machine
+failed instantly (0/7, 2 ticks) — the pipe count silently dropped from 7 to
+6, which is the tell.
+
+Only blocks 1-2 are joined so far. Blocks 3, 4 and 5 are still on 2-row gaps
+and each has exactly one pipe in and one out, so the same move applies; each
+should give another row or two.
+
+### memory: block 3 herringboned onto block 2 — height 37 -> 33, but width now binds
+
+Same move as blocks 1-2, mirrored: block 3 keeps its own columns (6-31) while
+block 2 sits at 8-36, so block 3 overhangs to the LEFT and block 2 to the
+RIGHT — a herringbone. That lets the pipe be just **2 cells**: down out of
+block 2's right overhang, then west into block 3's right wall.
+
+    block2 rows 5-8  cols 8-36
+    block3 rows 9-15 cols 6-31
+    pipe   (9,32) v -> (10,32) <   into block3's right wall at (10,31)
+
+7/7, and after squeezing: **36 x 33**, height down from 37.
+
+**Footprint unchanged at 1,296** — width 36 now binds against height 33.
+Three columns of width are worth more than any further vertical work here.
+Saved as `alexey-memory-h33.man`; not submitted, since the score is identical
+to memory_05 (26,272,620).
+
+The vertical idea is now fully proven on two joints and has three rows of
+headroom left in blocks 4-5, but it cannot pay again until the layout is
+narrowed. Next move is horizontal: the same offset trick applied sideways,
+or pulling the I/O rooms (columns 0-2) in against the blocks.
+
+### memory: herringbone flipped (block 2 left, block 3 right) — 7/7, clears column 7
+
+Alexey's correction: block 4 must be entered at its OWN top port (column 7),
+because it has two pipes each way and its ports cannot move. So the zigzag has
+to be flipped — block 2 goes LEFT and block 3 RIGHT — which leaves column 7
+uncovered below block 3 and lets block 4 be reached there.
+
+    block1 rows 0-4  cols 5-33
+    block2 rows 5-8  cols 3-31   (left)   1->2: (5,32) v -> (6,32) <   2 cells
+    block3 rows 9-15 cols 8-33   (right)  2->3: (9,7)  v -> (10,7) >   2 cells
+
+36x33, 7/7, ticks 4,143.6 (was 4,158). Saved as `alexey-memory-zig.man`.
+Footprint still 1,296 — width 36 binds against height 33.
+
+Raising block 4 by two rows then failed, and the tell was the same as before:
+**pipe count dropped 7 -> 6**. Block 4 has FOUR pipes (two to block 5, one to
+O, one from block 3); I redrew only the incoming one. Redrawing all four is
+the remaining work for that joint — and note that block 3 has two outgoing
+pipes, so moving its bottom port to the left wall (as this attempt did) needs
+its `s` cells re-audited, not just re-routed.
