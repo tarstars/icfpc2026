@@ -62,12 +62,30 @@ from .sim import Machine
 #       machine matches the model exactly through init (ring seeded, BP
 #       16->0), the prologue (seq=0, d=0), the X into the d==0 arm (BP=15)
 #       and the -1 marker injection. It then spins forever in the rotate
-#       Three faults found and fixed (see build_wip's docstring). Verified
-#       by trace: init seeds the ring, the prologue computes d, the branch
-#       picks BP, the marker is injected, the rotate loop counts down, the
-#       discard fires, `val` is read and inserted. Still hits the tick cap
-#       somewhere after the insert -- trace next from (20,13) onward through
-#       the lap loop and into the drain.
+#       Three routing faults found and fixed (see build_wip). A packet now
+#       walks the whole flow: prologue, branch, marker, rotate, discard,
+#       val, insert, lap, drain, next packet.
+#
+# FAULT 4 (design, not routing -- NOT yet fixed). The rotation-debt
+#       compensation is wrong. Traced and reproduced on paper:
+#
+#         inject marker   [s0 s1 .. s15 M]
+#         rotate 15 (d=0) [s15 M s0 s1 ..]     head is s15, not s0
+#         discard+insert  s15 thrown away, VAL appended at the tail
+#         lap to marker   [s0 s1 .. s14 VAL]
+#         drain reads     s0                   should have read VAL
+#
+#       Rotating d-1 (15 when d==0) assumes the head is s1, the debt the
+#       drain's terminating zero-read leaves behind. The first packet has
+#       no such debt, so it misses by a whole window. Creating the debt in
+#       init does not help: then the DRAIN misses, because it reads the
+#       head assuming s0. The debt can serve the insert or the drain, never
+#       both -- so the compensation has to go.
+#
+#       Options: (a) rotate exactly d and end the drain with a re-alignment
+#       lap (correct, but roughly doubles the op count from 258 to ~500 --
+#       still 15x better than tcp_00); (b) restructure so the drain never
+#       consumes the terminating zero. (a) is the safe next move.
 #
 #       Worth adding: a walk checker that runs the man and flags every cell
 #       he executes that belongs to a different phase. Grid only guards
