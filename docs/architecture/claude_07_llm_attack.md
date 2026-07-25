@@ -245,3 +245,74 @@ encoding layer, not the branch layer, is where the best designs win.
 Honest note: as an interpreter the DSL executes only the taken arm per
 run; whole-branch confidence comes from corpus coverage (rule 3) plus the
 join checks, with the symbolic tracker as the later static upgrade.
+
+## The correspondence table: every .man concept and its DSL reflection
+
+### State
+
+| .man concept | DSL reflection |
+|---|---|
+| `A` (main hand) | `lm.A` — the accumulator; the only target of data ops |
+| `B` (off hand) | `lm.B` — written only via `M()`, `W()`, `div()`; survives everything else (proven, `claude_effects.json`) |
+| `BP` (backpack, write-only) | hidden field: settable by `b()`, `m()`, `bp_half()` (`]`), `q` quarantined; readable ONLY through `branch_bp()` / `branch_parity()` — the DSL has no `lm.BP` getter, mirroring the machine |
+| signed-64 wrap | every DSL arithmetic call applies `wrap64`; overflow behaves identically in model and machine |
+
+### Data operations (one call = one glyph)
+
+| .man | DSL | Exact semantics carried |
+|---|---|---|
+| `0`-`9` | `digit(n)` | A = n |
+| `` `123` `` | `lit(n)` | A = n; costs len(digits)+2 cells at transcription; walk direction is transcription's problem, not the model's |
+| `M` | `M()` | B = A |
+| `W` | `W()` | swap |
+| `+ - *` | `add() sub() mul()` | wrap64; B untouched |
+| `/` | `div()` | A = floor quotient, **B = remainder**; B=0 case: A=0, B keeps dividend |
+| `%` | `mod()` | result takes B's sign; B=0 gives 0 |
+| `N` | `neg()` | A = -A |
+| `& \| ~` | `band() bor() bxor()` | two's complement on 64 bits |
+| `{ }` | `shl() shr()` | `{`: 0 if B outside 0..63; `}`: arithmetic, 0 if B<0, sign-fill if B>63 |
+
+### Control flow
+
+| .man | DSL | Notes |
+|---|---|---|
+| `X` | `branch_sign()` | native three-way; arms per the branch rules above |
+| `d` / `a` | `branch_bp()`, and loop constructs own their exit `d` | BP>0 test |
+| `x` | `branch_parity()` | always turns; raw low bit (negative BP is not zero) |
+| `H` | `halt()` | terminates the component's transaction stream |
+| racetrack main loop | `forever():` block | transcribes to the verified racetrack pattern |
+| relay loop (`>rsv`/`^md`) | `relay(bp_plus_1=True)` macro | expands to primitive calls; relays BP+1, exits with last value in A |
+| sentinel loop | `until_negative():` macro | recv + `branch_sign` composed; the sentinel idiom |
+| prologue (seeds off-loop) | `prologue():` block | executes once; transcription must keep it off the lap (the brackets bug, encoded as a rule); feeds the `prologue_ticks` metric |
+| `.` and space | absent | padding is layout, not semantics |
+
+### Pipes and I/O
+
+| .man | DSL | Notes |
+|---|---|---|
+| `s` | `send(port)` | blocking; port is a NAME — geometry comes later |
+| `r` | `recv(port)` | blocking; destructive; no peeking exists |
+| pipe itself | named port + net in the contract | capacity/latency are net properties, declared not modeled |
+| nearest-pipe resolution | **absent by design** | handled at transcription by the resolution map diff (engine-true); the model cannot express a mis-binding |
+| I/O rooms | ports named at the netlist level | the DSL sees only ports |
+| display ADDR/DATA/SWAP | typed sends on three ports | the ADDR->DATA->SWAP same-tick order and skew constraints live in the contract's timing class, checked at composition |
+| `S`, `R`, `U`, `q` | **quarantined — not in the v0 DSL** | timing-/occupancy-sensitive (`arrival_ordered`, `occupancy_observing`); components needing them are hand-assembled with explicit evidence, per the protocol classes |
+
+### Deliberately absent (the layer split is the point)
+
+| .man concept | Where it is handled instead |
+|---|---|
+| 2D grid, room rectangles, footprint | transcription + composer (layout is an output, not an input) |
+| arrows `> < ^ v` | the transcription of control structure; never written by hand in the model |
+| man position/movement/ticks | implicit: one call ≈ one glyph ≈ one tick on the walked path; cost estimate = call count + routing overhead |
+| literal walk direction, vertical backtick pairing | transcription rules + parse gate |
+| shared-cell tricks | transcription-only optimization; the DSL may not rely on it |
+| walls, `wall`/`bad-op`/`no-pipe` errors | unreachable arms transcribe to unrouted corridors (shared assertion); the rest are made unwritable by construction |
+| multi-room machines, men interaction | the netlist layer: one DSL program per room, composition by contracts |
+| server-vs-local divergences | load gates (`preflight`), not the model |
+
+Reading the table backwards is the design argument: everything with
+geometric meaning is absent from the DSL and owned by a checked layer
+below; everything with semantic meaning is present with machine-exact
+behavior. The model can therefore be wrong only in ways the trace tests
+catch, and the transcription can be wrong only in ways the gates catch.
