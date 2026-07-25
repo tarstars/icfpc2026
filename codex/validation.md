@@ -267,6 +267,49 @@ Updated: 2026-07-25
 - The unfrozen Grade Book standings snapshot updated at
   `2026-07-25T01:14:57.234Z` placed `wheezards` 21st of 31 rows with
   1.3333333333 points.
+- Recovered TCP hashes are fixed at
+  `61613871dc69…` (`tcp_02`), `8962e6f2eaa2…` (`tcp_03`),
+  `7868665ea88c…` (`tcp_04`), and `e5e45693b594…` (`tcp_05`);
+  `tcp_05` is byte-identical to `tcp_01`.
+- `build_tcp_recovered_best()` reproduces `tcp_02.man` byte-for-byte at
+  38×38 and footprint 1,444. All four recovered sources pass six public
+  cases, the server-layout gate, and 45 deterministic boundary cases. Their
+  maximum boundary ticks are 9,720, 9,730, 10,900, and 30,306 respectively.
+- Exact `sort_05` is 342 bytes, SHA-256
+  `e8df587d0edfc47198051df54293e9ce48205d7c8b3dbbab92feb2fdd3d0d379`,
+  and reproduces from `build_sort_count_token()`. It occupies 18×18 and
+  passes seven public cases at ticks
+  `[1038, 854, 1080, 758, 1388, 3302, 8390]`, average 2,412, and local score
+  778,062.8571428572.
+- `sort_05` passed eight worst-shape and 300 seeded randomized workloads; the
+  maximum observed completion time was 18,920 ticks. Its layout passes
+  `server_compat`.
+- Exact `reverse_02` is 233 bytes, SHA-256
+  `7ae75df4daa28e173f3f018e80fa98b57ea3babbe55f59ae240ffb6a3124957a`,
+  and reproduces from `build_reverse3()`. It occupies 15×15, retains a
+  17-cell return FIFO, and passes eight public cases at ticks
+  `[331, 515, 563, 969, 429, 165, 1801, 4521]`, local score 261,393.75.
+- `reverse_02` passed ten worst-shape and 250 seeded randomized workloads and
+  the server-layout gate.
+- The corrected Memory packing model charges 12,000 ticks for its default
+  `40 ticks/op × 300 ops` assumption. Twenty-six focused tests pass; the
+  proven capacity reduction is 100 values to 34 words, while the conservative
+  score projection is explicitly estimated at 75,666,269.22 (17.19% lower).
+- `uv run pytest -q tests/test_tcp_recovered.py
+  tests/test_alexey_sort_ring3.py` — 14 tests passed in 11.23 seconds.
+- `uv run pytest -q tests/test_alexey_reverse3.py` — 3 tests passed in
+  1.61 seconds.
+- `uv run pytest -q tests/test_memory_packing_model.py` — 26 tests passed in
+  0.37 seconds.
+- `uv run pytest -q` — 185 tests passed in 78.88 seconds after integrating
+  recovered TCP, Sort/Reverse candidates, the Memory model, and transfer
+  audits.
+- Mandatory pre-commit freshness gate: `git pull --ff-only` reported current
+  `main` already up to date. Exact standings updated at
+  `2026-07-25T07:18:57.240Z` showed Packet Reassembly 20/20 at score
+  5,981,625.6 (rank 20), Sort 25/25 at score 1,455,739.72 (rank 29), and
+  Reverse 20/20 at score 472,345.6 (rank 54). Direct authenticated reads
+  reconfirmed live `sort_03`, `reverse_01`, `tcp_00`, and `tcp_01`.
 
 ## Pending validation
 

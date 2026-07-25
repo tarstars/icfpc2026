@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Alexey research line. Shared variants.json is frozen for this line to avoid merge conflicts; new variants are catalogued here. sort_03 supersedes sort_02 as team best.",
+  "note": "Alexey research line. Shared variants.json is frozen for this line to avoid merge conflicts; new variants are catalogued here. sort_05 is the validated local successor to the live sort_03; it has not been submitted.",
   "problem": {
     "id": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
     "slug": "sort-numbers",
@@ -48,6 +48,38 @@
         "updatedAt": "2026-07-24T18:40:48.781Z",
         "fullResponse": "submissions/sort/alexey-sort_03-submit.json"
       }
+    },
+    {
+      "version": "sort_05",
+      "label": "in-band remaining-count token, shelf-folded ring",
+      "parent": "sort_03",
+      "changeType": "protocol-and-geometry",
+      "architecture": "selection-sort ring with the shrinking round count carried as a FIFO token behind the data; blocking receive replaces q and the three-row settling corridor; the 17-cell return pipe folds into the shelf below the pump",
+      "source": {
+        "path": "submissions/sort/sort_05.man",
+        "generator": "src/littleman/alexey_sort_ring3.py:build_sort_count_token",
+        "sha256": "e8df587d0edfc47198051df54293e9ce48205d7c8b3dbbab92feb2fdd3d0d379",
+        "bytes": 342,
+        "width": 18,
+        "height": 18,
+        "footprint": 324
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [1038, 854, 1080, 758, 1388, 3302, 8390],
+        "averageTicks": 2412.0,
+        "score": 778062.8571428572,
+        "serverCompatible": true,
+        "stress": "tests/test_alexey_sort_ring3.py: 8 worst-shape cases + 300 deterministic randomized cases (n<=16, |x|<=10000, 2-6 lists), all passed; max observed 18920 ticks"
+      },
+      "improvementFromParentLocal": {
+        "footprintPercent": 10.249307479224377,
+        "averageTicksPercent": 6.215630728211958,
+        "scorePercent": 16.19679268598354
+      },
+      "liveSubmission": null,
+      "verdict": "Validated local improvement. Do not submit without explicit user authorization."
     }
   ]
 }

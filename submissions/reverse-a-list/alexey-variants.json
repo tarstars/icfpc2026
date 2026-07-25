@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Alexey research line. Shared variants.json is frozen for this line to avoid merge conflicts; new variants are catalogued here. reverse_01 supersedes reverse_00 as team best.",
+  "note": "Alexey research line. Shared variants.json is frozen for this line to avoid merge conflicts; new variants are catalogued here. reverse_02 is the validated local successor to live reverse_01; it has not been submitted.",
   "problem": {
     "id": "537ec979-d883-40f3-9663-b59579a0682c",
     "slug": "reverse-a-list",
@@ -48,6 +48,38 @@
         "updatedAt": "2026-07-24T19:28:02.513Z",
         "fullResponse": "submissions/reverse-a-list/alexey-reverse_01-submit.json"
       }
+    },
+    {
+      "version": "reverse_02",
+      "label": "15x15 upper-return geometry",
+      "parent": "reverse_01",
+      "changeType": "geometry-only",
+      "architecture": "byte-identical corridor-free shrinking-ring rooms; pump and relay shifted left, relay raised one row, and the 17-cell return FIFO wrapped above the relay to remove one row and one column",
+      "source": {
+        "path": "submissions/reverse-a-list/reverse_02.man",
+        "generator": "src/littleman/alexey_reverse3.py:build_reverse3",
+        "sha256": "7ae75df4daa28e173f3f018e80fa98b57ea3babbe55f59ae240ffb6a3124957a",
+        "bytes": 233,
+        "width": 15,
+        "height": 15,
+        "footprint": 225
+      },
+      "localValidation": {
+        "casesPassed": 8,
+        "casesTotal": 8,
+        "caseTicks": [331, 515, 563, 969, 429, 165, 1801, 4521],
+        "averageTicks": 1161.75,
+        "score": 261393.75,
+        "serverCompatible": true,
+        "stress": "tests/test_alexey_reverse3.py: 10 worst-shape cases + 250 deterministic randomized cases"
+      },
+      "improvementFromParentLocal": {
+        "footprintPercent": 12.109375,
+        "averageTicksPercent": 0.04302000430200043,
+        "scorePercent": 12.147185550656054
+      },
+      "liveSubmission": null,
+      "verdict": "Validated local improvement. Do not submit without explicit user authorization."
     }
   ]
 }

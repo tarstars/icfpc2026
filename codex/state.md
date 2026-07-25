@@ -81,6 +81,23 @@ solutions.
   oracle cases locally and improves measured local score 32.98%.
 - Refreshed shared and Claude handoff state to show all twelve graded problems
   solved and retired the completed Memory handoff.
+- Recovered and preserved the missing Packet Reassembly lineage from five
+  platform downloads. `tcp_02` is the identified 38×38 counted winner;
+  its structural generator reproduces the artifact byte-for-byte, and all
+  recovered sources pass public, compatibility, and 45-case boundary gates.
+- Applied TCP's in-band-control lesson to Sort. The 18×18 `sort_05` carries a
+  remaining-count token behind its data and improves measured local score
+  16.20% over live `sort_03`, with 308 deterministic stress workloads passing.
+- Compacted Reverse geometry from 16×16 to 15×15 without changing room
+  programs. `reverse_02` improves measured local score 12.15% and passes its
+  public, capacity, compatibility, and 260-workload stress gates.
+- Completed the delegated Memory packing study. Three values safely fit in
+  one base-`2**21` signed-64 word, reducing 100 ring items to 34; 26 focused
+  model tests pass and the corrected conservative projection is 17.19%.
+- Completed bounded TCP-lesson audits for Grade Book, Matrix, Brackets,
+  Plotter, Sudoku, and Subset Sum, including exact route counts, recorded
+  negative results, a 306-square Sudoku packing bound, and an executable
+  Subset Sum placement probe with a localized route collision.
 
 ## Blockers
 
@@ -88,9 +105,12 @@ solutions.
 
 ## Next steps
 
-1. Recover the exact source and UUID behind the counted 5,981,625.6 Packet
-   Reassembly score from the contest web submission history.
-2. Submit `plotter_01` only with explicit user authorization and after the
+1. Recover the submission UUID for the now-preserved `tcp_02` source from the
+   contest web submission history.
+2. Submit `plotter_01`, `sort_05`, or `reverse_02` only with explicit user
+   authorization and after the
    mandatory freshness checks.
-3. Evaluate compact geometry or faster protocols for the other weak-rank
-   footprint-tick baselines.
+3. Build a guarded packed `memory_02` prototype; keep it only if station width
+   and measured decode overhead satisfy the feasibility report.
+4. Regenerate the colliding Subset Sum routes or prototype the two-row Sudoku
+   worker placement if higher-priority submissions are complete.

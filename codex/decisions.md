@@ -109,3 +109,36 @@ smallest values that keep routes disjoint and pipe parsing unchanged.
 Preserve both generated artifacts and reject a geometry candidate unless it
 matches the public cases, the deterministic 20-segment frame oracle, and the
 server-compatibility layout check.
+
+## 2026-07-25 — Treat recovered platform sources as immutable lineage
+
+Preserve all four newly downloaded Packet Reassembly sources with their exact
+hashes, including the `tcp_05 == tcp_01` duplicate. Represent the winning
+`tcp_02` structurally as room programs, placements, and pipe routes, and
+require the generator to reproduce the recovered bytes exactly.
+
+Do not invent the missing submission UUID. Identify `tcp_02` as the counted
+winner only from the arithmetic proof supplied by its 38×38 footprint and the
+displayed 5,981,625.6 score.
+
+## 2026-07-25 — Prefer in-band control to timing probes
+
+When FIFO order and the value domain permit, carry phase/count tokens behind
+the data and synchronize with blocking receive. The retained `sort_05`
+applies this rule to remove `q` and its settling corridor. Preserve protocol
+and geometry as one new numbered candidate because both contribute to its
+measured improvement.
+
+Keep layout semantics explicit: nearest-pipe selection, pipe capacity, and the
+bounding square are acceptance conditions, not post-processing details.
+
+## 2026-07-25 — Separate measured candidates from packing bounds
+
+Retain `reverse_02` because a generated artifact passes full local validation
+and improves score. Record the Sudoku rectangle calculation and Subset Sum
+coordinate probe only as bounds: neither is a candidate until all routes parse
+and public judging succeeds.
+
+For analytical score models, charge per-operation overhead for the full
+assumed operation count. Label projections as estimates and correct them
+before using them to authorize a machine build.
