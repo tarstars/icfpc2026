@@ -72,8 +72,14 @@ def tokenize(text: str) -> list[str]:
     return out
 
 
-def parse(text: str) -> dict[str, Block]:
-    """Source -> {name: Block}. Raises BlockGraphError on structure faults."""
+def parse(text: str, *, allow_timing_ops: bool = False) -> dict[str, Block]:
+    """Source -> {name: Block}. Raises BlockGraphError on structure faults.
+
+    `allow_timing_ops` permits q/R/U (occupancy- and arrival-sensitive), which
+    are rejected by default because they break latency-insensitive
+    composition. Decompiled graphs that use them are not `patient` and their
+    behaviour is only reproducible tick-accurately.
+    """
     blocks: dict[str, Block] = {}
     current: Block | None = None
     for tok in tokenize(text):
@@ -113,11 +119,11 @@ def parse(text: str) -> dict[str, Block]:
         current.ops.append(tok)
     if current and not current.kind:
         raise BlockGraphError(f"block {current.name!r} has no terminator")
-    check(blocks)
+    check(blocks, allow_timing_ops=allow_timing_ops)
     return blocks
 
 
-def check(blocks: dict[str, Block]) -> None:
+def check(blocks: dict[str, Block], *, allow_timing_ops: bool = False) -> None:
     """Local structural checks (claude_15 §checker)."""
     if not blocks:
         raise BlockGraphError("empty program")
@@ -130,11 +136,11 @@ def check(blocks: dict[str, Block]) -> None:
                 digits = op[1:-1].replace(" ", "")
                 if digits and not digits.isdigit():
                     raise BlockGraphError(f"bad literal {op!r} in {block.name!r}")
-            elif op in "RUq":
+            elif op in "RUq" and not allow_timing_ops:
                 raise BlockGraphError(
                     f"quarantined op {op!r} in {block.name!r} (timing-sensitive)"
                 )
-            elif op not in "0123456789@.MW+-*/%N&|~{}bm]srS<>^v":
+            elif op not in "0123456789@.MW+-*/%N&|~{}bm]qsrSRU<>^v":
                 raise BlockGraphError(f"unknown op {op!r} in {block.name!r}")
 
 
