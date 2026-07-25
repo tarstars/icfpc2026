@@ -11,10 +11,13 @@ You have A (main hand), B (off hand), BP (backpack, WRITE-ONLY).
 
 - `s` does NOT clobber A. You can send the same value twice, or send
   and keep using it.
-- B SURVIVES: `r s m d a x ] q b H > < ^ v X` and digits/literals.
-  B is DESTROYED by: `M W + - * / % N & | ~ { }`.
-  => You can carry one value in B through entire relay loops and
-  branch chains. This is the single most used trick.
+- B is written only by `M`, `W`, and `/`; it survives every other opcode,
+  including `+ - * % N & | ~ { }`, pipe operations, branches, movement,
+  digits, and literals. This is confirmed by `sim.py`, the language
+  reference, and a live-server-correlated `brackets_00` experiment: forcing B
+  to zero after arithmetic reduced the accepted machine from 9/9 to 3/9
+  locally. You can therefore hold one value in B while comparing or
+  transforming an entire stream.
 - `/` puts quotient in A AND remainder in B in one op. Use it for
   unpack/match tests (brackets: match iff (S-u)/3 has remainder 0).
 - `%` result takes B's sign; with positive B the result is in [0,B) —
@@ -65,6 +68,10 @@ Heading right: >0 goes DOWN, <0 goes UP, 0 straight.
 
 ## 4. Pipes: parsing and selection rules (bug source #1)
 
+- Every pipe must contain at least two cells, including its start and
+  terminal arrowheads. The local parser accepts one-cell pipes, but the
+  contest server rejects them at load; this invalidated `sort_05` and
+  `reverse_02`. Always run the server-compatible pipe-length gate.
 - A pipe STARTS with an arrowhead whose BACKWARD cell lies on the
   source room's border, pointing away. A pipe drawn leaving a right
   wall must start with `>' then bend; starting with `^` above the
