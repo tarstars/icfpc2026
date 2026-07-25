@@ -1,8 +1,9 @@
 # Claude Status
 
-- Updated UTC: 2026-07-25T11:42:00Z
-- State: stopped on the Memory implementation; write set released. One
-  contest submission was made under direct user authorization (see below).
+- Updated UTC: 2026-07-25T13:16:00Z
+- State: active on Semester 4 (LLM, LLLM, Snake) and the docs/architecture
+  brainstorm; Pathfinder released to Codex at 2026-07-25T13:15Z. Memory task
+  remains closed (submitted, live 27,753,851.08).
 - Role: solver and researcher
 - Current task: none (`20260725-memory-packed-candidate` stopped by the Codex
   takeover of 2026-07-25T08:31:20Z and acknowledged)
