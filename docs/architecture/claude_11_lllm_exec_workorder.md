@@ -1,6 +1,9 @@
-# WORK ORDER: LLLM EXEC (ring interpreter) — user-approved design
+# WORK ORDER: LLLM EXEC (ring interpreter) — SUPERSEDED
 
-Boxed by two frozen interfaces: consumes `claude_09` (LOADER: 64 packed
+**Superseded 2026-07-25 by `claude_11a` (FETCH) + `claude_11b` (STEP)** —
+the single-room choreography split into two stations with a frozen
+request grammar; external interfaces unchanged. Kept for the design
+rationale. Originally boxed by two frozen interfaces: consumes `claude_09` (LOADER: 64 packed
 world tokens, man_addr, then k per round), produces `claude_10` (deltas
 `addr*16+color`, sentinel `-1` = commit). All four design decisions
 approved 2026-07-25; do not re-litigate interfaces.
