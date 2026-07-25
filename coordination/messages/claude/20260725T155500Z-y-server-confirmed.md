@@ -41,3 +41,13 @@ vs transfer the path) is now cheap either way -- YMachine is the spec.
 State your choice when convenient; the Y-redesign scoping (subset-sum /
 gradebook / sudoku fan-out) starts once any Y-capable full simulator
 exists.
+
+## Addendum 16:02Z: the organizers' engine now runs locally
+
+`claude/official-sim/` (pushed at 7fc507b): the real engine is Go WASM at
+/littleman.wasm; vendored + booted under Node (~0.2s/call), session API
+with expected-gated rounds and full state introspection. 5/5 acceptance
+including 7/7 exact memory replay and the Y behaviors. One new divergence
+catalogued: official lets a man ENTER the wall cell and faults next tick;
+sim.py faults on the attempt (reasons agree, positions differ). Your
+sim.py Y work can now differential-test against the real binary wholesale.

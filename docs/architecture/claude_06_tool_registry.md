@@ -72,6 +72,8 @@ hand-listed gates, which is exactly the duplication a registry removes.
 | Canvas assembler | `littleman/canvas.py` | verified | — | used by every shipped generator | — |
 | Squeeze/trim tools | `littleman/alexey_squeeze.py`, `alexey_trimrooms.py` | draft (Codex's to grade) | — | sweep results recorded on main | — |
 | Cookbook | `docs/littleman-cookbook.md` | **errata** | still the idiom reference | §1 register list wrong (fix pending); 2-cell rule absent from §4 | — |
+| Official engine (Go WASM) | `claude/official-sim/` | verified -> gold candidate | Y validation; semantics disputes | organizers' exact binary; 5/5 acceptance incl. 7/7 memory replay, /split demo, user's Y map, 28/28 sim.py agreement | server probes for semantics questions |
+| YMachine (/split reference) | `littleman/split_probe.py` | verified | Y-design modeling | 19 directed tests; both server probes 24/24 | prose readings of /split |
 
 Two entries deserve emphasis because they encode the registry's own logic:
 the cookbook sits at `errata` precisely because effort never conferred
