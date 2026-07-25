@@ -16,7 +16,13 @@ from pathlib import Path
 import pytest
 
 from littleman.llm import LLM, program_grid
-from littleman.llm_components import DELTA_END, LLMPipeline, Q
+from littleman.llm_components import (
+    DELTA_END,
+    LLMPipeline,
+    Q,
+    pack_delta,
+    unpack_delta,
+)
 from littleman.llm_fuzz import corpus, program_tokens
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +85,13 @@ def test_queue_rejects_non_int_records():
     for bad in ("x", 1.0, (1, 2), [1], {1: 2}, None, True, False):
         with pytest.raises(TypeError):
             q.put(bad)
+
+
+@pytest.mark.parametrize(("addr", "color"), [(0, 0), (17, 9), (255, 15)])
+def test_delta_grammar_is_byte_exact_with_lllm_draw(addr, color):
+    token = pack_delta(addr, color)
+    assert token == addr * 16 + color
+    assert unpack_delta(token) == (addr, color)
 
 
 def test_every_queue_in_a_real_run_carried_only_int():

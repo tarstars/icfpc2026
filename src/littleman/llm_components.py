@@ -224,17 +224,15 @@ def unpack_pipe_desc(rec: int) -> tuple[int, int, int, int, int]:
     return cell_count, source, dest, head, tail
 
 
-# DELTA record -- travels on: delta (EXEC -> DELTA_DRAW). One int per
-# changed address, emitted at most once per address per tick:
-#
-#   bits 0-7  addr   grid address whose display color changed
-#   bits 8-11 color  its new display color, 0-15
+# DELTA record -- travels on: delta (EXEC -> DELTA_DRAW).  This is exactly
+# the accepted LLLM DRAW grammar: ``addr*16 + color`` for a changed address
+# and :data:`DELTA_END` after every frame.
 def pack_delta(addr: int, color: int) -> int:
-    return (addr & 0xFF) | ((color & 0xF) << 8)
+    return (addr & 0xFF) * 16 + (color & 0xF)
 
 
 def unpack_delta(rec: int) -> tuple[int, int]:
-    return rec & 0xFF, (rec >> 8) & 0xF
+    return divmod(rec, 16)
 
 
 def addr_of(r: int, c: int) -> int:
