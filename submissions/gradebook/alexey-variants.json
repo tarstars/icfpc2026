@@ -1,0 +1,25 @@
+{
+ "schemaVersion": 1,
+ "variants": [
+  {
+   "version": "gradebook_02",
+   "label": "mechanical squeeze of empty rows/columns",
+   "changeType": "geometry",
+   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (full): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "source": {
+    "path": "submissions/gradebook/gradebook_02.man",
+    "footprintBefore": 206116,
+    "footprintAfter": 178929
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 104303579600,
+    "score": 81914188255,
+    "gain": 1.27,
+    "fullResponse": "submissions/gradebook/alexey-gradebook_02-submit.json"
+   },
+   "verdict": "TEAM BEST for gradebook: 104,303,579,600 -> 81,914,188,255 (1.27x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+  }
+ ],
+ "note": "Alexey research line for gradebook."
+}

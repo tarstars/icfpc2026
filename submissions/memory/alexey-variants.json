@@ -1,0 +1,25 @@
+{
+ "schemaVersion": 1,
+ "variants": [
+  {
+   "version": "memory_02",
+   "label": "mechanical squeeze of empty rows/columns",
+   "changeType": "geometry",
+   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (rows only -- the column pass breaks it 2/7): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "source": {
+    "path": "submissions/memory/memory_02.man",
+    "footprintBefore": 2209,
+    "footprintAfter": 2116
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 91372248,
+    "score": 87493514,
+    "gain": 1.04,
+    "fullResponse": "submissions/memory/alexey-memory_02-submit.json"
+   },
+   "verdict": "TEAM BEST for memory: 91,372,248 -> 87,493,514 (1.04x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+  }
+ ],
+ "note": "Alexey research line for memory."
+}

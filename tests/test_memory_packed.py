@@ -157,7 +157,7 @@ def test_generator_is_deterministic(text):
 
 
 def test_artifact_matches_generator_byte_for_byte(text):
-    artifact = Path(__file__).resolve().parents[1] / "submissions/memory/memory_02.man"
+    artifact = Path(__file__).resolve().parents[1] / "submissions/memory/memory_04.man"
     assert artifact.read_bytes() == text.encode()
 
 

@@ -1,0 +1,81 @@
+{
+ "schemaVersion": 1,
+ "variants": [
+  {
+   "version": "plotter_04",
+   "label": "top block relocated into the free band, then squeezed",
+   "parent": "plotter_03",
+   "changeType": "geometry",
+   "architecture": "The five small rooms plus I form a linear chain I->A->B->C->D->E->BIG1 whose pipes are all internal except ONE (E's bottom port into BIG1's top port at column 17). So the block is translated rigidly (+62 rows, +69 cols) into the 57x261 band that the plotter_03 trim freed beside the three big rooms, and only that single connection is re-drawn. Rows 59-61 are blocked at columns 46-69, so the new route climbs a corridor at column 82, runs west along row 1 and comes back down column 17. Straight runs are drawn with segment glyphs ('|','-') rather than arrowheads so alexey_squeeze can still see through them; it then removed 59 rows and 25 columns.",
+   "source": {
+    "path": "submissions/plotter/plotter_04.man",
+    "generator": "src/littleman/alexey_plotter_move.py (reproduces byte-for-byte)",
+    "width": 113,
+    "height": 326,
+    "footprint": 106276
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "avgTicksLocal": 60293.8,
+    "comparedTo": "plotter_02 local: fp 148225, avgTicks 78072"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 113,
+    "height": 326,
+    "area2": 106276,
+    "avgTicks": 88146,
+    "score": 9367793668,
+    "fullResponse": "submissions/plotter/alexey-plotter_04-submit.json"
+   },
+   "verdict": "TEAM BEST for plotter: 16,905,772,730 -> 9,367,793,668 (1.80x), and 8.1x against the 75.8B this line started from. The long re-route was expected to cost ticks and instead SAVED them (114,065 -> 88,146), because the squeeze that followed shortened every pipe crossing the 59 deleted rows, not just this one."
+  },
+  {
+   "version": "plotter_03",
+   "label": "every room shrunk to its content (empty edge rows/columns dropped)",
+   "parent": "plotter_02",
+   "changeType": "geometry",
+   "architecture": "Per-room edge trim via src/littleman/alexey_trimrooms.py: each wall moves inward past that room's own empty edge rows/columns, and any pipe attached to the wall is extended to reach the new one. Seven rooms shrank -- five lost 8 empty left columns each, one lost 62, one lost 2 bottom rows; 104 edge lines in all. The LM-75 display is skipped, its blank interior being the drawing surface.",
+   "source": {
+    "path": "submissions/plotter/plotter_03.man",
+    "generator": "src/littleman/alexey_trimrooms.py (reproduces byte-for-byte)",
+    "width": 138,
+    "height": 385,
+    "footprint": 148225
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "area2": 148225,
+    "avgTicks": 114065.4,
+    "score": 16907343915,
+    "fullResponse": "submissions/plotter/alexey-plotter_03-submit.json"
+   },
+   "verdict": "NOT AN IMPROVEMENT on its own -- 16,907,343,915 against plotter_02's 16,905,772,730, 0.01% worse because the pipe extensions cost 7 ticks. A narrower room still sits in the same bounding box. Kept because it is the base for the move step: after the trim, rows 62-322 have columns 81-137 entirely free (57 wide by 261 tall), and the six trimmed rooms are now at most 34 wide and total 52 rows. Relocating them there would free rows 5-58 and 330-339, taking the height from 385 to about 320 -- footprint ~102,400, about 1.45x. Needs roughly twelve pipes re-routed."
+  },
+  {
+   "version": "plotter_02",
+   "label": "mechanical squeeze of empty rows/columns",
+   "changeType": "geometry",
+   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (full): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "source": {
+    "path": "submissions/plotter/plotter_02.man",
+    "footprintBefore": 194481,
+    "footprintAfter": 148225
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 75794498065,
+    "score": 16905772730,
+    "gain": 4.48,
+    "fullResponse": "submissions/plotter/alexey-plotter_02-submit.json"
+   },
+   "verdict": "TEAM BEST for plotter: 75,794,498,065 -> 16,905,772,730 (4.48x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+  }
+ ],
+ "note": "Alexey research line for plotter. plotter_04 is the current best at 9,367,793,668 -- 8.1x better than the 75,794,498,065 this line started from. Chain: plotter_02 (mechanical squeeze) -> plotter_03 (rooms trimmed to content, a deliberate no-op) -> plotter_04 (top block relocated into the band the trim freed)."
+}

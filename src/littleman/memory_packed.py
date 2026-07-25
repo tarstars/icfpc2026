@@ -1,4 +1,4 @@
-"""Generator for a PACKED Memory machine (`memory_02` candidate).
+"""Generator for a PACKED Memory machine (`memory_04` candidate).
 
 Baseline `memory.py` circulates 100 raw cell values around a FIFO ring, so an
 operation whose target sits ``k`` positions away costs ``k+1`` ring-item
@@ -282,7 +282,7 @@ STA_OUT_ROW = 13     # left wall
 
 
 def build_memory_packed() -> str:
-    """Render the packed `memory_02` candidate."""
+    """Render the packed `memory_04` candidate."""
     cv = Canvas()
     st_r, st_c = STATION_AT
     st_right = st_c + 23    # station's right wall column

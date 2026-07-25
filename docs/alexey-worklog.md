@@ -538,3 +538,383 @@ were already published and referenced), and folding my authoritative
 server responses — ids, scores, tick counts — into `alexey-variants.json`,
 which their copy lacked. Every entry now carries `alexeyNumbering`.
 **Match these machines by score or sha256, never by file number.**
+
+## 2026-07-25 — geometry sweep: one win, one server rule, one negative result
+
+Goal was cheap footprint wins with no algorithm changes. Measured the whole
+line first (fill density per submission, and how many places each problem's
+standings move per unit of score) rather than guessing.
+
+**Shipped: sort_06, 1,455,740 → 1,367,454 (−6%).** `sort_05` already existed
+at 18×18 (fp 324, better than the live sort_03's 361) and judged 7/7 locally
+— but the server refuses to load it.
+
+**New server rule: every pipe must be at least TWO cells.** A one-cell pipe
+loads with `pipe runs into a room wall — end it with an arrowhead pointing
+into the room`. Our parser accepts it and the local judge then reports a
+clean pass, so `sort_05` (one 1-cell pipe) and `reverse_02` (three of them,
+15×15, fp 225 vs the live 256) were both built, validated and abandoned
+without anyone connecting the load error to pipe length. Practical form:
+**two rooms must be two cells apart, not one.** Checker:
+`src/littleman/alexey_pipecheck.py` (the teammates' `server_compat` gate
+covers the other two divergences but not this one).
+
+Rerouting the input out of another wall to keep 18×18 failed for a reason
+worth remembering: the ring read at rel(5,11) had exactly ONE step of
+margin over the input pipe, so moving where the input entered flipped that
+read and deadlocked a machine that still parsed and audited fine. Restoring
+the column instead keeps sort_05's faster machine at sort_03's footprint.
+
+Divergences run both ways: `history_00.man` is live at 7,921 yet our parser
+rejects it outright (`invalid vertical literal at (20, 2)`). A local parse
+failure is not evidence the server will refuse a program.
+
+**Negative results — do not spend time here:**
+
+* *history-lesson is already geometrically optimal.* Swept the data-row
+  capacity from 78 to 91: capacities 83, 84 and 85 all give fp 7921, because
+  narrowing a row adds exactly the rows it saves. 89×88 sits on the balance
+  point. Only fewer literal cells (better than the current 2.2 cells/char)
+  can help, and the alphabet is 71 symbols, so re-basing the radix buys
+  nothing — 9 characters per 18-digit word either way.
+* *brackets repacking is worth ~15-20%, not more.* It looks wasteful (50×39,
+  30% fill) but CLASSIFY (20 wide) beside OPEN (22 wide) already forces
+  ~46 columns, and stacking all three rooms trades that for ~47 rows. Best
+  case ≈ fp 2116-2209 against 2500, which the standings turn into +1-2 places.
+* *reverse_02 cannot be saved at 15×15* — the I and O gaps are exactly the
+  one-cell pipes the server rejects, and widening either returns fp to 256.
+
+Where the headroom actually is, by places gained per unit of score
+(measured off the live standings): history-lesson −20% → **+22 places**
+(rank 28→6, densest field in the contest), reverse-a-list −50% → +18,
+memory −75% → +34, sort −50% → +11. All four need algorithm work, not
+geometry.
+
+### brackets repacked: 7,473,269 → 3,669,188 (2.04x), live 26/26
+
+I had estimated this at 15-20% and was wrong — it is 2x, because **short
+pipes buy ticks as well as footprint**. Footprint 2500 → 1764 (−29%) and
+avgTicks 1506 → 1080 locally (−28%); the two multiply.
+
+No machine logic touched. The three rooms are used verbatim, trimmed only
+of provably empty edges: classify 19×20 → 19×18 (two empty right columns),
+close 10×32 → 9×30 (two empty columns plus one empty interior row), open
+unchanged. Trims only remove cells beyond the last used column/row, so each
+walk is identical apart from being a few ticks shorter, and every port keeps
+its offset relative to its own room — which is why nearest-pipe resolution
+inside the rooms needed no re-derivation at all.
+
+**Room order is what makes the routing planar.** Two pipes must cross the
+whole layout: close-bottom → open-top and open-bottom → close-top. With
+open in the middle (as brackets_00 had it) both wraps are long and fight for
+the same corridor rows — I spent several attempts failing to route them past
+each other, each time blocked by a vertical run cutting a horizontal one.
+Putting **close** in the middle turns one wrap into a two-row hop and leaves
+a single long pipe, which then owns the east columns (35, 36) and the bottom
+row uncontested. brackets_00's 92-cell perimeter wrap becomes 89 cells of
+much straighter routing, and the 45-cell one becomes 16.
+
+Generator: `src/littleman/alexey_brackets_compact.py`, reproduces
+`brackets_01.man` byte-for-byte.
+
+Remaining headroom is small: height 42 binds against width 37, and all
+three inter-room gaps are already minimal (3 rows between classify and
+close for the bottom port, pipe 2 and pipe 6; 2 rows each elsewhere).
+Moving open beside classify instead computes to exactly the same fp 1764.
+
+Session total across the two geometry rounds: sort 1,455,740 → 1,367,454
+and brackets 7,473,269 → 3,669,188.
+
+### brackets, second pass: 3,669,188 → 3,494,864 (total 2.14x from 7,473,269)
+
+Question was whether the ROOMS themselves could be compacted, keeping the
+algorithm. Measured first: interiors are 75% / 67% / 75% visited, and after
+the first pass's trims **no fully dead interior row or column remains** in
+any of the three. The leftover blanks are all walked-over lanes or gaps
+inside otherwise-used rows, so nothing more can be deleted outright.
+
+Found one more free row anyway, in the *layout* rather than the rooms: pipe
+2 (classify → close, columns 3-7) and pipe 6 (the long wrap, columns 11-35)
+occupy disjoint column ranges and can share gap row 20. 37×41, fp 1681.
+Live 26/26 at 3,494,864.
+
+**Why the rooms cannot shrink further — the interesting part.** `classify`
+spends ten of its seventeen interior rows on five comparison blocks, each
+using one row for the block and one for the mismatch return. The obvious
+move is to serpentine them — block east, block west, block east — which
+would save five rows and about eight ticks per character. It does not work,
+and the reason is `X`: the MATCH case always continues *straight*. A
+westbound block's match arm therefore runs west, but its `s` has to reach
+the OPEN port on the east wall, and at low columns that cell resolves to the
+CLOSE port instead — the machine would send the token to the wrong room.
+
+Routing the arm around to a shared send cell on the east does resolve
+correctly, but it turns the per-character circuit from ~39 ticks into ~75.
+Since the score is footprint × ticks, a 22% footprint gain against a ~90%
+tick loss is a clear net loss. The present arm — send to OPEN immediately
+after `X`, then drop down the east lane — is tick-optimal, and that is
+exactly what pins the room at one block per two rows.
+
+So: brackets geometry is now done. Height 41 binds against width 37, all
+three inter-room gaps are minimal, and the rooms are at their layout floor
+given the port geometry.
+
+## 2026-07-25 — mechanical squeeze sweep: five problems improved, two up to 4.5x
+
+Swept every live submission for pure-geometry slack. The productive find was
+a transformation I had not been applying globally:
+
+**A row whose every cell is `' '` or `'|'` can be deleted outright.** It
+holds no instruction, no wall corner and no horizontal run, so dropping it
+shortens by one cell every room interior and every vertical pipe it crosses
+and changes nothing else — a man walks over blanks, so his path is identical
+apart from being one tick shorter. Columns of `' '` and `'-'` are the
+transpose. No room is re-laid, no pipe re-routed, nothing is moved.
+
+| problem | footprint | live score | gain |
+|---|---|---|---|
+| sudoku-validity | 81,796 → 61,504 | 105,335,908,125 → **25,480,732,026** | 4.13x |
+| plotter | 194,481 → 148,225 | 75,794,498,065 → **16,905,772,730** | 4.48x |
+| gradebook | 206,116 → 178,929 | 104,303,579,600 → **81,914,188,255** | 1.27x |
+| tcp | 1,444 → 1,369 | 5,981,626 → **5,655,750** | 1.06x |
+| memory | 2,209 → 2,116 | 91,372,248 → **87,493,514** | 1.04x |
+
+All five 20/20 or better on the server. Note that sudoku and plotter gained
+**far more than their area** — 4.1x and 4.5x against footprint gains of only
+1.33x and 1.31x. The rest came from ticks: deleting the blank rows shortened
+the pipes running through them, and on those two the score is
+latency-dominated. Same effect as the brackets repack.
+
+`reverse`, `sort`, `brackets` and `history` have **zero** deletable rows or
+columns. Those four are tight; do not look again.
+
+Not unconditionally safe — always re-judge. Two failures:
+
+* `memory` survives the row pass (7/7) but breaks on the column pass (2/7).
+  Deleting a column changes Manhattan distances and therefore which pipe an
+  `r`/`s` resolves to; memory has reads whose margin between two candidate
+  pipes is a single step. Salvaged as rows-only.
+* `matmul` breaks on both passes (0/7 full, 6/7 rows-only). Its footprint is
+  width-bound anyway, so only the column pass would have paid.
+
+Tool: `src/littleman/alexey_squeeze.py`, reproduces all five submitted files
+byte-for-byte. Run `alexey_pipecheck.check` afterwards as well — squeezing
+can shorten a two-cell pipe to one cell, which the server rejects at load.
+
+Also confirmed by measurement this round, so nobody re-derives it: in every
+one of the big programs the slack that remains sits in the NON-binding
+dimension. matmul, gradebook and sudoku are width-bound with their spare
+space in rows; plotter and memory are height-bound with theirs in columns.
+That is why the remaining headroom needs re-placement, not deletion.
+
+### Follow-up: per-room edge trimming — measured, and it is already spent
+
+Re-checked the specific idea "each room has empty edge rows/columns that can
+be trimmed", on the current (post-squeeze) submissions. Result, per program,
+counting the trim available along the vertical chain (rows) and the
+horizontal chain (columns), and the footprint that would result **after**
+re-placing the rooms to close the gaps:
+
+| problem | binds | row slack | col slack | gain if re-placed |
+|---|---|---|---|---|
+| reverse, sort, tcp, brackets, memory, sudoku | — | 0 | 0-11 | **1.00x** |
+| gradebook | H | 2 | 377 | 1.01x |
+| plotter | H | 2 | 8 | 1.01x |
+| matmul | H | 5 | 13 | 1.03x |
+
+**The idea is sound but already harvested.** Before the squeeze sweep these
+same rooms had real edge slack — memory 6+2 columns, sudoku 13-18 per room,
+plotter 30 per room. The whole-program squeeze removed it, because rooms in
+these layouts are column-aligned, so a room's empty edge column usually *is*
+blank across the entire program and the global pass takes it.
+
+What is left sits in the wrong dimension. gradebook still carries **377**
+trimmable columns along its horizontal chain — and gains nothing from them,
+because it binds on height (423 against 386). Same for plotter and sudoku.
+The only program with real row slack is matmul (5 rows, 13 columns, 1.03x),
+and that is precisely the one the global squeeze could not process.
+
+One trap found while measuring: plotter contains a room whose interior is
+entirely blank and which looks like free space — it is the **LM-75 display**,
+walled in `=` and `:` rather than `-` and `|`. Its blankness is the drawing
+surface. The squeeze leaves it alone automatically (`:` is not in `' |'`),
+but any hand-written trimmer must special-case it.
+
+### plotter: found the real slack, and why it is reachable
+
+Followed the "compress the rooms" idea into plotter and it leads somewhere
+concrete. plotter_02 is 138×385 — height-bound — and three rooms account for
+248 of those 385 rows:
+
+| room | rows | instructions | rows carrying an instruction | **pure return rows** |
+|---|---|---|---|---|
+| r62-148 | 85 | 48 | 39 | **46** |
+| r152-242 | 89 | 65 | 43 | **46** |
+| r247-322 | 74 | 49 | 35 | **39** |
+
+**131 of those 248 rows contain no instruction at all** — they are the
+westbound return legs of a serpentine that carries work only on its
+eastbound legs. The rooms are 4% filled.
+
+The width, by contrast, is NOT waste: a cell's column selects which pipe an
+`r`/`s` resolves to. Measured in r62-148: `r` at room-col 10 takes the pipe
+ending (61,17), `r` at col 39 takes (61,46); `s` at col 43 takes (149,50),
+`s` at col 48 takes (149,55). So the rooms are wide on purpose and columns
+must be preserved.
+
+**But the rows are free.** Every incoming pipe of each of the three rooms
+lands on its top wall and every outgoing pipe leaves from its bottom wall —
+one row each. The row term of the Manhattan distance is therefore identical
+for all candidates and cancels: resolution depends on the column alone.
+(Same property I engineered deliberately into tcp; here it is already true.)
+
+So instructions may be moved freely between rows as long as each keeps its
+column and the sequence order is preserved. Putting work on the westbound
+legs too would reclaim most of those 131 rows: height 385 → ~254, footprint
+148,225 → ~64,500, i.e. **~2.3x**, on top of the 4.48x already taken.
+
+Why I stopped short of doing it: the three rooms hold 4, 2 and 2 branches
+(`X`), and in a serpentine a branch's target is a geometric neighbour — CW
+lands on the return row, CCW on the row above. Re-flowing the walk means
+rebuilding the control-flow graph, not moving cells. That is a compiler-level
+job on generated code, and worth doing as its own piece of work rather than
+tacked onto a geometry pass.
+
+### plotter_03: rooms shrunk to their content — done, and it is a no-op alone
+
+Trimmed every plotter room past its own empty edge rows and columns, with
+each attached pipe extended to reach the wall's new position. Seven rooms
+shrank: five lost 8 empty left columns apiece, one lost 62, one lost 2
+bottom rows — 104 edge lines. The LM-75 display is skipped; its blank
+interior is the drawing surface.
+
+**Footprint unchanged at 148,225, and the score got 0.01% worse.** Live
+20/20 at 16,907,343,915 against plotter_02's 16,905,772,730 — the pipe
+extensions cost 7 ticks. A narrower room still sits inside the same bounding
+box, and running the global squeeze afterwards finds nothing new, because
+the freed columns are only free on the small rooms' rows: the three big
+rooms still occupy those columns from row 62 to row 322. plotter_02 stays
+the best submission.
+
+The value is what it opens. With the rooms trimmed, the band of rows 62-322
+— where the three big rooms sit, ending at column 80 — has **columns 81-137
+entirely free: 57 wide by 261 tall**. The six trimmed rooms are now at most
+34 wide and total 52 rows, so they all fit there. Moving them frees rows
+5-58 and 330-339 and takes the height from 385 to roughly 320:
+
+    footprint 148,225 -> ~102,400, about 1.45x
+
+That is the "can we move it" step, and it needs about twelve pipes
+re-routed. Tool: `src/littleman/alexey_trimrooms.py`, reproduces
+plotter_03.man byte-for-byte.
+
+### plotter_04: the move — 16.9B → 9.37B (1.80x), 8.1x across the session
+
+Moved the top block into the band that the plotter_03 trim opened. Live
+20/20 at **9,367,793,668**, fp 148,225 → 106,276, ticks 114,065 → 88,146.
+
+**It is one edit, not twelve.** The five small rooms plus I form a linear
+chain — I → A → B → C → D → E → BIG1 — joined by 2- and 3-cell pipes, and
+every one of those is *internal* to the block. Exactly one pipe leaves it:
+E's bottom port into BIG1's top port at column 17. So the block translates
+rigidly (+62 rows, +69 columns) with its plumbing intact and only that
+single connection is re-drawn. Checking the pipe topology before planning
+the move turned an estimated twelve re-routes into one.
+
+The new route is long — rows 59-61 are blocked at columns 46-69 by another
+pipe, so it cannot cut across and has to climb a corridor at column 82, run
+west along row 1 and come back down column 17. That should have cost ticks.
+
+**It saved them.** Straight runs are drawn with segment glyphs (`|`, `-`)
+instead of arrowheads, so `alexey_squeeze` can still see through them; it
+then deleted 59 rows and 25 columns, which shortened *every* pipe crossing
+those rows, not only the new one. Ticks fell 23%.
+
+Two things worth keeping from this:
+
+* **Re-run the squeeze after moving anything.** The move alone was
+  fp 148,225 → 147,456; the squeeze after it did the real work.
+* **Draw straight pipe runs as segments, not arrowheads**, or the squeeze is
+  blinded — my first attempt wrote `^`/`v` in every cell and collapsed one
+  row instead of fifty-nine.
+
+plotter across the session: 75,794,498,065 → 16,905,772,730 (squeeze) →
+9,367,793,668 (trim + move) = **8.1x**.
+
+### Attempted: BIG2 and BIG3 side by side — blocked by a forced pipe crossing
+
+Tried the biggest remaining lever on plotter: put BIG2 (37 wide) and BIG3
+(49 wide) side by side instead of stacked, which fits the 113-column budget
+and saves 80 rows. Also relocated r265 (5×5) into the east corridor to keep
+its two connections short.
+
+**The geometry works: footprint 106,276 → 60,025, 1.77x.** The plumbing does
+not, and the reason is structural rather than fiddly:
+
+* BIG2's output port is on its **bottom** wall at column 17 (west side).
+* BIG3's two input ports are on its **top** wall. Row 92 — the only row
+  between the BIG1 band and the BIG2 band — is blocked at columns 25, 30 and
+  44 by three existing pipes, so those ports can only be reached from the
+  **east**.
+* Therefore the BIG2→BIG3 pipe has to run the full width of the layout in
+  the band below BIG2, from column 17 out to the east corridor.
+* BIG3's output ports are on its **bottom** wall, and their targets (r271 and
+  the rest of the bottom block) sit below that same band. Those pipes must
+  descend **across** the horizontal run.
+
+A horizontal run spanning columns 17-96 and a vertical run at column 46 or 85
+intersect no matter which rows they use — adding routing rows cannot separate
+them, because the vertical span brackets the horizontal one. Escapes checked
+and rejected: routing the horizontal below the whole bottom block needs a
+column free from row 92 to row 251, and there is none (BIG3, the display and
+the 103-112 room between them cover every candidate); routing it over the top
+needs rows 0-2, which are already full.
+
+Fixing it means relocating r271 as well, and r271 is 23 wide against 18
+columns of remaining corridor. So this needs a wider restructuring than a
+move, and plotter_04 stands at 9,367,793,668.
+
+Worth keeping: **check whether two pipes' spans bracket each other before
+planning a move.** The previous block move worked because its single external
+pipe had nothing to cross; this one fails on exactly that test, and the test
+is cheap to run first.
+
+### The 3-row gaps in plotter are capacity, not waste
+
+Followed up the observation that a pipe can hug a room (as `triangle_04`
+does) so rooms need not be spread apart. Wrote a normalizer that rewrites
+the straight interior cells of every pipe as segment glyphs (`|`, `-`)
+instead of repeated arrowheads — a run written `v v v` hides a deletable row
+from `alexey_squeeze`, the same run written `v | v` does not and means
+exactly the same thing.
+
+It worked as intended: 11 cells normalized in plotter, and the squeeze then
+found 3 more deletable rows, fp 106,276 → 104,329.
+
+**And the result deadlocks, 0/6.** Not a resolution problem — I compared the
+pipe every `r`/`s` resolves to, before and after, across all 181 such cells:
+**zero changed**. The cause is capacity. A pipe holds as many values as it
+has cells, and the squeeze shortened four of them:
+
+    3 -> 2,  3 -> 2,  4 -> 3,  4 -> 3
+
+Those 3-cell pipes between BIG1 and BIG2 are three cells because the
+protocol needs three values in flight, and the 3-row gap exists to hold
+them. It is not slack.
+
+Nor can the capacity be kept in fewer rows: the first cell of a pipe leaving
+a bottom wall is forced to point south, and the destination port's column is
+fixed by resolution, so a 3-cell pipe between two vertically stacked rooms
+cannot be folded sideways into a 2-row gap — it would have to re-enter a
+cell it already occupies.
+
+So plotter's remaining gaps are: 2 rows where the pipe needs 2 (minimum),
+and 3 rows where it needs 3. plotter_04 (9,367,793,668) stands, and the
+normalizer is worth keeping only for layouts one is *building* — draw
+straight runs as segments from the start, as `alexey_plotter_move` does, so
+the squeeze is not blinded later.
+
+**Third failure mode for the squeeze, now all three are known:** it can
+change pipe resolution (broke memory's column pass), it can shorten a pipe
+below the two-cell minimum the server enforces, and it can shorten a pipe
+below the capacity the protocol needs (this one). Judge after every squeeze.

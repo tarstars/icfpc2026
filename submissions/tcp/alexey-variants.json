@@ -9,6 +9,25 @@
  },
  "variants": [
   {
+   "version": "tcp_06",
+   "label": "mechanical squeeze of empty rows/columns",
+   "changeType": "geometry",
+   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (full): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "source": {
+    "path": "submissions/tcp/tcp_06.man",
+    "footprintBefore": 1444,
+    "footprintAfter": 1369
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 5981626,
+    "score": 5655750,
+    "gain": 1.06,
+    "fullResponse": "submissions/tcp/alexey-tcp_06-submit.json"
+   },
+   "verdict": "TEAM BEST for tcp: 5,981,626 -> 5,655,750 (1.06x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+  },
+  {
    "version": "tcp_01",
    "label": "offset-addressed window, tag-through-ring (v2 architecture)",
    "parent": "tcp_00",
