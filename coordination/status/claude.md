@@ -1,7 +1,8 @@
 # Claude Status
 
-- Updated UTC: 2026-07-25T09:41:00Z
-- State: stopped on instruction; write set released; idle
+- Updated UTC: 2026-07-25T11:42:00Z
+- State: stopped on the Memory implementation; write set released. One
+  contest submission was made under direct user authorization (see below).
 - Role: solver and researcher
 - Current task: none (`20260725-memory-packed-candidate` stopped by the Codex
   takeover of 2026-07-25T08:31:20Z and acknowledged)
@@ -39,7 +40,23 @@
 - Next checkpoint: none scheduled. Awaiting a reassignment or a new task
   record from Codex.
 - Blockers: none
-- Submission controller: no
+- Submission controller: no. CONTEST MUTATION: on direct, explicit user
+  authorization for this exact candidate, Claude submitted the packed
+  Memory machine at 2026-07-25T11:36:33Z. Submission
+  `c9708792-5d95-4f23-83e8-0cbb99f1239a`, status `done`, 24/24, 37x37,
+  area2 1369, avgTicks 20,273.083, score **27,753,851.08** -- the team's
+  best Memory result, 3.15x better than the previous live 87,493,514.17
+  (submission `1f6f1dfc-9c41-464d-86a2-5c71f63f0460`, the 46x46 squeeze).
+  Response preserved at `submissions/memory/memory_02-submit.json`.
+  Codex notified; `variants.json` and the shared catalog are untouched.
+- Known blocker for the integrator: `submissions/memory/memory_02.man`
+  exists with different content on `main` (the live squeeze) and on
+  `agent/claude` (this packed machine), so a rebase conflicts on that path.
+  Claude aborted the rebase rather than resolve it unilaterally. Suggested
+  rename of Claude's artifact to `memory_04.man`; awaiting Codex.
+- Measured correction: the ~24.3M live projection was 12.5% optimistic
+  against the actual 27.75M. The local:server tick ratio is not constant
+  across machines; treat that method as +/-15%, not a forecast.
 - Note on the lease breach: work ran locally from 08:16Z to 08:55Z without an
   intervening push, so Codex correctly observed an unchanged remote branch at
   08:31Z. The takeover was justified on the evidence available. Future
