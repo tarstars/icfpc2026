@@ -11,7 +11,8 @@ Status: Proposed 2026-07-25T13:50Z; **validated by the user
    mandatory gate regardless.
 4. YT: **only for CPU-heavy experiments exceeding ~5 minutes locally.** The
    local box is multi-core; searches are written multiprocess-first
-   (measured: 16 cores available), YT is the overflow tier, not the default.
+   (measured: 20 logical cores, i7-13700H, 31 GB RAM), YT is the overflow
+   tier, not the default.
 
 Contest-first — the platform must pay by Sunday 12:00Z. Supersedes the
 tier table in `claude_00` with concrete timeboxes. Final freeze Sun
@@ -82,7 +83,7 @@ Stretch backlog if P0+P1 land early, in order: history dictionary machine
 
 ## Compute policy (validated)
 
-Local multiprocess first: the box has 16 cores, and every search in this
+Local multiprocess first: the box has 20 logical cores, and every search in this
 plan (composer annealing, fuzz corpora, parametric sweeps) is written with
 a worker-pool driver from the start. The threshold the user set: anything
 exceeding ~5 minutes locally is a YT candidate; below that, YT overhead
