@@ -1000,3 +1000,31 @@ a 3-cell pipe fits a 2-row gap. 40 wide x 44 tall would be fp 1,936.
 the trim is impossible. Find the single cell whose resolution flipped, write
 the room's reads as distance inequalities, and solve for a port position that
 satisfies all of them. Here the feasible window was 13 columns wide.
+
+### memory, continued: width 46 -> 40, pipes shorter than the original
+
+Following the trim of the top room, the two pipes along the right edge were
+6 cells longer than before (91->97, 67->73), and their long vertical runs
+sat in columns 44-45 while columns 39-43 held only the horizontal stubs.
+Squeezing those columns slides the verticals left, which shortens both pipes
+past their original length and takes the file's width with them:
+
+    width      46 -> 40
+    pipe A     91 -> 87
+    pipe B     67 -> 63
+    judge      7/7, pipe minimum respected
+
+Kept as `submissions/memory/alexey-memory-narrow40.man`. Not submitted: the
+footprint is still 2,116 because memory is now 40 wide by 46 tall and
+**height binds**. Width is no longer the constraint at all — 6 columns of
+slack now sit unused.
+
+What is left is height, and it is tight: the three gaps are 2, 3 and 2 rows
+against a minimum of 2 each, so gap compression yields at most **one** row.
+That one row is worth having now that width is 40 — 40x45 is fp 2,025
+against 2,116, a 4.3% gain — but the 3-row gap holds a horizontal pipe run
+on its middle row (26 cells), so collapsing it needs the ports on either
+side realigned, not just a sideways nudge.
+
+Beyond that, height 46 is 39 rows of rooms plus 7 of gaps; reaching 40 would
+need six rows out of the rooms themselves.
