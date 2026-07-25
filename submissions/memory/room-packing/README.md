@@ -139,3 +139,29 @@ That empties columns 0-1 completely and the squeeze takes them:
 
 Against `memory_04` (37x37, fp 1,369, ~27.8M) — **no machine logic touched at
 any point**, only where the rooms sit and which wall each pipe uses.
+
+## `alexey-memory-b2narrow.man` — block 2 folded in WIDTH only
+
+Block 2 was 4x29 with a 17-cell blank run on its return leg: 32 instructions,
+zero branches, spread over one long row and one nearly empty one. Walking the
+room from its `@` gives the sequence
+
+    M r s r - M `34` W % s r M 1 + M `34` W % M r s r s r s W
+
+Re-balanced 16 cells per row, keeping the height at 4 so **both ports stay on
+their own rows and neither pipe needs re-routing**:
+
+    +-------------------+
+    |>@Mrsr-M`34`W%srM1v|
+    |^ WsrsrsrM%W`43`M+<|
+    +-------------------+
+
+**4x21, eight columns narrower.** 7/7, ticks 4,143.6.
+
+The literal on the westbound row is written reversed (`43`), because a literal
+is read in walk order. The one pipe that entered the old right wall is simply
+extended eight cells to reach the new one.
+
+Footprint unchanged at 1,156 — block 2 was never the binder; block 5 sets the
+right edge at column 33. Banked, not cashed: eight columns are now free at
+rows 5-8, which is where a later repack can put something.
