@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from littleman.llm import LLM, op_color, program_grid
+from littleman.llm import LLM, Man, op_color, program_grid
 
 PROBLEM = json.loads(
     (
@@ -152,3 +152,63 @@ def test_every_lllm_room_is_the_outer_rectangle():
             height - 1,
             width - 1,
         ), case["name"]
+
+
+# ------------------------------------------- inherited littleman semantics
+# Neither rule is exercised by any public fixture (Codex review,
+# 20260725T123108Z): arithmetic must wrap signed-64, and men touching stop
+# both. Both are inherited from littleman, and hidden cases are the judge.
+
+
+def test_addition_wraps_signed_64():
+    rows = ["+---+", "|@+ |", "+---+"]
+    machine = LLM.parse(rows)
+    man = machine.men[0]
+    man.A = man.B = 2**62
+    machine.step()  # executes the space under @, moves onto '+'
+    machine.step()  # executes '+'
+    assert man.A == -(2**63)
+
+
+def test_subtraction_wraps_signed_64():
+    rows = ["+---+", "|@- |", "+---+"]
+    machine = LLM.parse(rows)
+    man = machine.men[0]
+    man.A, man.B = -(2**62) - (2**62), 1
+    machine.step()
+    machine.step()
+    assert man.A == 2**63 - 1
+
+
+def test_men_touching_stop_both_mover_stays_put():
+    """Mirrors littleman.sim: the mover does not enter the occupied cell.
+
+    Unreachable in a well-formed LLM program (one man per room, walls freeze
+    exits), so the machine is built by hand rather than parsed.
+    """
+    rows = ["+-----+", "|     |", "+-----+"]
+    machine = LLM.parse(rows)
+    machine.men = [
+        Man(1, 1, 0, heading=(0, 1)),
+        Man(1, 3, 0, heading=(0, -1)),
+    ]
+    machine.step()  # both step toward the middle; first mover takes (1,2)?
+    # man order: man0 moves first into (1,2); man1 then tries (1,2) -> both stop
+    m0, m1 = machine.men
+    assert (m0.r, m0.c) == (1, 2)
+    assert (m1.r, m1.c) == (1, 3)
+    assert m0.halted and m1.halted
+    assert machine.halted()
+
+
+def test_walking_onto_a_stationary_man_stops_both():
+    rows = ["+-----+", "|     |", "+-----+"]
+    machine = LLM.parse(rows)
+    machine.men = [
+        Man(1, 1, 0, heading=(0, 1)),
+        Man(1, 2, 0, halted=True),      # already stopped, still occupies
+    ]
+    machine.step()
+    m0, m1 = machine.men
+    assert (m0.r, m0.c) == (1, 1)       # mover stayed put
+    assert m0.halted and m1.halted
