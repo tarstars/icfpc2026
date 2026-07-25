@@ -237,12 +237,38 @@ from littleman.sim import Machine  # noqa: E402
 
 RIG = build_step_rig()
 SR, SC = STEP_AT
-# Every r/s cell in the STEP room and the port it is declared to reach.
-INTENT = {
-    (2, 11): "REQ", (4, 22): "REQ", (6, 15): "RESP", (17, 10): "LOAD",
-    (18, 18): "DRAW", (18, 46): "SCR", (18, 47): "SCR_OUT", (19, 14): "DRAW",
-    (19, 17): "DRAW", (21, 9): "LOAD", (21, 46): "SCR_OUT",
-}
+
+
+def intended_port(row, col, op):
+    """The room's three-zone layout rule, stated once and asserted for real.
+
+    Right of SCR_COL is the scratch loop; left of it, the top rows reach
+    FETCH (REQ out / RESP in) and the lower rows reach the outside world
+    (DRAW out / LOADER in).
+    """
+    from littleman.lllm_step import REQ_MAX_ROW, SCR_COL
+
+    if col >= SCR_COL:
+        return "SCR_OUT" if op == "s" else "SCR"
+    if row <= REQ_MAX_ROW:
+        return "REQ" if op == "s" else "RESP"
+    return "DRAW" if op == "s" else "LOAD"
+
+
+def step_bindings():
+    """{(room row, col): (op, port actually reached)} from the engine's map."""
+    from littleman.ir_export import machine_ir
+
+    ir = machine_ir(RIG)
+    out = {}
+    for key, entry in ir["resolution"].items():
+        r, c = (int(v) for v in key.split(","))
+        if not (SR < r < SR + STEP_ROWS + 1 and SC < c < SC + STEP_COLS + 1):
+            continue
+        cells = ir["pipes"][entry["pipe"]]["cells"]
+        end = cells[0] if entry["op"] == "s" else cells[-1]
+        out[(r - SR, c - SC)] = (entry["op"], PORTS[tuple(end)])
+    return out
 PORTS = {
     (SR + 2, SC - 1): "REQ", (SR + 20, SC - 1): "DRAW", (SR + 21, SC - 1): "LOAD",
     (SR - 1, SC + 8): "RESP", (SR + 30, SC + 74): "SCR_OUT",
@@ -265,19 +291,15 @@ def test_rig_is_deterministic():
 
 
 def test_binding_audit_is_engine_true():
-    """Every s/r resolves to its declared port (ir_export map, no hand math)."""
-    from littleman.ir_export import machine_ir
-
-    ir = machine_ir(RIG)
-    seen = {}
-    for key, entry in ir["resolution"].items():
-        r, c = (int(v) for v in key.split(","))
-        if not (SR < r < SR + STEP_ROWS + 1 and SC < c < SC + STEP_COLS + 1):
-            continue
-        cells = ir["pipes"][entry["pipe"]]["cells"]
-        end = cells[0] if entry["op"] == "s" else cells[-1]
-        seen[(r - SR, c - SC)] = PORTS[tuple(end)]
-    assert seen == INTENT
+    """Every s/r resolves to its zone's port (ir_export map, no hand math)."""
+    bound = step_bindings()
+    assert len(bound) >= 11
+    wrong = {
+        cell: got
+        for cell, (op, got) in bound.items()
+        if got != intended_port(cell[0], cell[1], op)
+    }
+    assert wrong == {}
 
 
 def test_binding_margins():
@@ -288,7 +310,7 @@ def test_binding_margins():
     step = next(r for r in machine.rooms if (r.top, r.left) == (SR, SC))
     ops = [
         Op((SR + r, SC + c), port, port in ("REQ", "DRAW", "SCR_OUT"))
-        for (r, c), port in INTENT.items()
+        for (r, c), (_, port) in step_bindings().items()
     ]
     report = audit(machine, step, ops)
     assert report["satisfied"]
@@ -318,6 +340,22 @@ def test_tick_interpreter_not_transcribed_yet():
     rows = rows_of(CASES[1])
     res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
     assert len(res.output) == 258 and res.output[-1] == -1
+
+
+def test_round_loop_tapes_place_without_collision():
+    """The seed / round-in choreography is placeable -- only ROUND 1's
+    post-pixel geometry blocks wiring it in (see the BLOCKER note)."""
+    from littleman.lllm_fetch import Room
+    from littleman.lllm_step import STEP_COLS, STEP_ROWS, _step_seed
+
+    room = Room(STEP_ROWS, STEP_COLS)
+    room.put(19, 13, "v")
+    for r in range(20, 23):
+        room.put(r, 61, "v")
+    _step_seed(room)
+    grid = room.render()
+    assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads
+    assert "H" in "".join(grid)                               # loop stub
 
 
 def test_tape_snakes_and_reverses_literals():

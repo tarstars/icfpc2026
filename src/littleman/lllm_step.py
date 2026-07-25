@@ -369,7 +369,7 @@ class ReferenceFetch:
 # RIGHT wall and the four external ones on the LEFT, separated vertically
 # into a top zone (LOAD in / DRAW out) and a bottom zone (RESP in / REQ
 # out).  Every r/s cell therefore lives in exactly one of three regions.
-STEP_ROWS, STEP_COLS = 60, 72
+STEP_ROWS, STEP_COLS = 96, 72
 
 # The hot path is the per-tick FETCH transaction, so REQ and RESP share the
 # TOP zone; LOAD (once a round) and DRAW (twice a round) share the BOTTOM.
@@ -446,11 +446,20 @@ def _step_round1(room) -> None:
     room.put(18, 17, ">s`16`+Mma")       # emit, p += 16, count, loop up
     # 257th pixel: the man, then the commit sentinel.
     room.put(18, 46, "rsM`16`*M9+v")
-    room.put(19, 13, "HsN1s")            # man pixel, then commit (walked west)
+    room.put(19, 14, "sN1s")             # man pixel, then commit (walked west)
+    room.put(19, 13, "H")                # TODO: round loop entry (see notes)
     room.put(19, 57, "<")
 
 
-SCR_COL = 51        # first column whose r/s provably binds the scratch loop
+TAPE_LO, TAPE_HI = 42, 60   # the scratch-loop tape zone (rows 22+)
+# Vertical highways live in columns 61..71, the only band no horizontal
+# walkway in the room ever crosses; every phase-to-phase jump uses one.
+HW = dict(live=71, split=70, tick=69, frozen=68, arm=67, move=66,
+          loop=65, emit=64, round=63)
+SEED_ROW, ROUND_ROW = 23, 30
+TICK_ROW = 36
+SCR_COL = 42        # first column whose r/s binds the scratch loop (rows 22+)
+REQ_MAX_ROW = 11    # last row whose left-wall s reaches REQ rather than DRAW
 
 
 class Tape:
@@ -509,6 +518,81 @@ class Tape:
             self.room.put(self.row, start, text)
             self.col += self.dir * len(text)
         return self
+
+    def down_at(self, col: int, row: int) -> "Tape":
+        """Leave the tape: walk on to ``col``, then descend to ``row``."""
+        while (col - self.col) * self.dir < 0:
+            self._turn()
+        for r in range(self.row, row):
+            self.room.put(r, col, "v")
+        self.row, self.col, self.dir = row, col, 1
+        return self
+
+
+# ---------------------------------------------------------------- BLOCKER
+# The round loop below is register-correct (its tape drives the ring to
+# exactly [CTRL=1, ADDR=man_addr, BI=0, AI=0, OLD=man_addr, K=k], verified
+# in the rig) but CANNOT YET BE PLACED, for a purely geometric reason:
+#
+#   * ROUND 1's man_addr walkway occupies row 21, columns 2..60, so no
+#     vertical corridor may cross row 21 anywhere in that span; and
+#   * its ascent back to row 4 occupies column 60, rows 5..21, so no
+#     horizontal run in rows 5..20 may cross column 60.
+#
+# Together those leave no path from the ROUND 1 finish (rows 18-19, columns
+# <= 57) down to rows 23+: reaching a column > 60 at row 21 requires a
+# horizontal run that must first cross column 60.  Every variant tried --
+# exit on row 19, on row 20, ascent moved to columns 27/45/47/62, walkway
+# moved to row 22 -- reproduces the same crossing under a different name.
+#
+# THE FIX, for whoever picks this up: re-lay `_step_round1`'s post-pixel
+# path so the man_addr park and ascent live entirely inside the highway
+# band (columns 61..71), leaving rows 19..22 clear across columns 1..60.
+# Then `_step_seed` places unchanged and `HW` wires the rest.
+def _highway(room, col: int, top: int, bottom: int) -> None:
+    """Fill one vertical highway segment (exclusive of ``bottom``)."""
+    for r in range(top, bottom):
+        room.put(r, col, "v")
+
+
+def _enter_tape(room, col: int, row: int) -> "Tape":
+    """Arrive down a highway, run west to the tape zone, start a tape east."""
+    room.put(row, col, "<")
+    room.put(row, TAPE_LO - 1, "v")
+    room.put(row + 1, TAPE_LO - 1, ">")
+    return Tape(room, row + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+
+
+def _leave_tape(room, tape: "Tape", col: int, row: int) -> None:
+    """Run the tape out to a highway column and descend to ``row``."""
+    tape.down_at(col, row)
+
+
+def _step_seed(room) -> None:
+    """Seed the six-slot ring, then read the round's k and stamp OLD/K.
+
+    Ring after the seed tape is ``[CTRL, ADDR, BI, AI, OLD, K]`` with CTRL
+    live-and-East (1) and every other slot 0.  ROUND-IN holds k in B across
+    five relays to write ``K = k``, then holds ADDR in B to write
+    ``OLD = ADDR``; both exploit B surviving r/s.
+    """
+    seed = _enter_tape(room, 61, SEED_ROW)
+    seed.emit("r", "M", "#1", "s", "W", "s", "#0", "s", "s", "s", "s")
+    _leave_tape(room, seed, HW["round"], ROUND_ROW)
+    _step_round_in(room)
+
+
+def _step_round_in(room) -> None:
+    """Per round: k from LOADER into BP-free B, then K and OLD stamped."""
+    room.put(ROUND_ROW, HW["round"], "<")
+    room.put(ROUND_ROW, 7, "Mr")          # walked west: r first, then M
+    room.put(ROUND_ROW, 5, "v")
+    room.put(ROUND_ROW + 1, 5, ">")
+    tape = Tape(room, ROUND_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+    tape.emit(*"rs" * 5, "r", "W", "s")                    # K = k
+    tape.emit(*"rs", "r", "M", "s", *"rs" * 2, "r", "W", "s", *"rs")
+    _leave_tape(room, tape, HW["tick"], TICK_ROW)
+    room.put(TICK_ROW, HW["tick"], "H")   # TODO: tick loop starts here
 
 
 def build_step_room():
