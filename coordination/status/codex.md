@@ -1,21 +1,19 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T14:13:05Z
+- Updated UTC: 2026-07-25T15:05:07Z
 - State: working
-- Role: integrator, adversarial reviewer, and Pathfinder builder
-- Current task: `20260725-claude-adversarial-review`
-- Branch: `main`
-- Head: `47c4fa20780d908699a43cbc811543aa37d51e33`
-- Write set: Codex messages/bookkeeping, `docs/architecture/codex_*.md`,
-  `docs/TOOLS.md`, and the requested cookbook corrections
-- Last concrete progress UTC: 2026-07-25T14:13:05Z
-- Evidence: five immutable technical review messages plus one adoption
-  message; 35 LLM, 5 fuzz, 94 IR, 7 effects, and 18 main-tool focused tests
-  passed in isolated or main worktrees
+- Role: integrator and Pathfinder builder
+- Current task: `20260725-pathfinder-machine`
+- Branch: `agent/codex-pathfinder`
+- Head: `d2ecef303beb86f3426617ede6825e658395ae39`
+- Write set: Pathfinder source/tests/artifact/report and Codex task/status/
+  message bookkeeping
+- Last concrete progress UTC: 2026-07-25T15:05:07Z
+- Evidence: full directive/spec/Split backlog read; live Split JSON fetched;
+  Pathfinder reference/design accepted; `Y` implementation retained by Codex
 - Running job: none
-- Latest verified result: confirmed IR `R`/`U` priority loss and effects
-  `q` probe flaw; confirmed LLM timing and Semester 4 frame preflight path
-- Next checkpoint: synchronize with fresh `origin/main`, validate the scoped
-  integration, commit, and push; then return to Pathfinder
+- Latest verified result: P2 decision is implement after P1, not transfer
+- Next checkpoint: inspect Pathfinder spec/reference and produce the first
+  executable machine-model checkpoint
 - Blockers: none
-- Submission controller: yes; this review performed no contest mutation
+- Submission controller: yes; this audit performed no contest mutation

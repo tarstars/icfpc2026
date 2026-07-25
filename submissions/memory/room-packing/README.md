@@ -71,3 +71,71 @@ serpentine in the free columns 29-35 fixed it — 7/7, ticks 4,145.6.
 Footprint stays 1,296: the layout is 36x33 and **width binds**. The two rows
 this freed are in the middle; the `O` room still holds the bottom at rows
 30-32, so it has to follow before the height can actually drop.
+
+## `alexey-memory-zig5.man` — `O` magnetised to block 4
+
+`O` rises two rows (30-32 -> 28-30) and sits against block 4's left wall.
+Block 4's exit stays exactly where it was — its left wall, row 29, which it
+must, since block 4 has two pipes each way — and the pipe collapses from four
+cells to **two**:
+
+    (29,4) < -> (29,3) <   into O's right wall at (29,2)
+
+7/7, ticks 4,143.6. Layout **36 x 32**.
+
+Footprint is still 1,296: width 36 binds against height 32, so every row won
+here is banked rather than cashed. What now holds the last row is the 5->4
+pipe, whose horizontal run sits on row 31 — block 5's outgoing port is on its
+BOTTOM wall, so the pipe is forced one row below the rooms. Block 5 has one
+pipe each way, so that port is free to move; but its natural alternative (the
+left wall) points straight at block 4's right wall, which would terminate the
+pipe at the wrong port. That is the next thing to solve.
+
+### State of the chain
+
+    block1 rows  0-4   cols  5-33
+    block2 rows  5-8   cols  3-31    herringbone left
+    block3 rows  9-15  cols  8-33    herringbone right
+    block4 rows 16-30  cols  5-28    joined, entered at its own top port
+    block5 rows 26-29  cols 30-35
+    I      rows  1-3   cols  0-2
+    O      rows 28-30  cols  0-2     magnetised
+
+    37x37 (memory_04) -> 36x36 (memory_05, submitted) -> 36x33 -> 36x32
+
+## `alexey-memory-zig6.man` — `O` pressed flat against block 4
+
+`O` moves up two more rows and right two columns (30-32/0-2 -> 26-28/2-4), so
+its right wall at column 4 now abuts block 4's left wall at column 5 — no cell
+shared, which is legal, and no corridor between them at all. Block 4's exit
+stays put at its left wall, row 29, and the pipe reaches `O` through the
+overhang below it:
+
+    (29,4) < -> (29,3) ^   into O's BOTTOM wall at (28,3)
+
+Two cells. 7/7, ticks 4,143.6, layout 36x32.
+
+This is the herringbone applied sideways: two rooms can touch along a wall as
+long as the pipe leaves through a face that overhangs, and `O` could take a
+port anywhere because it has one incoming pipe and nothing else.
+
+Columns 0-1 are now free at rows 26-28; only the `I` room (rows 1-3) still
+holds them, so the left edge is one repack away from moving in.
+
+## `memory_06.man` — SUBMITTED, 23,344,360
+
+`I` moves right two columns and up one (1-3/0-2 -> 0-2/2-4), so its right wall
+abuts block 1's left wall. Its pipe leaves through the overhang **below** it,
+which is free because block 1 starts at column 5:
+
+    (3,4) v -> (4,4) >   into block 1's left wall at (4,5)
+
+Two cells. Block 1's incoming port simply moves down its left wall from row 2
+to row 4 — free to do, since block 1 has one pipe each way.
+
+That empties columns 0-1 completely and the squeeze takes them:
+
+    34 x 32,  footprint 1,156,  7/7 local,  24/24 live,  **23,344,360**
+
+Against `memory_04` (37x37, fp 1,369, ~27.8M) — **no machine logic touched at
+any point**, only where the rooms sit and which wall each pipe uses.
