@@ -188,6 +188,23 @@ They apply to any room whose man loops forever over a branch tree.
   them at opposite corners and needs a long pipe, and pipe cells cost a
   tick each in transit.
 
+## Two places the simulator and the server disagree (verified on both)
+
+- **Rooms may NOT share a wall.** `+-+-+ / |I|O| / +-+-+` parses locally
+  as two rooms; the server never sees the second one and the pipe aimed
+  at it fails to load. Give every room its own wall.
+- **A man MAY walk into a wall right after his final `s`.** The value
+  already in the output pipe drains and the round passes. The simulator
+  ends the program on that step instead, so such a design reads as a
+  'wall' failure locally while scoring on the server. Judge it with
+  `littleman.alexey_walljudge` (same API as `littleman.judge`).
+
+That second one is a geometry lever, not a nicety: **you do not need a
+spare cell or an `H` after `s`**. A walk may fill every interior cell and
+end on `s` at the edge. Needing a spare cell forces a bigger interior,
+a bigger interior needs more turns to cover, and each turn costs a tick.
+Dropping it took triangle from 15 ticks to 13 (score 960 -> 832).
+
 ## Settled: `-` does NOT destroy B
 
 The cookbook sec.1 lists `+ - * N & | ~ { } %` as destroying B. The
