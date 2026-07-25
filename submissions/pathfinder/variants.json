@@ -101,13 +101,26 @@
         "averageTicksReductionPercent": 58.46441720947681,
         "scoreReductionPercent": 61.54971749371509
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "0c04a141-a73b-443c-a274-741bfe67d857",
+        "status": "done",
+        "casesPassed": 18,
+        "casesTotal": 18,
+        "width": 187,
+        "height": 1957,
+        "area2": 3829849,
+        "averageTicks": 4581436.722222222,
+        "score": 17546210849166.055,
+        "createdAt": "2026-07-25T20:06:45.579Z",
+        "updatedAt": "2026-07-25T20:07:44.094Z",
+        "fullResponse": "submissions/pathfinder/pathfinder_01-submit.json"
+      }
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-25T19:50:45.751Z",
+    "updatedAt": "2026-07-25T20:07:44.094Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rows": 0
+    "rows": 1
   }
 }

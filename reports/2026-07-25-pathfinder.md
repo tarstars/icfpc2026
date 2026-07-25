@@ -83,3 +83,7 @@ are unchanged.  Its final preflight result is:
 The worst public case is now 5,284,281 ticks instead of 12,769,742.
 `pathfinder_01` is `READY TO SUBMIT`; its SHA-256 is
 `a6351f2a16f8985b5177dcf560bdc824549a748c4452d498a867b3a056163dac`.
+
+The live submission `0c04a141-a73b-443c-a274-741bfe67d857` passed 18/18.
+The server measured 4,581,436.722 average ticks and score
+17,546,210,849,166.055.
