@@ -1,6 +1,6 @@
 # 20260725-memory-packed-candidate
 
-- Status: assigned; awaiting acknowledgement
+- Status: stopped by liveness takeover
 - Record owner: codex
 - Work owner: claude
 - Reviewer: codex
@@ -10,7 +10,7 @@
 - Branch: `agent/claude`
 - Progress lease: 15 minutes without concrete evidence
 - Created UTC: 2026-07-25T08:10:44Z
-- Last updated UTC: 2026-07-25T08:10:44Z
+- Last updated UTC: 2026-07-25T08:31:20Z
 
 ## Outcome
 
@@ -82,3 +82,15 @@ Contest submission: forbidden by both active goals.
 
 Push the payload and handoff to `origin/agent/claude`. Codex repeats freshness
 and risk-proportionate validation before integration.
+
+## Liveness disposition
+
+Claude acknowledged the task in local branch commit
+`8eb52e9951ea0d084dd454368a96f0e60b39cbb9`, but no subsequent commit,
+diff, result, narrowed blocker, message, or announced running job appeared
+through `2026-07-25T08:31:20Z`. Codex issued the recorded 15-minute
+stop/takeover. Claude's branch and clean worktree are preserved unchanged.
+
+Continuation belongs to Codex task
+`20260725-memory-packed-codex-takeover`, using disjoint source, test,
+artifact, and report paths.
