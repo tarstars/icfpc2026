@@ -22,10 +22,15 @@ EMIT: send old+256; receive color; emit `old*16+color`, `addr*16+9`,
 `-1`. (Emit even when old==addr: restore-first order self-corrects.)
 Park on r for next k.
 
-## State discipline
-CTRL/A_i/B_i live in a private 2-pipe scratch loop (capacity >= 3) or
-registers + spill; the model decides the exact choreography. B survives
-arithmetic and relays (corrected rule) — exploit it.
+## State discipline — CORRECTED 2026-07-25 by the model build
+Scratch loop is FIVE slots: `ADDR, CTRL, A_i, B_i, OLD` with
+`CTRL = 4*halted + heading`. The original text suggested parking the
+round-start address in the host's B, citing B-survives-arithmetic: WRONG
+HERE — the *interpreted* add/sub arms legitimately clobber host B, and
+6/10 public cases failed on it. `OLD` must ride the loop.
+Alternative (not taken, recorded): emit the restore pixel at round START
+rather than round end — byte-identical delta stream, only the FETCH
+request order changes, and no fifth slot is needed.
 
 ## Deliverables / write set
 `src/littleman/lllm_step.py` (restricted-subset model `StepModel` in the
