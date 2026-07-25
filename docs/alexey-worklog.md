@@ -624,3 +624,37 @@ Moving open beside classify instead computes to exactly the same fp 1764.
 
 Session total across the two geometry rounds: sort 1,455,740 → 1,367,454
 and brackets 7,473,269 → 3,669,188.
+
+### brackets, second pass: 3,669,188 → 3,494,864 (total 2.14x from 7,473,269)
+
+Question was whether the ROOMS themselves could be compacted, keeping the
+algorithm. Measured first: interiors are 75% / 67% / 75% visited, and after
+the first pass's trims **no fully dead interior row or column remains** in
+any of the three. The leftover blanks are all walked-over lanes or gaps
+inside otherwise-used rows, so nothing more can be deleted outright.
+
+Found one more free row anyway, in the *layout* rather than the rooms: pipe
+2 (classify → close, columns 3-7) and pipe 6 (the long wrap, columns 11-35)
+occupy disjoint column ranges and can share gap row 20. 37×41, fp 1681.
+Live 26/26 at 3,494,864.
+
+**Why the rooms cannot shrink further — the interesting part.** `classify`
+spends ten of its seventeen interior rows on five comparison blocks, each
+using one row for the block and one for the mismatch return. The obvious
+move is to serpentine them — block east, block west, block east — which
+would save five rows and about eight ticks per character. It does not work,
+and the reason is `X`: the MATCH case always continues *straight*. A
+westbound block's match arm therefore runs west, but its `s` has to reach
+the OPEN port on the east wall, and at low columns that cell resolves to the
+CLOSE port instead — the machine would send the token to the wrong room.
+
+Routing the arm around to a shared send cell on the east does resolve
+correctly, but it turns the per-character circuit from ~39 ticks into ~75.
+Since the score is footprint × ticks, a 22% footprint gain against a ~90%
+tick loss is a clear net loss. The present arm — send to OPEN immediately
+after `X`, then drop down the east lane — is tick-optimal, and that is
+exactly what pins the room at one block per two rows.
+
+So: brackets geometry is now done. Height 41 binds against width 37, all
+three inter-room gaps are minimal, and the rooms are at their layout floor
+given the port geometry.
