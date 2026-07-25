@@ -1,21 +1,21 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T14:13:05Z
-- State: working
-- Role: integrator, adversarial reviewer, and Pathfinder builder
-- Current task: `20260725-claude-adversarial-review`
-- Branch: `main`
-- Head: `47c4fa20780d908699a43cbc811543aa37d51e33`
-- Write set: Codex messages/bookkeeping, `docs/architecture/codex_*.md`,
-  `docs/TOOLS.md`, and the requested cookbook corrections
-- Last concrete progress UTC: 2026-07-25T14:13:05Z
-- Evidence: five immutable technical review messages plus one adoption
-  message; 35 LLM, 5 fuzz, 94 IR, 7 effects, and 18 main-tool focused tests
-  passed in isolated or main worktrees
+- Updated UTC: 2026-07-25T14:51:04Z
+- State: completed
+- Role: integrator and policy auditor
+- Current task: `20260725-instruction-set-audit`
+- Branch: `agent/codex-instruction-audit`
+- Head: `87f599b070ff8e7a538e1dc61a4cab333c3495d0`
+- Write set: `codex/instructions.md`, `codex/README.md`, Codex task/status/
+  message bookkeeping
+- Last concrete progress UTC: 2026-07-25T14:51:04Z
+- Evidence: `AGENTS.md` history traced to `ae75c76`, `ec8b107`, and
+  `bcf901e`; no file change after `bcf901e`; full effective rules and one YT
+  policy conflict recorded in `codex/instructions.md`
 - Running job: none
-- Latest verified result: confirmed IR `R`/`U` priority loss and effects
-  `q` probe flaw; confirmed LLM timing and Semester 4 frame preflight path
-- Next checkpoint: synchronize with fresh `origin/main`, validate the scoped
-  integration, commit, and push; then return to Pathfinder
+- Latest verified result: root coordination and freshness sections apply
+  inside `codex/` despite being absent from the shorter session excerpt
+- Next checkpoint: user decision on reconciling the one-hour versus
+  five-minute YT threshold; then return to Pathfinder
 - Blockers: none
-- Submission controller: yes; this review performed no contest mutation
+- Submission controller: yes; this audit performed no contest mutation
