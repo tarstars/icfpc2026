@@ -435,7 +435,11 @@ def _step_round1(room) -> None:
     room.put(20, 47, "v")                # jog to row 21 for the run east, so
     room.put(21, 47, ">")                # column 3 stays blank at rows 20-22
     room.put(21, 60, "^")
+    # Rows 10/11 are later crossed horizontally by FETCH.  Blank cells are
+    # intentional: both traversals already carry their required heading.
     for r in range(5, 21):
+        if r in (10, 11):
+            continue
         room.put(r, 60, "^")
     room.put(4, 60, "<")
     room.put(4, 13, "vb`652`M0s N1<")    # BP=256, B=0, send -1 to FETCH
@@ -460,7 +464,8 @@ TAPE_LO, TAPE_HI = 42, 60   # the scratch-loop tape zone (rows 22+)
 HW = dict(live=71, split=70, tick=69, frozen=68, arm=67, move=66,
           loop=65, emit=64, round=63)
 SEED_ROW, ROUND_ROW = 23, 30
-TICK_ROW = 33
+# ROUND-IN's tape wraps through row 33, so the tick must start below it.
+TICK_ROW = 36
 SCR_COL = 42        # first column whose r/s binds the scratch loop (rows 22+)
 REQ_MAX_ROW = 11    # last row whose left-wall s reaches REQ rather than DRAW
 
@@ -523,35 +528,22 @@ class Tape:
         return self
 
     def down_at(self, col: int, row: int) -> "Tape":
-        """Leave the tape: walk on to ``col``, then descend to ``row``."""
+        """Leave the tape at ``col`` and descend to a strictly lower row."""
         while (col - self.col) * self.dir < 0:
             self._turn()
+        if row <= self.row:
+            raise ValueError(
+                f"tape reached row {self.row}; cannot descend to {row}"
+            )
         for r in range(self.row, row):
             self.room.put(r, col, "v")
         self.row, self.col, self.dir = row, col, 1
         return self
 
 
-# ---------------------------------------------------------------- BLOCKER
-# The round loop below is register-correct (its tape drives the ring to
-# exactly [CTRL=1, ADDR=man_addr, BI=0, AI=0, OLD=man_addr, K=k], verified
-# in the rig) but CANNOT YET BE PLACED, for a purely geometric reason:
-#
-#   * ROUND 1's man_addr walkway occupies row 21, columns 2..60, so no
-#     vertical corridor may cross row 21 anywhere in that span; and
-#   * its ascent back to row 4 occupies column 60, rows 5..21, so no
-#     horizontal run in rows 5..20 may cross column 60.
-#
-# Together those leave no path from the ROUND 1 finish (rows 18-19, columns
-# <= 57) down to rows 23+: reaching a column > 60 at row 21 requires a
-# horizontal run that must first cross column 60.  Every variant tried --
-# exit on row 19, on row 20, ascent moved to columns 27/45/47/62, walkway
-# moved to row 22 -- reproduces the same crossing under a different name.
-#
-# THE FIX, for whoever picks this up: re-lay `_step_round1`'s post-pixel
-# path so the man_addr park and ascent live entirely inside the highway
-# band (columns 61..71), leaving rows 19..22 clear across columns 1..60.
-# Then `_step_seed` places unchanged and `HW` wires the rest.
+# The phase corridors deliberately share blank cells where one traversal is
+# horizontal and another vertical.  With one STEP man, the phases cannot
+# collide; retaining the incoming heading makes each blank a safe crossing.
 def _highway(room, col: int, top: int, bottom: int) -> None:
     """Fill one vertical highway segment (exclusive of ``bottom``)."""
     for r in range(top, bottom):
@@ -623,7 +615,7 @@ def _step_tick_halt(room) -> None:
     # Live (A < 0): drop a row, then east to the northbound fetch highway.
     room.put(TICK_ROW + 5, 50, ">")
     room.put(TICK_ROW + 5, 65, "^")
-    for r in range(11, TICK_ROW + 5):
+    for r in range(12, TICK_ROW + 5):
         room.put(r, 65, "^")
     _step_fetch(room)
 

@@ -336,15 +336,33 @@ def test_rig_round_one_matches_model_on_fuzz():
 
 
 def test_tick_interpreter_not_transcribed_yet():
-    """Explicit: the room halts after round 1's sentinel (see build_step_room)."""
+    """Without a k token, STEP parks at the later-round input as intended."""
     rows = rows_of(CASES[1])
     res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
     assert len(res.output) == 258 and res.output[-1] == -1
 
 
+def test_tick_skeleton_reaches_class_stub():
+    """The round-in, halt check, FETCH, and three blank crossings are live."""
+    rows = rows_of(CASES[1])
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=100_000, inputs=loader_stream(rows) + [1]
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, []).deltas
+    assert (man.r - SR, man.c - SC) == (44, 66)
+    assert machine.grid[man.r][man.c] == "H"
+    assert man.halted
+    for row, col in ((10, 60), (11, 60), (11, 65)):
+        assert machine.grid[SR + row][SC + col] == " "
+
+
 def test_round_loop_tapes_place_without_collision():
-    """The seed / round-in choreography is placeable -- only ROUND 1's
-    post-pixel geometry blocks wiring it in (see the BLOCKER note)."""
+    """The seed and round-in choreography is independently placeable."""
     from littleman.lllm_fetch import Room
     from littleman.lllm_step import STEP_COLS, STEP_ROWS, _step_seed
 
@@ -354,6 +372,14 @@ def test_round_loop_tapes_place_without_collision():
     grid = room.render()
     assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads
     assert "H" in "".join(grid)                               # loop stub
+
+
+def test_tape_rejects_non_descending_exit():
+    from littleman.lllm_fetch import Room
+
+    tape = Tape(Room(4, 12), 2, 5, 5, 11).emit("M")
+    with pytest.raises(ValueError, match="cannot descend"):
+        tape.down_at(10, 2)
 
 
 def test_tape_snakes_and_reverses_literals():
