@@ -1,7 +1,7 @@
 # Room packing experiments (Alexey line)
 
 Working intermediates, **not submissions**. Each is validated 7/7 on memory's
-public cases unless noted. The submitted results live in `submissions/`.
+public cases unless noted. The submitted results live one level up, next to this folder.
 
 The theme: how tightly can rooms be packed without touching any machine logic.
 Two server rules set the naive floor — rooms may not share a wall cell, and a
