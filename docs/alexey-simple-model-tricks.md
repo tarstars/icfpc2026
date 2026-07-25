@@ -272,3 +272,64 @@ B. Still prefer re-establishing B with an explicit `M` when it is free.
 - One experiment = one new variant file + one metadata note; measure
   (local judge) before and after every change.
 - If the sim and server disagree, suspect edges 2–3 above first.
+
+## Geometry work — start here (updated 2026-07-25)
+
+The full recipe is `docs/alexey-room-folding.md`. The short version, in the
+order you should try things:
+
+**0. Which dimension are you paid for?** Score is `max(w,h)² × avgTicks`.
+Shrinking the short side buys nothing today (though it is still worth
+committing — it becomes a win when a neighbour moves into the space).
+
+**1. Are the pipes the problem?** Compare the bounding box of the rooms
+alone against the program's box:
+
+```python
+m = Machine.parse(text)
+print(max(r.bottom for r in m.rooms)+1, max(r.right for r in m.rooms)+1)
+```
+
+If the rooms are much smaller, the footprint is being paid for pipes that
+wander outside. That was matmul: rooms 109×144, program 183×185. Re-routing
+three pipes took it from 33.29B to 20.04B. Everywhere else the rooms *are*
+the box — checked, do not re-check.
+
+**2. Re-route with the tool, never by hand.**
+
+```python
+from littleman.alexey_piperoute import Router
+rt = Router(text)
+rt.erase(old_pipe.cells)
+cells = rt.route_via([start, waypoint, end], into=(-1,0), target=268, out=(1,0))
+text  = rt.apply(cells, into=(-1,0))
+```
+
+* `target` — **keep the pipe's original cell count**. Length is buffer
+  capacity, and often delay too. Same length ⇒ identical tick counts.
+* `out` — the direction of the first step. Mandatory. A pipe is only
+  recognised when the cell touching the room carries an arrow pointing
+  *away* from it.
+* `route_via` waypoints — inflation only thickens a path where it already
+  runs, so drop a waypoint in the middle of the big empty region you want
+  it to burn cells in.
+* Pipes cannot cross. If several leave the same wall, the one exiting
+  furthest along takes the shallowest lane.
+
+**3. Empty rows/columns inside a room.** Safe to delete *if every pipe on
+that room meets the same pair of walls*: all on top/bottom ⇒ rows are safe;
+all on left/right ⇒ columns are safe. Otherwise it changes nearest-pipe
+resolution and you must re-audit every `r`/`s`.
+
+**4. `alexey_squeeze` is exhausted** on every live program as of
+2026-07-25. Re-run it only after you have moved something.
+
+**5. Folding a room** (last resort, most work): §3 of the recipe for
+straight-line rooms, §4 for a room with one branch (perimeter corridor).
+Always compare the per-case tick lists before and after — a correct fold is
+behaviour-neutral, so a tick change means you got something wrong even if
+the cases still pass.
+
+Live scores from this line after the 2026-07-25 geometry session:
+memory **20,491,008** (24/24), matmul **20,042,330,424** (20/20),
+tcp 5,655,750, brackets 3,494,864, sort 1,367,454, triangle 832.

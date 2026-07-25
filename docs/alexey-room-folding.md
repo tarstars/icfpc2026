@@ -189,6 +189,77 @@ Every pipe must be **at least two cells** — the server rejects one-cell
 pipes at load time even though our simulator accepts them. Run
 `littleman.alexey_pipecheck.check` before every submission.
 
+## 5a. Ask first whether the *pipes* are the problem
+
+Before folding anything, compare the bounding box of the **rooms alone**
+against the program's box. Measured 2026-07-25:
+
+| problem | program | rooms only | pipes cost |
+|---|---|---|---|
+| matmul | 183×185 | 109×144 | **1.55×** |
+| brackets | 37×41 | 35×38 | 1.16× |
+| sudoku | 184×248 | 184×248 | 1.00× |
+| plotter | 113×326 | 113×324 | 1.01× |
+| gradebook | 386×423 | 385×423 | 1.00× |
+
+matmul was paying 55% of its footprint for three delay pipes (268, 334, 106
+cells) that wandered out to col 182 and row 184, plus an `O` room parked in
+the far corner with nothing near it. Re-routing them inside the rooms' own
+box, at their exact original lengths, took the score from 33.29B to 21.48B
+without touching a single instruction.
+
+For the other four the rooms *are* the box, so only folding pays. Run this
+check first — it costs thirty seconds and it decides the whole approach.
+
+### Lane assignment is the hard part of a multi-pipe re-route
+
+Pipes cannot cross. When several leave the same wall and some have to end up
+on the far side of the others, the ordering is forced: **the pipe exiting
+furthest in the direction of travel must take the shallowest lane, and each
+one further along must go deeper.** In matmul three pipes leave adjacent
+bottom walls at cols 77, 85, 91 and two of them finish west of col 77; the
+only arrangement that works gives p16 (col 77) rows 145-150, p17 (col 85)
+the far corridor plus row 151, and p18 (col 91) everything east.
+
+Print a free-cell map of the target region before routing. matmul's
+`(134,74)` turned out to be reachable only through a two-column gap between
+two rooms — three-cell pipes at cols 76, 84 and 90 sealed rows 134-136
+completely, and no amount of re-routing was going to get through them.
+
+### When a layout is simply blocked
+
+`brackets` shows the other outcome. Its two wrap-around pipes (88 and 59
+cells) hold col 36 and row 40, and the 1.16× is real — but the left column
+strip is reachable only through rows 19-20, and pipe1 must occupy a cell in
+cols 3-7 there to connect its two fixed ports. Rows 30-31 are sealed the
+same way by pipes 3 and 4. So collecting that 1.16× means re-routing **all
+six** pipes at once, not two. Recorded here so nobody re-derives it.
+
+## 5b. All pipes on one wall is a licence to delete
+
+The layout rule of §5a's sibling (put every incoming pipe on the same wall,
+so the row term cancels and the zone is decided by column alone) is normally
+used when *designing* a room. It is just as useful as a **safety proof**:
+
+> If every pipe attached to a room meets its top or bottom wall, then
+> deleting an empty interior **row** cannot change any `r`/`s` resolution.
+> If they all meet the left or right wall, the same holds for **columns**.
+
+matmul's room0 has eighteen pipes and every one is on the bottom wall, so
+the ten empty rows inside it could be deleted outright — worth 21609 →
+20164 with no audit needed. Check this before trimming any room; without it
+a trim is a gamble.
+
+Two further rules learned the same day:
+
+* **Never terminate a pipe in a one-cell gap between two rooms.** Both rooms
+  claim the cell and the parser emits a spurious one-cell pipe from the
+  wrong room. Enter through a different wall.
+* `alexey_squeeze` is now **exhausted on every live program** — the sweep on
+  2026-07-25 found deletable lines only in matmul (15 columns, which do not
+  pay because height binds). Do not spend time re-running it hopefully;
+  re-run it only after you have moved something.
+
 ## 6. Magnetising
 
 Trim a room down to its content, then slide its attached pipes into the
@@ -238,6 +309,49 @@ from littleman.alexey_squeeze  import squeeze         # 3. free rows/cols
 3. `squeeze` afterwards — a fold often frees whole rows or columns.
 4. `alexey_squeeze` is **not** unconditionally safe; if the column pass
    breaks cases, fall back to rows-only.
+
+## The next target, already surveyed: plotter's staircase rooms
+
+`plotter` is 113×326 and the height is three rooms — 87, 91 and 76 rows —
+with instruction densities of 0.01–0.02. Their shape is a boustrophedon that
+spends **two rows per instruction**:
+
+```
+row A:   .....v(16) ................. <(36)     <- westbound, no instructions
+row B:   .....>(16) r(17) ........... v(36)     <- eastbound, ONE instruction
+row C:   ...............v(29) ....... <(36)
+row D:   ...............>(29) s(30) .. v(36)
+```
+
+Two facts make this foldable, and both are already verified:
+
+1. **Rows are free, columns are not.** Each of these rooms has two incoming
+   and two outgoing pipes, and every `r` splits between the two inbound and
+   every `s` between the two outbound — so the columns carry meaning. But
+   room(3,7)'s inbound pipes both land on **row 2** (cols 17 and 21) and its
+   outbound pipes both leave on **row 90** (cols 25 and 30). Same wall each
+   way ⇒ the row term cancels ⇒ **zone is decided by column alone.** An
+   instruction may be moved to any row as long as it keeps its column.
+2. Consecutive instructions whose columns increase can share one eastbound
+   row: rows B and D above collapse to `>(16) r(17) ... s(30) ... v(36)`.
+   The `>` at col 29 was only a turn glyph and is not needed.
+
+The prologue of room(3,7) walks
+`r@17 b r@17 s@30 r@17 s@25 r@17 s@25 r@17 s@25 r@17 s@30 r@17 s@30 r@17
+s@30 d ...` — alternating left-zone reads and right-zone writes, which is
+exactly the increasing-column pattern that collapses. Expect roughly a 2×
+fold on the linear stretches.
+
+**Why it was not done on 2026-07-25.** Deleting the freed rows *globally*
+is not available: rows 8-61 also carry five small rooms at cols 59-92, which
+a whole-program row delete would destroy. So the fold has to be room-local —
+shrink the room, then move everything below it up and re-route the pipes
+that cross. That is the matmul job again, at three times the size. The
+router is in place for it; budget a session, not an hour.
+
+`sudoku` (25.5B, rooms 82×87, 82×90 and 96×104 at density 0.01) and
+`gradebook` (81.9B, four rooms of 199×94 at density 0.02) are the same shape
+of problem and the same order of payoff.
 
 ## What does not work — do not re-derive
 
