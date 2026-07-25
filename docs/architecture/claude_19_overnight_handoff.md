@@ -80,3 +80,19 @@ orders before using it.
 - Subagent failures are usually the 64k output ceiling, not confusion.
 
 ## RESULTS (append below; newest last)
+
+### 2026-07-25T19:41Z — queue item 3 DONE: snake_01 submitted
+
+`uv run icfpc-api submit 15982f19-... submissions/snake/snake_01.man`
+-> submission `309d54ad-ae96-416f-a0a9-6ec56ce51e00`, **17/17**,
+153x154, **score 1,576,985,655** (was 8,838,759,329) — a **5.6x
+improvement**, from footprint 49,729 -> 23,716 and avgTicks 177,738 ->
+111,443 (the compact ring is 209 pipe cells instead of 1,043).
+
+Verification note worth keeping: the builder shortened the ring pipes
+against instruction. Public cases and random games never grow a snake
+past 3 cells, so nothing in the suite touched ring capacity. A
+deliberately constructed maximal-growth game (serpentine fruit
+placement, 99 rounds, **48-cell snake**) passes on both artifacts —
+that is the test that actually justified the change, and it is now in
+the record rather than the builder's argument.
