@@ -688,6 +688,48 @@ def _class_tokens(cls: int) -> tuple[str, ...] | None:
     return None                         # X gets its sign fork separately
 
 
+def _branch_update_tokens(delta: int) -> tuple[str, ...]:
+    """Replace live CTRL by ``(CTRL + delta) % 4`` and normalize the ring."""
+    return (
+        "r", "M", str(delta), "+", "M", "4", "W", "%", "s",
+        *("r", "s") * 5,
+    )
+
+
+def _step_branch_arm(room, tape: Tape) -> None:
+    """Implement interpreted X while restoring the canonical CTRL head.
+
+    The prefix saves interpreted AI in host B, relays OLD/K, then swaps AI
+    back into A.  Native X splits it three ways.  Positive and negative
+    each use one otherwise-free horizontal tape; zero preserves CTRL
+    unchanged.  All three enter the existing class-join highway.
+    """
+    tape.emit("r", "s", "r", "s", "M", "r", "s", "r", "s", "W")
+    room.put(tape.row, tape.col, "^")
+    room.put(tape.row - 1, tape.col, "^")
+    x_row, x_col = tape.row - 2, 62
+    room.put(x_row, tape.col, ">")
+    room.put(x_row, x_col, "X")
+
+    # Negative: north from X, west on row 99, then east along row 98.
+    room.put(x_row - 1, x_col, "<")
+    room.put(x_row - 1, TAPE_LO - 1, "^")
+    room.put(x_row - 2, TAPE_LO - 1, ">")
+    Tape(
+        room, x_row - 2, TAPE_LO, TAPE_LO, TAPE_HI
+    ).emit(*_branch_update_tokens(3))
+
+    # Positive: south from X, jog around the prefix, then east on row 104.
+    room.put(x_row + 1, x_col, "<")
+    room.put(x_row + 1, x_col - 1, "v")
+    room.put(x_row + 3, x_col - 1, "<")
+    room.put(x_row + 3, TAPE_LO - 1, "v")
+    room.put(x_row + 4, TAPE_LO - 1, ">")
+    Tape(
+        room, x_row + 4, TAPE_LO, TAPE_LO, TAPE_HI
+    ).emit(*_branch_update_tokens(1))
+
+
 def _step_class_dispatch(room) -> None:
     """Decode BP=class with a decrement staircase and normalize each arm."""
     room.put(CLASS_ROW, 66, "<")
@@ -705,7 +747,7 @@ def _step_class_dispatch(room) -> None:
         tape = _class_tape(room, row)
         tokens = _class_tokens(cls)
         if tokens is None:
-            tape.emit("H")               # branch-X arm is the next checkpoint
+            _step_branch_arm(room, tape)
             continue
         tape.emit(*tokens)
         _leave_tape(room, tape, CLASS_JOIN_COL, CLASS_JOIN_ROW)

@@ -233,8 +233,6 @@ def test_integration_rig_with_real_fetch():
 from littleman.lllm_step import (  # noqa: E402
     CLASS_JOIN_COL,
     CLASS_JOIN_ROW,
-    EMIT_START_COL,
-    EMIT_START_ROW,
     MOVE_JOIN_COL,
     MOVE_JOIN_ROW,
     ROUND_ROW,
@@ -347,7 +345,17 @@ def test_rig_round_one_matches_model_on_fuzz():
     assert bad == []
 
 
-def test_tick_interpreter_not_transcribed_yet():
+@pytest.mark.parametrize("case", CASES, ids=[c["name"] for c in CASES])
+def test_physical_step_matches_all_public_rounds(case):
+    """The composed STEP+FETCH rig is byte-exact for every public round."""
+    rows, ks, _ = case_rounds(case)
+    res = Machine.parse(RIG).run(
+        max_ticks=500_000, inputs=loader_stream(rows) + ks
+    )
+    assert res.output == run_case(rows, ks).deltas
+
+
+def test_no_later_input_parks_after_round_one():
     """Without a k token, STEP parks at the later-round input as intended."""
     rows = rows_of(CASES[1])
     res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
@@ -423,6 +431,25 @@ def test_space_program_reenters_for_multiple_rounds():
 
 
 @pytest.mark.parametrize(
+    "rows", [X_ZERO, X_POS, X_NEG], ids=["zero", "positive", "negative"]
+)
+def test_physical_branch_arms_match_reference(rows):
+    """Native X selects all three physical arms and rejoins the round loop."""
+    ks = [6, 6]
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=1_000_000, inputs=loader_stream(rows) + ks
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, ks).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert man.blocked
+
+
+@pytest.mark.parametrize(
     ("cls", "value", "expected"),
     [
         (0, 0, [1, 17, 7, 5, 17, 1]),
@@ -461,6 +488,35 @@ def test_straight_class_tapes_restore_canonical_ring(cls, value, expected):
         else:
             raise AssertionError(op)
     assert queue == expected
+
+
+@pytest.mark.parametrize(
+    ("delta", "expected_ctrl"), [(1, 2), (3, 0)]
+)
+def test_branch_update_tapes_restore_canonical_ring(delta, expected_ctrl):
+    from littleman.lllm_step import _branch_update_tokens
+    from littleman.sim import wrap64
+
+    queue = [1, 17, 7, 5, 17, 1]  # physical head CTRL
+    A = B = 0
+    for op in _branch_update_tokens(delta):
+        if op == "r":
+            A = queue.pop(0)
+        elif op == "s":
+            queue.append(A)
+        elif op == "M":
+            B = A
+        elif op == "W":
+            A, B = B, A
+        elif op == "+":
+            A = wrap64(A + B)
+        elif op == "%":
+            A = 0 if B == 0 else wrap64(A % B)
+        elif op.isdigit():
+            A = int(op)
+        else:
+            raise AssertionError(op)
+    assert queue == [expected_ctrl, 17, 7, 5, 17, 1]
 
 
 @pytest.mark.parametrize(
@@ -503,7 +559,7 @@ def test_round_loop_tapes_place_without_collision():
     _step_seed(room)
     grid = room.render()
     assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads
-    assert "H" in "".join(grid)                               # loop stub
+    assert "X" in "".join(grid)                               # branch fork
 
 
 def test_tape_rejects_non_descending_exit():
