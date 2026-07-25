@@ -21,7 +21,11 @@ provisional until promoted into neutral decision records.
    what holds, what to re-weight, what is missing (verification, the
    knowledge pipeline, multi-agent ops), and the contest-first vs
    foundation-first decision only the user can make.
-6. `claude_effects.json` — generated opcode effects table (see
+6. `claude_05_contest_plan.md` — the contest-first execution plan
+   (validated decision: pay by Sunday noon).
+7. `claude_06_tool_registry.md` — the tool registry: status by evidence,
+   not effort; seeded table; mandatory-on semantics; demotion path.
+8. `claude_effects.json` — generated opcode effects table (see
    `scripts/gen_effects.py`); the first falsifiable artifact of the set.
 
 ## Method note
