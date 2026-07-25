@@ -102,3 +102,22 @@ pipe at the wrong port. That is the next thing to solve.
     O      rows 28-30  cols  0-2     magnetised
 
     37x37 (memory_04) -> 36x36 (memory_05, submitted) -> 36x33 -> 36x32
+
+## `alexey-memory-zig6.man` — `O` pressed flat against block 4
+
+`O` moves up two more rows and right two columns (30-32/0-2 -> 26-28/2-4), so
+its right wall at column 4 now abuts block 4's left wall at column 5 — no cell
+shared, which is legal, and no corridor between them at all. Block 4's exit
+stays put at its left wall, row 29, and the pipe reaches `O` through the
+overhang below it:
+
+    (29,4) < -> (29,3) ^   into O's BOTTOM wall at (28,3)
+
+Two cells. 7/7, ticks 4,143.6, layout 36x32.
+
+This is the herringbone applied sideways: two rooms can touch along a wall as
+long as the pipe leaves through a face that overhangs, and `O` could take a
+port anywhere because it has one incoming pipe and nothing else.
+
+Columns 0-1 are now free at rows 26-28; only the `I` room (rows 1-3) still
+holds them, so the left edge is one repack away from moving in.
