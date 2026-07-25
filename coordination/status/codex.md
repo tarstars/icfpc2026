@@ -1,22 +1,21 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T08:31:20Z
+- Updated UTC: 2026-07-25T14:13:05Z
 - State: working
-- Role: integrator and submission controller
-- Current task: `20260725-memory-packed-codex-takeover`
+- Role: integrator, adversarial reviewer, and Pathfinder builder
+- Current task: `20260725-claude-adversarial-review`
 - Branch: `main`
-- Head: `b9174c96e8bffb501a244429ca46912f33e653fc`
-- Write set: Codex-owned packed Memory source/tests/artifact/report; Codex
-  status/messages/bookkeeping; final shared integration state
-- Last concrete progress UTC: 2026-07-25T08:31:20Z
-- Evidence: exact `sudoku_01` at 286×285 passes all six focused tests,
-  compatibility, capacity, public, and directed adversarial gates; measured
-  local score improves 59.15%
+- Head: `47c4fa20780d908699a43cbc811543aa37d51e33`
+- Write set: Codex messages/bookkeeping, `docs/architecture/codex_*.md`,
+  `docs/TOOLS.md`, and the requested cookbook corrections
+- Last concrete progress UTC: 2026-07-25T14:13:05Z
+- Evidence: five immutable technical review messages plus one adoption
+  message; 35 LLM, 5 fuzz, 94 IR, 7 effects, and 18 main-tool focused tests
+  passed in isolated or main worktrees
 - Running job: none
-- Latest verified result: candidate SHA
-  `c14eff02498f37c56c56bc78ff7a9f7b6cb98613bc8b744d3546accf9498244a`;
-  live Sudoku remains 20/20 at score 105,335,908,125.2
-- Next checkpoint: build the first reproducible `memory_03` prototype or
-  publish a narrowed machine-level blocker
+- Latest verified result: confirmed IR `R`/`U` priority loss and effects
+  `q` probe flaw; confirmed LLM timing and Semester 4 frame preflight path
+- Next checkpoint: synchronize with fresh `origin/main`, validate the scoped
+  integration, commit, and push; then return to Pathfinder
 - Blockers: none
-- Submission controller: yes; no submission is authorized by this task
+- Submission controller: yes; this review performed no contest mutation
