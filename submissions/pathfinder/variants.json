@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "c778ba35-4918-415b-83d0-37dc8f6f68c9",
+    "slug": "pathfinder",
+    "name": "Pathfinder",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "pathfinder_00",
+      "label": "row-bitboard backwards BFS",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "16 packed row words; modulo-3 distance planes; one-pass four-neighbour dilation; single-scan direction selection; display command router",
+      "source": {
+        "path": "submissions/pathfinder/pathfinder_00.man",
+        "generator": "src/littleman/pathfinder.py:build_pathfinder",
+        "sha256": "ba5438110af231d09d12453b9d37f31c443ed9c6c29b3697be2f4d401e591bdd",
+        "bytes": 967231,
+        "width": 452,
+        "height": 2034,
+        "maxDimension": 2034,
+        "footprint": 4137156
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "a straight shot": 3672910,
+          "around the pillars": 5561418,
+          "the long way": 12769742,
+          "rooms and doors": 8333494,
+          "a cluttered field": 6683330,
+          "running errands": 8414468,
+          "there and back again": 11117230
+        },
+        "averageTicks": 8078941.714285715,
+        "score": 33423842186907.43,
+        "adversarial": {
+          "oracle": "claude/pathfinder-reference.py",
+          "seedBase": 49374,
+          "cases": 8,
+          "pathLengthRange": [2, 12],
+          "result": "all frame streams exact"
+        }
+      },
+      "liveSubmission": null
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-25T19:50:45.751Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rows": 0
+  }
+}

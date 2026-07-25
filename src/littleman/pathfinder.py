@@ -1053,6 +1053,204 @@ def _add_direction_try(
     fsm.go(f"{p}_swap_done_s", "display", "s", "flag_x")
 
 
+def _add_move_step(fsm: Fsm, current_mod: int) -> None:
+    """Choose up/right/down/left with two ring laps instead of four probes."""
+
+    target_mod = (current_mod - 1) % 3
+    p = f"move{current_mod}"
+
+    # First lap reaches the two metadata tokens while preserving row order.
+    fsm.go(f"{p}_start", "logic", f"{_lit(16)}b", f"{p}_scan_r")
+    fsm.go(f"{p}_scan_r", "ring_in", "r", f"{p}_scan_s")
+    fsm.go(f"{p}_scan_s", "ring_out", "s", f"{p}_scan_dec")
+    fsm.bp(
+        f"{p}_scan_dec",
+        "logic",
+        "m",
+        zero=f"{p}_robot_r",
+        positive=f"{p}_scan_r",
+    )
+    fsm.go(f"{p}_robot_r", "ring_in", "r", f"{p}_robot_decode")
+    fsm.go(f"{p}_robot_decode", "logic", _decode_robot(), f"{p}_addr_save")
+    fsm.go(f"{p}_addr_save", "scratch_out", "ss", f"{p}_divide")
+
+    # Derive y (in BP), x, and the count needed to restore the second lap.
+    fsm.go(f"{p}_divide", "logic", f"M{_lit(16)}W/", f"{p}_y_save")
+    fsm.go(f"{p}_y_save", "logic", "bW", f"{p}_x_save")
+    fsm.go(f"{p}_x_save", "scratch_out", "s", f"{p}_tail")
+    fsm.go(f"{p}_tail", "logic", f"WM{_lit(14)}-", f"{p}_tail_save")
+    fsm.go(f"{p}_tail_save", "scratch_out", "s", f"{p}_cycle_addr1_r")
+
+    # Queue [addr, addr, x, tail] -> [x, tail, addr, addr].
+    fsm.go(f"{p}_cycle_addr1_r", "scratch_in", "r", f"{p}_cycle_addr1_s")
+    fsm.go(f"{p}_cycle_addr1_s", "scratch_out", "s", f"{p}_cycle_addr2_r")
+    fsm.go(f"{p}_cycle_addr2_r", "scratch_in", "r", f"{p}_cycle_addr2_s")
+    fsm.go(f"{p}_cycle_addr2_s", "scratch_out", "s", f"{p}_x_r")
+
+    # k is the bit index of the current x in the target modulo plane.
+    fsm.go(f"{p}_x_r", "scratch_in", "r", f"{p}_k")
+    fsm.go(
+        f"{p}_k",
+        "logic",
+        f"M{_lit(15)}-M{_lit(PLANE_OFFSET[target_mod])}W+M",
+        f"{p}_k_save",
+    )
+    fsm.go(f"{p}_k_save", "scratch_out", "ss", f"{p}_cycle_tail_r")
+
+    # Queue [tail, addr, addr, k, k] -> [k, k, tail, addr, addr].
+    for index, target in (
+        (1, f"{p}_cycle_addr3_r"),
+        (2, f"{p}_cycle_addr4_r"),
+        (3, f"{p}_distance_r"),
+    ):
+        name = "tail" if index == 1 else f"addr{index + 1}"
+        fsm.go(
+            f"{p}_cycle_{name}_r",
+            "scratch_in",
+            "r",
+            f"{p}_cycle_{name}_s",
+        )
+        fsm.go(f"{p}_cycle_{name}_s", "scratch_out", "s", target)
+
+    fsm.go(f"{p}_distance_r", "ring_in", "r", f"{p}_distance_save")
+    fsm.go(f"{p}_distance_save", "scratch_out", "s", f"{p}_rotate_dec")
+
+    # Border walls guarantee y>=1.  Rotate to row y-1 while B retains k.
+    fsm.go(f"{p}_rotate_dec", "logic", "m", f"{p}_rotate_check")
+    fsm.bp(
+        f"{p}_rotate_check",
+        "logic",
+        "",
+        zero=f"{p}_up_r",
+        positive=f"{p}_rotate_r",
+    )
+    fsm.go(f"{p}_rotate_r", "ring_in", "r", f"{p}_rotate_s")
+    fsm.go(f"{p}_rotate_s", "ring_out", "s", f"{p}_rotate_more")
+    fsm.go(f"{p}_rotate_more", "logic", "m", f"{p}_rotate_check")
+
+    # Up uses bit k in row y-1.
+    fsm.go(f"{p}_up_r", "ring_in", "r", f"{p}_up_s")
+    fsm.go(f"{p}_up_s", "ring_out", "s", f"{p}_up_test")
+    fsm.sign(
+        f"{p}_up_test",
+        "logic",
+        "}M1W&",
+        negative=f"{p}_up_hit_discard1",
+        zero=f"{p}_up_miss_k",
+        positive=f"{p}_up_hit_discard1",
+    )
+    fsm.go(
+        f"{p}_up_hit_discard1",
+        "scratch_in",
+        "r",
+        f"{p}_up_hit_discard2",
+    )
+    fsm.go(
+        f"{p}_up_hit_discard2",
+        "scratch_in",
+        "r",
+        f"{p}_up_tail_r",
+    )
+
+    # Row y is shifted once.  Bits 0 and 2 then record right and left.
+    fsm.go(f"{p}_up_miss_k", "scratch_in", "r", f"{p}_right_shift")
+    fsm.go(f"{p}_right_shift", "logic", "M1W-M", f"{p}_current_r")
+    fsm.go(f"{p}_current_r", "ring_in", "r", f"{p}_current_s")
+    fsm.go(f"{p}_current_s", "ring_out", "s", f"{p}_horizontal_bits")
+    fsm.sign(
+        f"{p}_horizontal_bits",
+        "logic",
+        "}M5W&bM1W&",
+        negative=f"{p}_right_hit_discard",
+        zero=f"{p}_right_miss_k",
+        positive=f"{p}_right_hit_discard",
+    )
+    fsm.go(
+        f"{p}_right_hit_discard",
+        "scratch_in",
+        "r",
+        f"{p}_right_tail_r",
+    )
+
+    # Down uses bit k in row y+1; left is the saved bit 2 from row y.
+    fsm.go(f"{p}_right_miss_k", "scratch_in", "r", f"{p}_down_k")
+    fsm.go(f"{p}_down_k", "logic", "M", f"{p}_down_r")
+    fsm.go(f"{p}_down_r", "ring_in", "r", f"{p}_down_s")
+    fsm.go(f"{p}_down_s", "ring_out", "s", f"{p}_down_test")
+    fsm.sign(
+        f"{p}_down_test",
+        "logic",
+        "}M1W&",
+        negative=f"{p}_down_tail_r",
+        zero=f"{p}_left_test",
+        positive=f"{p}_down_tail_r",
+    )
+    fsm.bp(
+        f"{p}_left_test",
+        "logic",
+        "]]",
+        zero="path_broken",
+        positive=f"{p}_left_tail_r",
+    )
+
+    # Complete the second lap.  Base tail is 14-y; early hits add the
+    # unexamined current/down rows so every route rotates exactly 16 rows.
+    for direction, extra in (("up", 2), ("right", 1), ("down", 0), ("left", 0)):
+        tail = f"{p}_{direction}_tail"
+        fsm.go(f"{tail}_r", "scratch_in", "r", f"{tail}_adjust")
+        code = f"M{extra}W+" if extra else ""
+        fsm.go(f"{tail}_adjust", "logic", code + "b", f"{tail}_check")
+        fsm.bp(
+            f"{tail}_check",
+            "logic",
+            "",
+            zero=f"{p}_{direction}_old_addr_r",
+            positive=f"{tail}_rotate_r",
+        )
+        fsm.go(f"{tail}_rotate_r", "ring_in", "r", f"{tail}_rotate_s")
+        fsm.go(f"{tail}_rotate_s", "ring_out", "s", f"{tail}_rotate_dec")
+        fsm.go(f"{tail}_rotate_dec", "logic", "m", f"{tail}_check")
+
+    # Emit the delta frame and replace the two metadata tokens.
+    for direction, delta in (
+        ("up", -16),
+        ("right", 1),
+        ("down", 16),
+        ("left", -1),
+    ):
+        q = f"{p}_{direction}"
+        fsm.go(f"{q}_old_addr_r", "scratch_in", "r", f"{q}_old_addr_command")
+        fsm.go(f"{q}_old_addr_command", "logic", "M1+", f"{q}_old_addr_s")
+        fsm.go(f"{q}_old_addr_s", "display", "s", f"{q}_old_color")
+        fsm.go(f"{q}_old_color", "logic", "1N", f"{q}_old_color_s")
+        fsm.go(f"{q}_old_color_s", "display", "s", f"{q}_new_addr_r")
+        fsm.go(f"{q}_new_addr_r", "scratch_in", "r", f"{q}_new_addr")
+        delta_code = f"M{_lit(abs(delta))}{'N' if delta < 0 else ''}+"
+        fsm.go(f"{q}_new_addr", "logic", delta_code, f"{q}_new_addr_command")
+        fsm.go(f"{q}_new_addr_command", "logic", "M1+", f"{q}_new_addr_s")
+        fsm.go(f"{q}_new_addr_s", "display", "s", f"{q}_new_color")
+        fsm.go(f"{q}_new_color", "logic", f"{_lit(11)}N", f"{q}_new_color_s")
+        fsm.go(f"{q}_new_color_s", "display", "s", f"{q}_new_addr_back")
+        fsm.go(f"{q}_new_addr_back", "logic", "W", f"{q}_new_robot")
+        fsm.go(f"{q}_new_robot", "logic", "M1W+N", f"{q}_new_robot_s")
+        fsm.go(f"{q}_new_robot_s", "ring_out", "s", f"{q}_distance_r")
+        fsm.go(f"{q}_distance_r", "scratch_in", "r", f"{q}_distance_edit")
+        fsm.go(f"{q}_distance_edit", "logic", "M1W+", f"{q}_distance_s")
+        fsm.go(f"{q}_distance_s", "ring_out", "s", f"{q}_remaining")
+        fsm.sign(
+            f"{q}_remaining",
+            "logic",
+            f"M{_lit(DISTANCE_TAG)}W+",
+            negative=f"{q}_swap_more",
+            zero=f"{q}_swap_done",
+            positive=f"{q}_swap_done",
+        )
+        fsm.go(f"{q}_swap_more", "logic", "0", f"{q}_swap_more_s")
+        fsm.go(f"{q}_swap_more_s", "display", "s", f"move{target_mod}_start")
+        fsm.go(f"{q}_swap_done", "logic", "0", f"{q}_swap_done_s")
+        fsm.go(f"{q}_swap_done_s", "display", "s", "flag_x")
+
+
 def build_controller_fsm() -> Fsm:
     fsm = Fsm()
 
@@ -1185,41 +1383,23 @@ def build_controller_fsm() -> Fsm:
         fsm,
         1,
         not_reached="wave2_vertical_start",
-        reached="move1_up_start",
+        reached="move1_start",
     )
     _add_wave_check(
         fsm,
         2,
         not_reached="wave0_vertical_start",
-        reached="move2_up_start",
+        reached="move2_start",
     )
     _add_wave_check(
         fsm,
         0,
         not_reached="wave1_vertical_start",
-        reached="move0_up_start",
+        reached="move0_start",
     )
 
-    directions = (
-        ("up", -16),
-        ("right", 1),
-        ("down", 16),
-        ("left", -1),
-    )
     for current_mod in range(3):
-        for index, (direction, delta) in enumerate(directions):
-            next_name = (
-                f"move{current_mod}_{directions[index + 1][0]}_start"
-                if index + 1 < len(directions)
-                else "path_broken"
-            )
-            _add_direction_try(
-                fsm,
-                current_mod,
-                direction,
-                delta=delta,
-                next_direction=next_name,
-            )
+        _add_move_step(fsm, current_mod)
 
     fsm.go("path_broken", "logic", "H", "path_broken")
     return fsm
