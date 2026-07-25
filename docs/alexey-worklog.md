@@ -918,3 +918,47 @@ the squeeze is not blinded later.
 change pipe resolution (broke memory's column pass), it can shorten a pipe
 below the two-cell minimum the server enforces, and it can shorten a pipe
 below the capacity the protocol needs (this one). Judge after every squeeze.
+
+## Baseline reset. Current live scores are the reference from here on.
+
+    plotter 9,367,793,668 | tcp 5,655,750 | brackets 3,494,864 | sort 1,367,454
+    memory 87,493,514 | sudoku 25,480,732,026 | gradebook 81,914,188,255
+    triangle 832 | reverse 472,346 | history 7,921
+
+### Requested: press the Input chain in plotter, serpentine its pipes
+
+Done and it works — but it does not pay, measured against the baseline.
+
+All four pipes joining the chain rooms run straight down column 61 and are
+3 cells long, which is why each needed a 3-row gap. **The jog trick removes
+that:** shift each next room one column right, and the pipe becomes
+`down, jog east, down` — still 3 cells, still capacity 3, but in a 2-row
+gap. Applied to all four gaps the chain shrinks from rows 3-61 to rows 3-57.
+
+    6/6 public, pipe capacities preserved (3,3,3,3)
+    footprint 106,276 -> 106,276      (unchanged)
+    avgTicks   60,294 -> 60,322       (28 worse)
+
+Footprint does not move because the chain sits beside BIG1, which spans rows
+3-89 — 28 rows taller than the chain even before pressing. The 28 extra ticks
+come from the E->BIG1 pipe, whose head had to be re-drawn 8 cells longer to
+reach the trunk from the chain's new position. Not submitted.
+
+**The technique itself is validated and worth reusing**: a 3-cell pipe fits
+a 2-row gap whenever the two ports differ by at least one column, and the
+port columns can be made to differ by sliding the lower room sideways —
+which costs nothing, because a room's internal pipe resolution moves with
+the room.
+
+### Requested: shrink memory's rooms by deleting empty rows/columns
+
+Two rooms have empty edges (6 and 2 columns). Trimming them:
+
+    footprint 2,116 -> 2,116   (unchanged)
+    judge      7/7  -> 2/7     (broken)
+
+Unchanged because neither room touches the bounding box — memory binds on
+height and both trims are columns. Broken for the reason already recorded
+against memory's column squeeze: deleting a column changes Manhattan
+distances, and memory has reads whose margin between two candidate pipes is
+a single step. Not submitted; memory_02 stands at 87,493,514.
