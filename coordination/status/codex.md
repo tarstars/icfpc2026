@@ -5,7 +5,7 @@
 - Role: integrator and policy auditor
 - Current task: `20260725-instruction-set-audit`
 - Branch: `agent/codex-instruction-audit`
-- Head: `87f599b070ff8e7a538e1dc61a4cab333c3495d0`
+- Head: `e3d2d1ca85a0932161ffb2963af47887497ac5a5`
 - Write set: `codex/instructions.md`, `codex/README.md`, Codex task/status/
   message bookkeeping
 - Last concrete progress UTC: 2026-07-25T14:51:04Z
