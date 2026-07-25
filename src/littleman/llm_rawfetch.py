@@ -27,9 +27,12 @@ def unpack_raw_world(world: list[int]) -> list[int]:
 
 def raw_fetch_reference(world: list[int], requests: list[int]) -> list[int]:
     cells = unpack_raw_world(world)
-    if any(not 0 <= addr < CELLS for addr in requests):
-        raise ValueError("raw fetch address outside 0..255")
-    return [cells[addr] for addr in requests]
+    if any(not 0 <= request < 2 * CELLS for request in requests):
+        raise ValueError("raw fetch request outside 0..511")
+    return [
+        cells[request] if request < CELLS else cells[request - CELLS] - ord("|")
+        for request in requests
+    ]
 
 
 FETCH_ROWS, FETCH_COLS = 17, 45
@@ -52,12 +55,14 @@ def _setup(room: Room) -> None:
 
 
 def _decode(room: Room) -> None:
-    # The first divide proves every request is the sole (kind=0) arm and
-    # leaves its address in B.  CHAIN derives word+2 in BP and
-    # 2**(10*field) in B for PACK's little-endian field order.
+    # The first divide selects raw (kind 0) or compare-to-'|' (kind 1) and
+    # leaves the address in B. CHAIN derives word+2 and the field divisor.
     room.put(7, 7, ">-M`256`W/X")
     room.put(7, 18, CHAIN)
     room.put(7, 44, "v")
+    room.put(8, 17, ">")
+    room.put(8, 18, CHAIN)
+    room.put(8, 43, "Nv")
     room.put(9, 44, "M")
 
 
@@ -68,11 +73,15 @@ def _relay_and_peel(room: Room) -> None:
     room.put(11, 41, "WX")
     room.put(12, 37, "^sr<")
     room.put(12, 42, "v")
-    # Walked west: W / M `1023` & s.
+    # Negative divisor: compare cell to '|', then share the output chute.
+    room.put(9, 18, "-W`421`M&`3201`M/WN")
+    room.put(9, 42, "<")
+    room.put(9, 2, "vs")
+    # Positive divisor: raw cell. Walked west: W / M `1023` & s.
     room.put(13, 25, "&`3201`M/W")
     room.put(13, 42, "<")
     room.put(13, 2, "vs")
-    for row in range(10, 14):
+    for row in range(10, 13):
         room.put(row, 2, "v")
 
 

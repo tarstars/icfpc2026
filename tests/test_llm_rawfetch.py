@@ -26,6 +26,7 @@ CASES = json.loads(
 )["publicTestData"]
 FUZZ = llm_corpus(20260726, 20)
 REQUESTS = [0, 1, 3, 4, 15, 16, 17, 63, 64, 127, 128, 254, 255]
+COMPARE_REQUESTS = [256 + addr for addr in REQUESTS]
 
 
 def rows_of(case):
@@ -85,7 +86,7 @@ def test_generator_is_deterministic_and_server_safe(text):
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case["name"])
 def test_public_raw_fetch(text, case):
-    check(text, rows_of(case))
+    check(text, rows_of(case), [*REQUESTS, *COMPARE_REQUESTS])
 
 
 @pytest.mark.parametrize("case", FUZZ, ids=lambda case: case["name"])
@@ -96,6 +97,14 @@ def test_pipe_fuzz_raw_fetch(text, case):
 def test_repeated_and_reverse_requests_restore_ring(text):
     rows = rows_of(CASES[0])
     check(text, rows, [255, 0, 255, 17, 17, 3, 2, 1, 0])
+
+
+def test_compare_requests_return_zero_only_for_vertical_wall(text):
+    rows = rows_of(CASES[0])
+    raw = raw_of(rows)
+    requests = [256 + addr for addr in range(256)]
+    script = check(text, rows, requests)
+    assert script.output == [cell - ord("|") for cell in raw]
 
 
 def test_tick_bound(text):
