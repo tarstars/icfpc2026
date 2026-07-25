@@ -29,13 +29,13 @@ reason the `X` on d exists.
 every `r` and `s` must be placed where `nearest` resolves the way we mean.
 `assert_pipe_map` pins the layout that `build_skeleton` produces:
 
-    reads   rows 1-2 reach INPUT;  rows 5-8 (col >= 8) reach RING-IN
-    writes  cols 6-9 reach OUTPUT; cols 13-17 reach RING-OUT
+    reads   interior rows 1-4 reach INPUT;  rows 9-12 reach RING-IN
+    writes  interior cols 1-2 reach OUTPUT;  cols 11-16 reach RING-OUT
 
-The write boundary slopes — the OUTPUT region ends at col 12 on row 1 but
-at col 9 on row 8, because `nearest` measures to the ring-out segment below
-the room. `assert_pipe_map` only pins the two regions that hold for every
-row; anything between them must be audited before use.
+Both boundaries slope, because `nearest` measures to the ring pipes below
+the room: reads in rows 5-8 and writes in cols 3-10 flip role part-way
+across. `assert_pipe_map` pins only the four corner zones that hold for
+every row and column; anything between them must be audited before use.
 
 Read instructions for the packet stream therefore live at the top of the
 room, ring traffic at the bottom right, and emits on the left.
@@ -47,14 +47,14 @@ from .canvas import Canvas
 from .sim import Machine
 
 SLOTS = 16
-PUMP_H, PUMP_W = 8, 12          # pump interior
+PUMP_H, PUMP_W = 12, 16         # pump interior (correctness first, golf later)
 PUMP_TOP, PUMP_LEFT = 0, 5      # canvas position of the pump's top-left corner
 
 # Pipe segment cells, by role. These are the cells `nearest` measures to.
 INPUT_END = (1, 4)
 OUTPUT_SRC = (5, 4)
-RING_OUT_SRC = (10, 16)
-RING_IN_END = (10, 10)
+RING_OUT_SRC = (PUMP_TOP + PUMP_H + 2, 16)
+RING_IN_END = (PUMP_TOP + PUMP_H + 2, 10)
 
 
 def build_skeleton(interior: list[str] | None = None) -> str:
@@ -62,7 +62,11 @@ def build_skeleton(interior: list[str] | None = None) -> str:
 
     `interior` is PUMP_H rows of PUMP_W characters; spaces where the man
     should simply walk on. The ring-in pipe is 23 cells, comfortably above
-    the 16 slots plus the marker that ride it.
+    the 17 values that ride it (16 slots plus the injected marker).
+
+    The pump is deliberately roomy: get the machine correct first, then
+    golf. At 258 ring ops per case even this 23x20 box projects to ~750k,
+    against tcp_00's 20,028k.
     """
     if interior is None:
         interior = [" " * PUMP_W for _ in range(PUMP_H)]
@@ -74,12 +78,15 @@ def build_skeleton(interior: list[str] | None = None) -> str:
     edge = "+" + "-" * PUMP_W + "+"
     cv.put(PUMP_TOP, PUMP_LEFT,
            [edge] + ["|" + row + "|" for row in interior] + [edge])
-    cv.put(12, 13, ["+----+", "|>s@v|", "|^r <|", "+----+"])   # relay
+    relay_top = PUMP_TOP + PUMP_H + 4
+    cv.put(relay_top, 13, ["+----+", "|>s@v|", "|^r <|", "+----+"])   # relay
 
     cv.pipe([(1, 3), (1, 4)])                            # I -> pump left wall
     cv.pipe([(5, 4), (5, 3)])                            # pump left wall -> O
-    cv.pipe([(10, 16), (11, 16)])                        # ring out -> relay
-    cv.pipe([(14, 12), (14, 2), (11, 2), (11, 10), (10, 10)])   # ring in
+    bot = PUMP_TOP + PUMP_H + 2        # first free row below the pump wall
+    cv.pipe([(bot, 16), (bot + 1, 16)])                   # ring out -> relay
+    cv.pipe([(relay_top + 2, 12), (relay_top + 2, 2), (bot + 1, 2),
+             (bot + 1, 10), (bot, 10)])                   # ring in
     return cv.render()
 
 
@@ -109,11 +116,11 @@ def assert_pipe_map(text: str | None = None) -> None:
     """Fail loudly if the geometry stops resolving pipes the way the code assumes."""
     mapping = pipe_map(text or build_skeleton())
     for (r, c), (inc, outg) in mapping.items():
-        if r <= 2:
+        if r <= 4:
             assert inc == "INPUT", f"read at {(r, c)} reaches {inc}, wanted INPUT"
-        if r >= 5 and c >= PUMP_LEFT + 3:
+        if r >= 9:
             assert inc == "RING-IN", f"read at {(r, c)} reaches {inc}, wanted RING-IN"
-        if c <= PUMP_LEFT + 4:
+        if c <= PUMP_LEFT + 2:
             assert outg == "OUTPUT", f"write at {(r, c)} reaches {outg}, wanted OUTPUT"
-        if c >= PUMP_LEFT + 8:
+        if c >= PUMP_LEFT + 11:
             assert outg == "RING-OUT", f"write at {(r, c)} reaches {outg}, wanted RING-OUT"
