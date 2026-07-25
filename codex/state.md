@@ -101,7 +101,9 @@ solutions.
 - Established a two-agent protocol with isolated worktrees, explicit task and
   path ownership, one `main` integrator, one serialized contest submission
   controller, per-agent status, immutable messages, structured handoffs, and a
-  ready-to-paste Claude onboarding prompt under `coordination/`.
+  ready-to-paste Claude onboarding prompt under `coordination/`. Claude may
+  stop voluntarily; Codex may reclaim an active task after 15 minutes without
+  concrete progress, using the recorded safe-takeover procedure.
 
 ## Blockers
 

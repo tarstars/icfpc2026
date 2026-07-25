@@ -155,3 +155,14 @@ write set. Use owner-specific status files and immutable sender-owned messages
 instead of a jointly edited live checklist. A handoff is complete only when it
 names a pushed commit, exact validation evidence, measurements, assumptions,
 and integration notes.
+
+## 2026-07-25 — Use a 15-minute concrete-progress lease for Claude
+
+Claude may stop voluntarily. When an active Claude task has no new inspectable
+evidence for 15 minutes, Codex may issue a stop/takeover and reassign the work
+without requesting further user approval.
+
+Do not treat timestamp churn as progress. Inspect the peer branch and any
+announced long-running job first, preserve Claude's worktree and commits, and
+establish a new exclusive owner before continuing from a separate branch or
+solution version.

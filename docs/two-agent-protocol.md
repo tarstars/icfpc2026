@@ -131,12 +131,13 @@ Each sender owns `coordination/messages/<sender>/`. Message names use:
 YYYYMMDDTHHMMSSZ-<task-id>-<kind>.md
 ```
 
-Kinds are `claim`, `progress`, `question`, `blocker`, `handoff`, `ack`,
-`release`, and `integrated`.
+Kinds are `claim`, `progress`, `question`, `blocker`, `policy`, `stop`,
+`takeover`, `handoff`, `ack`, `release`, and `integrated`.
 
 Messages are immutable after they are pushed. A correction is a new message
-that names the superseded file. Assignment, question, blocker, and handoff
-messages require an `ack` from the recipient. Progress messages do not.
+that names the superseded file. Assignment, question, blocker, policy, stop,
+takeover, and handoff messages require an `ack` from the recipient. Progress
+messages do not.
 
 The integrator publishes assignments and integration messages on `main`.
 Workers publish status and messages on their agent branches. After
@@ -167,8 +168,31 @@ Agents notify at meaningful state changes, not on a timer:
 6. **Integrated/release** — after the commit reaches `main`, or when a claim
    is abandoned.
 
-For work lasting more than about an hour without a milestone, refresh the
-owner status with the current experiment, latest evidence, and next check.
+An agent may stop voluntarily at any point. Before stopping, it should preserve
+safe work in progress, publish a blocker or release message, and release its
+write set. It must not resume a released task unless it is assigned again.
+
+An active Claude task has a 15-minute progress lease. Concrete progress is new
+inspectable evidence: a commit or diff, a test or experiment result, a narrowed
+failure, or a previously announced long-running command with traceable output.
+Repeating an intention or updating a timestamp without new evidence does not
+renew the lease.
+
+If Claude produces no concrete progress for 15 minutes, Codex may instruct
+Claude to stop and may reassign or take over the task without waiting for
+additional user approval. Before writing:
+
+1. Inspect Claude's status, messages, branch, and any announced running job.
+2. Publish a `stop` or `takeover` message naming the last observed evidence.
+3. Preserve Claude's branch and commits; never clean or rewrite its worktree.
+4. Record the new owner and exclusive write set.
+5. Continue from a separate branch or new solution version so late Claude work
+   cannot silently overwrite the takeover.
+
+After a stop or takeover message, Claude must cease task work promptly,
+checkpoint safe partial work if possible, acknowledge, and release the write
+set. It may still report useful findings, but must not resume implementation
+without reassignment.
 
 Direct user chat may duplicate an urgent notification, but the repository
 message is authoritative.
@@ -254,8 +278,10 @@ but must never copy, print, commit, or include its contents in a message.
   publish a blocker, and let the integrator reconcile ownership.
 - **Dirty shared worktree:** do not pull, rebase, stage, or commit. Identify
   the owner and move one agent to a separate worktree.
-- **Stale heartbeat:** do not assume the task is abandoned. Ask for status;
-  only the user or integrator can reassign it.
+- **Stale Claude progress:** after 15 minutes without concrete evidence, Codex
+  may issue a stop/takeover and reassign the task under the liveness procedure
+  above. A stale timestamp alone is not proof of abandonment before that
+  threshold.
 - **Failed experiment:** preserve concise evidence and release the task; do
   not hide negative results or promote projections as measurements.
 - **API ambiguity:** stop all new submissions for that problem until the

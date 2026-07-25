@@ -8,6 +8,7 @@
 - Problem: <slug or none>
 - Base main commit: <full SHA>
 - Branch: agent/<agent-id>
+- Progress lease: 15 minutes without concrete evidence
 - Created UTC: <YYYY-MM-DDTHH:MM:SSZ>
 - Last updated UTC: <YYYY-MM-DDTHH:MM:SSZ>
 

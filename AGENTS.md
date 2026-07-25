@@ -92,6 +92,10 @@ tracked artifacts under `coordination/`.
   messages as immutable after publishing; correct them with a new message.
 - Fetch and inspect the other agent's published status at task start, before
   touching a shared path, at handoff, and before integration.
+- An agent may stop and release its task. If Claude shows no concrete progress
+  for 15 minutes on an active task, Codex may tell Claude to stop and reassign
+  or take over the task without waiting for further user approval. Preserve
+  Claude's branch and establish a new exclusive write owner before continuing.
 - Direct chat is useful for urgency, but decisions, measurements, handoffs,
   blockers, and external mutations are not synchronized until recorded in the
   repository.

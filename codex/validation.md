@@ -317,6 +317,16 @@ Updated: 2026-07-25
 - `git diff --check` — passed after adding the concurrent-work policy,
   normative protocol, initial status/task records, templates, peer prompt, and
   bookkeeping links.
+- Claude workspace observation before adding the liveness policy —
+  `/home/tarstars/prj/icfpc2026-claude` was a clean `agent/claude` worktree at
+  onboarding commit `97b94990e910f157de28323c5e0048ac65c00ac5`; no files in
+  that worktree were changed by Codex.
+- Two-agent liveness-policy audit — the 15-minute concrete-progress lease,
+  voluntary-stop behavior, stop/takeover acknowledgement, evidence
+  definition, branch preservation, and exclusive-owner reassignment appear in
+  `AGENTS.md`, the normative protocol, Claude prompt, templates, durable
+  decision record, and a sender-owned policy message.
+- `git diff --check` — passed for the liveness-policy update.
 
 ## Pending validation
 

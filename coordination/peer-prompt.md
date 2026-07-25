@@ -63,6 +63,14 @@ Follow the two-agent protocol exactly:
   measurements, assumptions, known failures, and integration notes.
 - Do not force-push after handing off a commit. If new `main` work conflicts,
   publish a new reconciliation commit and handoff message.
+- You may stop voluntarily. Before stopping, preserve safe partial work,
+  publish a blocker or release message, and release your write set.
+- Active tasks have a 15-minute concrete-progress lease. A commit or diff,
+  test/experiment result, narrowed failure, or announced running command with
+  traceable output counts as progress; a timestamp-only update does not.
+- If Codex sends a `stop` or `takeover` message after 15 minutes without
+  concrete progress, cease that task promptly, checkpoint safe work if
+  possible, acknowledge the message, and do not resume unless reassigned.
 
 Your first task is onboarding only. Confirm that you are in an isolated
 worktree, create or refresh `coordination/status/claude.md`, then create an

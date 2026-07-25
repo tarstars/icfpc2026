@@ -53,3 +53,6 @@
   message/handoff templates, isolated-worktree and single-integrator rules,
   contest-mutation serialization, and a ready-to-paste Claude onboarding
   prompt under `coordination/`.
+- Added the user-authorized 15-minute concrete-progress lease: Claude may stop
+  voluntarily, and Codex may safely reclaim a stale task after publishing a
+  stop/takeover and preserving Claude's branch.
