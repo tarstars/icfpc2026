@@ -389,3 +389,19 @@ Every program of ours that spends a cell on `H` or on a trailing cell
 after its last `s` may be able to drop it, which can shrink the room and
 therefore the footprint. Candidates: sort_03, reverse_01, tcp_00,
 brackets_00, memory, max_00.
+
+## 2026-07-25 — sort: the delay corridor is already minimal (negative result)
+
+Tried the cheap win: shorten sort_03's delay corridor from three interior
+rows to two. Footprint would drop 361 -> 324 (the height binds at 19).
+
+It deadlocks — tick-cap, not wrong output, which is exactly the failure
+the corridor prevents: `q` counts only values already parked in the
+in-pipe, undercounts, and the scan then waits for values that never come.
+Verified against a helper that reproduces the shipped sort_03 byte for
+byte, so this is timing, not a wiring slip.
+
+**The corridor is at its minimum.** Any real gain on sort needs `q` gone
+entirely, with the ring size circulating as a value in the ring itself —
+the same redesign tcp needs, not a quick edit. Recorded so nobody retries
+the two-row corridor.
