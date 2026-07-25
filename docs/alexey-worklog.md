@@ -1167,3 +1167,24 @@ The vertical idea is now fully proven on two joints and has three rows of
 headroom left in blocks 4-5, but it cannot pay again until the layout is
 narrowed. Next move is horizontal: the same offset trick applied sideways,
 or pulling the I/O rooms (columns 0-2) in against the blocks.
+
+### memory: herringbone flipped (block 2 left, block 3 right) — 7/7, clears column 7
+
+Alexey's correction: block 4 must be entered at its OWN top port (column 7),
+because it has two pipes each way and its ports cannot move. So the zigzag has
+to be flipped — block 2 goes LEFT and block 3 RIGHT — which leaves column 7
+uncovered below block 3 and lets block 4 be reached there.
+
+    block1 rows 0-4  cols 5-33
+    block2 rows 5-8  cols 3-31   (left)   1->2: (5,32) v -> (6,32) <   2 cells
+    block3 rows 9-15 cols 8-33   (right)  2->3: (9,7)  v -> (10,7) >   2 cells
+
+36x33, 7/7, ticks 4,143.6 (was 4,158). Saved as `alexey-memory-zig.man`.
+Footprint still 1,296 — width 36 binds against height 33.
+
+Raising block 4 by two rows then failed, and the tell was the same as before:
+**pipe count dropped 7 -> 6**. Block 4 has FOUR pipes (two to block 5, one to
+O, one from block 3); I redrew only the incoming one. Redrawing all four is
+the remaining work for that joint — and note that block 3 has two outgoing
+pipes, so moving its bottom port to the left wall (as this attempt did) needs
+its `s` cells re-audited, not just re-routed.
