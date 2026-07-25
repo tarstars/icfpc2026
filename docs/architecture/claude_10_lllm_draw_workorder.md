@@ -15,7 +15,20 @@ drivers lifted verbatim (correctness-first).
   static color, draw new cell 9 — 0 pixels when the man is halted/frozen)
   + sentinel. DRAW is stateless about rounds: a pure stream transducer.
 
-## Structure
+## AMENDED 2026-07-25 by the build: DIST has ONE outgoing pipe
+
+The structure below said DIST splits addr/colour onto three driver
+pipes. WRONG for these drivers: Snake's ADDRDRV/DATADRV/SWAPDRV are a
+serial demux CHAIN -- each forwards the whole token and performs its own
+`M \`16\` W /` -- so feeding them pre-split values corrupts ADDRDRV's
+arithmetic, and replacing them would discard race tuning that is live on
+the server at 17/17. Built instead: DIST is a one-in/one-out adapter for
+the frozen interface (`t >= 0 -> t+1`; negatives passed through; a
+three-way X merge because `t = 0` is a legal pixel), and the binding
+audit widened from 3 cells to all 11. Measured: 46.0 ticks/pixel steady
+state, block 19x42 (26x64 with the display).
+
+## Structure (as originally specified; superseded above)
 
 ```
 EXEC ->(deltas)-> [DIST] ->(addr)->  [ADDRDRV] -> display TOP
