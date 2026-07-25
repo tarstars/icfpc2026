@@ -98,6 +98,10 @@ solutions.
   Plotter, Sudoku, and Subset Sum, including exact route counts, recorded
   negative results, a 306-square Sudoku packing bound, and an executable
   Subset Sum placement probe with a localized route collision.
+- Established a two-agent protocol with isolated worktrees, explicit task and
+  path ownership, one `main` integrator, one serialized contest submission
+  controller, per-agent status, immutable messages, structured handoffs, and a
+  ready-to-paste Claude onboarding prompt under `coordination/`.
 
 ## Blockers
 

@@ -310,6 +310,13 @@ Updated: 2026-07-25
   5,981,625.6 (rank 20), Sort 25/25 at score 1,455,739.72 (rank 29), and
   Reverse 20/20 at score 472,345.6 (rank 54). Direct authenticated reads
   reconfirmed live `sort_03`, `reverse_01`, `tcp_00`, and `tcp_01`.
+- Two-agent protocol artifact audit — all 11 Markdown artifacts under
+  `coordination/` exist; the task base and Codex status head match
+  `832ce90022da9010c299901df2748c9743c5845f`; no `.env` or `claude/` change
+  is present; all direct protocol entry-point paths exist.
+- `git diff --check` — passed after adding the concurrent-work policy,
+  normative protocol, initial status/task records, templates, peer prompt, and
+  bookkeeping links.
 
 ## Pending validation
 

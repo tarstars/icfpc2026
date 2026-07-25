@@ -49,3 +49,7 @@
 - Built Plotter in a new generator module from the shared symmetric-Bresenham
   design. Public and deterministic 20-round oracle tests passed, followed by
   a 20/20 live result at server score 75,794,498,065.
+- Established the shared two-agent synchronization protocol, task/status/
+  message/handoff templates, isolated-worktree and single-integrator rules,
+  contest-mutation serialization, and a ready-to-paste Claude onboarding
+  prompt under `coordination/`.

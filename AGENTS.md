@@ -77,6 +77,25 @@ virtual environments, raw run outputs, and bulk datasets do not belong in Git.
 - Keep secrets, personal tokens, browser state, and session data out of Git
   and shared artifact storage.
 
+## Two-agent coordination
+
+When two agents are active, follow `docs/two-agent-protocol.md` and use the
+tracked artifacts under `coordination/`.
+
+- Never let two writing agents share one Git worktree or index. Use one
+  worktree and branch per agent.
+- Exactly one agent is the integrator. Only the integrator updates `main`,
+  edits shared state hotspots, and performs contest-side mutations.
+- Every concurrent task needs one owner, an exclusive write set, acceptance
+  checks, and an integration owner recorded before implementation starts.
+- Each agent edits only its own status file and message namespace. Treat
+  messages as immutable after publishing; correct them with a new message.
+- Fetch and inspect the other agent's published status at task start, before
+  touching a shared path, at handoff, and before integration.
+- Direct chat is useful for urgency, but decisions, measurements, handoffs,
+  blockers, and external mutations are not synchronized until recorded in the
+  repository.
+
 ## Solution commit freshness
 
 Before committing any new or changed solution version:

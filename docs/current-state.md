@@ -40,6 +40,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
   `AGENTS.md`.
+- Concurrent work now uses the repository-backed protocol in
+  `docs/two-agent-protocol.md`: isolated agent worktrees, one integrator for
+  `main`, one serialized submission controller, explicit task write sets, and
+  owner-specific status and immutable messages under `coordination/`.
 - The current live Sort best is the 19×19 shrinking-ring `sort_03`; it passed
   all 25 server cases at score 1,455,739.72. The validated local `sort_05`
   carries its remaining count as an in-band FIFO token and folds the return

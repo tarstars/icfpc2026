@@ -142,3 +142,16 @@ and public judging succeeds.
 For analytical score models, charge per-operation overhead for the full
 assumed operation count. Label projections as estimates and correct them
 before using them to authorize a machine build.
+
+## 2026-07-25 — Coordinate two agents through ownership, not shared editing
+
+Require separate Git worktrees and agent branches for concurrent writers.
+Designate one integrator as the only writer to `main` and one submission
+controller as the only agent allowed to perform an explicitly authorized
+contest mutation.
+
+Split work into independently verifiable tasks with one owner and an exclusive
+write set. Use owner-specific status files and immutable sender-owned messages
+instead of a jointly edited live checklist. A handoff is complete only when it
+names a pushed commit, exact validation evidence, measurements, assumptions,
+and integration notes.
