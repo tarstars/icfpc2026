@@ -119,3 +119,66 @@ descend from it directly). Target: contracts frozen + Python refactor
 validated within ~2h of that; parallel component builds after; assembly
 and fuzz gate before submission. This slots into the validated plan as the
 Sat-morning P0 item, unchanged in the timeline.
+
+## How Python stays implementable in .man (the restricted subset)
+
+"Prototype in Python, implement in .man" fails if the prototype uses
+Python's freedoms — unlimited locals, random access, call stacks. So the
+method uses **two Python layers with different obligations**:
+
+1. **Contract layer** (the seven components with queues): only boundaries
+   must be faithful — token streams, blocking recv/send, no peeking.
+   Internals are arbitrary Python; their job is to pin *what*, not *how*.
+2. **Implementation model** per component: written in a restricted subset
+   that maps one-to-one onto machine capability. This is the layer that
+   answers "can this be built."
+
+The restricted subset is the machine's own discipline, enforced in Python:
+
+| Rule | Machine reality it mirrors |
+|---|---|
+| State is exactly `A`, `B`, and a write-only counter `bp` | the register file; B written only by `M`/`W`/`/` (proven, `claude_effects.json`) |
+| No other named values — bulk state lives in FIFO rings, consume-and-reappend | pipes are the only memory; random access = full rotation + index compare |
+| Branches only on `sign(A)`, `bp > 0`, `bp & 1` | `X`, `d`/`a`, `x` are the only tests |
+| Loops only as counted `bp` countdowns or sentinel-terminated streams | the two loop idioms we have |
+| One arithmetic step = one machine op, with its quirks (`/` yields quot+rem, `%` takes B's sign, shifts clamp) | the opcode table |
+| Ports: blocking `recv`/`send` in program order, nothing else | `r`/`s`; `q`/`R`/`U` quarantined |
+
+Concretely this is a ~15-line embedded DSL: a class whose methods are the
+opcodes (`.M() .W() .add() .div() .recv(port) .send(port) .b() .m()
+.branch_sign()`), holding `A`/`B` as its only data. You *cannot* hold a
+third live value, because there is nothing to bind it to — the
+impossibility is structural, not reviewed. A model written this way is a
+glyph sequence by construction: transcription to a room is one glyph per
+call, and the remaining work is purely geometric (layout, turns, literal
+placement).
+
+This is not speculative — it is how `memory_04` was actually built. The
+write-formula candidates were eliminated *in the model* because they
+needed three live values; the surviving mask/or form fits A+B; the HEAD
+row `>@Mrsr-M`34`W%s…` reads as a 1:1 transcript of its model calls. The
+funnel caught infeasibility before any ASCII existed.
+
+Checks that catch "unimplementable" early, in order of bite:
+
+1. **Register pressure**: at every model step, live values ⊆ {A, B, bp}.
+   The DSL makes violations impossible to write; for hand-written models,
+   `toolchain-plan` Level 3 (symbolic tracker, fed by `claude_effects.json`)
+   automates the audit.
+2. **Branch shape**: every conditional reduced to sign/parity on permitted
+   registers (comparisons become subtraction + sign — legal precisely
+   because B survives `-`).
+3. **Queue discipline**: every ring pass consumes and re-appends a fixed
+   count (cookbook §5's canonical-order rule), checked by counting.
+
+What the subset deliberately does not model: geometry. Layout cost, pipe
+bindings, literal walk-direction, shared-cell tricks all appear only at
+transcription, and are guarded there by the existing assembly gates
+(resolution map, DRC, preflight) plus the boundary-trace equality test.
+A model can therefore be implementable but *expensive* — the budget
+arithmetic above is what makes that acceptable for LLM (70x margin).
+
+Under contest-first, transcription stays manual (proven fast: the memory
+station took hours) and `toolchain-plan` Level 1 (block-graph -> room
+assembler) stays post-contest. The subset is what makes manual
+transcription mechanical enough to be boring — which is the point.
