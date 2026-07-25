@@ -62,11 +62,12 @@ from .sim import Machine
 #       machine matches the model exactly through init (ring seeded, BP
 #       16->0), the prologue (seq=0, d=0), the X into the d==0 arm (BP=15)
 #       and the -1 marker injection. It then spins forever in the rotate
-#       loop, BP pinned, because the body had no `m`. FIXED: the loop moved
-#       to rows 23-24 (the only run of five free cells) and its body is now
-#       `^ m s r <`.
-#       Still failing: a packet does not complete. Trace next from the
-#       rotate exit at (23,7) through the discard and the insert.
+#       Three faults found and fixed (see build_wip's docstring). Verified
+#       by trace: init seeds the ring, the prologue computes d, the branch
+#       picks BP, the marker is injected, the rotate loop counts down, the
+#       discard fires, `val` is read and inserted. Still hits the tick cap
+#       somewhere after the insert -- trace next from (20,13) onward through
+#       the lap loop and into the drain.
 #
 #       Worth adding: a walk checker that runs the man and flags every cell
 #       he executes that belongs to a different phase. Grid only guards
@@ -202,43 +203,46 @@ class Grid:
 def build_wip() -> str:
     """All ten nodes placed. Builds and parses; still hits the tick cap.
 
-    History of faults found and fixed here, each by one trace:
+    Faults found and fixed here, one trace each:
       1. init descended col 9 and stepped on the prologue's ']' (BP 16->8)
-         and the drain's 's' -- fixed by giving the pump two spare columns
-         and descending col 17, which no phase owns.
+         and on the drain's 's'. Fixed: two spare columns, descend col 17.
       2. the rotate loop body was `^ s r <`, no decrement, so it spun with
-         BP pinned -- fixed by moving the loop to rows 23-24, the only place
-         with five free cells in a row, and writing the body as `^ m s r <`.
-    Still failing: a packet does not complete. Next trace should start from
-    the rotate loop's exit at (23,7) and follow the discard and insert.
+         BP pinned. Fixed: moved to rows 23-24 (the only run of five free
+         cells) with the body `^ m s r <`.
+      3. the path from the insert to the lap entry ran along row 21 and
+         stepped on (21,12), the lap loop's own exit, which threw the man
+         north into the branch tail. Fixed: that path now uses row 20 and
+         the lap exit climbs col 12 to row 14, then west into the drain.
+
+    Faults 1 and 3 are the same shape: a WALK crossing a cell another phase
+    owns. Grid guards placement, not routing — a walk checker is still the
+    missing tool.
+
+    Cells are placed by explicit coordinate on purpose. Three of the bugs
+    in this build were off-by-one space counts inside padded strings.
     """
     g = Grid()
-    # init: read n and drop it, A=0, BP=16, seed the ring with 16 zeros.
-    # The descent uses col 17 because no phase occupies it -- the prologue
-    # fills row 3 across cols 2-11 and the drain fills row 16.
-    g.put(1, 1, "@r`16`b0"); g.put(1, 17, "v")
-    g.put(19, 17, "<"); g.put(19, 3, "v")
-    g.put(20, 3, ">   d"); g.put(21, 3, "^ ms<"); g.put(20, 8, "^")
-    g.put(2, 8, "<"); g.put(2, 2, "v")
-    # packet prologue and the three arms
-    g.put(3, 2, ">r-b]]]]dX"); g.col(3, 12, "v`15`b<")
-    g.col(4, 11, "bm"); g.put(9, 11, "v")
-    g.col(4, 10, "1N<"); g.put(6, 2, "Hs")
-    g.col(10, 11, "1Ns")                    # inject the -1 marker
-    # marker done -> west along row 18 -> down col 2 -> rotate loop
-    g.col(13, 11, "     <"); g.put(18, 2, "v"); g.col(19, 2, "    >")
-    g.put(23, 3, "   d")                    # rotate test
-    g.put(24, 2, "^msr<")                   # body: the `m` is what was missing
-    g.put(23, 7, "v"); g.put(24, 7, ">"); g.put(24, 16, "^")
-    g.put(17, 16, "r")                      # discard the empty slot
-    # val: up col 16 into the input zone, back down col 14 to the insert
-    g.put(2, 15, "r"); g.put(2, 16, "<"); g.put(2, 14, "v")
-    g.col(13, 14, "s<"); g.put(14, 13, "v")
-    g.put(21, 13, "<"); g.put(21, 10, "v")
-    # lap on until the marker returns
-    g.put(22, 10, ">rX v"); g.put(23, 10, "^s<<"); g.put(21, 12, "^")
-    # drain: rows 15-17 are the only band that reads RING and writes OUTPUT
-    g.put(15, 2, ">rX>s^"); g.put(16, 4, "s1+M0s")
-    g.put(16, 10, "v"); g.put(17, 10, "<"); g.put(17, 2, "^")
-    g.put(4, 7, "<"); g.put(4, 2, "^")
+    at = g.put
+    # init: read n, A=0, BP=16, seed the ring. Descends col 17 because no
+    # phase owns it (the prologue fills row 3, the drain fills row 16).
+    at(1, 1, "@r`16`b0"); at(1, 17, "v"); at(19, 17, "<"); at(19, 3, "v")
+    at(20, 3, ">   d"); at(21, 3, "^ ms<"); at(20, 8, "^")
+    at(2, 8, "<"); at(2, 2, "v")
+    # prologue and the three arms
+    at(3, 2, ">r-b]]]]dX"); g.col(3, 12, "v`15`b<")
+    g.col(4, 11, "bm"); at(9, 11, "v"); g.col(4, 10, "1N<"); at(6, 2, "Hs")
+    g.col(10, 11, "1Ns")                       # inject the -1 marker
+    at(18, 11, "<"); at(18, 2, "v"); at(23, 2, ">")
+    at(23, 6, "d"); at(24, 2, "^msr<")          # rotate loop, with its `m`
+    at(23, 7, "v"); at(24, 7, ">"); at(24, 16, "^"); at(17, 16, "r")
+    # val: up col 16 to the input zone, back down col 14 to the insert
+    at(2, 15, "r"); at(2, 16, "<"); at(2, 14, "v")
+    at(13, 14, "s"); at(14, 14, "<"); at(14, 13, "v")
+    at(20, 13, "<"); at(20, 10, "v")            # row 20, clear of the lap exit
+    at(22, 10, ">rX v"); at(23, 10, "^s<<"); at(21, 12, "^")
+    at(14, 12, "<"); at(14, 2, "v")             # lap exit -> row 14 -> drain
+    # drain: rows 15-17 are the only band reading RING and writing OUTPUT
+    at(15, 2, ">rX>s^"); at(16, 4, "s1+M0s")
+    at(16, 10, "v"); at(17, 10, "<"); at(17, 2, "^")
+    at(4, 7, "<"); at(4, 2, "^")
     return build_skeleton(g.rows())
