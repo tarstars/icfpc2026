@@ -182,3 +182,66 @@ Under contest-first, transcription stays manual (proven fast: the memory
 station took hours) and `toolchain-plan` Level 1 (block-graph -> room
 assembler) stays post-contest. The subset is what makes manual
 transcription mechanical enough to be boring — which is the point.
+
+## Branching in the DSL: three selectors, no general `if`
+
+The machine has exactly three tests, so the DSL has exactly three branch
+constructs and refuses to invent a fourth:
+
+| Construct | Machine op | Arms |
+|---|---|---|
+| `branch_sign()` | `X` on sign(A) | negative / zero / positive (three-way) |
+| `branch_bp()` | `d` / `a` on BP > 0 | taken / straight |
+| `branch_parity()` | `x` on BP low bit | odd / even (always turns) |
+
+There is deliberately **no `if_(a < b)`**: a comparison must be
+materialized the way the machine does it — `sub()` then `branch_sign()` —
+so its true cost is visible in the model. If an arm still needs the value
+the comparison destroyed, the model is forced to duplicate it upstream or
+re-derive it, which is precisely the register-pressure decision that kills
+or shapes designs (`memory_04`'s write formula was chosen this way).
+
+Rules that keep arms honest:
+
+1. **Arms re-converge or terminate.** An arm ends in a join, an `H`, a
+   park-on-`r`, or `unreachable(reason)` — the last transcribes to an
+   *unrouted corridor*, so violating the stated invariant crashes into a
+   wall: the model's assertion and the machine's are the same assertion.
+2. **Join invariants are declared.** Every join states what A/B/BP mean on
+   arrival (`join(A="dead", B="mask")`); both arms are checked against it
+   dynamically on every trace (statically later, via the Level-3 tracker).
+3. **Arm coverage is measured.** The DSL counts arm hits per branch across
+   the trace corpus: every routed arm must be exercised, and an
+   `unreachable` arm hit even once fails the model before any ASCII
+   exists.
+
+Worked example — the packed-memory P2 dispatch (tag parked in BP so one
+`d` branches an otherwise straight-line room):
+
+```python
+lm.recv("in"); lm.send("out")            # tag through
+lm.b()                                    # BP := tag (0=READ, 1=WRITE)
+lm.recv("in"); lm.send("out")            # k through
+with lm.branch_bp() as (write_arm, read_arm):
+    with read_arm:                        # BP == 0: straight on
+        lm.recv("in"); lm.M(); lm.lit(43); lm.sub(); lm.send("out")
+        lm.recv("in"); lm.recv("in")      # drop x and trailing shift
+    with write_arm:                       # BP > 0: turned
+        ...
+# transcribes to memory_04's actual P2 header row: >@rsbrsd ...
+```
+
+Geometry mapping is a small pattern library, one per construct: the
+X-fork with the cookbook's standard merge, the X with an unrouted
+assertion arm, the `d`-at-corner conditional turn (loops own their `d`
+via the loop constructs), and the `x` parity fork. Nesting is legal but
+each fork pays a corridor and a merge, so idiomatic code flattens into
+dispatch ladders — and the strongest idiom is **branch elimination by
+encoding**: memory's `-(k+1)` involution let one instruction path serve
+both READ and WRITE because the *data* carried the case. In the DSL that
+is just straight-line code over sign-encoded values, which is why the
+encoding layer, not the branch layer, is where the best designs win.
+
+Honest note: as an interpreter the DSL executes only the taken arm per
+run; whole-branch confidence comes from corpus coverage (rule 3) plus the
+join checks, with the symbolic tracker as the later static upgrade.
