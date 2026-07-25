@@ -171,3 +171,55 @@ this class of change risks.
 Not chosen: `gradebook_02` (386x423) and `matmul_02` (183x180) are
 already near-square, so balancing buys little; `subset-sum` is near-square
 and enormous. Presses are worth spending on lopsided boxes only.
+
+### 2026-07-26T00:40Z — sudoku shipped; the scoring math redirected the night
+
+**Sudoku press is live: 25,480,732,026 -> 16,126,208,644 (1.58x)**, 20/20
+on the server, 184x248 -> 198x194. Placement and routing only; rooms and
+all 24 ring pipes lifted byte-identical, 0 pipe-role diffs across 115
+`s`/`r`/`R`/`S` cells. Submission `2cb69f52-ecb2-4e9d-8e84-8dfff0d48b20`.
+
+**A wrong turn, recorded because the lesson is reusable.** Six graded-
+looking problems had no submission, so I read them as unclaimed points,
+built `hello-world` (13x13, 68 ticks, 1/1 public, first try) and started
+agents on `atoi` and `palette`. The server then answered:
+
+    403 forbidden: This is an ungraded practice problem; it does not accept submissions
+
+`atoi`, `hello-world`, `max-element` and `palette` are the
+`Practice Problems (Ungraded)` set. Both agents were stopped. **Check
+`status` in the `problems` listing before starting any problem** — the
+slug and the problem-set name give no hint, and nothing local does either.
+
+That forced the scoring question, worked out in `claude_20`:
+
+- 2 points per graded problem = `cases_passed/cases_total` + a rank
+  fraction. The raw score enters ONLY through the rank half.
+- All twelve problems we submit already pass **100% of cases**, so on
+  those only rank fractions remain — which is what a press buys.
+- Never scored: **pathfinder** (Codex's), **LLM**, **LLLM** — ~6 points.
+- All three have **`privateTestCount: 0`**: eligibility costs ONE passing
+  public case. Partial credit is per test case, not per round.
+- Subset Sum's 91.8 trillion is a trap: worth one point like everything
+  else, and we already pass 20/20.
+
+**The finding that retargets the night:** LLLM is a strict subset of LLM
+(single room, no pipes, no `s`/`r`), and **LLLM's `first steps` program is
+byte-identical to LLM's `first steps`** — the only one of LLM's 14 cases
+needing no pipes. One machine handling that single 4x4 program
+
+    +--+
+    |@v|      3 ticks: nop east, `v` heads south, `H` halts.
+    | H|      No arithmetic, no X, no wall collision, no second man.
+    +--+
+
+scores on **two** problems we currently score zero on. STEP was retargeted
+from "six arms" to "make `first steps` pass end to end", and a second
+agent is building the assembly harness in parallel so the artifact is
+ready to submit the minute STEP dispatches a heading.
+
+Also fixed: three submission records (`snake_01` and two memory Y probes)
+had `submission status:` lines ahead of their JSON, so every tool reading
+them silently skipped the record. snake_01 has been live all along at
+17/17, 153x154, **1,576,985,655**. Redirect stderr separately when
+submitting.
