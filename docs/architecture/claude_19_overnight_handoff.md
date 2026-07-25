@@ -96,3 +96,130 @@ deliberately constructed maximal-growth game (serpentine fruit
 placement, 99 rounds, **48-cell snake**) passes on both artifacts —
 that is the test that actually justified the change, and it is now in
 the record rather than the builder's argument.
+
+### 2026-07-25T19:55Z — queue item 1 mostly done
+
+- **CLASSIFY** complete: 185x86, 59 tests. Its load-bearing acceptance —
+  `classify(scan(t)) == lllm_loader.reference_stream(t)` — was SKIPPING
+  because Codex's oracle lived only on `origin/agent/codex-lllm-loader`.
+  Imported it; the assertion now really runs: **50/50** over 10 public +
+  40 fuzz worlds. Lesson: a test that can skip its own premise is not a
+  gate. 130 tests green across scan+classify+loader.
+- **SCAN** landed (17 KB module + tests).
+- **STEP is the last blocker**: setup and round 1 are transcribed and
+  rig-verified byte-exact against the real FETCH (69 tests), but the
+  per-tick interpreter is NOT. Resumed with its own handoff data
+  (`_step_main_plan()` + the `Tape` layout tool) and a prioritised arm
+  order, so a subset-capable machine can still be assembled if the full
+  9-way dispatch does not fit the night.
+
+### 2026-07-25T20:15Z — SCAN done; LOADER split validated end to end
+
+SCAN: 306x82, 58 tests, prologue 1065 ticks (size-independent). Design
+avoids per-cell coordinate tests entirely: state rides a 5-slot scratch
+ring `[ADDR, MAN, W, NPAD, RC]` and each row is four COUNTED segments
+driven by BP countdowns derived from W, so B stays free for constant
+folds.
+
+**The split is vindicated**: Codex's monolith was 723x8134; the two
+halves are 306x82 and 185x86. Same frozen interface, ~26x less height.
+
+**New press target (post-assembly)**: SCAN's 306 rows and CLASSIFY's 185
+will dominate the assembled box. Assembly first — LLLM scores zero
+today and correctness beats footprint — but a geometry press on these
+two is the obvious next win, exactly as snake_01 (5.6x) was.
+
+### 2026-07-25T20:50Z — STEP task moved, not re-prompted; two presses opened
+
+STEP's builder reported at its deadline: **"NO ARMS ARE LIVE."** The tick
+skeleton is placed (halt check, op fetch, class decode) but the man never
+reaches the class staircase stub, so nothing past round 1 executes. Round
+1 itself stays byte-exact vs `StepModel` on 10 public + 30 fuzz; 70 tests
+green; bindings satisfied at margin >=2. Committed as-is.
+
+That was the same agent's fourth attempt (338k tokens, two 64k
+truncations). Per `claude_14`'s two-failure rule the TASK moves rather
+than the prompt, so STEP restarted on a fresh clock carrying the previous
+agent's own continuation notes — `_step_main_plan()`, the `Tape` helper,
+and the one constraint that cost it hours:
+
+> **Row 11 is exactly the REQ/DRAW Voronoi midpoint (margin 0).** The
+> fetch band sits on row 10 for that reason and must not move back.
+
+Its standing instruction is to land staircase -> move -> kcount -> emit
+-> arms **one at a time, each byte-exact before the next**, and to report
+as soon as N arms are live. A machine interpreting a correct subset and
+halting cleanly on the rest scores; a half-finished sixth arm does not.
+
+**Reallocation.** With LLLM uncertain and ~9h left, capacity went to the
+proven recipe instead of a second uncertain build. Tonight's Snake press
+returned **5.6x** for about an agent-hour, purely from balancing a
+lopsided bounding box, and two live artifacts have the same shape:
+
+| artifact | box | footprint | live score | max dim set by |
+|---|---|---|---|---|
+| `plotter_04` | 113 x 326 | 106,276 | 9,367,793,668 | height, 2.9x the width |
+| `sudoku_02` | 184 x 248 | 61,504 | 25,480,732,026 | height |
+
+Balancing alone predicts ~2.6x on Plotter and ~1.34x on Sudoku, before
+any tick gain from shorter pipes. Both presses are forbidden from
+touching the live generator or room internals — placement and routing
+only — and both must clear a binding audit showing **0 role diffs**
+against the live artifact, because a silent re-binding is exactly what
+this class of change risks.
+
+Not chosen: `gradebook_02` (386x423) and `matmul_02` (183x180) are
+already near-square, so balancing buys little; `subset-sum` is near-square
+and enormous. Presses are worth spending on lopsided boxes only.
+
+### 2026-07-26T00:40Z — sudoku shipped; the scoring math redirected the night
+
+**Sudoku press is live: 25,480,732,026 -> 16,126,208,644 (1.58x)**, 20/20
+on the server, 184x248 -> 198x194. Placement and routing only; rooms and
+all 24 ring pipes lifted byte-identical, 0 pipe-role diffs across 115
+`s`/`r`/`R`/`S` cells. Submission `2cb69f52-ecb2-4e9d-8e84-8dfff0d48b20`.
+
+**A wrong turn, recorded because the lesson is reusable.** Six graded-
+looking problems had no submission, so I read them as unclaimed points,
+built `hello-world` (13x13, 68 ticks, 1/1 public, first try) and started
+agents on `atoi` and `palette`. The server then answered:
+
+    403 forbidden: This is an ungraded practice problem; it does not accept submissions
+
+`atoi`, `hello-world`, `max-element` and `palette` are the
+`Practice Problems (Ungraded)` set. Both agents were stopped. **Check
+`status` in the `problems` listing before starting any problem** — the
+slug and the problem-set name give no hint, and nothing local does either.
+
+That forced the scoring question, worked out in `claude_20`:
+
+- 2 points per graded problem = `cases_passed/cases_total` + a rank
+  fraction. The raw score enters ONLY through the rank half.
+- All twelve problems we submit already pass **100% of cases**, so on
+  those only rank fractions remain — which is what a press buys.
+- Never scored: **pathfinder** (Codex's), **LLM**, **LLLM** — ~6 points.
+- All three have **`privateTestCount: 0`**: eligibility costs ONE passing
+  public case. Partial credit is per test case, not per round.
+- Subset Sum's 91.8 trillion is a trap: worth one point like everything
+  else, and we already pass 20/20.
+
+**The finding that retargets the night:** LLLM is a strict subset of LLM
+(single room, no pipes, no `s`/`r`), and **LLLM's `first steps` program is
+byte-identical to LLM's `first steps`** — the only one of LLM's 14 cases
+needing no pipes. One machine handling that single 4x4 program
+
+    +--+
+    |@v|      3 ticks: nop east, `v` heads south, `H` halts.
+    | H|      No arithmetic, no X, no wall collision, no second man.
+    +--+
+
+scores on **two** problems we currently score zero on. STEP was retargeted
+from "six arms" to "make `first steps` pass end to end", and a second
+agent is building the assembly harness in parallel so the artifact is
+ready to submit the minute STEP dispatches a heading.
+
+Also fixed: three submission records (`snake_01` and two memory Y probes)
+had `submission status:` lines ahead of their JSON, so every tool reading
+them silently skipped the record. snake_01 has been live all along at
+17/17, 153x154, **1,576,985,655**. Redirect stderr separately when
+submitting.

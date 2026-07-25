@@ -229,13 +229,356 @@ def test_integration_rig_with_real_fetch():
         )
 
 
-def test_build_step_room_reports_its_blocker():
-    from littleman.lllm_step import build_step_room
+# --------------------------------------------------- phase 2: the STEP room
+from littleman.lllm_step import (  # noqa: E402
+    CLASS_JOIN_COL,
+    CLASS_JOIN_ROW,
+    MOVE_JOIN_COL,
+    MOVE_JOIN_ROW,
+    ROUND_ROW,
+    STEP_AT,
+    STEP_COLS,
+    STEP_ROWS,
+    Tape,
+    build_step_rig,
+    build_step_room,
+)
+from littleman.sim import Machine  # noqa: E402
 
-    if _module("lllm_fetch") is not None:
-        pytest.skip("claude_11a landed: transcription is now unblocked")
-    with pytest.raises(NotImplementedError, match="lllm_fetch"):
-        build_step_room()
+RIG = build_step_rig()
+SR, SC = STEP_AT
+
+
+def intended_port(row, col, op):
+    """The room's three-zone layout rule, stated once and asserted for real.
+
+    Right of SCR_COL is the scratch loop; left of it, the top rows reach
+    FETCH (REQ out / RESP in) and the lower rows reach the outside world
+    (DRAW out / LOADER in).
+    """
+    from littleman.lllm_step import REQ_MAX_ROW, SCR_COL
+
+    if col >= SCR_COL:
+        return "SCR_OUT" if op == "s" else "SCR"
+    if row <= REQ_MAX_ROW:
+        return "REQ" if op == "s" else "RESP"
+    return "DRAW" if op == "s" else "LOAD"
+
+
+def step_bindings():
+    """{(room row, col): (op, port actually reached)} from the engine's map."""
+    from littleman.ir_export import machine_ir
+
+    ir = machine_ir(RIG)
+    out = {}
+    for key, entry in ir["resolution"].items():
+        r, c = (int(v) for v in key.split(","))
+        if not (SR < r < SR + STEP_ROWS + 1 and SC < c < SC + STEP_COLS + 1):
+            continue
+        cells = ir["pipes"][entry["pipe"]]["cells"]
+        end = cells[0] if entry["op"] == "s" else cells[-1]
+        out[(r - SR, c - SC)] = (entry["op"], PORTS[tuple(end)])
+    return out
+PORTS = {
+    (SR + 2, SC - 1): "REQ", (SR + 20, SC - 1): "DRAW", (SR + 21, SC - 1): "LOAD",
+    (SR - 1, SC + 8): "RESP", (SR + 30, SC + 74): "SCR_OUT",
+    (SR + 33, SC + 74): "SCR",
+}
+
+
+def test_rig_layout_gates():
+    from littleman import alexey_pipecheck, server_compat
+
+    machine = Machine.parse(RIG)
+    assert len(machine.rooms) == 6 and len(machine.pipes) == 8
+    assert server_compat.validate_layout(RIG) is None
+    assert alexey_pipecheck.check(RIG) is None
+
+
+def test_rig_is_deterministic():
+    assert build_step_rig() == RIG
+    assert build_step_room().render() == build_step_room().render()
+
+
+def test_binding_audit_is_engine_true():
+    """Every s/r resolves to its zone's port (ir_export map, no hand math)."""
+    bound = step_bindings()
+    assert len(bound) >= 11
+    wrong = {
+        cell: got
+        for cell, (op, got) in bound.items()
+        if got != intended_port(cell[0], cell[1], op)
+    }
+    assert wrong == {}
+
+
+def test_binding_margins():
+    """room_ports margin: how far a port may slide before a binding flips."""
+    from littleman.room_ports import Op, audit
+
+    machine = Machine.parse(RIG)
+    step = next(r for r in machine.rooms if (r.top, r.left) == (SR, SC))
+    ops = [
+        Op((SR + r, SC + c), port, port in ("REQ", "DRAW", "SCR_OUT"))
+        for (r, c), (_, port) in step_bindings().items()
+    ]
+    report = audit(machine, step, ops)
+    assert report["satisfied"]
+    assert report["margin"] >= 2, report["margin"]
+
+
+@pytest.mark.parametrize("case", CASES, ids=[c["name"] for c in CASES])
+def test_rig_round_one_matches_model(case):
+    """The real FETCH station drives the room to a byte-exact first frame."""
+    rows = rows_of(case)
+    res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
+    assert res.output == run_case(rows, []).deltas
+
+
+def test_rig_round_one_matches_model_on_fuzz():
+    bad = [
+        i for i, case in enumerate(FUZZ[:30])
+        if Machine.parse(RIG).run(
+            max_ticks=300_000, inputs=loader_stream(rows_of(case))
+        ).output != run_case(rows_of(case), []).deltas
+    ]
+    assert bad == []
+
+
+@pytest.mark.parametrize("case", CASES, ids=[c["name"] for c in CASES])
+def test_physical_step_matches_all_public_rounds(case):
+    """The composed STEP+FETCH rig is byte-exact for every public round."""
+    rows, ks, _ = case_rounds(case)
+    res = Machine.parse(RIG).run(
+        max_ticks=500_000, inputs=loader_stream(rows) + ks
+    )
+    assert res.output == run_case(rows, ks).deltas
+
+
+def test_no_later_input_parks_after_round_one():
+    """Without a k token, STEP parks at the later-round input as intended."""
+    rows = rows_of(CASES[1])
+    res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
+    assert len(res.output) == 258 and res.output[-1] == -1
+
+
+def test_space_move_countdown_emit_and_reenter_round_input():
+    """A k=1 space tick emits its delta and waits for the next round."""
+    rows = rows_of(CASES[1])
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=100_000, inputs=loader_stream(rows) + [1]
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, [1]).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert machine.grid[man.r][man.c] == "r"
+    assert man.blocked
+    assert not man.halted
+    scratch = next(
+        p for p in machine.pipes
+        if p.dest is man.room and len(p.cells) == 17
+    )
+    travelling = [v for v in scratch.values if v is not None]
+    assert list(reversed(travelling)) == [1, 18, 0, 0, 17, 0]
+    for row, col in ((10, 60), (11, 60), (11, 65)):
+        assert machine.grid[SR + row][SC + col] == " "
+
+
+def test_positive_countdown_loops_then_emits_and_reenters():
+    """k=2 loops once, executes the ``v`` arm, and completes the round."""
+    rows = rows_of(CASES[1])
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=300_000, inputs=loader_stream(rows) + [2]
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, [2]).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert machine.grid[man.r][man.c] == "r"
+    assert man.blocked
+    assert not man.halted
+    scratch = next(
+        p for p in machine.pipes
+        if p.dest is man.room and len(p.cells) == 17
+    )
+    travelling = [v for v in scratch.values if v is not None]
+    assert list(reversed(travelling)) == [2, 34, 0, 0, 17, 0]
+
+
+def test_space_program_reenters_for_multiple_rounds():
+    """The physical STEP room consumes consecutive later-round tokens."""
+    rows = rows_of(CASES[1])
+    ks = [1, 2, 1]
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=1_000_000, inputs=loader_stream(rows) + ks
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, ks).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert machine.grid[man.r][man.c] == "r"
+    assert man.blocked
+
+
+@pytest.mark.parametrize(
+    "rows", [X_ZERO, X_POS, X_NEG], ids=["zero", "positive", "negative"]
+)
+def test_physical_branch_arms_match_reference(rows):
+    """Native X selects all three physical arms and rejoins the round loop."""
+    ks = [6, 6]
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=1_000_000, inputs=loader_stream(rows) + ks
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, ks).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert man.blocked
+
+
+@pytest.mark.parametrize(
+    ("cls", "value", "expected"),
+    [
+        (0, 0, [1, 17, 7, 5, 17, 1]),
+        (1, 0, [5, 17, 7, 5, 17, 1]),
+        (2, 3, [3, 17, 7, 5, 17, 1]),
+        (3, 3, [1, 17, 7, 3, 17, 1]),
+        (4, 0, [1, 17, 5, 5, 17, 1]),
+        (5, 0, [1, 17, 7, 12, 17, 1]),
+        (6, 0, [1, 17, 7, -2, 17, 1]),
+        (8, 0, [5, 17, 7, 5, 17, 1]),
+    ],
+)
+def test_straight_class_tapes_restore_canonical_ring(cls, value, expected):
+    from littleman.lllm_step import _class_tokens
+    from littleman.sim import wrap64
+
+    # FETCH has rotated canonical CTRL-headed order twice, so class arms
+    # enter with BI at the physical head.
+    queue = [7, 5, 17, 1, 1, 17]
+    A, B = 0, value
+    for op in _class_tokens(cls):
+        if op == "r":
+            A = queue.pop(0)
+        elif op == "s":
+            queue.append(A)
+        elif op == "M":
+            B = A
+        elif op == "W":
+            A, B = B, A
+        elif op == "+":
+            A = wrap64(A + B)
+        elif op == "-":
+            A = wrap64(A - B)
+        elif op.isdigit():
+            A = int(op)
+        else:
+            raise AssertionError(op)
+    assert queue == expected
+
+
+@pytest.mark.parametrize(
+    ("delta", "expected_ctrl"), [(1, 2), (3, 0)]
+)
+def test_branch_update_tapes_restore_canonical_ring(delta, expected_ctrl):
+    from littleman.lllm_step import _branch_update_tokens
+    from littleman.sim import wrap64
+
+    queue = [1, 17, 7, 5, 17, 1]  # physical head CTRL
+    A = B = 0
+    for op in _branch_update_tokens(delta):
+        if op == "r":
+            A = queue.pop(0)
+        elif op == "s":
+            queue.append(A)
+        elif op == "M":
+            B = A
+        elif op == "W":
+            A, B = B, A
+        elif op == "+":
+            A = wrap64(A + B)
+        elif op == "%":
+            A = 0 if B == 0 else wrap64(A % B)
+        elif op.isdigit():
+            A = int(op)
+        else:
+            raise AssertionError(op)
+    assert queue == [expected_ctrl, 17, 7, 5, 17, 1]
+
+
+@pytest.mark.parametrize(
+    ("heading", "expected_addr"),
+    [(0, 1), (1, 18), (2, 33), (3, 16)],
+)
+def test_move_tapes_restore_canonical_ring(heading, expected_addr):
+    from littleman.lllm_step import _move_tokens
+    from littleman.sim import wrap64
+
+    queue = [17, 7, 5, 17, 1, heading]  # physical head ADDR
+    A = B = 0
+    for op in _move_tokens(heading):
+        if op == "r":
+            A = queue.pop(0)
+        elif op == "s":
+            queue.append(A)
+        elif op == "M":
+            B = A
+        elif op == "N":
+            A = wrap64(-A)
+        elif op == "+":
+            A = wrap64(A + B)
+        elif op.startswith("#"):
+            A = int(op[1:])
+        elif op.isdigit():
+            A = int(op)
+        else:
+            raise AssertionError(op)
+    assert queue == [heading, expected_addr, 7, 5, 17, 1]
+
+
+def test_round_loop_tapes_place_without_collision():
+    """The seed and round-in choreography is independently placeable."""
+    from littleman.lllm_fetch import Room
+    from littleman.lllm_step import STEP_COLS, STEP_ROWS, _step_seed
+
+    room = Room(STEP_ROWS, STEP_COLS)
+    room.put(23, 3, ">")
+    _step_seed(room)
+    grid = room.render()
+    assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads
+    assert "X" in "".join(grid)                               # branch fork
+
+
+def test_tape_rejects_non_descending_exit():
+    from littleman.lllm_fetch import Room
+
+    tape = Tape(Room(4, 12), 2, 5, 5, 11).emit("M")
+    with pytest.raises(ValueError, match="cannot descend"):
+        tape.down_at(10, 2)
+
+
+def test_tape_snakes_and_reverses_literals():
+    from littleman.lllm_fetch import Room
+
+    room = Room(4, 12)
+    Tape(room, 1, 5, 5, 11).emit("M", "#256", "+", "#16", "s")
+    grid = room.render()
+    assert "`256`" in grid[1]                    # left-to-right lap
+    assert "`61`" in grid[2]                     # digits reversed walking west
+    assert "v" in grid[1] and "<" in grid[2]     # the lap turned at the edge
 
 
 def test_class_table_is_the_frozen_one():
