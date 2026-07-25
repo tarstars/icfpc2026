@@ -64,7 +64,11 @@ solutions.
   91,769,596,778,389.8.
 - Reworked simulator pipe shifting and scheduling around active pipes,
   run-indexed occupancy, blocked-worker wakeups, cached nearest ports, and a
-  persistent room occupancy map. The full 127-test suite passes.
+  persistent room occupancy map. The full 137-test suite passes.
+- Parameterized Grade Book worker spacing, command clearances, compiler right
+  padding, and vertical bands while preserving `gradebook_00` exactly. The
+  454×450 `gradebook_01` improves local score 16.00% and passed all 20 live
+  cases at server score 104,303,579,599.6, a 15.97% live improvement.
 
 ## Blockers
 
@@ -72,8 +76,6 @@ solutions.
 
 ## Next steps
 
-1. Optimize Grade Book geometry and control routing against the preserved
-   `gradebook_00` baseline.
-2. Evaluate compact geometry or faster protocols for other preserved
+1. Evaluate compact geometry or faster protocols for other preserved
    footprint-tick baselines.
-3. Support Claude with live problem retrieval, submission, and result polling.
+2. Support Claude with live problem retrieval, submission, and result polling.
