@@ -25,7 +25,10 @@ provisional until promoted into neutral decision records.
    (validated decision: pay by Sunday noon).
 7. `claude_06_tool_registry.md` — the tool registry: status by evidence,
    not effort; seeded table; mandatory-on semantics; demotion path.
-8. `claude_effects.json` — generated opcode effects table (see
+8. `claude_07_llm_attack.md` — the user's factory-as-decomposition applied
+   to the LLM problem: seven-component netlist, boundary-trace contracts,
+   budget arithmetic, revised feasibility.
+9. `claude_effects.json` — generated opcode effects table (see
    `scripts/gen_effects.py`); the first falsifiable artifact of the set.
 
 ## Method note

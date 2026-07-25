@@ -54,6 +54,13 @@ writing the second thousand lines of Rust.
 
 ### 3. "A components factory which optimizes components" is the weakest expected-ROI bullet of the six
 
+> **Correction (2026-07-25T14:2xZ):** the user clarified the intended
+> meaning — not room superoptimization but *contract-first decomposition
+> to attack infeasible problems, with composition and implementation as
+> parallel streams*. That reading is endorsed and applied to the LLM
+> problem in `claude_07_llm_attack.md`; the demotion below stands only
+> for the superoptimizer reading.
+
 The record of this contest: the big wins were *representation and
 architecture changes* — 3-per-word packing (3.78x local, 3.15x live), the
 single-station ring rebuild, protocol redesigns in TCP (3.35x lineage). The
