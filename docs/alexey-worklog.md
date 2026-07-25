@@ -437,3 +437,55 @@ Also this session's plumbing lessons, now paid for twice: a pipe's first
 arrowhead must back onto the source wall (a west-pointing start cannot
 leave a bottom wall), and a route drawn over another room's wall column
 mints a phantom pipe from that wall.
+
+## 2026-07-25 — tcp_02: deleting the marker. 20.0M → 8.55M (2.34x)
+
+**Live 20/20, score 8,554,029** (submission 12a6926b), after 6/6 public
+and 46/46 boundary stress. First tcp result from this line that beats
+tcp_00, and by a wide margin.
+
+The profile of tcp_01 said where to dig: the realign was 46% of ring ops
+and 28% of ticks, and the pump walked 16.5 cells per ring op against a
+5-cell loop body. Both had the same root cause — the resident marker.
+Every emitted value displaces the marker by one, so the marker has to be
+put back, and putting it back costs a lap.
+
+**The marker is unnecessary.** Slot w0 is *always* empty at packet start,
+because every packet drains to completion. So don't store it. The ring
+holds w1..w15 — 15 values, no sentinel:
+
+- `d >= 1`: rotate d−1, pop the stale slot, push val, relay 15−d. Exactly
+  16 ops, constant, and no drain at all: an off-head insert cannot fill w0.
+- `d == 0`: emit val straight to the forwarder, then pop-and-emit while
+  the head is positive. The forwarder's 0 refill lands at the tail, which
+  is exactly where the freed window slot belongs — the invariant restores
+  itself with no fixup. **An in-order packet costs two ring ops** (v2: ~36).
+
+The two loop counts used to need a second register nobody had. Fixed in
+the splitter, not the pump: it sends `seq` **and** `15−seq`, so with exp
+in B the pump gets d from one `-` and 15−d from one `+`.
+
+Measured: 1075 ring ops over the public cases vs 3204 (2.98x); forwarder
+fast path 8 cells vs 28; footprint 1849 vs 3844; avgTicks 4626 vs 13722.
+
+Three debug rounds, one lesson each:
+1. A counted relay loop needs `m` inside it. `d` only *tests* the
+   backpack, it does not decrement — a loop without `m` spins forever.
+   The seed loop had one and terminated, which is why only the rotate and
+   relay loops hung.
+2. RIN must be able to park the whole ring (≥16 cells). When the pump
+   idles between packets the forwarder keeps pushing; a 5-cell RIN
+   blocked it, and the tag still queued behind those values was never
+   decoded. Deadlock with the machine otherwise perfectly correct.
+3. Mirroring a room vertically must swap `v`↔`^` — and is only safe when
+   the room contains no handed op (`X`, `d`, `a`, `x`), since a mirror
+   flips clockwise into counter-clockwise.
+
+Layout trick worth reusing: **put every incoming pipe on the same wall.**
+Then the row term in the Manhattan distance is identical for all of them
+and the zone is decided purely by column — so a read cell's pipe no
+longer depends on how deep in the room it sits. That is what made the
+pump's nine `r` cells resolve correctly on the first audit.
+
+Remaining headroom: width 43 binds the footprint while height is only 38;
+repacking to width 38 gives fp 1444 (−22%).

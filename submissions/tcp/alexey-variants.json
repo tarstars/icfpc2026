@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "note": "Alexey research line. tcp_01 proves the tag-through-ring architecture end to end on the server but scores WORSE than tcp_00 (52.7M vs 20.0M); best-submission-counts means the team result is unharmed. Kept as the working base for the tick-reduction pass.",
+ "note": "Alexey research line. tcp_02 (marker-free ring) is the current best at 8,554,029 -- 2.34x better than tcp_00's 20,028,106. tcp_01 proved the tag-through-ring architecture but lost on ticks; kept for the record.",
  "problem": {
   "id": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
   "slug": "tcp",
@@ -8,6 +8,43 @@
   "scoring": "footprint-tick"
  },
  "variants": [
+  {
+   "version": "tcp_02",
+   "label": "marker-free ring, w0 implicit (v3 architecture)",
+   "parent": "tcp_01",
+   "changeType": "algorithm+geometry",
+   "architecture": "Ring holds only w1..w15 (15 values, no sentinel); w0 is implicit because it is always empty at packet start. d>=1: rotate d-1, pop stale, push val, relay 15-d (16 ops, no drain). d==0: emit val directly then pop-and-emit while head>0; the forwarder's 0 refill lands exactly where the freed slot belongs, so the invariant self-restores (2 ops for an in-order packet). Splitter sends seq AND 15-seq so both loop counts come from one `-` and one `+` with exp held in B. Forwarder fast path 8 cells.",
+   "source": {
+    "path": "submissions/tcp/tcp_02.man",
+    "generator": "src/littleman/alexey_tcp_v3.py (reproduces byte-for-byte)",
+    "sha256": "7868665ea88cb9f888b68f1385efa0a717f915f2b6e93b5ab199d60a83c5b0c2",
+    "bytes": 1161,
+    "width": 43,
+    "height": 38,
+    "footprint": 1849
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "stress": "46/46 synthetic incl. n=48, full window, instant loss, fully reversed",
+    "avgTicksLocal": 2798,
+    "ringOpsPublic": 1075,
+    "ringOpsV2": 3204
+   },
+   "liveSubmission": {
+    "id": "12a6926b-0791-416b-bcf7-454cdc89c2b3",
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "width": 43,
+    "height": 38,
+    "area2": 1849,
+    "avgTicks": 4626.3,
+    "score": 8554028.7,
+    "fullResponse": "submissions/tcp/alexey-tcp_02-submit.json"
+   },
+   "verdict": "TEAM BEST for tcp. 2.34x better than tcp_00. Remaining headroom: width 43 is the binding dimension (height only 38) -- repacking the splitter/O to width 38 would give fp 1444 (-22%); ticks 4626 still carry a per-packet transit of ~30 cells between the S, V and RIN zones."
+  },
   {
    "version": "tcp_01",
    "label": "offset-addressed window, tag-through-ring (v2 architecture)",
