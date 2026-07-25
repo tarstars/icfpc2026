@@ -2,6 +2,30 @@
  "schemaVersion": 1,
  "variants": [
   {
+   "version": "memory_04",
+   "label": "packed-storage machine (teammate's; recovered from a paste, was not in the repo)",
+   "parent": null,
+   "changeType": "algorithm",
+   "architecture": "Five machine rooms, packed cell storage using 21-bit masks (`2097151`), shifts and `&`/`~` rather than the 100-value FIFO ring of the memory_00..03 line.",
+   "source": {
+    "path": "submissions/memory/memory_04.man",
+    "width": 37,
+    "height": 37,
+    "footprint": 1369,
+    "note": "Committed here because it existed only on the contest server and in chat -- no repo copy."
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "avgTicksLocal": 4159.0,
+    "comparedTo": "memory_03 local: fp 1849, ticks 9760"
+   },
+   "liveSubmission": {
+    "score": "~27,800,000 (reported by the team; submitted outside this line)"
+   },
+   "geometryChecked": "squeeze (rows/cols/both) and per-room edge trim all return it unchanged -- no empty row, column or room edge exists. fp 1369 is a perfect square; both dimensions bind."
+  },
+  {
    "version": "memory_03",
    "label": "top room trimmed, right-edge pipes slid in, bottom room's ports moved to its right wall",
    "parent": "memory_02",
@@ -29,7 +53,7 @@
     "score": 75823407,
     "fullResponse": "submissions/memory/alexey-memory_03-submit.json"
    },
-   "verdict": "TEAM BEST for memory: 87,493,514 -> 75,823,407 (1.15x), footprint 2,116 -> 1,849."
+   "verdict": "SUPERSEDED by memory_04 (~27.8M). This was the pipeline-ring line; the geometry work on it was correct but applied to a baseline already beaten 3x."
   },
   {
    "version": "memory_02",
@@ -48,8 +72,8 @@
     "gain": 1.04,
     "fullResponse": "submissions/memory/alexey-memory_02-submit.json"
    },
-   "verdict": "TEAM BEST for memory: 91,372,248 -> 87,493,514 (1.04x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+   "verdict": "SUPERSEDED by memory_04 (~27.8M). This was the pipeline-ring line; the geometry work on it was correct but applied to a baseline already beaten 3x."
   }
  ],
- "note": "Alexey research line for memory. memory_03 is the current best at 75,823,407 (40x43), down from the 87,493,514 baseline."
+ "note": "CORRECTION 2026-07-25: the real memory baseline is memory_04 at ~27.8M live, a packed-storage machine that is NOT the pipeline-ring line. Everything below it (memory_01/02/03) is that older, weaker line -- my geometry work took memory_01's 91.4M down to 75.8M, but memory_04 was already 3x better. Geometry has nothing to give on memory_04: it is a tight 37x37 square, and squeeze/trim-rooms both return it unchanged (fp 1369, 7/7, ticks 4159)."
 }

@@ -1087,3 +1087,30 @@ padding I had prepared — capacity was not binding here.
 3. After trimming a room, the pipes that were attached grow; sliding their
    long runs into the freed columns makes them shorter than they started and
    takes the bounding box with them.
+
+## CORRECTION: memory's real baseline is ~27.8M, not 87M
+
+A teammate's packed-storage memory machine scores ~27.8M live and **was not
+in the repository** — it existed only on the contest server. Committed now as
+`submissions/memory/memory_04.man`.
+
+    memory_04 (theirs)   37x37   fp 1,369   ticks 4,159 local
+    memory_03 (mine)     40x43   fp 1,849   ticks 9,760 local
+
+So the whole memory thread — 91.4M -> 87.5M -> 75.8M — was geometry applied
+to the pipeline-ring line, which had already been beaten threefold by a
+different algorithm. The work was sound and the techniques it produced are
+reusable, but it moved a number that no longer mattered.
+
+**Geometry has nothing to give on memory_04**: squeeze (rows, columns, both)
+and the per-room edge trim all return it byte-identical. It has no empty row,
+no empty column, no trimmable room edge, and it is a perfect 37x37 square, so
+both dimensions bind at once.
+
+Process lesson, and the expensive one: **the public standings lag badly.**
+They still showed 91,372,248 for memory while two better submissions of mine
+were already live, and they still show pre-squeeze numbers for sudoku,
+plotter and gradebook. I had been treating them as current. Before optimising
+anything, confirm the baseline from the submit responses — and ask the team
+what is live but uncommitted, because a machine can be on the server with no
+copy in git at all.
