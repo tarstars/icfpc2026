@@ -10,6 +10,7 @@ normative; this directory contains the synchronization artifacts.
 | `tasks/<task-id>.md` | Work package and exclusive path scope | Declared record owner |
 | `status/<agent-id>.md` | Current agent snapshot | Named agent only |
 | `messages/<sender>/*.md` | Immutable notifications | Sender only |
+| `goals/*.md` | User-activated, time-boxed agent objectives | Integrator |
 | `templates/` | Schemas for tasks, status, messages, and handoffs | Integrator |
 | `peer-prompt.md` | Ready-to-paste onboarding prompt | Integrator |
 
