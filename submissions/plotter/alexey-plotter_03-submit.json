@@ -1,0 +1,18 @@
+{
+  "area2": 148225,
+  "avgTicks": 114065.4,
+  "casesPassed": 20,
+  "casesTotal": 20,
+  "createdAt": "2026-07-25T10:55:47.806Z",
+  "error": null,
+  "height": 385,
+  "id": "0bed64ff-65a4-4084-8373-5e6ffd0898b1",
+  "loadError": null,
+  "output": "Passed 20/20 test cases",
+  "problemId": "0c3e3d4d-2901-45f1-81cf-5704d49c9139",
+  "score": 16907343915,
+  "status": "done",
+  "uberStrictPassed": null,
+  "updatedAt": "2026-07-25T10:56:01.636Z",
+  "width": 138
+}

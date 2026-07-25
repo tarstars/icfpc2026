@@ -779,3 +779,31 @@ lands on the return row, CCW on the row above. Re-flowing the walk means
 rebuilding the control-flow graph, not moving cells. That is a compiler-level
 job on generated code, and worth doing as its own piece of work rather than
 tacked onto a geometry pass.
+
+### plotter_03: rooms shrunk to their content — done, and it is a no-op alone
+
+Trimmed every plotter room past its own empty edge rows and columns, with
+each attached pipe extended to reach the wall's new position. Seven rooms
+shrank: five lost 8 empty left columns apiece, one lost 62, one lost 2
+bottom rows — 104 edge lines. The LM-75 display is skipped; its blank
+interior is the drawing surface.
+
+**Footprint unchanged at 148,225, and the score got 0.01% worse.** Live
+20/20 at 16,907,343,915 against plotter_02's 16,905,772,730 — the pipe
+extensions cost 7 ticks. A narrower room still sits inside the same bounding
+box, and running the global squeeze afterwards finds nothing new, because
+the freed columns are only free on the small rooms' rows: the three big
+rooms still occupy those columns from row 62 to row 322. plotter_02 stays
+the best submission.
+
+The value is what it opens. With the rooms trimmed, the band of rows 62-322
+— where the three big rooms sit, ending at column 80 — has **columns 81-137
+entirely free: 57 wide by 261 tall**. The six trimmed rooms are now at most
+34 wide and total 52 rows, so they all fit there. Moving them frees rows
+5-58 and 330-339 and takes the height from 385 to roughly 320:
+
+    footprint 148,225 -> ~102,400, about 1.45x
+
+That is the "can we move it" step, and it needs about twelve pipes
+re-routed. Tool: `src/littleman/alexey_trimrooms.py`, reproduces
+plotter_03.man byte-for-byte.

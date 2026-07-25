@@ -2,6 +2,30 @@
  "schemaVersion": 1,
  "variants": [
   {
+   "version": "plotter_03",
+   "label": "every room shrunk to its content (empty edge rows/columns dropped)",
+   "parent": "plotter_02",
+   "changeType": "geometry",
+   "architecture": "Per-room edge trim via src/littleman/alexey_trimrooms.py: each wall moves inward past that room's own empty edge rows/columns, and any pipe attached to the wall is extended to reach the new one. Seven rooms shrank -- five lost 8 empty left columns each, one lost 62, one lost 2 bottom rows; 104 edge lines in all. The LM-75 display is skipped, its blank interior being the drawing surface.",
+   "source": {
+    "path": "submissions/plotter/plotter_03.man",
+    "generator": "src/littleman/alexey_trimrooms.py (reproduces byte-for-byte)",
+    "width": 138,
+    "height": 385,
+    "footprint": 148225
+   },
+   "liveSubmission": {
+    "status": "done",
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "area2": 148225,
+    "avgTicks": 114065.4,
+    "score": 16907343915,
+    "fullResponse": "submissions/plotter/alexey-plotter_03-submit.json"
+   },
+   "verdict": "NOT AN IMPROVEMENT on its own -- 16,907,343,915 against plotter_02's 16,905,772,730, 0.01% worse because the pipe extensions cost 7 ticks. A narrower room still sits in the same bounding box. Kept because it is the base for the move step: after the trim, rows 62-322 have columns 81-137 entirely free (57 wide by 261 tall), and the six trimmed rooms are now at most 34 wide and total 52 rows. Relocating them there would free rows 5-58 and 330-339, taking the height from 385 to about 320 -- footprint ~102,400, about 1.45x. Needs roughly twelve pipes re-routed."
+  },
+  {
    "version": "plotter_02",
    "label": "mechanical squeeze of empty rows/columns",
    "changeType": "geometry",
