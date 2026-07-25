@@ -82,10 +82,25 @@ from .sim import Machine
 #       head assuming s0. The debt can serve the insert or the drain, never
 #       both -- so the compensation has to go.
 #
-#       Options: (a) rotate exactly d and end the drain with a re-alignment
-#       lap (correct, but roughly doubles the op count from 258 to ~500 --
-#       still 15x better than tcp_00); (b) restructure so the drain never
-#       consumes the terminating zero. (a) is the safe next move.
+#       Chosen: (a) rotate exactly d and end the drain with a re-alignment
+#       lap. ~500 ops per case instead of 258, still far better than
+#       tcp_00; projected ~4M against 20M.
+#
+#       Rotating exactly d has a bonus: the whole `X` branch disappears.
+#       No d==0 arm, no vertical `15` literal, no `m` -- BP = d is just
+#       `b`. That is 12 cells and a three-way merge gone.
+#
+# THE REAL BLOCKER is not any single bug. Four of the faults so far were
+#       the same shape: a walk crossing a cell another phase owns. Patching
+#       them one at a time keeps producing the next one, because routes are
+#       being threaded through whatever cells happen to be free at the
+#       time. What this needs before more layout work:
+#         1. reserve highway columns/rows up front, exclusive to routing,
+#            and place phases only in the remaining blocks;
+#         2. write the walk checker -- run the man, flag every executed
+#            cell belonging to a different phase. Grid guards placement,
+#            assert_pipe_map guards pipe zones, and this third checker is
+#            the one that would have caught all four.
 #
 #       Worth adding: a walk checker that runs the man and flags every cell
 #       he executes that belongs to a different phase. Grid only guards
