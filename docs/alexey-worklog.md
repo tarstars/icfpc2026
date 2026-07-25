@@ -1249,3 +1249,26 @@ thirty seconds.
   and the machine then loads and runs with one pipe silently missing.
 * `Router.text()` dropped trailing blank rows, so a padded canvas shrank
   between passes and the route could not use the row it had been given.
+
+## 2026-07-25 — matmul_04: 20,042,330,424 (20/20, 115x142)
+
+Two more safe moves on top of matmul_03 (33.29B -> 20.04B overall, 1.66x).
+
+**A provably safe row squeeze.** The rows-only pass drops exactly 10 rows --
+room0's empty interior rows. Normally deleting rows inside a room is a
+resolution risk, but not here: *every one of room0's eighteen pipes attaches
+to its bottom wall*, so the row term of the Manhattan distance is the same
+for all of them and the zone is decided by column alone. Deleting rows
+cannot change any `r`/`s` resolution. That is the same cancellation the tcp
+layout rule is built on, used here as a licence to delete rather than as a
+design rule. **Worth checking on every room before trimming it.**
+
+The column pass still breaks -- it squeezes one pipe to a single cell.
+
+**The O room was holding the width** at col 142 all by itself. Moved to
+cols 112-114, pipe re-routed at its exact length (104). First attempt put
+the pipe's terminal in the one-cell gap between room0's right wall and the O
+room's left wall: **both rooms claim that cell**, and the parser emitted a
+spurious 1-cell pipe from room0 straight into O. Entering through the top
+wall instead fixed it. Rule: never terminate a pipe in a one-cell gap
+between two rooms.
