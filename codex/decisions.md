@@ -73,3 +73,16 @@ when the relevant pipe changes. Cache nearest-port lookups and maintain room
 occupancy incrementally. Preserve tick ordering and the cell representation
 as the semantics oracle, with deterministic randomized equivalence tests for
 the run index.
+
+## 2026-07-24 — Parameterize Grade Book clearances without changing protocols
+
+Keep the accepted four-worker FSMs, ring capacities, acknowledgement chain,
+and result collector unchanged. Expose worker gaps, side margins, command
+clearance, external ack clearance, parser/worker separation, and compiled-FSM
+right padding through `GradebookLayout`.
+
+Preserve the old defaults as `BASELINE_LAYOUT`. For `COMPACT_LAYOUT`, use a
+one-cell corridor between workers, the minimum one-cell external pipe
+clearance, one separating row between parser and workers, and no unused
+interior column beyond the rightmost control track. Reject parameters that
+would place routes on walls or make rooms touch.

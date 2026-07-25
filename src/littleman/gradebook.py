@@ -69,7 +69,10 @@ class CompiledRoom:
 
 
 def compile_fsm(
-    fsm: Fsm, zone_offsets: dict[str, int], min_width: int = 0
+    fsm: Fsm,
+    zone_offsets: dict[str, int],
+    min_width: int = 0,
+    right_padding: int = 3,
 ) -> CompiledRoom:
     """Embed a finite-state graph in one rectangular littleman room.
 
@@ -80,6 +83,8 @@ def compile_fsm(
     not affect each other.
     """
     names = {block.name for block in fsm.blocks}
+    if right_padding < 0:
+        raise ValueError("right_padding cannot be negative")
     for block in fsm.blocks:
         if any(target not in names for target in block.targets):
             missing = [target for target in block.targets if target not in names]
@@ -167,7 +172,7 @@ def compile_fsm(
 
     edge_base = branch_base + 3
     edge_cols = {edge: edge_base + track for edge, track in edge_tracks.items()}
-    width = max(min_width, max(edge_cols.values()) + 3)
+    width = max(min_width, max(edge_cols.values()) + right_padding)
     height = next_band_row + 1
     grid = [[" "] * (width + 2) for _ in range(height + 2)]
     for col in range(width + 2):
@@ -562,6 +567,43 @@ RESULT_RELAY = [
 ]
 
 
+@dataclass(frozen=True)
+class GradebookLayout:
+    """Horizontal placement parameters for the four-worker machine."""
+
+    worker_gap: int = 6
+    margin: int = 8
+    command_left_clearance: int = 4
+    ack_right_clearance: int = 3
+    fsm_right_padding: int = 3
+    worker_vertical_gap: int = 14
+
+    def validate(self) -> None:
+        if self.command_left_clearance < 1:
+            raise ValueError("command_left_clearance must be positive")
+        if self.worker_gap < self.command_left_clearance:
+            raise ValueError("worker_gap must leave command routes outside workers")
+        if self.margin <= self.command_left_clearance:
+            raise ValueError("margin must leave the first command route off the wall")
+        if self.ack_right_clearance < 2:
+            raise ValueError("ack route must stay outside the parser wall")
+        if self.fsm_right_padding < 0:
+            raise ValueError("fsm_right_padding cannot be negative")
+        if self.worker_vertical_gap < 2:
+            raise ValueError("worker_vertical_gap must separate parser and workers")
+
+
+BASELINE_LAYOUT = GradebookLayout()
+COMPACT_LAYOUT = GradebookLayout(
+    worker_gap=1,
+    margin=2,
+    command_left_clearance=1,
+    ack_right_clearance=2,
+    fsm_right_padding=0,
+    worker_vertical_gap=2,
+)
+
+
 def build_result_collector(width: int) -> list[str]:
     """Build one wide room so four result pipes can enter without crossing."""
     if width < 9:
@@ -589,13 +631,19 @@ def build_result_collector(width: int) -> list[str]:
     return ["".join(row) for row in grid]
 
 
-def build_gradebook() -> str:
+def _build_gradebook(layout: GradebookLayout) -> str:
+    layout.validate()
     workers = [
-        compile_fsm(build_worker_fsm(subject), WORKER_ZONES) for subject in range(1, 5)
+        compile_fsm(
+            build_worker_fsm(subject),
+            WORKER_ZONES,
+            right_padding=layout.fsm_right_padding,
+        )
+        for subject in range(1, 5)
     ]
     worker_width = max(worker.width for worker in workers) + 2
-    gap = 6
-    margin = 8
+    gap = layout.worker_gap
+    margin = layout.margin
     worker_offsets = [margin + i * (worker_width + gap) for i in range(4)]
     total_width = worker_offsets[-1] + worker_width + margin
 
@@ -603,13 +651,14 @@ def build_gradebook() -> str:
         build_parser_fsm(),
         PARSER_ZONES,
         min_width=total_width,
+        right_padding=layout.fsm_right_padding,
     )
 
     canvas = Canvas()
     parser_top = 5
     canvas.put(parser_top, 0, parser.rows)
     parser_bottom = parser_top + parser.height + 1
-    workers_top = parser_bottom + 14
+    workers_top = parser_bottom + layout.worker_vertical_gap
     for offset, worker in zip(worker_offsets, workers, strict=True):
         canvas.put(workers_top, offset, worker.rows)
 
@@ -629,11 +678,11 @@ def build_gradebook() -> str:
     for offset, worker in zip(worker_offsets, workers, strict=True):
         worker_cmd_x = offset + worker.zones["command"]
         worker_bottom = workers_top + worker.height + 1
-        left_gap = offset - 4
+        command_route_x = offset - layout.command_left_clearance
         canvas.pipe(
             [
-                (parser_bottom + 1, left_gap),
-                (worker_bottom + 2, left_gap),
+                (parser_bottom + 1, command_route_x),
+                (worker_bottom + 2, command_route_x),
                 (worker_bottom + 2, worker_cmd_x),
                 (worker_bottom + 1, worker_cmd_x),
             ]
@@ -719,7 +768,7 @@ def build_gradebook() -> str:
     final_ack_x = worker_offsets[-1] + final_worker.zones["ack_out"]
     final_worker_bottom = workers_top + final_worker.height + 1
     parser_ack_x = parser.zones["ack"]
-    far_right = total_width + 3
+    far_right = total_width + layout.ack_right_clearance
     canvas.pipe(
         [
             (final_worker_bottom + 1, final_ack_x),
@@ -750,3 +799,13 @@ def build_gradebook() -> str:
         ]
     )
     return canvas.render()
+
+
+def build_gradebook() -> str:
+    """Reproduce the accepted baseline artifact exactly."""
+    return _build_gradebook(BASELINE_LAYOUT)
+
+
+def build_gradebook_compact() -> str:
+    """Build the tighter geometry-only successor to ``gradebook_00``."""
+    return _build_gradebook(COMPACT_LAYOUT)

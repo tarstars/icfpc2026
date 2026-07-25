@@ -216,6 +216,29 @@ Updated: 2026-07-24
 - The unfrozen Subset Sum standings snapshot updated at
   `2026-07-25T00:56:57.514Z` placed `wheezards` 20th of 26 rows with
   1.2083333333 points.
+- `gradebook_00.man` still reproduces its accepted SHA-256 exactly after the
+  layout parameters were introduced.
+- Exact-file benchmarking measured `gradebook_01` at 454×450, footprint
+  206,116, SHA-256
+  `f159eaf92ea37d9df9e66f814e8248c9ce10bb23eb9dbec591fc58f10f98c91f`,
+  and 201,291 bytes.
+- All seven Grade Book public cases passed at ticks
+  `[40334, 124472, 130841, 102968, 147839, 68354, 442953]`, average
+  151,108.7142857143, and local score 31,145,923,753.714287. This is a
+  15.9980267355% local-score improvement over `gradebook_00`.
+- A deterministic seed-`20260724`, N=16, K=4 oracle workload covered 48
+  operations across six batches and passed in 1,344,885 ticks.
+- All four data-return pipes retain 98 cells, and invalid clearances, padding,
+  and vertical gaps are rejected by focused layout tests.
+- `uv run pytest tests/test_gradebook.py -q` — 13 tests passed.
+- `uv run pytest -q` — 137 tests passed in 57.63 seconds.
+- Submitted exact `gradebook_01` once as
+  `321cd740-3f00-49f2-9321-36330ab0fe6f`; the server reported `done`, 20/20,
+  454×450, average ticks 506,043.1, score 104,303,579,599.6, and no error.
+  This improves the previous live score by 15.9680477528%.
+- The unfrozen Grade Book standings snapshot updated at
+  `2026-07-25T01:14:57.234Z` placed `wheezards` 21st of 31 rows with
+  1.3333333333 points.
 
 ## Pending validation
 

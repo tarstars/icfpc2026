@@ -20,6 +20,7 @@
         "bytes": 224886,
         "width": 494,
         "height": 462,
+        "maxDimension": 494,
         "footprint": 244036
       },
       "localValidation": {
@@ -50,6 +51,80 @@
         "createdAt": "2026-07-24T19:07:39.907Z",
         "updatedAt": "2026-07-24T19:07:54.515Z"
       }
+    },
+    {
+      "version": "gradebook_01",
+      "label": "minimum-clearance four-worker layout",
+      "parent": "gradebook_00",
+      "changeType": "component",
+      "architecture": "unchanged normalized parser, four ID/grade rings, chained acknowledgements, and result collector; parameterized FSM padding and minimum-clearance routing",
+      "source": {
+        "path": "submissions/gradebook/gradebook_01.man",
+        "generator": "src/littleman/gradebook.py:build_gradebook_compact",
+        "sha256": "f159eaf92ea37d9df9e66f814e8248c9ce10bb23eb9dbec591fc58f10f98c91f",
+        "bytes": 201291,
+        "width": 454,
+        "height": 450,
+        "maxDimension": 454,
+        "footprint": 206116
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "tiny roster walkthrough": 40334,
+          "TOP demotion": 124472,
+          "tie-break": 130841,
+          "floor rounding": 102968,
+          "mixed batch": 147839,
+          "K=1 minimal": 68354,
+          "N=16 K=4 max": 442953
+        },
+        "averageTicks": 151108.7142857143,
+        "score": 31145923753.714287,
+        "adversarial": {
+          "seed": 20260724,
+          "students": 16,
+          "subjects": 4,
+          "batches": 6,
+          "operations": 48,
+          "ticks": 1344885
+        }
+      },
+      "improvementFromParent": {
+        "maxDimensionPercent": 8.097165991902834,
+        "footprintPercent": 15.53869101280139,
+        "averageTicksPercent": 0.5438415863926745,
+        "localScorePercent": 15.998026735485388,
+        "liveScorePercent": 15.968047752830616
+      },
+      "liveSubmission": {
+        "id": "321cd740-3f00-49f2-9321-36330ab0fe6f",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 454,
+        "height": 450,
+        "area2": 206116,
+        "averageTicks": 506043.1,
+        "score": 104303579599.59999,
+        "createdAt": "2026-07-25T01:12:04.475Z",
+        "updatedAt": "2026-07-25T01:12:38.194Z",
+        "fullResponse": "submissions/gradebook/gradebook_01-submit.json"
+      }
     }
-  ]
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-25T01:14:57.234Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rank": 21,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "score": 104303579599.59999,
+    "passPoints": 1.0,
+    "rankPoints": 0.3333333333333333,
+    "points": 1.3333333333333333,
+    "rows": 31
+  }
 }

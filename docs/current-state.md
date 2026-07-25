@@ -46,10 +46,12 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - The submitted 38×41 Packet Reassembly paired-value ring passed all 20 server
   cases with score 20,028,106.4; the immutable source and properties are under
   `submissions/tcp/`.
-- The submitted 494×462 Grade Book candidate passed all 20 server cases with
-  average 508,628.7 ticks and score 124,123,713,433.2. Its exact source and
-  properties are under `submissions/gradebook/`, with architecture and metrics
-  in `reports/2026-07-24-grade-book.md`.
+- Grade Book `gradebook_01` compacts the accepted four-worker baseline from
+  494×462 to 454×450 without changing its protocols. It passed all 20 live
+  cases and improved the server score 15.97%, from 124,123,713,433.2 to
+  104,303,579,599.6. The exact variants are under
+  `submissions/gradebook/`; the optimization is documented in
+  `reports/2026-07-24-grade-book-optimization.md`.
 - Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
   The best compact nested-ring geometry occupies 183×180, passes all seven
   public cases, including 16×16×16 in 4,198,400 ticks, and improves the local
