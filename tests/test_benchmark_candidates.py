@@ -37,6 +37,10 @@ def test_benchmark_reports_exact_metrics_and_parent_comparison(tmp_path):
     assert candidate["casesPassed"] == candidate["casesTotal"] == 10
     assert candidate["maxDimension"] == 14
     assert candidate["footprint"] == 196
+    assert candidate["rooms"] == 3
+    assert candidate["men"] == 1
+    assert candidate["pipes"] == 2
+    assert candidate["pipeLengths"] == [3, 4]
     assert candidate["comparisonWithParent"]["scorePercent"] == 0
 
 
@@ -55,3 +59,20 @@ def test_benchmark_rejects_an_unparseable_exact_file(tmp_path):
     candidate = result["candidates"][0]
     assert candidate["path"] == str(invalid)
     assert candidate["casesPassed"] < candidate["casesTotal"]
+
+
+def test_benchmark_rejects_a_server_invalid_one_cell_pipe():
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "reverse-a-list",
+            "submissions/reverse-a-list/reverse_02.man",
+        ],
+        cwd=REPO,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    assert completed.returncode == 2
+    assert "shorter than 2 cells" in completed.stderr

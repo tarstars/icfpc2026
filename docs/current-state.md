@@ -12,7 +12,7 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 
 - Task docs archived: `docs/textbook.md`, `docs/language-reference.md`,
   `docs/grading.md`, `docs/rules.md`, `docs/api.md`.
-- 16 problems released so far (12 graded in "Semester 1–3", 4 practice);
+- 20 problems released so far (16 graded in "Semester 1–4", 4 practice);
   specs + public test data in `data/small/problems/`.
 - Scoring per problem: up to 1 point for test-case fraction + up to 1 point
   for ranking vs other teams. Program score = `max(width,height)² × avg
@@ -32,10 +32,15 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   API client.
 - `uv run icfpc-api` provides JSON problem reads and guarded submission/polling
   commands; local credentials remain in the ignored `.env`.
-- All 12 graded problems are solved. In the standings snapshot updated at
-  `2026-07-25T05:56:56Z`, every counted result passed all private cases; the
-  weakest ranks were Sudoku 42/46, Plotter 37/43, Subset Sum 29/35, and
-  Matrix Multiply 24/36.
+- All 12 Semester 1–3 graded problems are solved. In the standings snapshot
+  updated at `2026-07-25T05:56:56Z`, every counted result passed all private
+  cases; the weakest ranks were Sudoku 42/46, Plotter 37/43, Subset Sum
+  29/35, and Matrix Multiply 24/36.
+- Semester 4 added four graded 16×16-display problems: `snake`, `pathfinder`,
+  `little-little-little-man` (LLLM), and `little-little-man` (LLM). Their
+  exact API specifications and 36 total public cases are attached under
+  `data/small/problems/`; no Semester 4 solution is recorded yet. See
+  `reports/2026-07-25-semester-4-release.md`.
 - Before committing any solution version, agents must pull and integrate the
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
