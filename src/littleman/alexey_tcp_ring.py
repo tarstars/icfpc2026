@@ -46,6 +46,18 @@ from __future__ import annotations
 from .canvas import Canvas
 from .sim import Machine
 
+# --- build state -------------------------------------------------------
+# DONE: algorithm (alexey_tcp_model, 6/6 public, 258 ring ops/case), the room
+#       and pipe skeleton, the pipe-zone map with assertions, and the layout
+#       of init + packet prologue + the three-way branch (see LAYOUT below).
+# TODO: insert, the lap-to-marker loop, the drain loop, and the column-16
+#       highway that carries the man up to rows 1-4 to read `val` (it must be
+#       read after the rotation, because the rotation's `r` would clobber A).
+#       Then judge against alexey_tcp_model and submit as tcp_01.
+#
+# Estimated landing: ~750k at this room size, against tcp_00's 20,028k and
+# the best known 593k. Compaction comes after it is correct.
+
 SLOTS = 16
 PUMP_H, PUMP_W = 12, 16         # pump interior (correctness first, golf later)
 PUMP_TOP, PUMP_LEFT = 0, 5      # canvas position of the pump's top-left corner
@@ -124,3 +136,35 @@ def assert_pipe_map(text: str | None = None) -> None:
             assert outg == "OUTPUT", f"write at {(r, c)} reaches {outg}, wanted OUTPUT"
         if c >= PUMP_LEFT + 11:
             assert outg == "RING-OUT", f"write at {(r, c)} reaches {outg}, wanted RING-OUT"
+
+
+# --- work in progress: pump interior ------------------------------------
+# 1-based (row, col) inside the pump. Rows 1-4 read INPUT, rows 9-12 read
+# RING-IN, cols 1-2 write OUTPUT, cols 11-16 write RING-OUT.
+#
+#   row 1   @ r `16` b 0, then the seed loop that fills the ring with zeros
+#   row 2   seed loop body: ^ s m <
+#   row 3   return path west, and the `val` read once the highway lands here
+#   row 4   packet prologue: > r - b ]]]] d X
+#   rows 5-7  three arms: loss (col 10), d>0 sets BP=d-1 (col 11),
+#             d==0 sets BP=15 (col 16); the last two merge at (7,11)
+#   row 8   loss emits -1 at col 3 and halts at col 2
+#   rows 8-10  marker injection 1 N s at col 11
+#   rows 11-12 rotate loop: entry > at (11,11), test d at (11,14),
+#             body ^ s r < on row 12
+#
+# What is missing is listed in the build-state note at the top of the file.
+LAYOUT_WIP = [
+    "@r`16`b0>   dv  ",
+    "        ^ sm<   ",
+    " v           <r ",
+    " >r-b]]]]dX`15`v",
+    "         1b   ^b",
+    "         Nm   ^v",
+    "         vv    <",
+    " Hs      <1   ^ ",
+    "          N   ^ ",
+    "          s   r ",
+    "          >  d^ ",
+    "          ^sr<  ",
+]
