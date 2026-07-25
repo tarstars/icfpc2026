@@ -130,6 +130,33 @@
     "gain": 1.14
    },
    "verdict": "BEST. Width now 32 and height 31 -- height binds, so further width folds (block 3 is 7x26) are banked, not cashed, until a row comes out."
+  },
+  {
+   "version": "memory_08",
+   "label": "block 3 re-laid 26->23 wide; block 5 slid left",
+   "changeType": "geometry",
+   "architecture": "Block 3 (50 instruction cells, one `d`) re-laid with the perimeter-corridor pattern: prologue + d + the short BP==0 arm on the perimeter, the 34-cell BP>0 arm serpentined through the inside, both arms converging on the bottom-right corner. Its two pipes both meet the LEFT wall and it has one pipe each way (port freedom), so the fold needed no pipe work at all. Block 5 then slid one column left and its two pipes were re-routed in separate lanes (cols 28-30 for the inbound, 24-27 for the outbound) at 30 and 21 cells -- both slightly longer than before, never shorter.",
+   "source": {
+    "path": "submissions/memory/memory_08.man",
+    "width": 31,
+    "height": 31,
+    "footprintBefore": 1024,
+    "footprintAfter": 961
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "note": "tick counts identical to memory_07 in all seven cases"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 20491008,
+    "score": 19230331,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "gain": 1.07
+   },
+   "verdict": "BEST. Both dimensions are now 31 and block 4 is what holds them: 15 of the 31 rows and 21 of the 31 columns. Everything else is folded out."
   }
  ],
  "note": "Alexey research line for memory. memory_06 is the current best at 23,344,360 (34x32), reached from memory_04 (37x37, ~27.8M) purely by room packing -- no machine logic touched. Intermediates in submissions/memory/room-packing/."

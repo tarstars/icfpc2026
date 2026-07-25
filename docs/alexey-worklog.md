@@ -1336,3 +1336,58 @@ between this transformation and a silent wrong answer.
 110 rows removed, ticks down 21%. Width 386 now binds — four 94-wide rooms
 side by side, columns frozen by zone resolution — so further row folding
 here is banked, not cashed.
+
+## 2026-07-25 — memory_08: 20,491,008 -> 19,230,331 (24/24, 31x31)
+
+Block 3 re-laid from 7x26 to 7x23 and block 5 slid one column left. Both
+were free moves in the sense that mattered: block 3 has one pipe each way
+and **both meet its left wall**, so the fold needed no pipe work; block 5's
+two pipes were re-routed in separate lanes at 30 and 21 cells, never shorter
+than the 29 and 19 they replaced. Ticks identical in all seven cases.
+
+**The remaining 2x is entirely in block 4, and here is what it is.**
+
+Block 4 is 15x21 and holds 15 of the 31 rows and 21 of the 31 columns. Every
+other room is now folded out. Its control-flow graph, extracted with
+`src/littleman/alexey_roomcfg.py` (which traces *every* branch arm, not just
+the one a single walk follows):
+
+```
+B0:   `33` b 0 s            -> d1
+d1:   cw -> [m, s] -> d1                 (counted send loop)
+      straight -> B1
+B1:   r                     -> X1
+X1:   straight -> [r b r M r s] -> d2
+      cw       -> [r] -> X2
+      ccw      -> halt
+d2:   cw -> [m, r, s] -> d2              (loop)
+      straight -> [{ M `43` W } s] -> B1
+X2:   straight -> [r M] -> TAIL
+      cw       -> [b m r M r s] -> d3
+      ccw      -> halt
+d3:   cw -> [m, r, s] -> d3              (loop)
+      straight -> TAIL
+TAIL: r & M r | s           -> B1
+```
+
+Five branch points, three self-loops, and a TAIL shared by two predecessors.
+46 instruction cells in 13 interior rows -- **two of those rows carry no
+instructions at all** (rows 3 and 13 relative), they are pure carriage
+returns, and several more carry two.
+
+Two things make a re-lay legal, and both are checked:
+
+* Rows 3 and 13 exist only because a block sits far from the branch that
+  jumps to it. Placing each block adjacent to its predecessor removes them.
+* Block 4 is the one room in `memory` **without** port freedom: two pipes in,
+  two out, and they sit on three different walls, so a zone depends on row
+  *and* column. Moving both inbound ports to the top wall and both outbound
+  to the bottom would make it column-zoned -- and the existing column
+  pattern already matches (reads from block 3 are at low columns, reads from
+  block 5 at high ones; the write to O is low, the writes to block 5 high).
+  That is the enabling move, and it costs four pipe re-routes.
+
+Estimated payoff: block 4 at 8 rows instead of 15 puts the box at roughly
+24x24, i.e. footprint 576 against today's 961, and the shorter walk takes
+ticks down with it. That is the 2x. It is a compiler-shaped job -- embedding
+a 10-block CFG in a grid -- not an afternoon's edit.
