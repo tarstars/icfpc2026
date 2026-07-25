@@ -128,3 +128,46 @@ halves are 306x82 and 185x86. Same frozen interface, ~26x less height.
 will dominate the assembled box. Assembly first — LLLM scores zero
 today and correctness beats footprint — but a geometry press on these
 two is the obvious next win, exactly as snake_01 (5.6x) was.
+
+### 2026-07-25T20:50Z — STEP task moved, not re-prompted; two presses opened
+
+STEP's builder reported at its deadline: **"NO ARMS ARE LIVE."** The tick
+skeleton is placed (halt check, op fetch, class decode) but the man never
+reaches the class staircase stub, so nothing past round 1 executes. Round
+1 itself stays byte-exact vs `StepModel` on 10 public + 30 fuzz; 70 tests
+green; bindings satisfied at margin >=2. Committed as-is.
+
+That was the same agent's fourth attempt (338k tokens, two 64k
+truncations). Per `claude_14`'s two-failure rule the TASK moves rather
+than the prompt, so STEP restarted on a fresh clock carrying the previous
+agent's own continuation notes — `_step_main_plan()`, the `Tape` helper,
+and the one constraint that cost it hours:
+
+> **Row 11 is exactly the REQ/DRAW Voronoi midpoint (margin 0).** The
+> fetch band sits on row 10 for that reason and must not move back.
+
+Its standing instruction is to land staircase -> move -> kcount -> emit
+-> arms **one at a time, each byte-exact before the next**, and to report
+as soon as N arms are live. A machine interpreting a correct subset and
+halting cleanly on the rest scores; a half-finished sixth arm does not.
+
+**Reallocation.** With LLLM uncertain and ~9h left, capacity went to the
+proven recipe instead of a second uncertain build. Tonight's Snake press
+returned **5.6x** for about an agent-hour, purely from balancing a
+lopsided bounding box, and two live artifacts have the same shape:
+
+| artifact | box | footprint | live score | max dim set by |
+|---|---|---|---|---|
+| `plotter_04` | 113 x 326 | 106,276 | 9,367,793,668 | height, 2.9x the width |
+| `sudoku_02` | 184 x 248 | 61,504 | 25,480,732,026 | height |
+
+Balancing alone predicts ~2.6x on Plotter and ~1.34x on Sudoku, before
+any tick gain from shorter pipes. Both presses are forbidden from
+touching the live generator or room internals — placement and routing
+only — and both must clear a binding audit showing **0 role diffs**
+against the live artifact, because a silent re-binding is exactly what
+this class of change risks.
+
+Not chosen: `gradebook_02` (386x423) and `matmul_02` (183x180) are
+already near-square, so balancing buys little; `subset-sum` is near-square
+and enormous. Presses are worth spending on lopsided boxes only.
