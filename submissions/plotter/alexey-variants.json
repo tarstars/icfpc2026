@@ -1,0 +1,25 @@
+{
+ "schemaVersion": 1,
+ "variants": [
+  {
+   "version": "plotter_02",
+   "label": "mechanical squeeze of empty rows/columns",
+   "changeType": "geometry",
+   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (full): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "source": {
+    "path": "submissions/plotter/plotter_02.man",
+    "footprintBefore": 194481,
+    "footprintAfter": 148225
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 75794498065,
+    "score": 16905772730,
+    "gain": 4.48,
+    "fullResponse": "submissions/plotter/alexey-plotter_02-submit.json"
+   },
+   "verdict": "TEAM BEST for plotter: 75,794,498,065 -> 16,905,772,730 (4.48x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+  }
+ ],
+ "note": "Alexey research line for plotter."
+}

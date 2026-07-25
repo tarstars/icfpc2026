@@ -658,3 +658,51 @@ exactly what pins the room at one block per two rows.
 So: brackets geometry is now done. Height 41 binds against width 37, all
 three inter-room gaps are minimal, and the rooms are at their layout floor
 given the port geometry.
+
+## 2026-07-25 — mechanical squeeze sweep: five problems improved, two up to 4.5x
+
+Swept every live submission for pure-geometry slack. The productive find was
+a transformation I had not been applying globally:
+
+**A row whose every cell is `' '` or `'|'` can be deleted outright.** It
+holds no instruction, no wall corner and no horizontal run, so dropping it
+shortens by one cell every room interior and every vertical pipe it crosses
+and changes nothing else — a man walks over blanks, so his path is identical
+apart from being one tick shorter. Columns of `' '` and `'-'` are the
+transpose. No room is re-laid, no pipe re-routed, nothing is moved.
+
+| problem | footprint | live score | gain |
+|---|---|---|---|
+| sudoku-validity | 81,796 → 61,504 | 105,335,908,125 → **25,480,732,026** | 4.13x |
+| plotter | 194,481 → 148,225 | 75,794,498,065 → **16,905,772,730** | 4.48x |
+| gradebook | 206,116 → 178,929 | 104,303,579,600 → **81,914,188,255** | 1.27x |
+| tcp | 1,444 → 1,369 | 5,981,626 → **5,655,750** | 1.06x |
+| memory | 2,209 → 2,116 | 91,372,248 → **87,493,514** | 1.04x |
+
+All five 20/20 or better on the server. Note that sudoku and plotter gained
+**far more than their area** — 4.1x and 4.5x against footprint gains of only
+1.33x and 1.31x. The rest came from ticks: deleting the blank rows shortened
+the pipes running through them, and on those two the score is
+latency-dominated. Same effect as the brackets repack.
+
+`reverse`, `sort`, `brackets` and `history` have **zero** deletable rows or
+columns. Those four are tight; do not look again.
+
+Not unconditionally safe — always re-judge. Two failures:
+
+* `memory` survives the row pass (7/7) but breaks on the column pass (2/7).
+  Deleting a column changes Manhattan distances and therefore which pipe an
+  `r`/`s` resolves to; memory has reads whose margin between two candidate
+  pipes is a single step. Salvaged as rows-only.
+* `matmul` breaks on both passes (0/7 full, 6/7 rows-only). Its footprint is
+  width-bound anyway, so only the column pass would have paid.
+
+Tool: `src/littleman/alexey_squeeze.py`, reproduces all five submitted files
+byte-for-byte. Run `alexey_pipecheck.check` afterwards as well — squeezing
+can shorten a two-cell pipe to one cell, which the server rejects at load.
+
+Also confirmed by measurement this round, so nobody re-derives it: in every
+one of the big programs the slack that remains sits in the NON-binding
+dimension. matmul, gradebook and sudoku are width-bound with their spare
+space in rows; plotter and memory are height-bound with theirs in columns.
+That is why the remaining headroom needs re-placement, not deletion.
