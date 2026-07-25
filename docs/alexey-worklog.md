@@ -1456,3 +1456,74 @@ consistent; what remains is the placement itself — embedding ten blocks and
 five branch points in a grid, which is the compiler-shaped part. It wants a
 clean session, not the tail of one, because a half-verified block 4 is worse
 than none: it passes seven local cases and fails on the server's twenty-four.
+
+## 2026-07-25 — block 4: measured before building, and the measurement killed the plan
+
+Before laying block 4 out I instrumented `Machine._tick` and counted, per
+room, how many ticks its man spends **walking** versus **blocked**, on
+memory's largest public case (22,719 ticks).
+
+```
+room   walking   blocked   busy%
+R1        4004     18715    17.6
+R2        4753     17966    20.9
+R3        7802     14917    34.3
+R4       22719         0   100.0     <- block 4
+R6       12846      9873    56.5
+```
+
+**Block 4 is the bottleneck and it never blocks.** Every other room idles
+65-82% of the time waiting on it, so the whole runtime is block 4's walk.
+That part confirmed the plan. Then the per-cell counts overturned it:
+
+```
+row  total  no-op  content
+  3     10     10   v        <          <- the carriage return I was going to delete
+  5   4738   2456   ^  v         >rsv
+  6   4513   2306   ^  v         ^ md
+  9   4162   2106   ^    >bmrM   >rsv
+ 10   3612   1806   ^            ^ md
+ 12    900    850   ^ >              sv
+ 13    950    950   ^                 <  <- the other carriage return
+```
+
+**Rows 5-6 and 9-10 are 73% of the entire runtime.** They are the two
+counted relay loops, and they ran 1141 and 928 times on this case. The two
+carriage-return rows I had designed the re-lay around cost **1,810 ticks
+between them — 8%**. I had been optimising the wrong thing: those rows run
+once per *outer* iteration, the loops run thousands of times.
+
+### And the loops are already at their geometric floor
+
+The unit is
+
+```
+> r s v
+^ · m d
+```
+
+four operations (`r` receive, `s` send, `m` decrement, `d` test) in an
+eight-cell cycle. It cannot be seven: a grid cycle has even length, and the
+cycle needs three turn glyphs — one to go south, one to go north, and one to
+turn the man back east after the `^`, because he arrives at the top row
+heading north and something has to turn him. Three turns plus four
+instructions is seven cells, so the cycle is eight. **The current unit is
+optimal.** Half of its ticks being no-op is structural, not waste.
+
+### Conclusion, and it is a negative one
+
+Block 4's *layout* cannot deliver 2x. The room is 100% busy, 73% of its work
+is two loops that are already minimal, and the whole outer structure — every
+carriage return, every rail — is worth at most ~9%. Re-laying it is worth
+doing eventually for the footprint, but not for the score.
+
+The 2x on `memory` has to come from somewhere else:
+
+* **Footprint**: 961 → 484 means everything inside 22x22. Every room is
+  already folded; block 4 at 15x21 is what stands in the way, so this is the
+  same re-lay, worth ~1.3x at best on its own.
+* **Fewer ticks per relayed value**: unrolling the loop to `r s r s m d`
+  moves two values per cycle — nine cells plus three turns is a ten-cell
+  cycle, i.e. five ticks per value against eight, a 37% cut. That is an
+  **algorithm change**, not geometry: the counter would have to handle odd
+  lengths. It is where the 2x actually lives.
