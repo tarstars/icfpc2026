@@ -58,6 +58,13 @@ solutions.
 - Implemented a generated symmetric-Bresenham Plotter without modifying the
   protected earlier sketch. It matched 20 deterministic oracle segments and
   passed all 20 live cases at server score 75,794,498,065.
+- Implemented a meet-in-the-middle Subset Sum machine with two 1,024-stage
+  systolic sorters and lexicographic mask reduction. Its exact 9,743,784-byte
+  artifact passed all seven public and all 20 live cases at server score
+  91,769,596,778,389.8.
+- Reworked simulator pipe shifting and scheduling around active pipes,
+  run-indexed occupancy, blocked-worker wakeups, cached nearest ports, and a
+  persistent room occupancy map. The full 127-test suite passes.
 
 ## Blockers
 
@@ -65,7 +72,8 @@ solutions.
 
 ## Next steps
 
-1. Complete the remaining unsolved Subset Sum problem.
-2. Optimize Grade Book geometry and control routing against the preserved
+1. Optimize Grade Book geometry and control routing against the preserved
    `gradebook_00` baseline.
+2. Evaluate compact geometry or faster protocols for other preserved
+   footprint-tick baselines.
 3. Support Claude with live problem retrieval, submission, and result polling.

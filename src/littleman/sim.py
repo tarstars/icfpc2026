@@ -6,6 +6,7 @@ pipes shift -> I/O -> execute -> movement.
 
 from __future__ import annotations
 
+import heapq
 from dataclasses import dataclass, field
 
 MASK64 = (1 << 64) - 1
@@ -68,38 +69,91 @@ class Pipe:
     dest: Room
     values: list = None
     side: str | None = None  # display pipes: addr | data | swap
-    occupied: set[int] = field(default_factory=set)
+    runs: list[list[int]] = field(default_factory=list)
+    value_count: int = 0
 
     def __post_init__(self):
         if self.values is None:
             self.values = [None] * len(self.cells)
-        self.occupied = {
-            i for i, value in enumerate(self.values) if value is not None
-        }
+        self.runs = []
+        for index, value in enumerate(self.values):
+            if value is None:
+                continue
+            if self.runs and self.runs[-1][1] + 1 == index:
+                self.runs[-1][1] = index
+            else:
+                self.runs.append([index, index])
+        self.value_count = sum(end - start + 1 for start, end in self.runs)
 
     def put(self, index: int, value: int):
         index %= len(self.values)
+        was_empty = self.values[index] is None
         self.values[index] = value
-        self.occupied.add(index)
+        if not was_empty:
+            return
+        self.value_count += 1
+        for run_index, (start, end) in enumerate(self.runs):
+            if index < start - 1:
+                self.runs.insert(run_index, [index, index])
+                return
+            if index == start - 1:
+                self.runs[run_index][0] = index
+                return
+            if index == end + 1:
+                self.runs[run_index][1] = index
+                if (
+                    run_index + 1 < len(self.runs)
+                    and index + 1 == self.runs[run_index + 1][0]
+                ):
+                    self.runs[run_index][1] = self.runs[run_index + 1][1]
+                    self.runs.pop(run_index + 1)
+                return
+        self.runs.append([index, index])
 
     def take(self, index: int):
         index %= len(self.values)
         value = self.values[index]
         self.values[index] = None
-        self.occupied.discard(index)
+        if value is None:
+            return None
+        self.value_count -= 1
+        for run_index, (start, end) in enumerate(self.runs):
+            if not start <= index <= end:
+                continue
+            if start == end:
+                self.runs.pop(run_index)
+            elif index == start:
+                self.runs[run_index][0] += 1
+            elif index == end:
+                self.runs[run_index][1] -= 1
+            else:
+                self.runs[run_index : run_index + 1] = [
+                    [start, index - 1],
+                    [index + 1, end],
+                ]
+            break
         return value
 
     def shift(self):
-        for i in sorted(self.occupied, reverse=True):
-            if i + 1 < len(self.values) and i + 1 not in self.occupied:
-                self.values[i + 1] = self.values[i]
-                self.values[i] = None
-                self.occupied.remove(i)
-                self.occupied.add(i + 1)
+        if not self.runs:
+            return
+        blocked_suffix = self.runs[-1][1] == len(self.values) - 1
+        moving_count = len(self.runs) - int(blocked_suffix)
+        for run_index in range(moving_count):
+            start, end = self.runs[run_index]
+            self.values[start + 1 : end + 2] = self.values[start : end + 1]
+            self.values[start] = None
+            self.runs[run_index] = [start + 1, end + 1]
+        if blocked_suffix and moving_count:
+            moving = self.runs[moving_count - 1]
+            blocked = self.runs[moving_count]
+            if moving[1] + 1 == blocked[0]:
+                moving[1] = blocked[1]
+                self.runs.pop(moving_count)
 
     @property
     def count(self):
-        return len(self.occupied)
+        return self.value_count
 
 
 @dataclass
@@ -113,6 +167,8 @@ class Man:
     BP: int = 0
     halted: bool = False
     blocked: bool = False
+    wait_kind: str | None = None
+    wait_pipes: tuple = ()
 
 
 @dataclass
@@ -134,12 +190,26 @@ class Machine:
         self.pipes = pipes
         self.out_pipes = {}  # room id -> [pipes], sorted later
         self.in_pipes = {}
+        self._nearest_outgoing_cache = {}
+        self._nearest_incoming_cache = {}
         for p in pipes:
             self.out_pipes.setdefault(id(p.source), []).append(p)
             self.in_pipes.setdefault(id(p.dest), []).append(p)
         self.input_pipe = next((p for p in pipes if p.source.kind == "input"), None)
         self.output_pipe = next((p for p in pipes if p.dest.kind == "output"), None)
         self.displays = [r for r in rooms if r.kind == "display"]
+        self._pipe_by_id = {id(pipe): pipe for pipe in pipes}
+        self._active_pipes = {
+            id(pipe): pipe for pipe in pipes if self._pipe_can_shift(pipe)
+        }
+        self._man_indices = {id(man): index for index, man in enumerate(men)}
+        self._runnable_men = set(range(len(men)))
+        self._receive_waiters: dict[int, set[int]] = {}
+        self._send_waiters: dict[int, set[int]] = {}
+        self._tick_heap = None
+        self._tick_processed: set[int] = set()
+        self._tick_current_index = -1
+        self._occupied = {(man.r, man.c): man for man in men}
 
     # ------------------------------------------------------------- parsing
     @classmethod
@@ -306,9 +376,7 @@ class Machine:
                                 fc in (target.left, target.right)
                             )
                             if corner or fc == target.right and not corner:
-                                raise LoadError(
-                                    f"bad display attach at {(fr, fc)}"
-                                )
+                                raise LoadError(f"bad display attach at {(fr, fc)}")
                             if on_top:
                                 pipe.side = "addr"
                             elif on_bottom:
@@ -316,9 +384,7 @@ class Machine:
                             elif on_left:
                                 pipe.side = "data"
                             else:
-                                raise LoadError(
-                                    f"bad display attach at {(fr, fc)}"
-                                )
+                                raise LoadError(f"bad display attach at {(fr, fc)}")
                         return pipe
             # advance
             r, c = r + d[0], c + d[1]
@@ -417,6 +483,101 @@ class Machine:
         digits = "".join(ch for ch in cells if ch.isdigit())
         return int(digits) if digits else None
 
+    # ---------------------------------------------------------- scheduling
+    @staticmethod
+    def _pipe_can_shift(pipe: Pipe) -> bool:
+        if not pipe.runs:
+            return False
+        return len(pipe.runs) > 1 or pipe.runs[-1][1] != len(pipe.values) - 1
+
+    def _clear_wait(self, index: int) -> None:
+        man = self.men[index]
+        waiter_map = (
+            self._receive_waiters
+            if man.wait_kind in {"r", "RU"}
+            else self._send_waiters
+        )
+        for pipe_id in man.wait_pipes:
+            waiters = waiter_map.get(pipe_id)
+            if waiters is None:
+                continue
+            waiters.discard(index)
+            if not waiters:
+                waiter_map.pop(pipe_id, None)
+        man.wait_kind = None
+        man.wait_pipes = ()
+
+    def _schedule_man(self, index: int) -> None:
+        man = self.men[index]
+        if man.halted:
+            return
+        self._clear_wait(index)
+        man.blocked = False
+        if (
+            self._tick_heap is not None
+            and index > self._tick_current_index
+            and index not in self._tick_processed
+        ):
+            heapq.heappush(self._tick_heap, index)
+        else:
+            self._runnable_men.add(index)
+
+    def _wait_condition_ready(self, man: Man) -> bool:
+        pipes = [self._pipe_by_id[pipe_id] for pipe_id in man.wait_pipes]
+        if man.wait_kind == "r":
+            return pipes[0].values[-1] is not None
+        if man.wait_kind == "RU":
+            return any(pipe.values[-1] is not None for pipe in pipes)
+        if man.wait_kind == "s":
+            return pipes[0].values[0] is None
+        if man.wait_kind == "S":
+            return all(pipe.values[0] is None for pipe in pipes)
+        return False
+
+    def _maybe_wake(self, index: int) -> None:
+        man = self.men[index]
+        if man.wait_kind is not None and self._wait_condition_ready(man):
+            self._schedule_man(index)
+
+    def _wake_pipe_receivers(self, pipe: Pipe) -> None:
+        for index in tuple(self._receive_waiters.get(id(pipe), ())):
+            self._maybe_wake(index)
+
+    def _wake_pipe_senders(self, pipe: Pipe) -> None:
+        for index in tuple(self._send_waiters.get(id(pipe), ())):
+            self._maybe_wake(index)
+
+    def _register_wait(self, index: int, kind: str, pipes: list[Pipe]) -> None:
+        man = self.men[index]
+        man.wait_kind = kind
+        man.wait_pipes = tuple(id(pipe) for pipe in pipes)
+        waiter_map = (
+            self._receive_waiters if kind in {"r", "RU"} else self._send_waiters
+        )
+        for pipe in pipes:
+            waiter_map.setdefault(id(pipe), set()).add(index)
+
+    def _pipe_put(self, pipe: Pipe, index: int, value: int) -> None:
+        pipe.put(index, value)
+        pipe_id = id(pipe)
+        if self._pipe_can_shift(pipe):
+            self._active_pipes[pipe_id] = pipe
+        else:
+            self._active_pipes.pop(pipe_id, None)
+        if pipe.values[-1] is not None:
+            self._wake_pipe_receivers(pipe)
+
+    def _pipe_take(self, pipe: Pipe, index: int):
+        value = pipe.take(index)
+        pipe_id = id(pipe)
+        if self._pipe_can_shift(pipe):
+            self._active_pipes[pipe_id] = pipe
+        else:
+            self._active_pipes.pop(pipe_id, None)
+        if pipe.values[0] is None:
+            self._wake_pipe_senders(pipe)
+        return value
+
     # ------------------------------------------------------------- running
     def run(
         self, inputs=None, max_ticks: int = 5_000_000, controller=None
@@ -440,12 +601,14 @@ class Machine:
             if self._verdict:
                 res.status = self._verdict
                 return res
-            if all(m.halted for m in self.men):
+            if (
+                not self._runnable_men
+                and not self._receive_waiters
+                and not self._send_waiters
+            ):
                 if self.output_pipe and self.output_pipe.count:
                     continue  # drain output pipe
-                if any(
-                    p.count for p in self.pipes if p.dest.kind == "display"
-                ):
+                if any(p.count for p in self.pipes if p.dest.kind == "display"):
                     continue  # displays keep consuming in-flight values
                 res.status = "halted"
                 return res
@@ -453,12 +616,23 @@ class Machine:
 
     def _tick(self, res: RunResult):
         # 1. pipes shift
-        for pipe in self.pipes:
+        for pipe in tuple(self._active_pipes.values()):
+            source_was_full = pipe.values[0] is not None
+            destination_was_empty = pipe.values[-1] is None
             pipe.shift()
+            pipe_id = id(pipe)
+            if self._pipe_can_shift(pipe):
+                self._active_pipes[pipe_id] = pipe
+            else:
+                self._active_pipes.pop(pipe_id, None)
+            if source_was_full and pipe.values[0] is None:
+                self._wake_pipe_senders(pipe)
+            if destination_was_empty and pipe.values[-1] is not None:
+                self._wake_pipe_receivers(pipe)
         # 2. I/O: emit output, then inject input
         self._verdict = None
         if self.output_pipe and self.output_pipe.values[-1] is not None:
-            value = self.output_pipe.take(-1)
+            value = self._pipe_take(self.output_pipe, -1)
             res.output.append(value)
             res.output_ticks.append(res.ticks)
             if self._controller:
@@ -470,37 +644,76 @@ class Machine:
             if self._controller:
                 value = self._controller.pop_input()
                 if value is not None:
-                    self.input_pipe.put(0, value)
+                    self._pipe_put(self.input_pipe, 0, value)
             elif self._input_queue:
-                self.input_pipe.put(0, self._input_queue.pop(0))
+                self._pipe_put(self.input_pipe, 0, self._input_queue.pop(0))
         # 3. execute
-        for man in self.men:
+        self._tick_heap = list(self._runnable_men)
+        heapq.heapify(self._tick_heap)
+        self._runnable_men = set()
+        self._tick_processed = set()
+        movers = []
+        while self._tick_heap:
+            index = heapq.heappop(self._tick_heap)
+            if index in self._tick_processed:
+                continue
+            self._tick_processed.add(index)
+            self._tick_current_index = index
+            man = self.men[index]
             if man.halted:
                 continue
             man.blocked = False
             err = self._execute(man)
             if err:
+                self._tick_heap = None
                 return err
+            if man.blocked:
+                instruction = self.grid[man.r][man.c]
+                if instruction == "r":
+                    pipes = [self._nearest_incoming(man)]
+                    kind = "r"
+                elif instruction in "RU":
+                    pipes = self._incoming(man)
+                    kind = "RU"
+                elif instruction == "s":
+                    pipes = [self._nearest_outgoing(man)]
+                    kind = "s"
+                else:
+                    pipes = self._outgoing(man)
+                    kind = "S"
+                self._register_wait(index, kind, pipes)
+            elif not man.halted:
+                movers.append(index)
+                self._runnable_men.add(index)
         for disp in self.displays:
             err = self._display_tick(disp, res)
             if err:
+                self._tick_heap = None
                 return err
         # 4. movement
-        occupied = {(man.r, man.c): man for man in self.men}
-        for man in self.men:
-            if man.halted or man.blocked:
+        occupied = self._occupied
+        for index in movers:
+            man = self.men[index]
+            if man.halted:
                 continue
             nr, nc = man.r + man.direction[0], man.c + man.direction[1]
             if not man.room.contains_interior(nr, nc):
+                self._tick_heap = None
                 return "wall"
             occupant = occupied.get((nr, nc))
             if occupant:
                 man.halted = True
                 occupant.halted = True
+                self._runnable_men.discard(index)
+                occupant_index = self._man_indices[id(occupant)]
+                self._runnable_men.discard(occupant_index)
+                self._clear_wait(occupant_index)
                 continue
             del occupied[(man.r, man.c)]
             man.r, man.c = nr, nc
             occupied[(nr, nc)] = man
+        self._tick_heap = None
+        self._tick_current_index = -1
         return None
 
     # ------------------------------------------------------------- display
@@ -513,7 +726,7 @@ class Machine:
             pipe = by_side.get(side)
             if pipe is None or pipe.values[-1] is None:
                 continue
-            v = pipe.take(-1)
+            v = self._pipe_take(pipe, -1)
             size = disp.disp_w * disp.disp_h
             if side == "addr":
                 if not 0 <= v < size:
@@ -522,9 +735,7 @@ class Machine:
             elif side == "data":
                 if not 0 <= v <= 15:
                     return "display"
-                disp.next[disp.cursor // disp.disp_w][
-                    disp.cursor % disp.disp_w
-                ] = v
+                disp.next[disp.cursor // disp.disp_w][disp.cursor % disp.disp_w] = v
                 disp.cursor = (disp.cursor + 1) % size
             else:  # swap
                 if v not in (0, 1):
@@ -538,9 +749,7 @@ class Machine:
                     if verdict:
                         self._verdict = verdict
                 if v == 0:
-                    disp.next = [
-                        [0] * disp.disp_w for _ in range(disp.disp_h)
-                    ]
+                    disp.next = [[0] * disp.disp_w for _ in range(disp.disp_h)]
                     disp.cursor = 0
         return None
 
@@ -563,16 +772,32 @@ class Machine:
         )[0]
 
     def _nearest_outgoing(self, man):
-        pipes = self._outgoing(man)
-        if not pipes:
-            return None
-        return self._nearest([(p, p.cells[0]) for p in pipes], (man.r, man.c))
+        key = (id(man.room), man.r, man.c)
+        if key not in self._nearest_outgoing_cache:
+            pipes = self._outgoing(man)
+            self._nearest_outgoing_cache[key] = (
+                self._nearest(
+                    [(p, p.cells[0]) for p in pipes],
+                    (man.r, man.c),
+                )
+                if pipes
+                else None
+            )
+        return self._nearest_outgoing_cache[key]
 
     def _nearest_incoming(self, man):
-        pipes = self._incoming(man)
-        if not pipes:
-            return None
-        return self._nearest([(p, p.cells[-1]) for p in pipes], (man.r, man.c))
+        key = (id(man.room), man.r, man.c)
+        if key not in self._nearest_incoming_cache:
+            pipes = self._incoming(man)
+            self._nearest_incoming_cache[key] = (
+                self._nearest(
+                    [(p, p.cells[-1]) for p in pipes],
+                    (man.r, man.c),
+                )
+                if pipes
+                else None
+            )
+        return self._nearest_incoming_cache[key]
 
     def _turn_away(self, man, pipe):
         dr, dc = pipe.cells[-1]
@@ -660,7 +885,7 @@ class Machine:
             if pipe.values[0] is not None:
                 man.blocked = True
             else:
-                pipe.put(0, man.A)
+                self._pipe_put(pipe, 0, man.A)
         elif ch == "S":
             pipes = self._outgoing(man)
             if not pipes:
@@ -669,7 +894,7 @@ class Machine:
                 man.blocked = True
             else:
                 for p in pipes:
-                    p.put(0, man.A)
+                    self._pipe_put(p, 0, man.A)
         elif ch == "r":
             pipe = self._nearest_incoming(man)
             if pipe is None:
@@ -677,7 +902,7 @@ class Machine:
             if pipe.values[-1] is None:
                 man.blocked = True
             else:
-                man.A = pipe.take(-1)
+                man.A = self._pipe_take(pipe, -1)
         elif ch in "RU":
             pipes = self._incoming(man)
             if not pipes:
@@ -687,7 +912,7 @@ class Machine:
                 man.blocked = True
             else:
                 pipe = min(ready, key=lambda p: p.cells[-1])
-                man.A = pipe.take(-1)
+                man.A = self._pipe_take(pipe, -1)
                 if ch == "U":
                     self._turn_away(man, pipe)
         elif ch == "q":

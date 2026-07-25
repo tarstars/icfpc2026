@@ -69,6 +69,12 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   correctness baseline passed all 20 live cases at 394×535 and score
   75,794,498,065. Its exact source and private-test-oriented validation are
   documented in `reports/2026-07-24-plotter.md`.
+- Subset Sum is solved by a generated meet-in-the-middle machine with two
+  1,024-stage systolic sorters. Its compact 3,646×3,029 artifact passed all
+  20 live cases at score 91,769,596,778,389.8. The exact Git-LFS source,
+  variant properties, and validation are documented under
+  `submissions/subset-sum/` and in
+  `reports/2026-07-24-subset-sum.md`.
 
 ## Storage
 

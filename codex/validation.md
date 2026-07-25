@@ -193,6 +193,29 @@ Updated: 2026-07-24
 - The unfrozen Plotter standings snapshot updated at
   `2026-07-24T21:52:57.148Z` placed `wheezards` 19th of 30 rows with
   1.3793103448 points.
+- The final compact Subset Sum artifact reproduced exactly from
+  `build_subset_sum()` at 9,743,784 bytes and SHA-256
+  `cd1000a2b5b944e6905e991022116f5b6a6daf7729c4a93bd13f72a683c65d77`.
+  It parsed as 2,121 rooms, 2,164 pipes, and 2,119 men, with occupied
+  dimensions 3,646×3,029 and footprint 13,293,316.
+- All seven Subset Sum public cases passed under the 15,000,000-tick cap at
+  ticks `[6640497, 7199445, 6718443, 7274629, 6468694, 7263957, 7378811]`.
+  Average ticks were 6,992,068 and local score was 92,947,769,417,488.
+- The exact compact geometry was tested rather than relying on the earlier
+  oversized layout. Focused coverage includes equal-sum ordering, padded
+  slots, and a seeded core integration test choosing the greatest valid mask.
+- A 10,000-operation deterministic randomized test confirmed run-indexed
+  `Pipe.put`, `Pipe.take`, and `Pipe.shift` behavior against the prior
+  cell-by-cell model.
+- `uv run pytest -q` — 127 tests passed in 53.83 seconds after the final
+  Subset Sum geometry and simulator scheduling changes.
+- Submitted the exact compact artifact once as
+  `edda50dc-411e-49b6-83eb-0e895d4c1f7e`; the server reported `done`, 20/20,
+  3,646×3,029, average ticks 6,903,439.05, score
+  91,769,596,778,389.8, and no error.
+- The unfrozen Subset Sum standings snapshot updated at
+  `2026-07-25T00:56:57.514Z` placed `wheezards` 20th of 26 rows with
+  1.2083333333 points.
 
 ## Pending validation
 
