@@ -1303,3 +1303,14 @@ precondition.
 Branches in these rooms are compiled as long empty columns that the man
 falls down. Deleting whole leg pairs preserves them -- the deleted rows are
 blank at every column a fall uses.
+
+## 2026-07-25 — sudoku_04: 25,480,732,026 -> 11,307,342,643 (20/20, 184x192)
+
+The same staircase the plotter rooms use, and the same fold. All four big
+rooms pass `ports_are_single_walled`, so rows are free and columns frozen:
+80 rows freed, 56 removed globally, ticks down 26%. `uberStrictPassed: true`.
+
+Built from **sudoku_02, not from tarstars' sudoku_03**. Their repack is the
+better starting point on its own (16.1B vs 25.5B) but leaves fewer
+globally-empty rows once the staircase is folded — 39204 against 36864. Worth
+checking both bases whenever a teammate has repacked the same program.
