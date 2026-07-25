@@ -51,9 +51,21 @@ from .sim import Machine
 # DONE: algorithm (alexey_tcp_model, 6/6 public, 258 ring ops/case), the room
 #       and pipe skeleton, the pipe-zone map with assertions, and all ten
 #       layout nodes (build_wip) -- it builds, parses and holds the zones.
-# TODO: it loops instead of finishing a packet. Debug with a trace filtered
-#       to the PUMP man, fix the routing, judge against alexey_tcp_model,
-#       then submit as tcp_01 and compact the room.
+# TODO: FOUND, not yet fixed. The init drops south down col 9 and that
+#       highway crosses two phases that already own cells in it:
+#         step 10, (3,9)  -- the ']' of the prologue's ]]]] chain, which
+#                            shifts BP from 16 to 8, so the seed loop then
+#                            fills the ring with 8 zeros instead of 16;
+#         step 23, (16,9) -- the drain's 's', which injects a stray value
+#                            into the ring.
+#       Nothing is overwritten, so Grid cannot catch it: the collision is
+#       between a WALK and a cell, not between two writes. Fix by routing
+#       the init highway down a column no phase occupies (or by rerouting
+#       the phases), then judge against alexey_tcp_model.
+#
+#       Worth adding: a walk checker that runs the man and flags every cell
+#       he executes that belongs to a different phase. Grid only guards
+#       placement; this class of bug needs the trace.
 #
 # The drain is the one node with a real constraint behind its placement:
 # it must both read the ring and write the output, and rows 15-17 at low
