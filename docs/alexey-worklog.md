@@ -878,3 +878,43 @@ Worth keeping: **check whether two pipes' spans bracket each other before
 planning a move.** The previous block move worked because its single external
 pipe had nothing to cross; this one fails on exactly that test, and the test
 is cheap to run first.
+
+### The 3-row gaps in plotter are capacity, not waste
+
+Followed up the observation that a pipe can hug a room (as `triangle_04`
+does) so rooms need not be spread apart. Wrote a normalizer that rewrites
+the straight interior cells of every pipe as segment glyphs (`|`, `-`)
+instead of repeated arrowheads — a run written `v v v` hides a deletable row
+from `alexey_squeeze`, the same run written `v | v` does not and means
+exactly the same thing.
+
+It worked as intended: 11 cells normalized in plotter, and the squeeze then
+found 3 more deletable rows, fp 106,276 → 104,329.
+
+**And the result deadlocks, 0/6.** Not a resolution problem — I compared the
+pipe every `r`/`s` resolves to, before and after, across all 181 such cells:
+**zero changed**. The cause is capacity. A pipe holds as many values as it
+has cells, and the squeeze shortened four of them:
+
+    3 -> 2,  3 -> 2,  4 -> 3,  4 -> 3
+
+Those 3-cell pipes between BIG1 and BIG2 are three cells because the
+protocol needs three values in flight, and the 3-row gap exists to hold
+them. It is not slack.
+
+Nor can the capacity be kept in fewer rows: the first cell of a pipe leaving
+a bottom wall is forced to point south, and the destination port's column is
+fixed by resolution, so a 3-cell pipe between two vertically stacked rooms
+cannot be folded sideways into a 2-row gap — it would have to re-enter a
+cell it already occupies.
+
+So plotter's remaining gaps are: 2 rows where the pipe needs 2 (minimum),
+and 3 rows where it needs 3. plotter_04 (9,367,793,668) stands, and the
+normalizer is worth keeping only for layouts one is *building* — draw
+straight runs as segments from the start, as `alexey_plotter_move` does, so
+the squeeze is not blinded later.
+
+**Third failure mode for the squeeze, now all three are known:** it can
+change pipe resolution (broke memory's column pass), it can shorten a pipe
+below the two-cell minimum the server enforces, and it can shorten a pipe
+below the capacity the protocol needs (this one). Judge after every squeeze.
