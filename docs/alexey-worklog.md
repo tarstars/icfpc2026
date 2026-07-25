@@ -962,3 +962,41 @@ height and both trims are columns. Broken for the reason already recorded
 against memory's column squeeze: deleting a column changes Manhattan
 distances, and memory has reads whose margin between two candidate pipes is
 a single step. Not submitted; memory_02 stands at 87,493,514.
+
+### memory: the top room's six empty columns ARE trimmable — after moving one port
+
+The trim broke the machine (7/7 -> 2/7) for one cell only. Found it:
+
+    read at row 4, absolute column 24 (the `r` in `srs%W`001`MN-<`)
+      to the I pipe,    ending (3,5)   : 1 + 19 = 20
+      to the right pipe, ending (3,44) : 1 + 20 = 21   -> I pipe wins by ONE
+      to the right pipe, ending (3,38) : 1 + 14 = 15   -> flips after the trim
+
+Moving the I *room* cannot fix it: a pipe's endpoint is pinned to the wall
+it enters, not to where the source room sits. Moving the *port* can. Solving
+the six reads of that room as inequalities gives a window: bring the I pipe
+in through the BOTTOM wall at column 12-24. Column 14 leaves a margin of 3
+instead of 1, and row 6 is clear west of column 16, so the route is
+`I bottom -> (5,1) -> east along row 6 -> (6,14) north into the wall`.
+
+Result, all six reads correct and **7/7**:
+
+    (1,9) (1,11) (3,11) (4,24) -> I pipe        (now 15 cells)
+    (1,30) (3,35)             -> right pipe     (73 cells)
+
+Footprint stays 2,116 and ticks are flat (9,750 vs 9,750), because memory is
+a 46x46 square bound by its HEIGHT: taking six columns off gives 40x46 and
+max(w,h) does not move. But the step unlocks what was previously impossible
+— the column squeeze now runs clean, dropping 6 columns at 7/7, where before
+it broke 5 of 7 cases.
+
+Kept as `submissions/memory/alexey-memory-trimmed-top.man` (not submitted:
+same score). To turn it into a gain the height must come down from 46;
+memory's rooms occupy 36 of those rows and 11 are gaps, which is where the
+jog trick validated on plotter applies — slide the lower room one column so
+a 3-cell pipe fits a 2-row gap. 40 wide x 44 tall would be fp 1,936.
+
+**General rule worth keeping:** when a trim breaks a machine, do not conclude
+the trim is impossible. Find the single cell whose resolution flipped, write
+the room's reads as distance inequalities, and solve for a port position that
+satisfies all of them. Here the feasible window was 13 columns wide.
