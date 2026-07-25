@@ -1391,3 +1391,68 @@ Estimated payoff: block 4 at 8 rows instead of 15 puts the box at roughly
 24x24, i.e. footprint 576 against today's 961, and the shorter walk takes
 ticks down with it. That is the 2x. It is a compiler-shaped job -- embedding
 a 10-block CFG in a grid -- not an afternoon's edit.
+
+## 2026-07-25 — block 4 of memory: the re-lay, designed
+
+Took the layout apart. Two findings decide the shape of the work.
+
+**The cheap route is closed.** The obvious saving is the carriage-return row
+3 (`d1`-straight walks ten cells west to reach B1). It could be deleted by
+letting the man fall down a clear column to the bottom return row instead —
+except **there is no clear column**. Checked all nineteen: every one carries
+a glyph somewhere between row 3 and the bottom. The literal `` `34` `` alone
+blocks columns 11-14 on row 7.
+
+**The prize is bigger than the footprint.** Block 4 walks **38 cells of pure
+carriage return on every loop iteration** — row 3 (10 west + 1 down), row 13
+(18 west), and the column-1 rail (9 north) — against 46 instruction cells in
+the whole room. That is why the re-lay pays twice: it takes rows out *and*
+it takes a large bite out of avgTicks, which is the other half of the score.
+
+### The design
+
+The enabling move is to make the room **column-zoned**: put both inbound
+pipes on the top wall and both outbound on the bottom, and the row term of
+the Manhattan distance cancels. Then every `r`/`s` only needs to be on the
+correct *side* of the room. Block 4 is the one room in `memory` without port
+freedom, so this costs four pipe re-routes — `alexey_piperoute` handles them.
+
+Which side goes to which pipe is not free, and getting it backwards costs a
+row. With **block 3 reading HIGH and block 5 reading LOW** (and block 5
+written HIGH, `O` written LOW), the blocks fall out like this:
+
+| block | body | rows |
+|---|---|---|
+| B0 | `` `33` `` b 0 · s(H) | 2 (with the loop's `m d` under it) |
+| B1 / X1 / B3 / X2 / B5 | r(H) · r(H) · r(H) M | 1-2 |
+| B2 | r(H) b r(H) M ⟶ **loop** r(L) s(H) | 2 |
+| B4 | { M `` `43` `` W } s(L) | 1 |
+| B6 | b m r(H) M ⟶ **loop** r(L) s(H) | 2 |
+| TAIL | r(L) & M r(H) \| s(H) | **1** |
+
+TAIL is the one that moves: today it needs two rows because its columns run
+high → low → high, which forces a direction change. Under the flipped
+assignment it reads low → high → high, **monotonically increasing**, so it
+fits on a single eastbound row. The mirror-image choice (block 3 LOW) makes
+TAIL cost two rows and B2 one — strictly worse, because TAIL is on the hot
+path and B2 is not.
+
+Two more constraints that any layout must respect:
+
+* The loop unit `> r · · s v / ^ · · m d` may be **stretched**: `r` and `s`
+  need not be adjacent, so a unit can straddle the low/high boundary. That is
+  what lets B2's and B6's loops hold r(L) and s(H) on one row.
+* `X` is three-way and *handed*: straight / clockwise / counter-clockwise are
+  relative to the direction of travel, and the assignment (straight → the
+  long arm, cw → the short arm, ccw → halt) is fixed by `sign(A)`. So each
+  `X` must be placed with a clear run to a wall on its counter-clockwise
+  side, and the entry direction decides where the other two arms may go.
+
+Target: 9-10 interior rows against today's 13, and the 38 wasted cells per
+iteration mostly gone.
+
+**Status: designed, not built.** The constraint system is worked out and
+consistent; what remains is the placement itself — embedding ten blocks and
+five branch points in a grid, which is the compiler-shaped part. It wants a
+clean session, not the tail of one, because a half-verified block 4 is worse
+than none: it passes seven local cases and fails on the server's twenty-four.
