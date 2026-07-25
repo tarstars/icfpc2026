@@ -316,6 +316,16 @@ def walk_report(text: str, grid: Grid, inputs: list[int], max_ticks: int = 3000)
 # level down. Until that exists, every added connection can silently break
 # an earlier one -- which is exactly what the walk checker now surfaces in
 # one line instead of a tick-cap.
+#
+# Measured twice, and the number is the point: TEN connections against
+# THREE highway columns.
+#   attempt 1: init -> route -> marker   (col 11 shared with prologue->marker)
+#   attempt 2: init -> route -> discard  (col 11 shared with rotate->discard)
+# Both times init's descent boarded another connection's lane. This is a
+# resource shortage, not a bug: either widen the pump for more lanes, or
+# write the allocator that hands each connection an exclusive
+# (column, row-range) and fails the build when two overlap. Guessing lanes
+# by hand will keep producing exactly these two lines.
 HIGHWAY_COLS = (1, 11, 18)
 HIGHWAY_ROWS = (5, 13, 18, 21)
 
