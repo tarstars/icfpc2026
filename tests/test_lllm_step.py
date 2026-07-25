@@ -237,6 +237,7 @@ from littleman.lllm_step import (  # noqa: E402
     EMIT_START_ROW,
     MOVE_JOIN_COL,
     MOVE_JOIN_ROW,
+    ROUND_ROW,
     STEP_AT,
     STEP_COLS,
     STEP_ROWS,
@@ -353,8 +354,8 @@ def test_tick_interpreter_not_transcribed_yet():
     assert len(res.output) == 258 and res.output[-1] == -1
 
 
-def test_space_move_and_countdown_reach_emit_boundary():
-    """A k=1 space tick advances East and leaves canonical K=0 state."""
+def test_space_move_countdown_emit_and_reenter_round_input():
+    """A k=1 space tick emits its delta and waits for the next round."""
     rows = rows_of(CASES[1])
     machine = Machine.parse(RIG)
     res = machine.run(
@@ -364,10 +365,11 @@ def test_space_move_and_countdown_reach_emit_boundary():
         m for m in machine.men
         if (m.room.top, m.room.left) == (SR, SC)
     )
-    assert res.output == run_case(rows, []).deltas
-    assert (man.r - SR, man.c - SC) == (EMIT_START_ROW, EMIT_START_COL)
-    assert machine.grid[man.r][man.c] == "H"
-    assert man.halted
+    assert res.output == run_case(rows, [1]).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert machine.grid[man.r][man.c] == "r"
+    assert man.blocked
+    assert not man.halted
     scratch = next(
         p for p in machine.pipes
         if p.dest is man.room and len(p.cells) == 17
@@ -378,8 +380,8 @@ def test_space_move_and_countdown_reach_emit_boundary():
         assert machine.grid[SR + row][SC + col] == " "
 
 
-def test_positive_countdown_loops_into_heading_tick():
-    """k=2 returns through the blank crossings and executes the `v` arm."""
+def test_positive_countdown_loops_then_emits_and_reenters():
+    """k=2 loops once, executes the ``v`` arm, and completes the round."""
     rows = rows_of(CASES[1])
     machine = Machine.parse(RIG)
     res = machine.run(
@@ -389,14 +391,35 @@ def test_positive_countdown_loops_into_heading_tick():
         m for m in machine.men
         if (m.room.top, m.room.left) == (SR, SC)
     )
-    assert res.output == run_case(rows, []).deltas
-    assert (man.r - SR, man.c - SC) == (EMIT_START_ROW, EMIT_START_COL)
+    assert res.output == run_case(rows, [2]).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert machine.grid[man.r][man.c] == "r"
+    assert man.blocked
+    assert not man.halted
     scratch = next(
         p for p in machine.pipes
         if p.dest is man.room and len(p.cells) == 17
     )
     travelling = [v for v in scratch.values if v is not None]
     assert list(reversed(travelling)) == [2, 34, 0, 0, 17, 0]
+
+
+def test_space_program_reenters_for_multiple_rounds():
+    """The physical STEP room consumes consecutive later-round tokens."""
+    rows = rows_of(CASES[1])
+    ks = [1, 2, 1]
+    machine = Machine.parse(RIG)
+    res = machine.run(
+        max_ticks=1_000_000, inputs=loader_stream(rows) + ks
+    )
+    man = next(
+        m for m in machine.men
+        if (m.room.top, m.room.left) == (SR, SC)
+    )
+    assert res.output == run_case(rows, ks).deltas
+    assert (man.r - SR, man.c - SC) == (ROUND_ROW, 8)
+    assert machine.grid[man.r][man.c] == "r"
+    assert man.blocked
 
 
 @pytest.mark.parametrize(

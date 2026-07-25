@@ -438,7 +438,7 @@ def _step_round1(room) -> None:
     # Rows 10/11 are later crossed horizontally by FETCH.  Blank cells are
     # intentional: both traversals already carry their required heading.
     for r in range(5, 21):
-        if r in (10, 11):
+        if r in (8, 10, 11):
             continue
         room.put(r, 60, "^")
     room.put(4, 60, "<")
@@ -616,7 +616,8 @@ def _step_tick_halt(room) -> None:
     room.put(TICK_ROW + 5, 50, ">")
     room.put(TICK_ROW + 5, 65, "^")
     for r in range(12, TICK_ROW + 5):
-        room.put(r, 65, "^")
+        if r != ROUND_ROW:
+            room.put(r, 65, "^")
     _step_fetch(room)
 
 
@@ -655,7 +656,8 @@ def _step_fetch(room) -> None:
     room.put(11, 28, ">")
     room.put(11, 66, "v")
     for r in range(12, CLASS_ROW):
-        room.put(r, 66, "v")
+        if r != ROUND_ROW:
+            room.put(r, 66, "v")
     _step_class_dispatch(room)
 
 
@@ -793,7 +795,65 @@ def _step_countdown(room) -> None:
 
     # K-1 == 0 continues west into the emit boundary.
     room.put(COUNT_X_ROW, TAPE_LO - 1, "v")
-    room.put(EMIT_START_ROW, TAPE_LO - 1, ">H")  # TODO: emit phase
+    room.put(EMIT_START_ROW, TAPE_LO - 1, ">")
+    _step_emit(room)
+
+
+EMIT_CONT_ROW = 180
+EMIT_DRAW_ROW = 185
+EMIT_RETURN_ROW = 186
+
+
+def _step_emit(room) -> None:
+    """Restore OLD, draw ADDR, commit, then wait for the next round's k."""
+    # Preserve OLD in host B while K is relayed, restoring canonical CTRL
+    # head before the FETCH request.
+    prefix = Tape(
+        room, EMIT_START_ROW, EMIT_START_COL, TAPE_LO, TAPE_HI
+    )
+    prefix.emit(
+        *("r", "s") * 4,
+        "r", "s", "M",
+        "r", "s", "W", "M",
+    )
+    room.put(prefix.row, 71, "^")
+    for row in range(9, prefix.row):
+        room.put(row, 71, "^")
+    room.put(8, 71, "<")
+
+    # Walked west: OLD+256 -> FETCH; response colour completes OLD*16+colour.
+    room.put(8, 39, "`652`")
+    room.put(8, 37, "s+")
+    room.put(8, 33, "`61`")
+    room.put(8, 29, "+rM*")
+    room.put(8, 27, "v")
+    room.put(22, 27, ">")
+    room.put(22, 38, "s")
+    room.put(22, 40, "v")
+
+    # The old-cell DRAW token descends through blank crossings to the new
+    # address formatter.
+    room.put(EMIT_CONT_ROW, 40, ">")
+    new = Tape(room, EMIT_CONT_ROW, TAPE_LO, TAPE_LO, TAPE_HI)
+    new.emit(
+        "r", "s", "r", "s", "M",
+        *("r", "s") * 4, "W", "M",
+        "#16", "*", "M", "9", "+",
+    )
+    new.down_at(31, EMIT_DRAW_ROW)
+    room.put(EMIT_DRAW_ROW, 31, "<")
+    room.put(EMIT_DRAW_ROW, 28, "s")
+    room.put(EMIT_DRAW_ROW, 24, "sN1")   # walked west: 1, N, send -1
+    room.put(EMIT_DRAW_ROW, 22, "v")
+    room.put(EMIT_RETURN_ROW, 22, ">")
+    room.put(EMIT_RETURN_ROW, 70, "^")
+
+    # Return to ROUND-IN.  Row 163 is the one horizontal crossing of this
+    # highway; the northbound man retains its heading through the blank.
+    for row in range(31, EMIT_RETURN_ROW):
+        if row != EMIT_START_ROW:
+            room.put(row, 70, "^")
+    room.put(ROUND_ROW, 70, "<")
 
 
 def build_step_room():
