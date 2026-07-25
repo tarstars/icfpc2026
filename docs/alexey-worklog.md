@@ -1144,3 +1144,26 @@ failed instantly (0/7, 2 ticks) — the pipe count silently dropped from 7 to
 Only blocks 1-2 are joined so far. Blocks 3, 4 and 5 are still on 2-row gaps
 and each has exactly one pipe in and one out, so the same move applies; each
 should give another row or two.
+
+### memory: block 3 herringboned onto block 2 — height 37 -> 33, but width now binds
+
+Same move as blocks 1-2, mirrored: block 3 keeps its own columns (6-31) while
+block 2 sits at 8-36, so block 3 overhangs to the LEFT and block 2 to the
+RIGHT — a herringbone. That lets the pipe be just **2 cells**: down out of
+block 2's right overhang, then west into block 3's right wall.
+
+    block2 rows 5-8  cols 8-36
+    block3 rows 9-15 cols 6-31
+    pipe   (9,32) v -> (10,32) <   into block3's right wall at (10,31)
+
+7/7, and after squeezing: **36 x 33**, height down from 37.
+
+**Footprint unchanged at 1,296** — width 36 now binds against height 33.
+Three columns of width are worth more than any further vertical work here.
+Saved as `alexey-memory-h33.man`; not submitted, since the score is identical
+to memory_05 (26,272,620).
+
+The vertical idea is now fully proven on two joints and has three rows of
+headroom left in blocks 4-5, but it cannot pay again until the layout is
+narrowed. Next move is horizontal: the same offset trick applied sideways,
+or pulling the I/O rooms (columns 0-2) in against the blocks.
