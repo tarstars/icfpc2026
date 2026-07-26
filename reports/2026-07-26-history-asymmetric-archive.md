@@ -4,10 +4,9 @@ Date: 2026-07-26
 
 ## Result
 
-`history_03` is an 84×84 candidate for the footprint-only History Lesson
-problem. It emits the canonical 2,810-byte text in 1,783,519 ticks and scores
-7,056 locally. This is 169 footprint points (2.34%) below the live 85×85
-`history_02` baseline.
+`history_03` is the live 84×84 History Lesson program. It emits the canonical
+2,810-byte text in 1,783,519 local ticks and has footprint score 7,056. This
+is 169 footprint points (2.34%) below the preceding 85×85 `history_02`.
 
 The generated source is
 `submissions/history/history_03.man`, SHA-256
@@ -61,3 +60,11 @@ The mandatory freshness read at `2026-07-26T18:08:05.738Z` found the
 scoreboard unfrozen and `wheezards` at 1/1, score 7,225, rank 29. Direct API
 read of submission `b8426386-da64-4210-978d-f30b23b231a1` confirmed the
 85×85 baseline with no load or execution error.
+
+Submission `c11d1a93-6e1b-4dd1-92b7-55d9a2e7375a` then completed at
+`2026-07-26T18:14:31.110Z`: 1/1, 84×84, score 7,056, with no load or runtime
+error. The exact terminal response is preserved in
+`submissions/history/history_03-submit.json`.
+
+The unfrozen standings refresh at `2026-07-26T18:16:04.721Z` counted the new
+score and moved `wheezards` from tied rank 29 to tied rank 26.
