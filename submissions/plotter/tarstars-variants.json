@@ -42,7 +42,20 @@
         "averageTicksReductionPercent": 0.33911395071263284,
         "localScoreReductionPercent": 4.159620758262839
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "c4e94257-0709-4eb4-bd4c-894721ec2294",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 152,
+        "height": 145,
+        "area2": 23104,
+        "averageTicks": 69221,
+        "score": 1599281984,
+        "createdAt": "2026-07-26T23:08:23.158Z",
+        "updatedAt": "2026-07-26T23:08:33.623Z",
+        "fullResponse": "submissions/plotter/plotter_07-submit.json"
+      }
     }
   ]
 }

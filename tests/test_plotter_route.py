@@ -22,6 +22,7 @@ from littleman.sim import Machine
 REPO = pathlib.Path(__file__).resolve().parent.parent
 SOURCE = REPO / "submissions" / "plotter" / "plotter_06.man"
 CANDIDATE = REPO / "submissions" / "plotter" / "plotter_07.man"
+RESPONSE = REPO / "submissions" / "plotter" / "plotter_07-submit.json"
 PROBLEM = json.loads(
     (REPO / "data" / "small" / "problems" / "plotter.json").read_text()
 )
@@ -133,3 +134,17 @@ def test_deterministic_multiround_frame_oracle():
     ]
     result = judge_case(CANDIDATE.read_text(), rounds, max_ticks=2_500_000)
     assert result.passed, result
+
+
+def test_terminal_live_response_matches_the_candidate():
+    response = json.loads(RESPONSE.read_text())
+    assert response["id"] == "c4e94257-0709-4eb4-bd4c-894721ec2294"
+    assert response["status"] == "done"
+    assert (response["casesPassed"], response["casesTotal"]) == (20, 20)
+    assert (response["width"], response["height"], response["area2"]) == (
+        152,
+        145,
+        23_104,
+    )
+    assert response["avgTicks"] == 69_221
+    assert response["score"] == 1_599_281_984

@@ -58,3 +58,11 @@ Immediately before the candidate commit, the branch was updated to
 improvement. Scaling the live score by the measured local ratio predicts
 approximately `1,599,472,249`, enough for one place if hidden-case behavior
 tracks the public ratio.
+
+## Live result
+
+Submission `c4e94257-0709-4eb4-bd4c-894721ec2294` passed 20/20 at 152x145,
+average 69,221 ticks, and score `1,599,281,984`. This is a 4.170% reduction
+from the counted `1,668,891,820`, closely matching the public-case
+projection. The terminal response is preserved in
+`submissions/plotter/plotter_07-submit.json`.
