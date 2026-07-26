@@ -14,14 +14,26 @@ INDEX_COPY_END = -5100
 
 
 def indexcopy_reference(tokens: list[int]) -> list[int]:
+    return indexmulticopy_reference(tokens, 2)
+
+
+def indexmulticopy_reference(tokens: list[int], copies: int) -> list[int]:
+    if copies < 2:
+        raise ValueError("indexed copy count must be at least two")
     if not tokens or tokens[-1] != INDEX_END:
         raise ValueError("index copy requires one complete indexed state")
-    return [*tokens, INDEX_COPY_SPLIT, *tokens, INDEX_COPY_END]
+    out = []
+    for index in range(copies):
+        out.extend(tokens)
+        out.append(INDEX_COPY_END if index + 1 == copies else INDEX_COPY_SPLIT)
+    return out
 
 
-def _build_fsm(prefix_words: int = 0) -> _Fsm:
+def _build_fsm(prefix_words: int = 0, copies: int = 2) -> _Fsm:
     if prefix_words < 0:
         raise ValueError("prefix length must be non-negative")
+    if copies < 2:
+        raise ValueError("indexed copy count must be at least two")
     fsm = _Fsm()
     first = "prefix_0" if prefix_words else "load_header_r"
     fsm.go("boot", "left", "@", first)
@@ -60,9 +72,7 @@ def _build_fsm(prefix_words: int = 0) -> _Fsm:
         restored(prefix, "event", f"{prefix}_field_0_r", duplicate)
         for index in range(11):
             target = (
-                f"{prefix}_field_{index + 1}_r"
-                if index < 10
-                else f"{prefix}_header_r"
+                f"{prefix}_field_{index + 1}_r" if index < 10 else f"{prefix}_header_r"
             )
             plain(prefix, f"field_{index}", source, target, duplicate)
         restored(prefix, "setup", f"{prefix}_split_r", duplicate)
@@ -151,7 +161,24 @@ def _build_fsm(prefix_words: int = 0) -> _Fsm:
         f" `{abs(INDEX_COPY_SPLIT)}`Ns",
         "copy_header_r",
     )
-    indexed_pass("copy", "right", False, "copy_end")
+    if copies == 2:
+        indexed_pass("copy", "right", False, "copy_end")
+    else:
+        indexed_pass("copy", "right", True, "copy_split_2")
+        for copy_no in range(2, copies):
+            prefix = f"copy{copy_no}"
+            fsm.go(
+                f"copy_split_{copy_no}",
+                "lit_l",
+                f" `{abs(INDEX_COPY_SPLIT)}`Ns",
+                f"{prefix}_header_r",
+            )
+            indexed_pass(
+                prefix,
+                "right",
+                copy_no + 1 < copies,
+                (f"copy_split_{copy_no + 1}" if copy_no + 1 < copies else "copy_end"),
+            )
     fsm.go(
         "copy_end",
         "lit_l",
@@ -162,25 +189,29 @@ def _build_fsm(prefix_words: int = 0) -> _Fsm:
     return fsm
 
 
-def build_indexcopy_room(prefix_words: int = 0) -> list[str]:
-    return _compile(_build_fsm(prefix_words), extra_gap=96)
+def build_indexcopy_room(prefix_words: int = 0, copies: int = 2) -> list[str]:
+    return _compile(_build_fsm(prefix_words, copies), extra_gap=96)
 
 
-def _port_rows(prefix_words: int = 0) -> tuple[int, int, int, int]:
-    fsm = _build_fsm(prefix_words)
+def _port_rows(prefix_words: int = 0, copies: int = 2) -> tuple[int, int, int, int]:
+    fsm = _build_fsm(prefix_words, copies)
     _routes, blocks, _height = _layout(fsm)
     groups = ([], [], [], [])
     main_in, main_out, scratch_out, scratch_in = groups
     for name, zone, code, _kind, _targets in fsm.blocks:
         for char in code:
             if char == "r":
-                (scratch_in if name.startswith("copy_") and zone == "right" else main_in).append(
-                    blocks[name]
-                )
+                (
+                    scratch_in
+                    if name.startswith("copy") and zone == "right"
+                    else main_in
+                ).append(blocks[name])
             elif char == "s":
-                (scratch_out if name.startswith("load_") and zone == "right" else main_out).append(
-                    blocks[name]
-                )
+                (
+                    scratch_out
+                    if zone == "right" and name.startswith(("load_", "copy"))
+                    else main_out
+                ).append(blocks[name])
 
     def middle(rows):
         return (min(rows) + max(rows)) // 2
@@ -194,13 +225,14 @@ def add_indexcopy_network(
     top: int,
     left: int,
     prefix_words: int = 0,
+    copies: int = 2,
 ) -> tuple[tuple[int, int], tuple[int, int]]:
-    room = build_indexcopy_room(prefix_words)
+    room = build_indexcopy_room(prefix_words, copies)
     right = left + len(room[0]) - 1
     relay_left = right + 5
     far = relay_left + 17
     relay_top = top + len(room) + 20
-    input_row, output_row, scratch_out, scratch_in = _port_rows(prefix_words)
+    input_row, output_row, scratch_out, scratch_in = _port_rows(prefix_words, copies)
     input_row += top
     output_row += top
     scratch_out += top
@@ -226,9 +258,9 @@ def add_indexcopy_network(
     return (input_row, left - 1), (output_row, left - 1)
 
 
-def build_indexcopy_rig() -> str:
+def build_indexcopy_rig(copies: int = 2) -> str:
     cv = Canvas()
-    ingress, egress = add_indexcopy_network(cv, top=0, left=5)
+    ingress, egress = add_indexcopy_network(cv, top=0, left=5, copies=copies)
     cv.put(ingress[0] - 1, 0, ["+-+", "|I|", "+-+"])
     cv.put(egress[0] - 1, 0, ["+-+", "|O|", "+-+"])
     cv.pipe([(ingress[0], 3), ingress])

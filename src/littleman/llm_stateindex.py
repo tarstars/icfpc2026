@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .lllm_scan import _compile, _Fsm
+from .lllm_scan import _compile, _Fsm, _layout
 from .llm_perimeter import ROOM_END
 from .llm_pipetrace import PIPE_END
 from .llm_roomfind import SETUP_END
@@ -172,9 +172,51 @@ def _build_fsm() -> _Fsm:
         pos="drain_restore",
     )
     fsm.go("drain_restore", "left", "Ws", "drain_r")
-    fsm.go("index_end", "left", "WsH", "index_end")
+    fsm.go("index_end", "left", "Ws", "item_r")
     return fsm
 
 
 def build_stateindex_room() -> list[str]:
     return _compile(_build_fsm())
+
+
+def build_stateindex_rig() -> str:
+    from .canvas import Canvas
+    from .lllm_fetch import build_relay
+
+    room = build_stateindex_room()
+    block_rows = _layout(_build_fsm())[1]
+    left = 5
+    right = left + len(room[0]) - 1
+    relay_left = right + 5
+    far = relay_left + 17
+    buffer_bottom = len(room) + 190
+    input_row = 45
+    output_row = 55
+    cv = Canvas()
+    cv.put(0, left, room)
+    cv.put(buffer_bottom - 20, relay_left, build_relay().render())
+    cv.put(input_row - 1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(output_row - 1, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(input_row, 3), (input_row, left - 1)])
+    cv.pipe([(output_row, left - 1), (output_row, 3)])
+    out_row = block_rows["count_store"]
+    in_row = block_rows["drain_r"]
+    relay_row = buffer_bottom - 19
+    cv.pipe(
+        [
+            (out_row, right + 1),
+            (out_row, far),
+            (relay_row, far),
+            (relay_row, relay_left + 6),
+        ]
+    )
+    cv.pipe(
+        [
+            (relay_row, relay_left - 1),
+            (relay_row, right + 3),
+            (in_row, right + 3),
+            (in_row, right + 1),
+        ]
+    )
+    return cv.render()

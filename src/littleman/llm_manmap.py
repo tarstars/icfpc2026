@@ -96,7 +96,7 @@ def _build_fsm() -> _Fsm:
     fsm.go("mask_marker", "left", "s", "mask_r")
     fsm.go("mask_r", "left", "rs", "values_marker_r")
     fsm.go("values_marker_r", "left", "rs", "values_count_r")
-    fsm.go("values_count_r", "left", "rMs", "values_count")
+    fsm.go("values_count_r", "left", "rMbs", "values_count")
     fsm.bp("values_count", "mid", "", zero="pipe_end_r", pos="value_r")
     fsm.go("value_r", "left", "rs", "values_dec")
     fsm.bp("values_dec", "mid", "m", zero="pipe_end_r", pos="value_r")

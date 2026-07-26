@@ -94,7 +94,7 @@ def _build_fsm(*, prefix_world: bool = False) -> _Fsm:
     fsm.go("mask_recv", "right", "r", "mask_out")
     fsm.go("mask_out", "left", "s", "values_marker_r")
     fsm.go("values_marker_r", "left", "rs", "values_count_r")
-    fsm.go("values_count_r", "left", "rMs", "values_count")
+    fsm.go("values_count_r", "left", "rMbs", "values_count")
     fsm.bp(
         "values_count",
         "mid",
@@ -133,6 +133,46 @@ def build_maskmap_rig() -> str:
     from .canvas import Canvas
 
     ctrl = build_maskmap_room()
+    ctrl_right = CTRL_LEFT + len(ctrl[0]) - 1
+    service_left = ctrl_right + 10
+    service = build_pipemask_room()
+    service_right = service_left + len(service[0]) - 1
+    relay_left = service_right + 5
+    far = relay_left + 17
+    cv = Canvas()
+    cv.put(0, CTRL_LEFT, ctrl)
+    cv.put(0, service_left, service)
+    cv.put(20, relay_left, build_relay().render())
+    cv.put(INPUT_ROW - 1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(OUTPUT_ROW - 1, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(INPUT_ROW, 3), (INPUT_ROW, CTRL_LEFT - 1)])
+    cv.pipe([(OUTPUT_ROW, CTRL_LEFT - 1), (OUTPUT_ROW, 3)])
+    cv.pipe([(CTRL_CMD_ROW, ctrl_right + 1), (CTRL_CMD_ROW, service_left - 1)])
+    cv.pipe(
+        [
+            (6, service_left - 1),
+            (6, ctrl_right + 4),
+            (CTRL_RESP_ROW, ctrl_right + 4),
+            (CTRL_RESP_ROW, ctrl_right + 1),
+        ]
+    )
+    cv.pipe([(2, service_right + 1), (2, far), (21, far), (21, relay_left + 6)])
+    cv.pipe(
+        [
+            (21, relay_left - 1),
+            (21, service_right + 2),
+            (9, service_right + 2),
+            (9, service_right + 1),
+        ]
+    )
+    return cv.render()
+
+
+def build_maskprefix_rig() -> str:
+    """World-prefixed variant used at the start of a complete tick."""
+    from .canvas import Canvas
+
+    ctrl = build_maskprefix_room()
     ctrl_right = CTRL_LEFT + len(ctrl[0]) - 1
     service_left = ctrl_right + 10
     service = build_pipemask_room()
