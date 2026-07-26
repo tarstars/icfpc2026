@@ -2,7 +2,7 @@
 
 Date: 2026-07-27
 
-Status: locally ready; live result pending.
+Status: accepted live, 20/20.
 
 ## Candidate
 
@@ -86,3 +86,20 @@ no observed regression among 14,992 baseline-passing streams.
 
 An independent agent reproduced the same 14,992/0/0/8 matrix, public ticks,
 unchanged bindings, and 3.076% reduction before release.
+
+## Live result
+
+Exact submission `95c909b1-1449-4b28-9c7d-9612462bad36` completed at
+2026-07-26T21:53:22.293Z:
+
+| Property | `tcp_08` | `tcp_09` | Change |
+| --- | ---: | ---: | ---: |
+| Cases | 20/20 | 20/20 | unchanged |
+| Dimensions | 31×31 | 31×31 | unchanged |
+| Average ticks | 1,707.05 | 1,639.05 | -3.9841% |
+| Score | 1,640,475.05 | 1,575,127.05 | -3.9841% |
+
+The live tick reduction exceeded the public projection and crossed the prior
+rank-29 score of 1,618,346.25. The exact terminal API document is preserved
+at `submissions/tcp/tcp_09-submit.json`; the standings snapshot had not yet
+refreshed at the time of this report update.
