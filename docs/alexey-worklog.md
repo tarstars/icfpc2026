@@ -2007,3 +2007,22 @@ closer, empty string, `([)]`, full-length balanced, balanced-then-unclosed.
 `submissions/brackets/brackets_06.man`. Expected live ~ 789,237 x (961/1156)
 x (380,983/455,336 / (961/1156)) — the tick average is unchanged again, so
 simply **~656,000**.
+
+### brackets_07: re-run squeeze AFTER moving things — 31x29 -> 30x27 (fp 900)
+
+`alexey_squeeze` had nothing to delete on brackets_04 (the trick sheet even
+says so). After the shift ladder moved three rooms and four pipes, it found
+**3 rows and 2 columns**: 961 -> **900**, local 380,983 -> 353,600, 9/9,
+250-fuzz clean. A second pass finds nothing more.
+
+That is the general lesson, and it is now paid for twice: **squeeze is not
+exhausted, it is exhausted *for a given layout*. Re-run it after every move.**
+
+Live ladder for brackets today: 836,345 -> 789,237 (fold the return pipe off
+the east column) -> 660,983 (shift the middle room three columns left) ->
+**615,565** (squeeze the slack the shift opened). Total **1.36x**, all of it
+footprint; the tick average never moved.
+
+Remaining: 30 wide against 27 tall, so the width still binds. The next
+column would have to come out of the middle room's interior (29 wide),
+which is program surgery, not layout.
