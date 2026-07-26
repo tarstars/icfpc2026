@@ -78,10 +78,26 @@ class Step3Model:
     def __init__(self, fetch) -> None:
         self.fetch = fetch
         self.ring: list[int] = []
-        self.deltas: list[int] = []
-        self.A = 0
+        self.ring2: list[int] = []      # [MARK2, seg0, seg1]; segment =
+        self.deltas: list[int] = []     # [-(rawHDR), (addr, pres, val) x L]
+        self.A = 0                      # with cell groups TAIL-FIRST
         self.B = 0
         self.msteps = 0
+
+    def _pull2(self) -> int:
+        self.A = self.ring2.pop(0)
+        self.msteps += 1
+        return self.A
+
+    def _push2(self, value: int | None = None) -> None:
+        if value is not None:
+            self.A = value
+        self.ring2.append(self.A)
+        self.msteps += 1
+
+    def _relay2(self, n: int) -> None:
+        for _ in range(n):
+            self._push2(self._pull2())
 
     # -- scratch-loop primitives ------------------------------------------
     def _pull(self) -> int:
@@ -155,16 +171,88 @@ class Step3Model:
         self._man_group(stream[66])                 # r(LOAD) -> M0
         self._man_group(self._pull())               # r(Y)    -> M1
         self._man_group(self._pull())               # r(X)    -> M2
+        n = sum(1 for a in stream[64:67] if a)      # path-encoded (4 paths)
         self._push(MARK)                            # `1` N s
         self._push(0)                               # `0` s   (SP)
-        self._push(0)                               # s       (OVER)
+        self._push(2 ** (3 - n))                    # `1|2|4|8` s  (SHIFTM)
         self._push(0)                               # s       (K)
-        assert stream[67] == 0, "pipes are phase C"
+        for p in range(stream[67]):                 # r(LOAD): count, b-loop
+            self._intake_pipe(stream[68 + 8 * p : 76 + 8 * p])
+        self._push2(MARK)                           # `1` N s2 (canon TAIL)
         self._check_canonical()
+
+    def _intake_pipe(self, desc) -> None:
+        """One 8-word descriptor -> one ring2 segment, cells REVERSED.
+
+        The 7 cell words are reversed by insertion into RING1 (step t:
+        push w, relay t, relay 16 -- men stay contiguous, statically), so
+        the hi-first peel emits addrs tail-first; BP = 21-L skips the
+        zero padding, which always leads.  HDR is stored as -raw (raw >= 2
+        always: L>=1 and head addr 0 is geometrically impossible), so
+        segment starts are the only negative ring2 slots after MARK2.
+        """
+        raw = desc[0]                               # r(LOAD)
+        self._push2(-raw)                           # N s2
+        length = raw & 31                           # N M `31` W & ...
+        for t, word in enumerate(desc[1:8]):        # ... N M `21` W + b
+            self._push(word)                        # r(LOAD) s
+            self._relay(t)                          # rev-so-far
+            self._relay(16)                         # the men, contiguous
+        skip = 21 - length
+        for _ in range(7):
+            w = self._pull()                        # r (ring1 head)
+            for div in (1 << 42, 1 << 21, 1):       # M `2^k` W / hi-first
+                field, w = divmod(w, div)
+                if skip:                            # d: BP > 0
+                    skip -= 1                       # m
+                    continue
+                self._push2(field)                  # s2 (addr)
+                self._push2(0)                      # `0` s2 (pres)
+                self._push2(0)                      # s2 (val)
 
     def _check_canonical(self) -> None:
         assert len(self.ring) == 16
         assert self.ring[12] == MARK and self.ring[13] == 0
+        assert not self.ring2 or self.ring2[-1] == MARK
+
+    # -- pipes: the tick's phase 1 (tail-first gap fill, one lap) ----------
+    def _pipe_shift(self) -> None:
+        """Structural ring2 lap; cells are tail-first so the pulled order
+        IS the model's descending-i order, and the pending-gap walk (addr
+        pushed early, pres/val deferred, giver's addr held in B) does the
+        cascade with two registers.  Only addr-or-sentinel slots are ever
+        sign-tested; addrs are >= 0, so values never fake a boundary."""
+        x = self._pull2()                           # first sentinel or MARK2
+        while x != MARK:
+            self._push2(x)                          # s2 (the -raw header)
+            gap = False                             # no pending (deferred
+            while True:                             # pres/val) cell yet
+                x = self._pull2()                   # r2: addr or sentinel
+                if x < 0:
+                    if gap:
+                        self._push2(0)              # pending resolves empty
+                        self._push2(0)
+                    break
+                if not gap:
+                    self._push2(x)                  # s2 (addr, A kept)
+                    if self._pull2():               # r2(pres) X
+                        self._push2(1)              # `1` s2
+                        self._push2(self._pull2())  # r2(v) s2
+                    else:
+                        self._pull2()               # r2: junk v, dropped
+                        gap = True                  # this cell now pending
+                else:                               # x = giver addr (in B)
+                    p = self._pull2()               # r2 X
+                    v = self._pull2()               # r2
+                    if p:                           # transfer up the pipe
+                        self._push2(1)              # pending := (1, v)
+                        self._push2(v)
+                    else:
+                        self._push2(0)              # pending stays empty
+                        self._push2(0)
+                    self._push2(x)                  # W s2: giver's addr;
+                    gap = True                      # giver is now pending
+        self._push2(x)                              # MARK2 home: canonical
 
     # -- FETCH round trip --------------------------------------------------
     def _op_fetch(self, addr: int) -> int:
@@ -230,15 +318,102 @@ class Step3Model:
             c = self._pull()                        # r: A = 8+h
             self._push(c - 4)                       # `4` M W - s -> 4+h
             self._relay(3)
-        elif cls in (9, 10):                        # s/r: phase C; blocked
-            self._relay(14)
-            c = self._pull()
-            self._push(c - 8)                       # `8` M W - s: no intent
-            self._relay(3)
+        elif cls in (9, 10):                        # s / r: the pipe arms
+            self._pipe_arm(outgoing=cls == 9)
         else:                                       # class 0: nop + move
             self._relay(2)
 
-    # -- pass 2: apply moves against the live ring (occupancy = ADDRs) -----
+    # -- the s/r arms ------------------------------------------------------
+    def _lap_read(self, offset: int) -> int:
+        """Full ring1 lap bringing slot ``offset`` through the hand."""
+        self._relay(offset)
+        value = self._pull()
+        self._push(value)
+        self._relay(15 - offset)
+        return value
+
+    def _lap_write(self, offset: int, value: int) -> None:
+        self._relay(offset)
+        self._pull()
+        self._push(value)
+        self._relay(15 - offset)
+
+    def _seg_headers(self) -> list[int]:
+        """One structural ring2 lap; returns each segment's raw HDR.
+
+        Machine shape: pull HDR' (push back), N, L-extract, BP=3L relay,
+        next sentinel...; raw values ride through MARK/SP parking slots.
+        """
+        raws = []
+        x = self._pull2()
+        while x != MARK:
+            self._push2(x)                          # s2
+            raws.append(-x)                         # N (+ parking dance)
+            self._relay2(3 * (-x & 31))             # BP = 3L cell slots
+            x = self._pull2()
+        self._push2(x)                              # MARK2: canonical
+        return raws
+
+    def _pipe_arm(self, outgoing: bool) -> None:
+        """head = AI of the executing man; ends at the next man's CTRL.
+
+        Machine: BP count-to-MARK names the man (3 static sub-arms); the
+        nearest-pipe pick parks intermediates in the MARK/SP slots and
+        re-reads SHIFTM for the mask bit 2^(21|24 + mi)/SHIFTM.
+        """
+        mi = (10 - self.ring.index(MARK)) // 4      # `3`b + m per group hop
+        self._relay(2 + 4 * (2 - mi) + 1)           # AI,BI + hops + rs(MARK)
+        self._relay(3)                              # SP, SHIFTM, K: head 0
+        shiftm = self.ring[14]                      # r(SHIFTM) en route
+        man_addr = self._lap_read(4 * mi + 1)
+        raws = self._seg_headers()
+        best, key = -1, None
+        bit = 2 ** ((21 if outgoing else 24) + mi) // shiftm
+        for pi, raw in enumerate(raws):             # <=2: straight-line
+            if not raw & bit:                       # W & X (raw stays in B)
+                continue
+            cell = raw >> (5 if outgoing else 13) & 255
+            d = abs(cell // 16 - man_addr // 16) + abs(
+                cell % 16 - man_addr % 16
+            )
+            if key is None or (d, cell) < key:
+                best, key = pi, (d, cell)
+        blocked = best < 0 or not self._seg_act(best, outgoing, mi)
+        if blocked:
+            self._lap_write(4 * mi, self._lap_read(4 * mi) - 8)
+        self._relay(4 * (mi + 1))                   # -> next man's CTRL
+
+    def _seg_act(self, ci: int, outgoing: bool, mi: int) -> bool:
+        """Rotate ring2 to segment ``ci``, act on head/tail cell, rotate
+        home structurally.  Returns False when blocked (full/empty)."""
+        for _ in range(ci):                         # skip earlier segments
+            x = self._pull2()
+            self._push2(x)
+            self._relay2(3 * (-x & 31))
+        length = -self._pull2() & 31                # r2(HDR') s2 N `31`&b
+        self._push2()
+        if outgoing:                                # head cell = LAST group
+            self._relay2(3 * (length - 1))
+            a, p, v = self._pull2(), self._pull2(), self._pull2()
+            ok = p == 0
+            self._push2(a)
+            self._push2(1 if ok else p)
+            self._push2(self._lap_read(4 * mi + 2) if ok else v)
+        else:                                       # tail cell = FIRST group
+            a, p, v = self._pull2(), self._pull2(), self._pull2()
+            ok = p == 1
+            self._push2(a)
+            self._push2(0 if ok else p)
+            self._push2(0 if ok else v)
+            if ok:
+                self._lap_write(4 * mi + 2, v)      # AI := taken value
+            self._relay2(3 * (length - 1))
+        while True:                                 # structural walk home
+            x = self._pull2()
+            self._push2(x)
+            if x == MARK:
+                return ok
+            self._relay2(3 * (-x & 31))
     def _pass2(self) -> None:
         while True:
             v = self._pull()                        # r
@@ -246,8 +421,12 @@ class Step3Model:
                 self._push(v)
                 self._relay(3)
                 return
-            if v < 8 or v >= 12:                    # `8`MW-X / `4`MW-X
-                self._push(v if v < 8 else v - 8)   # clear intent if halted
+            if v < 8 or v >= 16:                    # no intent, or walled
+                self._push(v)                       # `8`MW-X ... s
+                self._relay(3)
+                continue
+            if v >= 12:                             # collision-halted here
+                self._push(v - 8)                   # `4`MW- `4`MW+ s: 4+h
                 self._relay(3)
                 continue
             h = v - 8                               # mover: A = heading
@@ -296,31 +475,35 @@ class Step3Model:
                 continue
             self._relay(14)                         # wall: back to own CTRL
             self._pull()                            # r(c)
-            self._push(c + 4)                       # `4` M W + s: frozen
-            while self._pull() != MARK:             # relay-until-MARK
-                self._push()
-            self._push(MARK)                        # s
-            self._relay(1)                          # rs(SP)
-            self._pull()                            # r(OVER), dropped
-            self._push(1)                           # `1` s: OVER = 1
-            self._relay(1)                          # rs(K) -> head 0, restart
+            self._push(c + 20)                      # `20` M W + s: WALLED
+            self._relay(3)                          # -> next man's CTRL
 
-    # -- tick loop top: OVER gate and the K countdown ----------------------
+    # -- tick loop top: freeze scan + the K countdown ----------------------
     def _loop_top(self) -> str:
-        """head 0 -> head 0; returns 'tick' or 'emit' (the branch taken)."""
-        self._relay(12)                             # the three man groups
-        self._relay(2)                              # MARK, SP
-        over = self._pull()                         # r(OVER)
-        self._push(over)                            # X ... s
+        """head 0 -> head 0; 'tick' / 'idle' / 'emit'.
+
+        The relay over the 12 man slots doubles as a straight-line scan:
+        each CTRL branches walled (>=16) / live (<4) / frozen into three
+        parallel relay tracks (found-states are idempotent, so tracks
+        merge pairwise; ~6 short blocks in the room).
+        """
+        walled = live = False
+        for _ in range(3):                          # r X ... s, relay 3
+            c = self._pull()
+            self._push(c)
+            walled = walled or c >= 16
+            live = live or c < 4
+            self._relay(3)
+        self._relay(3)                              # MARK, SP, SHIFTM
         k = self._pull()                            # r(K)
-        if over:                                    # drain: M - s -> K = 0
-            self._push(0)
+        if walled:                                  # global freeze: drain
+            self._push(0)                           # M - s
             return "emit"
         if k == 0:                                  # X: A == 0
             self._push(0)                           # s
             return "emit"
         self._push(k - 1)                           # M `1` W - s
-        return "tick"
+        return "tick" if live else "idle"
 
     # -- EMIT: one full-frame repaint + man pixels + commit ----------------
     def _emit(self, token: int) -> None:
@@ -334,6 +517,18 @@ class Step3Model:
         colors = self.fetch.send(-1)
         for addr, color in enumerate(colors):       # r(RESP) + s `16` + M ma
             self._emit(addr * 16 + color)
+        x = self._pull2()                           # pipes over the grid
+        while x != MARK:                            # structural repaint lap
+            self._push2(x)
+            for _ in range(-x & 31):
+                a = self._pull2()                   # r2 s2 (addr, held)
+                self._push2(a)
+                p = self._pull2()                   # r2 X: 14 full / 6 empty
+                self._push2(p)
+                self._relay2(1)                     # rs2(val)
+                self._emit(a * 16 + (14 if p else 6))
+            x = self._pull2()
+        self._push2(x)                              # MARK2: ring2 canonical
         while True:
             c = self._pull()                        # r
             if c == MARK:
@@ -360,10 +555,12 @@ class Step3Model:
 
     def round(self, k: int) -> None:
         self.round_in(k)
-        while self._loop_top() == "tick":
-            self._pass1()
-            self._pass2()
-            self._pass3()
+        while (state := self._loop_top()) != "emit":
+            if state == "tick":
+                self._pipe_shift()
+                self._pass1()
+                self._pass2()
+                self._pass3()
         self.emit_frame()
 
     def run(self, stream, ks) -> None:

@@ -302,8 +302,253 @@ def _build_s2_fsm() -> _Fsm:
 
 
 def build_s2_room() -> list[str]:
-    """The strip+pack room: 256 v2 cell tokens in, 64 words out, relay."""
+    """The packer room: 256 fields in -> 64 words out, then pure relay."""
     return _compile3(_build_s2_fsm())
+
+
+# --------------------------------------------- P1 controller assembler
+# Memory slot map (N = 312 ring slots; DK = N - 2 is the dummy target):
+NSLOT = 312
+DK = NSLOT - 2
+MEN_S = 256      # 256..258 man addrs
+NR_S = 259       # room count
+RC_S = 260       # 260..271 room coords t,l,b,r per room
+MR_S = 272       # 272..274 man->room (reading order), -1 absent
+CN_S = 275       # candidate count
+C_S = 276        # 276..283 candidate words key<<10 | gaddr<<2 | dir
+PC_S = 284       # pipe count
+D_S = 285        # 285..300 descriptor words, 8 per pipe
+S0, S1, S2, S3, S4, S5, S6 = range(301, 308)     # scratch
+
+
+class _Asm:
+    """Linear block emitter over _Fsm: goto blocks auto-chain to the
+    next emitted block; labels name join points for branches/loops."""
+
+    def __init__(self) -> None:
+        self.rows: list[list] = []       # [name, zone, code, kind, targets]
+        self.count = 0
+        self.next_name: str | None = None
+
+    def _emit(self, zone, code, kind, targets) -> str:
+        name = self.next_name or f"b{self.count}"
+        self.next_name = None
+        self.count += 1
+        if self.rows and self.rows[-1][3] == "goto" \
+                and self.rows[-1][4] == ["AUTO"]:
+            self.rows[-1][4] = [name]
+        self.rows.append([name, zone, code, kind, list(targets)])
+        return name
+
+    def label(self, name: str) -> None:
+        self.next_name = name
+
+    def go(self, zone, code, to="AUTO"):
+        return self._emit(zone, code, "goto", [to])
+
+    def sign(self, zone, code, neg, zero, pos):
+        return self._emit(zone, code, "sign", [neg, zero, pos])
+
+    def bp(self, zone, code, zero, pos):
+        return self._emit(zone, code, "bp", [zero, pos])
+
+    def fsm(self) -> _Fsm:
+        out = _Fsm()
+        for name, zone, code, kind, targets in self.rows:
+            assert targets != ["AUTO"], f"{name}: unresolved chain"
+            out.blocks.append((name, zone, code, kind, tuple(targets)))
+        return out
+
+    # ---- memory macros: one op + one dummy write = one full ring lap
+    def rd_c(self, slot):
+        """A := mem[slot]; B is preserved through the whole read."""
+        self.go("lit_r", " " + _lit(slot + 1) + "Ns")
+        self.go("lit_r", " " + _lit(DK - slot) + "s0s")
+        self.go("right", "r")
+
+    def wr_c(self, slot):
+        """mem[slot] := A (A survives; B ends holding slot)."""
+        self.go("lit_r", "M" + _lit(slot) + "sWs")
+        self.go("lit_r", " " + _lit(DK - slot) + "s0s")
+
+    def rd_a(self):
+        """A := mem[A] (B clobbered)."""
+        self.go("lit_r", "M" + _lit(1) + "+Ns")
+        self.go("lit_r", " " + _lit(DK) + "-s0s")
+        self.go("right", "r")
+
+    def wr_a(self):
+        """mem[A] := B (both clobbered)."""
+        self.go("right", "sWs")
+        self.go("lit_r", " " + _lit(DK) + "W-N")
+        self.go("right", "s0s")
+
+    def op(self, opch, n):
+        """A := A <opch> n  (B ends holding n)."""
+        self.go("lit_r", "M" + _lit(n) + "W" + opch)
+
+    def test(self, n, neg, zero, pos):
+        """Branch on sign of A - n; every arm receives A = A - n."""
+        self.sign("lit_r", "M" + _lit(n) + "W-", neg, zero, pos)
+
+    def bump(self, slot, delta):
+        """mem[slot] += delta (A ends holding the new value)."""
+        self.rd_c(slot)
+        self.op("+" if delta >= 0 else "-", abs(delta))
+        self.wr_c(slot)
+
+    def setc(self, slot, value):
+        """mem[slot] := literal value (A/B dead after, like wr_c)."""
+        self.go("lit_r", " " + _lit(value))
+        self.wr_c(slot)
+
+    def jmp(self, to):
+        self.go("right", "", to=to)
+
+
+def _p1_ingest(a: _Asm, done: str) -> None:
+    """mem[0..255] := stripped cells, mem[256..258] := men; i in S0."""
+    a.label("ing_top")
+    a.rd_c(S0)
+    a.test(256 + MEN, "ing_body", done, done)
+    a.label("ing_body")
+    a.go("right", "+")                   # A = i again
+    a.wr_c(S3)
+    a.rd_c(S3)
+    a.test(256, "ing_strip", "ing_man", "ing_man")
+    a.label("ing_strip")
+    a.go("left", "r")                    # A = raw v2 token
+    a.wr_c(S1)
+    a.rd_c(S1)
+    a.op("}", 9)                         # padding bit
+    a.op("*", 512)
+    a.wr_c(S2)
+    a.rd_c(S1)
+    a.op("%", 256)                       # char
+    a.go("right", "M")
+    a.rd_c(S2)                           # A = 512*pad, B = char
+    a.go("right", "+M")                  # A = clean field, B = clean
+    a.rd_c(S3)                           # A = i, B = clean
+    a.wr_a()
+    a.jmp("ing_inc")
+    a.label("ing_man")
+    a.go("left", "r")
+    a.go("right", "M")
+    a.rd_c(S3)
+    a.wr_a()
+    a.label("ing_inc")
+    a.bump(S0, 1)
+    a.jmp("ing_top")
+
+
+def _p1_emit(a: _Asm, relay: str) -> None:
+    """Drain fields+men, PC, then 8*PC descriptor words; then relay."""
+    a.label("em0")
+    a.setc(S0, 0)
+    a.label("em_top")
+    a.rd_c(S0)
+    a.test(256 + MEN, "em_body", "em_pc", "em_pc")
+    a.label("em_body")
+    a.go("right", "+")
+    a.rd_a()
+    a.go("left", "s")
+    a.bump(S0, 1)
+    a.jmp("em_top")
+    a.label("em_pc")
+    a.rd_c(PC_S)
+    a.go("left", "s")
+    a.test(1, relay, "em_d8", "em_d16")
+    a.label("em_d8")
+    a.setc(S1, D_S + 8)
+    a.jmp("em_dini")
+    a.label("em_d16")
+    a.setc(S1, D_S + 16)
+    a.label("em_dini")
+    a.setc(S0, D_S)
+    a.label("em_dtop")
+    a.rd_c(S0)
+    a.go("right", "M")
+    a.rd_c(S1)                           # A = limit, B = q
+    a.go("right", "W-")                  # A = q - limit
+    a.sign("mid", "", "em_dbody", relay, relay)
+    a.label("em_dbody")
+    a.go("right", "+")                   # A = q
+    a.rd_a()
+    a.go("left", "s")
+    a.bump(S0, 1)
+    a.jmp("em_dtop")
+
+
+def _build_p1_asm(phases: int = 9) -> _Asm:
+    """The controller program; ``phases`` gates how much is built."""
+    a = _Asm()
+    a.go("mid", "@")
+    _p1_ingest(a, "em0")
+    _p1_emit(a, "relay")
+    a.label("relay")
+    a.go("left", "rs", to="relay")
+    return a
+
+
+def build_p1_rig(phases: int = 9) -> str:
+    """I -> controller(+312-slot memory) -> O, for phase gates."""
+    from .canvas import Canvas
+
+    room = _compile3(_build_p1_asm(phases).fsm())
+    cr = 5 + len(room[0]) - 1
+    cv = Canvas()
+    cv.put(0, 5, room)
+    cv.put(1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(5, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(2, 3), (2, 4)])
+    cv.pipe([(6, 4), (6, 3)])
+    _add_memory(cv, cr + 8, cr)
+    return cv.render()
+
+
+# ------------------------------------------------ P1 memory subsystem
+# memory.py's P3W/P3R verbatim; the seeding relay grown to 312 zeros.
+RELAY312 = [
+    "+-----------+",
+    "|@`311`b0>sv|",
+    "|        ^md|",
+    "|        >sv|",
+    "|        ^r<|",
+    "+-----------+",
+]
+
+
+def _serpentine(top: int, bot: int, left: int, cols: int) -> list[tuple]:
+    """Zigzag waypoints over ``cols`` vertical runs; ends on the top row
+    (use an odd ``cols``), ready for a leftward return corridor."""
+    out = []
+    for j in range(cols):
+        c = left + 2 * j
+        if j % 2 == 0:
+            out += [(bot, c), (top, c)]
+        else:
+            out += [(top, c), (bot, c)]
+    return out
+
+
+def _add_memory(cv, mx: int, cr: int) -> None:
+    """Rooms + wiring for the 312-slot ring; controller wall is at cr."""
+    from .memory import P3R, P3W
+
+    cv.put(0, mx, P3W)                    # rows 0..10
+    cv.put(13, mx, P3R)                   # rows 13..20
+    cv.put(23, mx, RELAY312)              # rows 23..28
+    cv.pipe([(2, cr + 1), (2, mx - 3), (3, mx - 3), (3, mx - 1)])
+    cv.pipe([(18, mx - 1), (18, cr + 2), (9, cr + 2), (9, cr + 1)])
+    cv.pipe([(11, mx + 2), (12, mx + 2)])            # cmd fwd
+    cv.pipe([(11, mx + 16), (12, mx + 16), (12, mx + 9)])  # ring W->R
+    cv.cells[(12, mx + 9)] = "v"          # terminal bend into P3R top
+    cv.pipe([(21, mx + 10), (22, mx + 10), (22, mx - 3), (27, mx - 3),
+             (27, mx - 1)])               # ring R -> RELAY
+    serp = _serpentine(14, 26, mx + 15, 25)
+    cv.pipe([(26, mx + 13), (26, mx + 14)] + serp
+            + [(13, serp[-1][1]), (13, mx + 18), (12, mx + 18),
+               (11, mx + 18)])            # RELAY -> park -> P3W ring-in
 
 
 def build_s2_rig() -> str:

@@ -45,6 +45,27 @@ def test_phase_a_lllm_public(case):
 
 # ------------------------------------------------------------ phase B gate
 LLM_NOPIPE = [c for c in LLM_CASES if pipeless(c)]
+LLM_PIPED = [c for c in LLM_CASES if not pipeless(c)]
+
+
+# ------------------------------------------------------------ phase C gate
+@pytest.mark.parametrize("case", LLM_PIPED, ids=lambda c: c["name"])
+def test_phase_c_llm_piped_public(case):
+    check_case3(*case_rows_ks(case))
+
+
+def test_phase_c_fuzz_piped():
+    bad, ran = [], 0
+    for i, case in enumerate(llm_fuzz.llm_corpus(20260727, 60)):
+        rows, ks = case_rows_ks(case)
+        if machine_stream(rows)[67] == 0:
+            continue
+        ran += 1
+        try:
+            check_case3(rows, ks)
+        except AssertionError:
+            bad.append(i)
+    assert bad == [] and ran >= 30
 
 
 @pytest.mark.parametrize("case", LLM_NOPIPE, ids=lambda c: c["name"])
