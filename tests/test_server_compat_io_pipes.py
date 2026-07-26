@@ -22,15 +22,28 @@ from littleman import server_compat
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
+def _records_for(man: str):
+    """Every submission record for this artifact, whoever submitted it.
+
+    Records are named both `tcp_06-submit.json` and `alexey-tcp_06-submit.json`.
+    Matching only the first form is how the output-room false positive got
+    through: `tcp_06.man` is our LIVE tcp machine and the server accepted it,
+    but its record carries the `alexey-` prefix so it was never checked.
+    """
+    path = pathlib.Path(man)
+    stem = path.stem
+    return list(path.parent.glob(f"*{stem}-submit.json"))
+
+
 def _server_accepted(man: str) -> bool:
-    record = pathlib.Path(man.replace(".man", "-submit.json"))
-    if not record.exists():
-        return False
-    try:
-        loaded = json.loads(record.read_text())
-    except Exception:
-        return False
-    return loaded.get("loadError") is None and bool(loaded.get("width"))
+    for record in _records_for(man):
+        try:
+            loaded = json.loads(record.read_text())
+        except Exception:
+            continue
+        if loaded.get("loadError") is None and loaded.get("width"):
+            return True
+    return False
 
 
 ACCEPTED = [f for f in sorted(glob.glob(str(ROOT / "submissions" / "*" / "*.man")))

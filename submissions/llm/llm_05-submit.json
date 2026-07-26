@@ -1,0 +1,18 @@
+{
+  "area2": null,
+  "avgTicks": null,
+  "casesPassed": 4,
+  "casesTotal": 28,
+  "createdAt": "2026-07-26T04:16:06.445Z",
+  "error": null,
+  "height": 1951,
+  "id": "25e57bf4-1596-49ae-8f50-3cc9ad980926",
+  "loadError": null,
+  "output": "Passed 4/28 test cases\n\nFailed 12 of 14 public tests (12 wrong-frames)\nFailed 12 of 14 private tests (12 wrong-frames)\nRun your program in the editor to view public test cases",
+  "problemId": "383158cc-1891-46b2-9a9f-d9ed2661c85d",
+  "score": null,
+  "status": "done",
+  "uberStrictPassed": null,
+  "updatedAt": "2026-07-26T04:16:14.003Z",
+  "width": 591
+}

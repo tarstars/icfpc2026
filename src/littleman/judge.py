@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .sim import Machine
+# The executor is `fastsim.Machine`: a `sim.Machine` subclass that only
+# replaces `run()` (parsing, load errors and semantics are sim's own code,
+# and it falls back to `sim.Machine.run` if a layout is not supported).
+from .fastsim import Machine
 
 
 def footprint(text: str) -> int:

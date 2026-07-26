@@ -58,7 +58,7 @@ def find_shared_walls(text: str) -> list[SharedWall]:
 
 
 def validate_io_pipe_counts(text: str) -> None:
-    """Reject an I room with several outgoing pipes, or an O room with several in.
+    """Reject an input room with more than one pipe running against its wall.
 
     The server enforces this and our simulator does not.  A reverse-a-list
     candidate passed the local judge 8/8 and preflight READY, then came back
@@ -74,12 +74,20 @@ def validate_io_pipe_counts(text: str) -> None:
     exactly what happened: an 18-cell return pipe ran up the column beside
     the input room's wall, and its cells also passed directly over that
     room's top wall.
+
+    Restricted to INPUT rooms on purpose.  The observed server error only
+    ever named the input room, and extending it to output rooms produced a
+    false positive on `tcp_06.man` -- our LIVE tcp machine, 37x37, which the
+    server accepted with ``loadError: null`` and which has two pipes running
+    against its output room's wall.  A gate that blocks valid submissions
+    costs more than the bug it catches, so the rule stays as narrow as the
+    evidence.
     """
 
     machine = Machine.parse(text)
     for room in machine.rooms:
         kind = getattr(room, "kind", None)
-        if kind not in ("input", "output"):
+        if kind != "input":
             continue
         border = _border_cells(room)
         touching = set()

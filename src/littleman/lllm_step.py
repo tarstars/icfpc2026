@@ -1157,3 +1157,496 @@ def oracle_frames(rows: list[str], ks: list[int]) -> list[list[str]]:
         machine.run(int(k))
         out.append(machine.render())
     return out
+
+
+# =====================================================================
+# LLM (not LLLM): three independent interpreters behind one display
+# =====================================================================
+# `pileup` and `bounce house` are the two LLM cases with several men and no
+# pipes.  `bounce house` needs NOTHING from this room that LLLM did not
+# already need: with no pipes the men never interact, so three UNMODIFIED
+# copies of the LLLM STEP+FETCH complex reproduce it exactly (verified in
+# Python against `littleman.llm.LLM` through the real `StepModel`).  Only two
+# small rooms are new, and `lllm_step.build_step_room` is untouched, so
+# `submissions/lllm/lllm_03.man` keeps rebuilding byte for byte.
+#
+# `pileup` is NOT reachable this way and is deliberately out of scope here:
+# it needs the LLM rule that ONE man reaching a wall freezes ALL of them, and
+# that is cross-talk between the three interpreters.
+#
+#   LOADER --> TEE1 --+--> STEP0 ------------------> GATE1 --> GATE2 --> DRAW
+#                     |                              ^  ^       ^
+#                     +--> TEE2 --+--> STEP1 --------+  |       |
+#                                 +--> STEP2 -----------|-------+
+#
+# Surplus interpreters are not switched off: SCAN v2 reports address 0 for a
+# missing man, cell 0 is forced to be a wall, so the extra STEP freezes on
+# tick 1 and emits, every round, the pair (0*16+4, 0*16+9) = (4, 9).  A gate
+# forwards the restore pixel (which repaints cell 0 correctly) and drops the
+# man pixel by value: 9 means address 0 with the man colour, and no live man
+# can ever stand on cell 0 because arriving on a wall is what freezes him.
+MEN = 3
+
+
+TEE_ROWS, TEE_COLS = 13, 34
+TEE_IN_ROW = 12            # left wall, incoming from upstream
+TEE_NEAR_ROW = 2           # left wall, outgoing to the first consumer
+TEE_FAR_ROW = 12           # right wall, outgoing to the second consumer
+
+
+def build_tee(men: int = MEN):
+    """One stream in, two out: broadcast, then ``men`` addressed sends.
+
+    ``S`` puts a token on EVERY outgoing pipe, which covers the 64 world
+    tokens and every later round count; only the man tokens must pick a
+    single destination, and they do it by position -- the near send sits two
+    cells from the left wall and the far send three from the right, so
+    nearest-pipe resolution is a plain left/right split with a margin of
+    thirty cells.
+
+    ``men`` is how many addressed tokens THIS tee still has to place, and it
+    shrinks down the chain: the first tee sees all three and keeps one, so the
+    second sees two.  A tee that reads one address too many eats the first
+    round count as if it were a man -- which starves its NEAR consumer of that
+    round forever, and that is exactly the llm_04 deadlock.
+    """
+    from .lllm_fetch import Room
+
+    room = Room(TEE_ROWS, TEE_COLS)
+    # row 1: BP = 64, then the broadcast loop; `d` sends BP > 0 south so the
+    # fall-through can keep running east on the same row.
+    room.put(1, 1, "@`64`b>rSmd")
+    room.put(2, 11, "<")                 # loop return, west then back up
+    room.put(2, 7, "^")
+    room.put(1, 12, "v")                 # BP exhausted
+    room.put(2, 12, "v")
+    room.put(3, 12, "<")
+    room.put(3, 1, "v")
+    room.put(4, 1, ">rs")                # man 0 -> the near pipe
+    room.put(4, 20, "v")
+    room.put(5, 20, "<")
+    room.put(5, 1, "v")
+    room.put(6, 1, ">")                  # man 1 -> the far pipe
+    room.put(6, 30, "rs")
+    room.put(6, 32, "v")
+    room.put(7, 32, "<")
+    room.put(7, 1, "v")
+    if men > 2:
+        room.put(8, 1, ">")              # man 2 -> the far pipe
+        room.put(8, 30, "rs")
+        room.put(8, 32, "v")
+        room.put(9, 32, "<")
+    else:
+        room.put(8, 1, "v")              # no third address: fall straight past
+    room.put(9, 1, "v")
+    room.put(10, 1, ">rSv")              # every later token, broadcast forever
+    room.put(11, 4, "<")
+    room.put(11, 1, "^")
+    return room
+
+
+GATE_ROWS, GATE_COLS = 28, 56
+GATE_UP_ROW = 14           # left wall,  incoming <- the upstream delta stream
+GATE_OWN_ROW = 14          # right wall, incoming <- this gate\'s own STEP
+GATE_OUT_ROW = 22          # right wall, outgoing -> downstream
+
+
+def build_gate():
+    """Splice one interpreter\'s delta stream into the stream flowing past.
+
+    Two incoming pipes, one on each side wall, so nearest-pipe resolution is
+    a left/right split: every ``r`` at column <= 24 reads UPSTREAM and every
+    ``r`` at column >= 33 reads this gate\'s OWN interpreter.  There is only
+    one outgoing pipe, so an ``s`` may sit anywhere.
+
+    Per round the gate copies the upstream round through (recognising its end
+    by the negative commit sentinel, which it swallows), then splices in its
+    own man\'s two pixels, then re-issues one sentinel.  Round 1 is the only
+    asymmetry: every interpreter paints the same 256 static pixels, so this
+    gate must DROP its own copy or it would repaint over the men the upstream
+    gates have already spliced in.
+
+    BOTH the copy and the splice drop the token 9 -- address 0 carrying the
+    man colour, which only a parked surplus interpreter can emit.  The copy
+    has to do it too: the interpreter at the HEAD of the chain has no gate of
+    its own, so its man pixel is only ever seen as upstream traffic.
+    """
+    from .lllm_fetch import Room
+
+    room = Room(GATE_ROWS, GATE_COLS)
+    room.put(1, 1, "@v")                 # down column 2, which no phase uses
+    room.put(2, 2, "v")
+    room.put(3, 2, "<")
+    room.put(3, 1, "v")
+    room.put(4, 1, "v")
+    _gate_drain(room, 5, 50, 9, 10)      # round 1: copy the upstream round
+    # round 1: swallow this gate\'s own 256 static pixels.
+    room.put(10, 1, ">`256`b>")
+    room.put(10, 33, "rmd")
+    room.put(11, 35, "<")
+    room.put(11, 8, "^")
+    room.put(10, 36, "v")
+    room.put(11, 36, "v")
+    room.put(12, 36, "<")
+    room.put(12, 1, "v")
+    room.put(13, 1, "v")
+    _gate_splice(room, 14, 33, first=True)
+    room.put(14, 52, "v")
+    room.put(18, 52, "<")
+    room.put(18, 1, "v")
+    room.put(19, 1, "v")
+    _gate_drain(room, 20, 52, 24, 26)    # the endless round loop
+    room.put(25, 1, "v")
+    _gate_splice(room, 26, 33, first=False)
+    room.put(26, 54, "^")                # back to the drain, up a blank column
+    room.put(17, 54, "<")
+    room.put(17, 1, "v")
+    return room
+
+
+def _gate_drain(room, row: int, exit_col: int, land: int, nxt: int) -> None:
+    """Copy upstream tokens until the negative sentinel, which is dropped.
+
+    Five rows: the sentinel arm above, the read, the ``== 9`` test, the two
+    test arms, and one westbound return that every path falls onto.
+    """
+    room.put(row, 1, ">rXv")
+    room.put(row + 1, 3, ">")            # A > 0 joins the A == 0 fall-through
+    room.put(row + 1, 4, "M`0009`W-X")   # A = token - 9
+    for arm in (row, row + 2):
+        room.put(arm, 13, ">+sv")
+    room.put(row + 1, 16, "v")           # token == 9: nothing sent
+    room.put(row + 3, 16, "<")
+    for back in range(row + 1, row + 4):
+        room.put(back, 1, "^")
+    room.put(row - 1, 3, ">")            # A < 0: the sentinel, leave north
+    room.put(row - 1, exit_col, "v")
+    room.put(land, exit_col, "<")
+    room.put(land, 1, "v")
+    if nxt > land + 1:
+        room.put(land + 1, 1, "v")
+
+
+def _gate_splice(room, row: int, col: int, *, first: bool) -> None:
+    """This gate\'s own pixels: (round 1) the man only, else restore then man."""
+    room.put(row, 1, ">")
+    if not first:
+        room.put(row, col, "rs")         # the restore pixel, always kept
+        col += 2
+    room.put(row, col, "rM`0009`W-X")    # A = man pixel - 9
+    branch = col + 10
+    for arm, turn in ((row - 1, "v"), (row + 1, "^")):
+        room.put(arm, branch, ">+s" + turn)
+    room.put(row, branch + 3, ">r1Ns")   # sentinel dropped, commit emitted
+
+
+# ------------------------------------------------------------ llm_04 press
+# Row bands, not column bands: the three interpreter complexes are STACKED,
+# so each one may reuse the same two local margin columns (58 = LOAD, 60 =
+# DRAW) without ever meeting its neighbours.  Every long haul then runs in
+# the east margin, where the columns are assigned in leg order so the spans
+# NEST -- a leg at row R only ever reaches columns whose verticals stop above
+# R.  That is the whole routing discipline and it is checked mechanically by
+# :func:`_audit_llm` rather than by eye.
+LLM_COMPLEX_COL = 100          # bc for all three complexes
+LLM_COMPLEX_ROWS = (1100, 1300, 1500)
+LOCAL_LOAD_COL = 58
+LOCAL_DRAW_COL = 60
+
+
+def _place_complex(cv, br: int, bc: int) -> None:
+    """One FETCH + STEP + two relays, lifted byte-identical from lllm_press."""
+    from . import lllm_fetch
+
+    sr, sc = br + STEP_AT[0], bc + STEP_AT[1]
+    fr, fc = br + FETCH_AT[0], bc + FETCH_AT[1]
+    cv.put(fr, fc, lllm_fetch.build_fetch().render())
+    cv.put(sr, sc, build_step_room().render())
+    cv.put(fr + 20, fc + 50, lllm_fetch.build_relay().render())
+    cv.put(sr + SCR_OUT_ROW - 1, sc + 80, build_step_relay().render())
+    left, right = sc - 1, sc + STEP_COLS + 2
+    fleft = fc - 1
+    col_req = bc + 9
+    cv.pipe([(sr + REQ_ROW, left), (sr + REQ_ROW, col_req),
+             (fr + 2, col_req), (fr + 2, fleft)])
+    cv.pipe([(fr + 13, fleft), (fr + 13, fleft - 1), (sr - 1, fleft - 1),
+             (sr - 1, sc + RESP_COL)])
+    cv.cells[(sr - 1, sc + RESP_COL)] = "v"
+    cv.pipe([(fr + 2, fc + 47), (fr + 2, fc + 67), (fr + 21, fc + 67),
+             (fr + 21, fc + 56)])
+    cv.pipe([(fr + 21, fc + 49), (fr + 21, fc + 48), (fr + 5, fc + 48),
+             (fr + 5, fc + 47)])
+    cv.pipe([(sr + SCR_OUT_ROW, right), (sr + SCR_OUT_ROW, sc + 79)])
+    cv.pipe([(sr + SCR_OUT_ROW + 1, sc + 86), (sr + SCR_OUT_ROW + 1, sc + 87),
+             (sr + SCR_IN_ROW, sc + 87), (sr + SCR_IN_ROW, right)])
+
+
+def complex_ports(br: int, bc: int) -> dict[str, tuple[int, int]]:
+    """LOAD in / DRAW out, as canvas pipe cells on the STEP room's west wall."""
+    sr, sc = br + STEP_AT[0], bc + STEP_AT[1]
+    return {"load": (sr + LOAD_ROW, sc - 1), "draw": (sr + DRAW_ROW, sc - 1)}
+
+
+# --------------------------------------------------------------- autorouter
+# Hand-routing twenty inter-room pipes around three stacked interpreter
+# complexes is a planarity puzzle, not a design decision, so it is solved
+# mechanically: a breadth-first maze router over the canvas, with every
+# occupied cell dilated by one so a pipe never runs flush against a room wall
+# or against another pipe (either would change how `Machine.parse` binds it).
+def _blocked(cv, exempt, solid=()) -> set[tuple[int, int]]:
+    """Occupied cells, with ROOM cells dilated by one.
+
+    Only rooms get the halo: a pipe hugging a wall may bind to it, but two
+    pipes running side by side are ordinary -- the LLLM machine's own LOAD
+    and DRAW legs are on adjacent rows -- so pipe cells block only themselves.
+    """
+    halo = set(cv.cells)
+    for (r, c) in solid:
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                halo.add((r + dr, c + dc))
+    return halo - exempt
+
+
+def route(cv, spath, epath, bounds, reserved=(), solid=()) -> None:
+    """Draw one pipe: a fixed lane out of each port, a BFS path between them.
+
+    ``spath`` runs outward from the source port and ``epath`` inward to the
+    destination port; only the gap between their ends is searched, so the
+    arrowheads the parser reads always come from the lanes, which are chosen
+    by hand.
+    """
+    from collections import deque
+
+    start, end = spath[-1], epath[0]
+    exempt = set(spath) | set(epath)
+    for cell in (start, end):
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                exempt.add((cell[0] + dr, cell[1] + dc))
+    exempt -= set(cv.cells)
+    exempt |= {start, end}
+    blocked = _blocked(cv, exempt, solid) | (set(reserved) - exempt)
+    lo_r, hi_r, lo_c, hi_c = bounds
+    seen = {start: None}
+    queue = deque([start])
+    while queue:
+        cell = queue.popleft()
+        if cell == end:
+            break
+        r, c = cell
+        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            nxt = (nr, nc)
+            if nxt in seen or not (lo_r <= nr <= hi_r and lo_c <= nc <= hi_c):
+                continue
+            if nxt in blocked and nxt != end:
+                continue
+            seen[nxt] = cell
+            queue.append(nxt)
+    if end not in seen:
+        raise ValueError("no route %s -> %s" % (start, end))
+    middle = []
+    cell = end
+    while cell is not None:
+        middle.append(cell)
+        cell = seen[cell]
+    middle.reverse()
+    full = spath[:-1] + middle + epath[1:]
+    out = [full[0]]
+    for prev, cur, nxt in zip(full, full[1:], full[2:]):
+        if (cur[0] - prev[0], cur[1] - prev[1]) != (nxt[0] - cur[0], nxt[1] - cur[1]):
+            out.append(cur)
+    out.append(full[-1])
+    cv.pipe(out)
+
+
+W_OUT, W_IN = (0, -1), (0, 1)      # west wall: leaving / entering
+E_OUT, E_IN = (0, 1), (0, -1)      # east wall: leaving / entering
+
+LLM_PLACE = {
+    "I": (20, 250),
+    "SCAN": (20, 300),
+    "CLASSIFY": (700, 300),
+    # Spread horizontally, not vertically: stacked in one column band these
+    # five rooms all shared one west margin, and the first pipe routed through
+    # it sealed the rest into a pocket the router could not escape.
+    "TEE1": (760, 500),
+    "TEE2": (760, 620),
+    # The gates sit BELOW the interpreter stack, not beside it: the three
+    # DRAW wires have to leave the stack southwards anyway (LOAD owns the
+    # north), and putting their consumers in the same open southern half is
+    # what keeps the router from fencing itself in.
+    "GATE1": (1750, 340),
+    "GATE2": (1750, 500),
+    "DIST": (1900, 340),
+}
+LLM_BOUNDS = (0, 2000, 0, 800)
+LANE = 8          # default escape lane reserved straight out of a port
+
+
+def _expand(waypoints):
+    """A waypoint list -> every cell on it, in order."""
+    cells = [waypoints[0]]
+    for a, b in zip(waypoints, waypoints[1:]):
+        dr = (b[0] > a[0]) - (b[0] < a[0])
+        dc = (b[1] > a[1]) - (b[1] < a[1])
+        cur = a
+        while cur != b:
+            cur = (cur[0] + dr, cur[1] + dc)
+            cells.append(cur)
+    return cells
+
+
+def _place_scan_v2(cv, mod, r0: int, c0: int) -> None:
+    room = mod.build_scan_room_v2()
+    right = c0 + len(room[0]) - 1
+    cv.put(r0, c0, room)
+    relay_left = right + 5
+    cv.put(r0 + 1, relay_left, mod.build_relay())
+    cv.pipe([(r0 + mod.RING_OUT_ROW, right + 1),
+             (r0 + mod.RING_OUT_ROW, relay_left - 1)])
+    far = relay_left + 12
+    cv.pipe([(r0 + 3, relay_left + 6), (r0 + 3, far),
+             (r0 + mod.RING_IN_ROW, far), (r0 + mod.RING_IN_ROW, right + 1)])
+
+
+def _llm_ports() -> dict:
+    """Every external port as an explicit ESCAPE LANE of canvas cells.
+
+    A lane is a fixed prologue the router may not deviate from; the maze
+    search only starts where the lane ends.  The complexes need this: LOAD
+    and DRAW sit on adjacent rows of the same wall, so left to itself the
+    router lays the first of them across the second\'s only way out.  Their
+    lanes therefore leave in opposite directions -- LOAD north over the
+    complex, DRAW south under it -- and never meet.
+    """
+    from . import lllm_classify, lllm_scan
+
+    sr, sc = LLM_PLACE["SCAN"]
+    cr, cc = LLM_PLACE["CLASSIFY"]
+
+    def lane(cell, direction, length=LANE):
+        """``direction`` always points OUT of the room; a destination lane is
+        reversed by the router, which is what makes its last step point in."""
+        return [cell, (cell[0] + direction[0] * length,
+                       cell[1] + direction[1] * length)]
+
+    ports = {
+        "I.out": lane((LLM_PLACE["I"][0] + 1, LLM_PLACE["I"][1] + 3), E_OUT, 4),
+        "SCAN.in": lane((sr + lllm_scan.CMD_ROW, sc - 1), W_OUT, 4),
+        "SCAN.out": lane((sr + lllm_scan.RESP_ROW, sc - 1), W_OUT, 4),
+        "CLASSIFY.in": lane((cr + lllm_classify.PIPE_ROW, cc - 1), W_OUT),
+        "CLASSIFY.out": lane((cr + lllm_classify.PIPE_ROW, cc + 86), E_OUT),
+        "DIST.in": [(LLM_PLACE["DIST"][0] + 2, LLM_PLACE["DIST"][1] - 1),
+                    (LLM_PLACE["DIST"][0] + 2, 320), (1970, 320)],
+    }
+    for tag in ("TEE1", "TEE2"):
+        tr, tc = LLM_PLACE[tag]
+        ports[f"{tag}.in"] = lane((tr + TEE_IN_ROW, tc - 1), W_OUT)  # noqa
+        ports[f"{tag}.near"] = lane((tr + TEE_NEAR_ROW, tc - 1), W_OUT)
+        ports[f"{tag}.far"] = lane((tr + TEE_FAR_ROW, tc + TEE_COLS + 2), E_OUT)
+    for tag in ("GATE1", "GATE2"):
+        gr, gc = LLM_PLACE[tag]
+        up = (gr + GATE_UP_ROW, gc - 1)
+        own = (gr + GATE_OWN_ROW, gc + GATE_COLS + 2)
+        out = (gr + GATE_OUT_ROW, gc + GATE_COLS + 2)
+        if tag == "GATE1":
+            ports["GATE1.up"] = [up, (up[0], 320)]
+            ports["GATE1.own"] = [own, (own[0], 420)]
+            ports["GATE1.out"] = [out, (out[0], 440), (1950, 440)]
+        else:
+            ports["GATE2.up"] = [up, (up[0], 480), (1950, 480)]
+            ports["GATE2.own"] = [own, (own[0], 580)]
+            ports["GATE2.out"] = [out, (out[0], 600), (1970, 600)]
+    for index, br in enumerate(LLM_COMPLEX_ROWS):
+        p = complex_ports(br, LLM_COMPLEX_COL)
+        lr, lc = p["load"]
+        dr_, dc_ = p["draw"]
+        # LOAD leaves north over its complex, DRAW south under it, and the
+        # DRAW lanes then fan into three private corridors east of the stack
+        # (deepest complex innermost, so the three eastward legs nest).
+        # LOAD and DRAW sit on adjacent rows of the same wall, so they must
+        # part company IMMEDIATELY or one lays itself across the other: DRAW
+        # turns north at the westernmost of the two columns and LOAD south at
+        # the easternmost, and neither horizontal ever reaches the other\'s
+        # turn.  DRAW then runs east into a private corridor (columns shrink
+        # with depth, so the three eastward legs nest) and LOAD west into one
+        # of its own before climbing back to the tees.
+        draw_turn, load_turn = 104 - 4 * index, 112 - 4 * index
+        west = 88 - 6 * index
+        corridor = 300 - 20 * index
+        bottom = 1720 + 10 * index
+        gate_col = (580, 420, 320)[index]
+        ports[f"C{index}.load"] = [
+            (lr, lc), (lr, load_turn), (br + 185, load_turn),
+            (br + 185, west), (700, west),
+        ]
+        # The fan-out below the stack is planar by construction: the deeper
+        # (and so more westerly) a corridor is, the LOWER it turns east, so it
+        # passes under every corridor it has to reach past.  That ordering is
+        # why complex 0 feeds the LAST gate and complex 2 the first -- the men
+        # are interchangeable, the geometry is not.
+        ports[f"C{index}.draw"] = [
+            (dr_, dc_), (dr_, draw_turn), (br - 12, draw_turn),
+            (br - 12, corridor), (bottom, corridor), (bottom, gate_col),
+            (LLM_PLACE["GATE1"][0] + GATE_UP_ROW, gate_col),
+        ]
+    return ports
+
+
+# Routed longest-haul first: the six wires that cross the whole canvas pick
+# their corridors before the short local hops can fence them in.
+LLM_LINKS = [
+    ("TEE1.near", "C0.load"),
+    ("TEE2.near", "C1.load"),
+    ("TEE2.far", "C2.load"),
+    ("GATE1.out", "GATE2.up"),
+    ("GATE2.out", "DIST.in"),
+    ("C2.draw", "GATE1.up"),
+    ("C1.draw", "GATE1.own"),
+    ("C0.draw", "GATE2.own"),
+    ("I.out", "SCAN.in"),
+    ("SCAN.out", "CLASSIFY.in"),
+    ("CLASSIFY.out", "TEE1.in"),
+    ("TEE1.far", "TEE2.in"),
+]
+
+
+def _route_llm(cv, solid) -> None:
+    ports = {name: _expand(way) for name, way in _llm_ports().items()}
+    for src, dst in LLM_LINKS:
+        keep = set(ports[src]) | set(ports[dst])
+        foreign = set()
+        for name, lane in ports.items():
+            if name in (src, dst):
+                continue
+            for (r, c) in lane:
+                for d_r in (-1, 0, 1):
+                    for d_c in (-1, 0, 1):
+                        foreign.add((r + d_r, c + d_c))
+        route(cv, ports[src], list(reversed(ports[dst])), LLM_BOUNDS,
+              foreign - keep, solid)
+
+
+def build_llm_machine() -> str:
+    """`submissions/llm/llm_04.man`: SCAN v2 -> CLASSIFY -> 3 interpreters."""
+    from .canvas import Canvas
+    from . import lllm_classify, lllm_draw, lllm_scan
+
+    cv = Canvas()
+    ir, ic = LLM_PLACE["I"]
+    cv.put(ir, ic, ["+-+", "|I|", "+-+"])
+    _place_scan_v2(cv, lllm_scan, *LLM_PLACE["SCAN"])
+    cv.put(*LLM_PLACE["CLASSIFY"], lllm_classify.build_classify_room())
+    # TEE1 places all three addresses (one near, two far); TEE2 is handed only
+    # the two that went far, so it must read exactly two.
+    for name, men in (("TEE1", MEN), ("TEE2", MEN - 1)):
+        cv.put(*LLM_PLACE[name], build_tee(men).render())
+    for name in ("GATE1", "GATE2"):
+        cv.put(*LLM_PLACE[name], build_gate().render())
+    lllm_draw.place_display_block(cv, *LLM_PLACE["DIST"])
+    for br in LLM_COMPLEX_ROWS:
+        _place_complex(cv, br, LLM_COMPLEX_COL)
+    solid = set(cv.cells)          # rooms and their tuned internal pipes
+    _route_llm(cv, solid)
+    return cv.render()
