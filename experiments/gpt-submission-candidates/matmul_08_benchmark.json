@@ -1,0 +1,180 @@
+{
+  "candidates": [
+    {
+      "averageTicks": 489590.14285714284,
+      "bytes": 9245,
+      "cases": [
+        {
+          "name": "2x2 warm up",
+          "passed": true,
+          "reason": null,
+          "ticks": 16019
+        },
+        {
+          "name": "non-square 2x3x2",
+          "passed": true,
+          "reason": null,
+          "ticks": 21531
+        },
+        {
+          "name": "identity",
+          "passed": true,
+          "reason": null,
+          "ticks": 72679
+        },
+        {
+          "name": "16x16x16 full size",
+          "passed": true,
+          "reason": null,
+          "ticks": 2476351
+        },
+        {
+          "name": "skinny 16x2x16",
+          "passed": true,
+          "reason": null,
+          "ticks": 460351
+        },
+        {
+          "name": "negative heavy",
+          "passed": true,
+          "reason": null,
+          "ticks": 125153
+        },
+        {
+          "name": "max magnitude 7x5x9",
+          "passed": true,
+          "reason": null,
+          "ticks": 255047
+        }
+      ],
+      "casesPassed": 7,
+      "casesTotal": 7,
+      "comparisonWithParent": {
+        "averageTicksPercent": 5.122917462584919,
+        "footprintPercent": 25.890359168241964,
+        "maxDimensionPercent": 13.91304347826087,
+        "scorePercent": 29.686934899871062
+      },
+      "footprint": 9801,
+      "height": 98,
+      "maxDimension": 99,
+      "men": 10,
+      "path": "/mnt/data/matmul_08_candidate.man",
+      "pipeLengths": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        24,
+        24,
+        24,
+        24,
+        24,
+        24,
+        69,
+        256,
+        268
+      ],
+      "pipes": 19,
+      "rooms": 12,
+      "score": 4798472990.142857,
+      "sha256": "6d77cb4dac845d620a3f39804c345cb818c17de3d7577af848bc0ea8a9cc685e",
+      "width": 99
+    }
+  ],
+  "parent": {
+    "averageTicks": 516025.71428571426,
+    "bytes": 10668,
+    "cases": [
+      {
+        "name": "2x2 warm up",
+        "passed": true,
+        "reason": null,
+        "ticks": 16882
+      },
+      {
+        "name": "non-square 2x3x2",
+        "passed": true,
+        "reason": null,
+        "ticks": 22698
+      },
+      {
+        "name": "identity",
+        "passed": true,
+        "reason": null,
+        "ticks": 76614
+      },
+      {
+        "name": "16x16x16 full size",
+        "passed": true,
+        "reason": null,
+        "ticks": 2610270
+      },
+      {
+        "name": "skinny 16x2x16",
+        "passed": true,
+        "reason": null,
+        "ticks": 484958
+      },
+      {
+        "name": "negative heavy",
+        "passed": true,
+        "reason": null,
+        "ticks": 131968
+      },
+      {
+        "name": "max magnitude 7x5x9",
+        "passed": true,
+        "reason": null,
+        "ticks": 268790
+      }
+    ],
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "footprint": 13225,
+    "height": 98,
+    "maxDimension": 115,
+    "men": 10,
+    "path": "submissions/matmul/matmul_07.man",
+    "pipeLengths": [
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      24,
+      24,
+      24,
+      24,
+      24,
+      24,
+      76,
+      256,
+      268
+    ],
+    "pipes": 19,
+    "rooms": 12,
+    "score": 6824440071.428571,
+    "sha256": "9deb5b44092e1099e09de12ca4fee7ab71811e6187392e76482ef070c01e51d3",
+    "width": 115
+  },
+  "problem": {
+    "id": "58f54636-3ec4-497d-8102-b486f13a1ed1",
+    "path": "/mnt/data/icfpc2026_git/data/small/problems/matmul.json",
+    "scoring": "footprint-tick",
+    "sha256": "2b2a17851cd20e67a432f06cddc6f19d558fa4bcd3fa909f04b049639727e2a0",
+    "slug": "matmul"
+  },
+  "schemaVersion": 1
+}
