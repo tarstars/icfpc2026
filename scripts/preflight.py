@@ -24,7 +24,8 @@ import sys
 
 from littleman import server_compat
 from littleman.judge import footprint
-from littleman.sim import LoadError, Machine
+from littleman.fastsim import Machine
+from littleman.sim import LoadError
 
 
 def main(argv: list[str]) -> int:
@@ -61,10 +62,13 @@ def main(argv: list[str]) -> int:
 
     try:
         server_compat.validate_layout(text)
-        print("walls    : OK  (no room shares a wall cell)")
+        print("layout   : OK  (no shared walls; one pipe per I/O room)")
     except server_compat.ServerCompatibilityError as exc:
-        print(f"walls    : FAIL  {exc}")
-        ok = False
+        print(f"layout   : FAIL  {exc}")
+        # judge_problem re-runs this check and would raise, so stop here: a
+        # layout the server refuses to load cannot be judged meaningfully.
+        print("\nVERDICT  : NOT SUBMITTABLE")
+        return 1
 
     lengths = sorted(len(p.cells) for p in machine.pipes)
     if lengths and min(lengths) < 2:

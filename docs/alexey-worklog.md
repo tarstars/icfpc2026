@@ -1188,3 +1188,1047 @@ O, one from block 3); I redrew only the incoming one. Redrawing all four is
 the remaining work for that joint — and note that block 3 has two outgoing
 pipes, so moving its bottom port to the left wall (as this attempt did) needs
 its `s` cells re-audited, not just re-routed.
+
+## 2026-07-25 — memory_07: 23,344,360 -> 20,491,008 (24/24, 32x31, fp 1024)
+
+Three geometry moves, no algorithm change, all recorded in
+`submissions/memory/room-packing/`:
+
+1. Block 2 folded width-only, 4x29 -> 4x21.
+2. Block 1 folded 5x29 -> 5x17. It branches, so the plain serpentine does
+   not apply; the perimeter-corridor layout does. Written up as sec.4 of
+   `docs/alexey-room-folding.md`.
+3. Block 4 had three *interior* empty columns (21, 22, 25). Removing them
+   pulled its right wall from col 26 to col 23, which let block 5 slide two
+   columns left -- and block 5 was the only thing holding the right edge at
+   col 33. Width 34 -> 32; height was already 32 and squeezed to 31.
+
+Both of block 5's pipes had to be re-routed. That is what
+`src/littleman/alexey_piperoute.py` is for: BFS shortest path, inflated to a
+target length with +2 detours, rendered with `-`/`|` runs and arrowheads
+only at turns. It keeps a re-route from silently shrinking a buffer.
+
+**Trap paid for here:** a pipe is only recognised when the cell touching the
+room carries an arrow pointing *away* from that room. A route that happens
+to leave sideways is not a pipe at all -- the machine loads, runs, and fails
+with a pipe count one short as the only clue. `Router.route(out=...)` now
+forces the first step. Also: a pipe may not attach to a room's *corner*.
+
+Ticks fell too (avg 4143.6 -> 4109.9 locally) because block 4 lost three
+columns the man was walking across.
+
+## 2026-07-25 — matmul_03: 33,286,994,352 -> 21,478,654,512 (20/20, 143x147)
+
+**The rooms were never the problem.** matmul's twelve rooms fit inside
+109x144. The 183x185 bounding box was made by three pipes -- 268, 334 and
+106 cells -- that wandered out to column 182 and row 184, plus the `O` room
+parked at cols 180-182 with nothing near it.
+
+Erased those three, moved `O` next to the body, and re-routed all three with
+`alexey_piperoute` **at their exact original cell counts** (268/334/106). A
+pipe's length is its buffer, and on this machine it is also its delay, so
+the counts are not negotiable -- and because they were preserved, the tick
+counts came out identical in all seven local cases.
+
+The hard part was not routing, it was **lane assignment**. All three leave
+the bottom wall of adjacent rooms at cols 77, 85, 91 and two of them have to
+end up west of col 77. Pipes cannot cross, so the pipe exiting furthest west
+must take the shallowest lane and each one further east must go deeper. Zone
+blocks: p16 rows 145-150 cols 24-84, p17 the left pocket cols 0-23 plus row
+151, p18 everything east of col 91.
+
+Also learned: `(134,74)` was reachable only through the two-column gap
+between two rooms -- three-cell pipes at cols 76, 84 and 90 seal rows
+134-136 completely. Printing a free-cell map before routing is worth the
+thirty seconds.
+
+**Two traps paid for, both now fixed in the router:**
+
+* Inflation must never touch the first or last step. A `+2` detour inserted
+  at the start replaces the arrow that makes the parser recognise the pipe,
+  and the machine then loads and runs with one pipe silently missing.
+* `Router.text()` dropped trailing blank rows, so a padded canvas shrank
+  between passes and the route could not use the row it had been given.
+
+## 2026-07-25 — matmul_04: 20,042,330,424 (20/20, 115x142)
+
+Two more safe moves on top of matmul_03 (33.29B -> 20.04B overall, 1.66x).
+
+**A provably safe row squeeze.** The rows-only pass drops exactly 10 rows --
+room0's empty interior rows. Normally deleting rows inside a room is a
+resolution risk, but not here: *every one of room0's eighteen pipes attaches
+to its bottom wall*, so the row term of the Manhattan distance is the same
+for all of them and the zone is decided by column alone. Deleting rows
+cannot change any `r`/`s` resolution. That is the same cancellation the tcp
+layout rule is built on, used here as a licence to delete rather than as a
+design rule. **Worth checking on every room before trimming it.**
+
+The column pass still breaks -- it squeezes one pipe to a single cell.
+
+**The O room was holding the width** at col 142 all by itself. Moved to
+cols 112-114, pipe re-routed at its exact length (104). First attempt put
+the pipe's terminal in the one-cell gap between room0's right wall and the O
+room's left wall: **both rooms claim that cell**, and the parser emitted a
+spurious 1-cell pipe from room0 straight into O. Entering through the top
+wall instead fixed it. Rule: never terminate a pipe in a one-cell gap
+between two rooms.
+
+## 2026-07-25 — plotter_06: 3,076,834,345 -> 1,668,891,820 (20/20, 155x145)
+
+Layered on tarstars' plotter_05 repack, and orthogonal to it: they moved
+rooms, this folds what is inside them.
+
+plotter's three tall rooms spent **two rows on every instruction** --
+
+```
+row A:   .....v(p) ................. <(q)     west leg, carries nothing
+row B:   .....>(p) INSTR ........... v(q)     east leg, ONE instruction
+```
+
+-- and the west leg is nothing but a carriage return.
+`src/littleman/alexey_stairfold.py` merges two consecutive east legs
+whenever their instruction columns increase across the join, deleting the
+west leg between them. 82 rows freed; a rows-only squeeze then took 40 of
+them out globally. Ticks fell 21% too, because the man stops walking the
+carriage returns.
+
+**Why it is legal, and the same reason the column pass is forbidden:** every
+inbound pipe of these rooms lands on the top wall and every outbound one
+leaves through the bottom, so the row term of the Manhattan distance cancels
+and the zone is decided by column alone. Rows are free; **columns are
+frozen**. Running the column squeeze drops it to 1/6, exactly as that rule
+predicts. `alexey_stairfold.ports_are_single_walled` checks the
+precondition.
+
+Branches in these rooms are compiled as long empty columns that the man
+falls down. Deleting whole leg pairs preserves them -- the deleted rows are
+blank at every column a fall uses.
+
+## 2026-07-25 — sudoku_04: 25,480,732,026 -> 11,307,342,643 (20/20, 184x192)
+
+The same staircase the plotter rooms use, and the same fold. All four big
+rooms pass `ports_are_single_walled`, so rows are free and columns frozen:
+80 rows freed, 56 removed globally, ticks down 26%. `uberStrictPassed: true`.
+
+Built from **sudoku_02, not from tarstars' sudoku_03**. Their repack is the
+better starting point on its own (16.1B vs 25.5B) but leaves fewer
+globally-empty rows once the staircase is folded — 39204 against 36864. Worth
+checking both bases whenever a teammate has repacked the same program.
+
+## 2026-07-25 — gradebook_04: 81,914,188,255 -> 54,422,867,494 (20/20, 386x313)
+
+Same staircase fold again, on the biggest program we have. All five big
+rooms pass `ports_are_single_walled`; R2-R5 fold completely, 7/7 each time.
+
+**R1 does not, and the failure is one merge wide.** Folding R1 alone drops
+to 5/7, but of the 35 merges available there the first 34 are all safe --
+found by a binary search over the merge prefix, six judge runs. So the merge
+condition in `alexey_stairfold` is *nearly* sufficient, not provably so: it
+checks column monotonicity and collisions, but a deleted west leg can also
+be the landing spot of a vertical fall belonging to some other branch, and
+nothing in the static check sees that.
+
+**Therefore: always drive the fold with the judge.** Fold room by room and
+keep only what passes; when a room fails, binary-search the safe prefix.
+That is cheap (a handful of judge runs) and it is the only thing standing
+between this transformation and a silent wrong answer.
+
+110 rows removed, ticks down 21%. Width 386 now binds — four 94-wide rooms
+side by side, columns frozen by zone resolution — so further row folding
+here is banked, not cashed.
+
+## 2026-07-25 — memory_08: 20,491,008 -> 19,230,331 (24/24, 31x31)
+
+Block 3 re-laid from 7x26 to 7x23 and block 5 slid one column left. Both
+were free moves in the sense that mattered: block 3 has one pipe each way
+and **both meet its left wall**, so the fold needed no pipe work; block 5's
+two pipes were re-routed in separate lanes at 30 and 21 cells, never shorter
+than the 29 and 19 they replaced. Ticks identical in all seven cases.
+
+**The remaining 2x is entirely in block 4, and here is what it is.**
+
+Block 4 is 15x21 and holds 15 of the 31 rows and 21 of the 31 columns. Every
+other room is now folded out. Its control-flow graph, extracted with
+`src/littleman/alexey_roomcfg.py` (which traces *every* branch arm, not just
+the one a single walk follows):
+
+```
+B0:   `33` b 0 s            -> d1
+d1:   cw -> [m, s] -> d1                 (counted send loop)
+      straight -> B1
+B1:   r                     -> X1
+X1:   straight -> [r b r M r s] -> d2
+      cw       -> [r] -> X2
+      ccw      -> halt
+d2:   cw -> [m, r, s] -> d2              (loop)
+      straight -> [{ M `43` W } s] -> B1
+X2:   straight -> [r M] -> TAIL
+      cw       -> [b m r M r s] -> d3
+      ccw      -> halt
+d3:   cw -> [m, r, s] -> d3              (loop)
+      straight -> TAIL
+TAIL: r & M r | s           -> B1
+```
+
+Five branch points, three self-loops, and a TAIL shared by two predecessors.
+46 instruction cells in 13 interior rows -- **two of those rows carry no
+instructions at all** (rows 3 and 13 relative), they are pure carriage
+returns, and several more carry two.
+
+Two things make a re-lay legal, and both are checked:
+
+* Rows 3 and 13 exist only because a block sits far from the branch that
+  jumps to it. Placing each block adjacent to its predecessor removes them.
+* Block 4 is the one room in `memory` **without** port freedom: two pipes in,
+  two out, and they sit on three different walls, so a zone depends on row
+  *and* column. Moving both inbound ports to the top wall and both outbound
+  to the bottom would make it column-zoned -- and the existing column
+  pattern already matches (reads from block 3 are at low columns, reads from
+  block 5 at high ones; the write to O is low, the writes to block 5 high).
+  That is the enabling move, and it costs four pipe re-routes.
+
+Estimated payoff: block 4 at 8 rows instead of 15 puts the box at roughly
+24x24, i.e. footprint 576 against today's 961, and the shorter walk takes
+ticks down with it. That is the 2x. It is a compiler-shaped job -- embedding
+a 10-block CFG in a grid -- not an afternoon's edit.
+
+## 2026-07-25 — block 4 of memory: the re-lay, designed
+
+Took the layout apart. Two findings decide the shape of the work.
+
+**The cheap route is closed.** The obvious saving is the carriage-return row
+3 (`d1`-straight walks ten cells west to reach B1). It could be deleted by
+letting the man fall down a clear column to the bottom return row instead —
+except **there is no clear column**. Checked all nineteen: every one carries
+a glyph somewhere between row 3 and the bottom. The literal `` `34` `` alone
+blocks columns 11-14 on row 7.
+
+**The prize is bigger than the footprint.** Block 4 walks **38 cells of pure
+carriage return on every loop iteration** — row 3 (10 west + 1 down), row 13
+(18 west), and the column-1 rail (9 north) — against 46 instruction cells in
+the whole room. That is why the re-lay pays twice: it takes rows out *and*
+it takes a large bite out of avgTicks, which is the other half of the score.
+
+### The design
+
+The enabling move is to make the room **column-zoned**: put both inbound
+pipes on the top wall and both outbound on the bottom, and the row term of
+the Manhattan distance cancels. Then every `r`/`s` only needs to be on the
+correct *side* of the room. Block 4 is the one room in `memory` without port
+freedom, so this costs four pipe re-routes — `alexey_piperoute` handles them.
+
+Which side goes to which pipe is not free, and getting it backwards costs a
+row. With **block 3 reading HIGH and block 5 reading LOW** (and block 5
+written HIGH, `O` written LOW), the blocks fall out like this:
+
+| block | body | rows |
+|---|---|---|
+| B0 | `` `33` `` b 0 · s(H) | 2 (with the loop's `m d` under it) |
+| B1 / X1 / B3 / X2 / B5 | r(H) · r(H) · r(H) M | 1-2 |
+| B2 | r(H) b r(H) M ⟶ **loop** r(L) s(H) | 2 |
+| B4 | { M `` `43` `` W } s(L) | 1 |
+| B6 | b m r(H) M ⟶ **loop** r(L) s(H) | 2 |
+| TAIL | r(L) & M r(H) \| s(H) | **1** |
+
+TAIL is the one that moves: today it needs two rows because its columns run
+high → low → high, which forces a direction change. Under the flipped
+assignment it reads low → high → high, **monotonically increasing**, so it
+fits on a single eastbound row. The mirror-image choice (block 3 LOW) makes
+TAIL cost two rows and B2 one — strictly worse, because TAIL is on the hot
+path and B2 is not.
+
+Two more constraints that any layout must respect:
+
+* The loop unit `> r · · s v / ^ · · m d` may be **stretched**: `r` and `s`
+  need not be adjacent, so a unit can straddle the low/high boundary. That is
+  what lets B2's and B6's loops hold r(L) and s(H) on one row.
+* `X` is three-way and *handed*: straight / clockwise / counter-clockwise are
+  relative to the direction of travel, and the assignment (straight → the
+  long arm, cw → the short arm, ccw → halt) is fixed by `sign(A)`. So each
+  `X` must be placed with a clear run to a wall on its counter-clockwise
+  side, and the entry direction decides where the other two arms may go.
+
+Target: 9-10 interior rows against today's 13, and the 38 wasted cells per
+iteration mostly gone.
+
+**Status: designed, not built.** The constraint system is worked out and
+consistent; what remains is the placement itself — embedding ten blocks and
+five branch points in a grid, which is the compiler-shaped part. It wants a
+clean session, not the tail of one, because a half-verified block 4 is worse
+than none: it passes seven local cases and fails on the server's twenty-four.
+
+## 2026-07-25 — block 4: measured before building, and the measurement killed the plan
+
+Before laying block 4 out I instrumented `Machine._tick` and counted, per
+room, how many ticks its man spends **walking** versus **blocked**, on
+memory's largest public case (22,719 ticks).
+
+```
+room   walking   blocked   busy%
+R1        4004     18715    17.6
+R2        4753     17966    20.9
+R3        7802     14917    34.3
+R4       22719         0   100.0     <- block 4
+R6       12846      9873    56.5
+```
+
+**Block 4 is the bottleneck and it never blocks.** Every other room idles
+65-82% of the time waiting on it, so the whole runtime is block 4's walk.
+That part confirmed the plan. Then the per-cell counts overturned it:
+
+```
+row  total  no-op  content
+  3     10     10   v        <          <- the carriage return I was going to delete
+  5   4738   2456   ^  v         >rsv
+  6   4513   2306   ^  v         ^ md
+  9   4162   2106   ^    >bmrM   >rsv
+ 10   3612   1806   ^            ^ md
+ 12    900    850   ^ >              sv
+ 13    950    950   ^                 <  <- the other carriage return
+```
+
+**Rows 5-6 and 9-10 are 73% of the entire runtime.** They are the two
+counted relay loops, and they ran 1141 and 928 times on this case. The two
+carriage-return rows I had designed the re-lay around cost **1,810 ticks
+between them — 8%**. I had been optimising the wrong thing: those rows run
+once per *outer* iteration, the loops run thousands of times.
+
+### And the loops are already at their geometric floor
+
+The unit is
+
+```
+> r s v
+^ · m d
+```
+
+four operations (`r` receive, `s` send, `m` decrement, `d` test) in an
+eight-cell cycle. It cannot be seven: a grid cycle has even length, and the
+cycle needs three turn glyphs — one to go south, one to go north, and one to
+turn the man back east after the `^`, because he arrives at the top row
+heading north and something has to turn him. Three turns plus four
+instructions is seven cells, so the cycle is eight. **The current unit is
+optimal.** Half of its ticks being no-op is structural, not waste.
+
+### Conclusion, and it is a negative one
+
+Block 4's *layout* cannot deliver 2x. The room is 100% busy, 73% of its work
+is two loops that are already minimal, and the whole outer structure — every
+carriage return, every rail — is worth at most ~9%. Re-laying it is worth
+doing eventually for the footprint, but not for the score.
+
+The 2x on `memory` has to come from somewhere else:
+
+* **Footprint**: 961 → 484 means everything inside 22x22. Every room is
+  already folded; block 4 at 15x21 is what stands in the way, so this is the
+  same re-lay, worth ~1.3x at best on its own.
+* **Fewer ticks per relayed value**: unrolling the loop to `r s r s m d`
+  moves two values per cycle — nine cells plus three turns is a ten-cell
+  cycle, i.e. five ticks per value against eight, a 37% cut. That is an
+  **algorithm change**, not geometry: the counter would have to handle odd
+  lengths. It is where the 2x actually lives.
+
+## 2026-07-26 — memory_09 and _10: 19,230,331 -> 17,236,875 (24/24, 30x30)
+
+The profile said the loops were untouchable and the carriage returns were
+only 8%. Both were true, and there was still 10% between them: **the gaps**.
+
+`memory_09` (-4.9%): the loop units sat four and three columns to the right
+of the instructions feeding them, so the man walked blanks to reach them on
+every outer iteration. Pulled loop2 and loop3 from rel cols 14-17 to 11-14,
+pulled B4's row in to end at rel 14, and pulled TAIL's two legs from rel
+3-18 to 6-16. Big case 22,719 -> 21,469 ticks.
+
+Two columns had to stay clear and knowing which mattered: **rel 4 carries
+X1's clockwise descent and rel 6 carries X2's counter-clockwise halt path.**
+Putting an instruction in either changes what a branch arm executes. Every
+`r`/`s` zone was re-audited cell by cell against memory_08 -- all fifteen
+resolve to the same pipe.
+
+`memory_10` (-5.7% more): with the interior tight, the carriage-return row
+could finally go. B0's loop unit moved to rel 16-18 so `d1`'s straight jump
+falls down rel column 18 -- clear only *after* the previous step -- to the
+bottom return row, instead of needing a row of its own. Block 4: 15 rows ->
+14, footprint 961 -> 900.
+
+**Trap:** the `O` pipe's attachment ended up beside block 4's new
+bottom-left corner, where the O room also claims it. Moved it to the top of
+the left wall, which as a bonus widens the margin between the two write
+zones.
+
+First attempt at all this failed 2/7 for a reason worth recording: `d3`'s
+straight jump lands on TAIL's entry cell, and pulling TAIL left removed the
+cell it lands on. **A branch's straight arm is a jump with a landing pad;
+move the pad and the jump falls through.** Both entry points (X2's descent
+and d3's jump) now have their own `<`.
+
+## 2026-07-26 — reverse-a-list: packing assessed, and a correction
+
+**The cost is quadratic in the list length**, measured on reverse_01 with
+synthetic single-round lists:
+
+```
+ n     1    2    3    4    6    8   10   12   14   16
+ticks 54  105  167  239  413  627  881 1175 1509 1883
+```
+
+Per-element cost grows linearly (51, 62, 72, ..., 187), so
+`ticks = 5n^2 + 32n`. That is the ring re-circulating to reverse, and
+packing k values into one cell cuts the quadratic term by k^2.
+
+### The 64-bit limit is real and the simulator hides it
+
+Registers are **64-bit signed** and `sim.py` wraps them **silently** --
+`wrap64()` sits on every arithmetic op including the multiply. An overflow
+does not raise; it returns a wrong answer, and only on values near the
++/-1,000,000 extremes. The public cases use 42, 100, 10, 20, 30, so **a
+local 8/8 would not catch it.** Any packed design has to be bounded on
+paper and then stress-tested at the extremes by hand.
+
+Bounds, shifting by +1,000,000 into 0..2,000,000:
+
+| pack | base | max value | headroom vs 9.223e18 |
+|---|---|---|---|
+| 2 | 2,000,001 | 4.00e12 | **6 orders of magnitude** |
+| 3 | 2,000,001 | 8.000012e18 | 13.3% |
+| 3 | 2^21 fields | 8.796e18 | 4.6% |
+| 4 | any | 1.6e25 | impossible, 1.7 million x over |
+
+Three fits only with Horner's scheme, `((v2*B)+v1)*B+v0`, so no intermediate
+exceeds the final value -- and nothing may ever be added to a packed value
+afterwards. Note the 21-bit-field variant is *tighter* than base 2,000,001,
+not looser: three 21-bit fields is 63 bits, one bit past the sign.
+
+### Two-packing, not three
+
+The quadratic saving saturates while the packing overhead keeps growing:
+
+| | ring term at n=16 | overhead | net |
+|---|---|---|---|
+| now | 1280 | -- | 1883 |
+| 2-pack | 320 | ~240 | ~1160 (-38%) |
+| 3-pack | 180 | ~360 | ~1140 (-39%) |
+
+One point apart, and two-packing has six orders of magnitude of headroom
+against three-packing's 13%. Take the safe one.
+
+It only pays for long lists -- at n=4 packing is a loss, at n=8 a wash. The
+live avgTicks is 1845 against a local average of 1162, so the server's cases
+are longer than the public ones and it should pay there: expect 20-30%,
+roughly 472k -> 350k. It is a new machine, not an edit.
+
+`reverse_02.man` is **not** a candidate -- the server rejected it. reverse_01
+is the base.
+
+### Before building it: the footprint has to be counted too
+
+Score is `fp x avgTicks`, and a packer plus an unpacker are two new rooms.
+Free space inside reverse_01's 16x16 box, with the one-cell clearance a room
+needs: **22 cells**, and they are a 4x3 pocket at cols 0-3 rows 7-9 plus a
+sliver of column 0. Two arithmetic rooms need roughly 100 cells with walls.
+**They do not fit.** So the box grows, and the break-even is steep:
+
+| box | fp | ticks must beat |
+|---|---|---|
+| 17x17 | 289 | x0.89 |
+| 18x18 | 324 | x0.79 |
+| 20x20 | 400 | x0.64 |
+
+Two-packing quarters the ring term (`5n^2 -> 1.25n^2`), which is 960 of the
+1883 ticks at n=16, but the packer and unpacker add back 15-25 per value.
+Realistic average over the case mix: **x0.72**. Against a box grown to 19x19
+that is x1.02 — a loss. Against 18x18, x0.91.
+
+So on the naive plan the packing barely pays, and only if the two new rooms
+squeeze into 68 extra cells. They will not.
+
+### But the delay line shrinks too, and that changes it
+
+The ring is not inside a room at all — it is **pipe P3, seventeen cells
+long**, running rows 10-13 and cols 0-7. That is where the sixteen values
+sit. With pairs, only eight packed values ever need storing, so **P3 drops
+from 17 cells to ~9**, freeing most of rows 10-13 and columns 0-7 — which is
+exactly the region the packer and unpacker need.
+
+That is what makes the idea work: packing does not merely trade ticks for
+area, it *frees* the area it needs. The build is
+`I -> packer -> R1 -> unpacker -> O` with P3 shortened, and the target is to
+stay inside 16x16 so the x0.72 on ticks lands whole: 472k -> ~340k.
+
+Encoding, bounded on paper: `P = (a+1e6) + (b+1e6)*B + f*B^2` with
+`B = 2,000,001` and `f` a 0/1 flag for "this cell holds a pair". Maximum
+8.0e12 against the 9.2e18 limit — six orders of margin. When `n` is odd the
+**first** input value goes in alone (`f=0`); being first in, it comes out
+last, which is where it belongs. The unpacker emits `b` then `a` for a pair,
+`a` alone for a singleton.
+
+## 2026-07-26 — reverse: packing is dead, geometry is not (reverse_06, 14x14)
+
+### The packing plan is obsolete — measured, not guessed
+
+While the packing design above was being worked out, tarstars replaced the
+machine underneath it. `reverse_05` (his branch, live **117,214**) is a
+different ring: **6 ticks per relayed value instead of 10, and each pass
+extracts TWO values**, so the cost is `1.5n^2 + 9n + 5` instead of
+`5n^2 + 32n`. Measured on synthetic single-round lists:
+
+```
+ n        1    2    4    8   12   16
+r_01     54  105  239  627 1175 1883
+r_05     21   30   65  173  329  533
+```
+
+Two-packing halves the ring term. At `n = 16` that saves `1.5*(256-64) =
+288` ticks. The arithmetic to buy it:
+
+| step | cells walked |
+|---|---|
+| pack `P = x*K + (y+S)` | `r { M r + M` + a 9-cell `S` literal + `+ s` = ~22 |
+| unpack, copy 1 (`y`) | build `B=K` (8) + `r / ` + `S` (9) + `- N s` = ~22 |
+| unpack, copy 2 (`x`) | `21` + `M r } s` = ~8 |
+
+**~50 ticks per pair against 36 saved.** It loses, and that is before the
+footprint: a packer and an unpacker are two more rooms, 225 -> 289 at
+best. The floor is the offset: values span `[-1e6, 1e6]`, so the low field
+needs `+S` with `S > 1e6` — a 7-digit literal, 9 cells, walked once to add
+it and once to remove it. There is no cheaper form (checked: `{`/`}` with
+a small shift needs a second constant live at the same time; `&` masking
+needs a mask; folding `S` into the multiplier needs `C = S*(K+1)`, 13-14
+digits; per-word correction `S*(K^2+K+1)` saves one walk in three and
+costs 21 cells). Three-to-a-cell is worse still — the stack digits must be
+peeled by repeated division, so a word must be re-sent once per digit.
+
+**Rule of thumb worth keeping: arithmetic packing costs ~20-30 ticks per
+value. It only pays against a ring whose lap is ~10 ticks or more.** It
+would have paid on reverse_01. It cannot pay on anything as tight as
+reverse_05. Do not rebuild it.
+
+### What did pay: reverse_06, 14x14, local 62,769
+
+tarstars' handoff (`docs/architecture/claude_27_reverse2_handoff.md`)
+named the next step exactly: width binds at relay(4) + gap(1) + pump(10),
+so the pump interior has to go 8 -> 7 wide. He was blocked on east-side
+convergence. Re-laying the pump from scratch got 7 wide **and** 6 tall
+(his was 8x7), which takes the box to 14x14 and the score to **62,769**
+(reverse_05: 74,390) — 1.185x, of which 1.148x is footprint and the rest
+ticks. Three ideas did it:
+
+1. **Fold the head send into the relay loop.** Walk the loop as
+   `> s U d m ^` — it SENDS what is already in A, then READS the next
+   value. Enter with `A = k-2` (the new head) and `BP = k-2`: lap j sends
+   value j-1 (lap 1 sends the head), reads value j, and `d` falls through
+   at lap k-1 holding `v_{k-1}`. That is exactly `head + v1..v_{k-2}` sent
+   and `v1..v_{k-1}` read. The dedicated head-`s` cell and its approach
+   lane disappear.
+2. **Load BP with k-2, not k-1.** Then `k == 2` needs no fixup: put `X`
+   one row directly above the loop's `U` and its straight-south arm drops
+   onto `U` with `BP = 0`, so `d` falls through into the shared tail.
+   Costs zero cells; reverse_05 spent a lane and a zeroing `m` there.
+   BP is 0 at the start of every pass anyway (the loop always drains it),
+   which is why only the k>=3 arm needs the `b`.
+3. **Constant 2 instead of 1**: one `-` replaces `-b-`. Reloaded by `2`
+   on the climb and `M` on the head row.
+
+```
+        c0 c1 c2 c3 c4 c5 c6
+    r0   .  .  v  -  r  M  <     head row, walked WEST: B=2, A=k, A=k-2
+    r1   .  .  b  .  .  .  2     BP = k-2 ; climb reloads A=2
+    r2   v  .  X  r  s  @  ^     three-way branch ; k==1 spur (r, print)
+    r3   >  s  U  .  .  .  s     loop top ; climb prints v_{k-1}
+    r4   ^  m  d  .  .  .  W     loop bottom ; climb swaps
+    r5   .  .  >  M  r  s  ^     tail: hold v_{k-1}, read+print v_k
+```
+
+Generator `src/littleman/alexey_reverse6.py`, tests
+`tests/test_alexey_reverse6.py` (8 tests: geometry, the input-room pipe
+rule, every `s`/`r`/`U` resolution, public 8/8, every length 1..16 with
+extremes, 120 fuzz rounds, branch-mix boundaries). 262-case stress green,
+max 1546 ticks.
+
+Two traps re-paid during the re-lay:
+
+* The return pipe's westward bend first sat at row 7, flush against the
+  pump's left wall — its backward cell IS the wall, so it parsed as a
+  second pipe out of the pump (5 pipes instead of 4). Moved the jog to
+  row 9, below the room.
+* The return pipe then wanted to climb column 3, flush past the input
+  room's right wall. The server counts a pipe merely PASSING an input
+  room's wall as a second connection and rejects the program (tarstars
+  paid a submission for that one). It climbs column 4 instead.
+
+**Submitted 2026-07-26T12:36Z**, id `e338fb00-7962-432f-9c30-77baff5ce603`:
+20/20, width 14, height 14, avgTicks 503.45, **server score 98,676.2**
+(reverse_05: 117,214) — 1.188x live, and the estimate from the local
+ratio was 99,000, so the server's case mix tracks the public one.
+
+Next lever if anyone picks it up: 13x13 = fp 169, another 1.16x. Needs
+either a 6-wide pump interior (the head row alone wants 5 cells plus the
+drop column, and the loop wants 2 more to its west — it does not fit as
+laid out) or the relay moved BELOW the pump so width stops being
+relay + gap + pump. The latter flips the ring-in to the pump's floor,
+which turns `U` north and needs the interior re-walked.
+
+### 13x13 attempt: why 7x6 interior is the floor for this architecture
+
+Tried, does not close. fp 169 needs BOTH dimensions at 13, i.e. relay(4) +
+gap(1) + pump(8) wide and one row less tall — a **6x5 pump interior**.
+The two blockers are structural, not a lack of cells (24 used of 30):
+
+**Columns: 7 is the floor.** The head row is 5 cells — `<` (the climb's
+turn), `M`, `r`, `-`, and the drop `v` — and it must run from the climb
+column *west* to the drop column, so `cE = cU + 4`. The loop is a 2x3
+block whose `>` sits at `cU - 2`, so `cU >= 2`. Union = `cU-2 .. cU+4` =
+**7 columns**. Every way out was tried and closes worse:
+
+* Drop `M` from the head row (compute `2-k` with `r M 2 -`, no preset B):
+  needs `N` to get `k-2` back for the head send and `b`, and the branch
+  arms swap sides, which puts the k=1 spur into the wall.
+* Mirror the loop (`a` instead of `d`) so it sits east of `U` and `cU`
+  can be 1: the main arm then needs two cells (`N`, `b`) between `X` and
+  the loop entry but only one exists. Widening the loop's top row to make
+  room turns the lap from 6 cells into 8 — +2 ticks on every one of the
+  56 relays at n=16, which eats most of the 14% the area would buy.
+* A 2x2 loop leaves no cell for `s` and `m`.
+
+**Rows: 6 is the floor.** `b` can indeed move off its own row onto the
+main arm (BP is 0 at the start of every pass, so the k=2 arm needs no
+`b`), which is what a 5-row layout needs. But then the climb column must
+carry `W`, the `s` that prints `v_{k-1}`, the k=1 spur's join turn, and
+the `2` — four cells between the tail's turn and the head row's `<`, and
+a 5-row interior offers three.
+
+The only route left is a different *room* layout: relay under the pump so
+width stops being relay+gap+pump. That flips the ring-in to the pump's
+floor (so `U` turns north and the interior must be re-walked) and then
+runs out of pipe space — with the pump against the box edge there is no
+floor row left for the ring-out and the output, and putting both on the
+side wall makes the ROW decide nearest-pipe, which collides: the loop's
+`s` and the climb's `s` share a row.
+
+**Where the remaining ticks are** (profiled, n=16, 516 ticks): blocking is
+1-3 ticks total, so the machine is walk-bound, not transit-bound. 336
+ticks are the 56 relay laps (6 each) and ~180 the 8 passes' fixed cost
+(head row 5, tail 4, climb 5, arms 4). The real lever is **three
+extractions per pass** — relays drop 56 -> 35 and passes 8 -> 6, about
+-33% — but it needs a third live value (`v_{k-2}` held while `v_{k-1}`
+and `v_k` are read), so it needs a one-value stash room off the ring, at
+20 cells plus two pipes.
+
+## 2026-07-26 — three-to-a-cell packing: BUILT and MEASURED, still loses
+
+Built the pack side for real rather than estimating again:
+`/tmp/.../scratchpad/pack3.py` (harness, not repo code). One room, one man,
+`I -> packer -> O`: read three values, Horner-pack base `K = 2^21`, add the
+per-word offset correction once, emit the word. The judge compares the word
+against the number Python computes, so the arithmetic is verified end to end.
+
+**The arithmetic is fine — the user's bound holds.** `K = 2^21`, `S = 2^20`,
+digits `v + S` in `[48576, 2048576]`, word `= (v1+S)K^2 + (v2+S)K + (v3+S)`.
+Worst case measured on the machine: `1000000,1000000,1000000` ->
+**9,009,736,825,708,692,032** against the signed limit
+9,223,372,036,854,775,807 — 2.3% of headroom, no wrap. All five probes pass
+(extremes, all-negative, all-zero, mixed sign).
+
+**The cost is the problem: 103 ticks for three values = 34 ticks per value,
+for PACKING ALONE.** The whole of reverse_06 costs 516 ticks for sixteen
+values = 32 ticks per value. Even a tight serpentine layout (fold the return
+leg) only gets packing to ~23/value, and unpacking is strictly worse.
+
+Why it cannot be made cheap — one sentence: **every constant costs a literal
+walk, because a literal writes A, and A is where the accumulator lives.**
+The per-value sequence is forced:
+
+    M `21` W { M r +      park T in B, load 21, swap back, shift, park, read, add
+
+Ten cells, of which four are the literal `21`, purely to get a constant into
+B without losing T. The >1e6 offset is kept off this path by adding
+`C = S*(K^2+K+1)` once per word (a 19-digit literal, 21 cells) instead of
+`+S` three times — that trick works and is worth remembering, but it still
+costs 8 ticks per value amortised.
+
+Unpacking is worse for a structural reason: `/` writes BOTH A and B, so
+after one division the base is gone from B and reloading it destroys the
+remaining stack. Every digit therefore needs the word re-sent (the pump
+sending it three times, i divisions on copy i) or a partner room to park the
+quotient. Six divisions per word, each with a base reload, plus removing the
+offset from each digit while the stack is live: ~30+ ticks per value.
+
+**Total, honestly: ~55-60 ticks/value of arithmetic against 32 ticks/value
+for the entire current machine, plus two or three new rooms.** The ring
+saving is real and large — 6 words instead of 16 values takes the relay laps
+from 336 ticks to ~36 at n=16 — but the ring is only 336 of 516 ticks, so
+even a FREE packer could not reach half. Packing is closed. It was the right
+idea against reverse_01's 10-tick lap and 5n^2; it cannot beat a 6-tick lap
+with double extraction.
+
+### 13x13 by room repacking: also closed
+
+Tried the user's suggestion (move I/O flush against the rooms, re-route).
+13 columns = relay(4) + pump(9) exactly, so there is **no routing lane**:
+the relay's right wall touches the pump's left wall, and a pipe cannot pass
+between adjacent walls. Every alternative was walked:
+
+* pipe out of a room's roof needs TWO free rows (the first cell must point
+  away, the bend needs its own cell) — one free row above is not enough;
+* with the relay beside the pump, the only free columns spanning the pump's
+  rows are inside the relay, so a return pipe cannot climb from below the
+  pump back to its roof;
+* moving I and O into the bottom band blocks the westward corridor the
+  ring-out needs, and routing around them runs the pipe flush past the input
+  room's wall, which the server rejects.
+
+Both dimensions are therefore pinned: 7x6 is the floor for the pump interior
+(proven above) and 4+9 is the floor for the width.
+
+## 2026-07-26 — reverse_07: 13x13 by moving one room at a time
+
+**I was wrong about 13x13 being impossible.** The proof I wrote earlier
+assumed the gap column between the relay and the pump was mandatory, because
+the ring-in leaves the relay's right wall. Alexey's method — move one thing,
+judge, then move the next thing relative to that, without designing the final
+layout first — found the way through in six steps. Every step is preserved in
+`experiments/alexey-reverse06/` with its `.man` and a note.
+
+| step | move | box | score |
+|---|---|---|---|
+| 0 | reverse_06 as submitted | 14x14 | 62,769 |
+| 1 | Output flush: its pipe bends into O's right wall instead of dropping into the roof, so O climbs two rows | 14x14 | 62,769 |
+| 2 | Relay down two rows (rows 2-7); ring-in now leaves the ROOF and is 7 cells | 14x14 | 63,161 |
+| 3 | Input up one row; ring-out re-terminates on the relay floor | 14x14 | 62,744 |
+| 4 | Ring-out out of the last row | 14x13 | 62,891 |
+| 5 | Pump one column left — relay FLUSH, no gap column | **13x13** | 53,911 |
+| 6 | Ring-out serpentined: 13 cells instead of 11 | 13x13 | **53,594** |
+
+Step 2 is the one that mattered and it looked pointless at the time (the
+score got *worse*). Two free rows above the relay let the ring-in leave
+through its roof, and that is what makes the gap column unnecessary — which
+only becomes visible three steps later.
+
+Step 6 is worth remembering on its own: **a longer pipe was both more
+capacious and faster.** Pipe cells are parking space as well as delay, so the
+serpentine (13 cells vs 11) removed blocking that the short route caused.
+
+Two traps re-paid, both already in the trick sheet: a bend flush against the
+pump's bottom wall parsed as a fifth pipe (fixed by moving the jog off row
+8), and the ring-out could not climb the column beside the input room.
+
+Also learned: reverse_06's `(1,4)` was a **dead glyph** — the ring-in
+actually starts at `(0,4)`, sourced from the relay's top-right corner. The
+parser wants an arrowhead adjacent to a border cell pointing away from the
+room; `(1,4)`'s `^` matched no room, so it was never part of a pipe.
+
+Capacity checked properly instead of by rule of thumb: peak occupancy across
+both ring pipes is **16** on three consecutive n=16 rounds (the frame is at
+most 17 values and the pump always holds one), against a capacity of 19.
+
+`src/littleman/alexey_reverse7.py`, `tests/test_alexey_reverse7.py` (8 tests),
+`submissions/reverse-a-list/reverse_07.man`. 8/8 public, every length 1..16
+against three value patterns, 250-case fuzz, CLI preflight 53,594.1.
+Live estimate: 98,676 / 1.171 ~ **84,000**. Not submitted yet.
+
+## 2026-07-26 — brackets_05: 35x30 -> 34x29 by folding one pipe (fp 1225 -> 1156)
+
+Same method, applied to the current best (`brackets_04`, live 836,345).
+Steps in `experiments/alexey-brackets04/`.
+
+**Where the box was going:** brackets is width-bound (35 wide, 30 tall). The
+widest room spans cols 5-33, so **columns 34-35 were pure pipe** — the
+69-cell return from R3 to R1 climbed the far east column and ran back west
+along row 0.
+
+**Step 1** re-routed that pipe with `alexey_piperoute` under
+`bounds=(29, 34)` and `target=69` — same 69 cells, so identical buffering and
+identical tick counts — and the box became **34x29, fp 1156, local 482,514 ->
+455,336**. Row 0 emptied out as a side effect, which is where the extra row
+came from. Verified 9/9 public plus 200 fuzz strings (balanced generator and
+uniform random, lengths 0-64) and the edges: depth-32 nests, all-openers,
+lone closer, empty string, `([)]`, 64-char balanced.
+
+**Step 2 and 3 failed, and the reason is worth recording.** To get to 33 the
+pipe needs a northward corridor west of R2 (cols 1-4). Two things block it
+and they cannot both be moved:
+
+* the 14-cell R3->R2 pipe climbs that corridor and elbows east at row 12 to
+  reach R2's left wall — the elbow spans the whole corridor width, so any
+  pipe climbing beside it is cut off at row 12;
+* moving that pipe one column west (step 2, tried: it works, 16 cells, 9/9)
+  just moves the blockage — its vertical run then cuts row 18, which is the
+  only way from the east half to the west half, because R3 fills rows 19-29
+  below and R2 fills rows 10-17 above.
+
+So one of the two pipes always crosses the other. The next real move is to
+shift **R2 itself** one column left (cols 4-32), which frees col 33 for the
+climb; that needs its three roof pipes re-jogged by one column, and R2's
+nearest-pipe resolution re-audited, because two of them land on the same
+wall.
+
+`submissions/brackets/brackets_05.man`. Expected live: 836,345 x 0.944 ~
+**789,000** (the tick average is unchanged — this is pure footprint).
+
+### brackets_06: the shift ladder — 35x30 -> 31x29 (fp 1225 -> 961)
+
+Continuing after brackets_05 (live 789,237, exactly the predicted 789k).
+The blocker was named in the step-2/3 failure above: the return pipe needs a
+climb column and R2's right wall is where it would be. So move R2.
+
+**The step, generalised.** Shift R2 (and the O room with it) `k` columns
+left, then fold the return pipe into the freed column. R2 has two incoming
+and two outgoing pipes, so all four attachment cells must keep their offset
+*inside R2* or the nearest-pipe resolution changes. R1 has a single outgoing
+pipe, so that one's source may move freely — which is the degree of freedom
+that makes the whole thing work.
+
+| shift | box | fp | local |
+|---|---|---|---|
+| 0 (brackets_05) | 34x29 | 1156 | 455,336 |
+| 1 | 33x29 | 1089 | 429,550 |
+| 2 | 32x29 | 1024 | 404,935 |
+| 3 | **31x29** | **961** | **380,983** |
+| 4 | 35x29 | 1225 | 487,142 (worse: R3's pipe terminal needs col 0, so the box grows west) |
+
+Three traps paid on the way, all recorded so the next re-lay is cheaper:
+
+1. **Erase pipes before moving a room.** The R3->R2 pipe terminates on a
+   cell the moved room lands on; erasing afterwards deletes a wall glyph and
+   the program stops parsing.
+2. **Two roof pipes jogging in the same direction collide.** R1->R2 and
+   R2->R1 both attach to R2's roof and both must reach R1's floor; sending
+   one west along row 9 and the other east along row 8 keeps them apart at
+   every shift.
+3. `route_safe` refuses **every** arrowhead beside a room, which is stricter
+   than the rule. An arrowhead there is only a phantom pipe start if it
+   points AWAY from that room, so the two short jogs are hand-placed and
+   audited by hand.
+
+Verified: 9/9 public, 250 fuzz strings (balanced generator + uniform random,
+lengths 0-64), and the edges — depth-32 nests of each type, 64 openers, lone
+closer, empty string, `([)]`, full-length balanced, balanced-then-unclosed.
+
+`submissions/brackets/brackets_06.man`. Expected live ~ 789,237 x (961/1156)
+x (380,983/455,336 / (961/1156)) — the tick average is unchanged again, so
+simply **~656,000**.
+
+### brackets_07: re-run squeeze AFTER moving things — 31x29 -> 30x27 (fp 900)
+
+`alexey_squeeze` had nothing to delete on brackets_04 (the trick sheet even
+says so). After the shift ladder moved three rooms and four pipes, it found
+**3 rows and 2 columns**: 961 -> **900**, local 380,983 -> 353,600, 9/9,
+250-fuzz clean. A second pass finds nothing more.
+
+That is the general lesson, and it is now paid for twice: **squeeze is not
+exhausted, it is exhausted *for a given layout*. Re-run it after every move.**
+
+Live ladder for brackets today: 836,345 -> 789,237 (fold the return pipe off
+the east column) -> 660,983 (shift the middle room three columns left) ->
+**615,565** (squeeze the slack the shift opened). Total **1.36x**, all of it
+footprint; the tick average never moved.
+
+Remaining: 30 wide against 27 tall, so the width still binds. The next
+column would have to come out of the middle room's interior (29 wide),
+which is program surgery, not layout.
+
+### brackets_08/09: the two tricks that were still missing — 30x27 -> 27x27
+
+Alexey caught that I had jumped to subset-sum with brackets tricks unapplied.
+He was right; two of the four playbook moves had never been run on it.
+
+**Room-edge trimming** (playbook move 2). `alexey_trimrooms` applied whole
+destroys this program — it loses a pipe and moves resolution — so it was done
+by hand, one room and one edge at a time, with `alexey_resolveaudit` as the
+gate:
+
+| step | move | box | local |
+|---|---|---|---|
+| brackets_07 | (was) | 30x27 | 353,600 |
+| brackets_08 | R2's right wall in by 1, return pipe re-folded at 65 cells | 29x27 | 330,420 |
+| brackets_09 | R2's right wall in by 2 more, O slid 2 left with it, re-fold | **27x27** | **286,416** |
+
+The blocker at the first attempt is worth keeping: **a room's blank edge
+columns are only trimmable up to its outermost PORT.** R2 had three blank
+right columns but a pipe to the output room attached to its roof at the
+second of them; trimming past it orphaned that pipe (5 pipes instead of 6).
+The fix was to trim two more only after sliding O — and its pipe — left as
+well. O has a single pipe, so its resolution cannot be ambiguous; that is the
+free variable again.
+
+Two more things the gates caught before the judge did:
+
+* the first re-fold routed the return pipe flush past the input room —
+  `server_compat` rejects that (the rule tarstars paid a submission for), so
+  the input room's neighbourhood is now blocked before routing;
+* `route_safe` could not place any of these folds (it refuses every arrowhead
+  beside a room). Plain `route` plus a retry loop that blocks only the
+  arrowheads which actually created a phantom pipe works, and the pipe-count
+  gate is what makes that safe.
+
+**The staircase fold does not apply here**: no room in brackets has
+single-walled ports (checked all three).
+
+Live: 836,345 -> 789,237 -> 660,983 -> 615,565 -> **498,608**, i.e. **1.68x
+today**, all footprint, tick average untouched. 27x27 is square now, so the
+next gain needs BOTH dimensions, which means interior surgery on the 25-wide
+middle room rather than layout work.
+
+### brackets b10: the dead-cell scan — room 0 loses 6 columns of nothing
+
+Alexey spotted two useless arrows in the top room by eye. Measured properly
+(a visited-cells scan through the Python sim over 460 constraint-respecting
+cases: offender at every position 1..64, every unclosed depth 1..32 of each
+bracket type, balanced strings of every even length, 300 depth-capped random
+strings), room 0 has exactly **four** dead cells: the two `<` at (5,19),(5,20)
+he saw, plus an orphaned `>`(3,1) / `^`(5,1) — remains of a western return
+path that no longer exists. Blanked all four; room 0's right wall then trims
+21 -> 15 (the room was 22 wide for content that ends at col 14).
+
+Resolution map identical, 9/9, fuzz clean. Score unchanged — the box is
+bound by room 2 in width AND by the room stack in height — so per the
+standing rule this is recorded as an enabler step
+(`experiments/alexey-brackets04/b10_deadtrim.man`), not submitted.
+
+Four findings from the scan, all worth more than the columns:
+
+1. **brackets is single-round by contract.** All 9 public cases are one
+   round, the description has no round language (reverse's says "1-3 lists"),
+   and the machine deadlocks on ANY second round — in brackets_04, the
+   original live 26/26 artifact, identically. The server's private cases are
+   therefore single-round too. My earlier fuzzes were multi-round-free by
+   accident; now it is explicit.
+2. **The four `H` cells in room 2 never execute, but they are load-bearing.**
+   The judge passes the case the moment the output value is emitted — but the
+   value spends 2 ticks in the output pipe, and a man who walks into a wall
+   meanwhile is an ERROR, which kills the program including its pipes before
+   the value drains. `H` after the final `s` is what buys those 2 ticks. Do
+   not delete a trailing H to save a column unless the man can be turned
+   somewhere safe instead.
+3. **`judge_case` here is fastsim-backed (C).** Patching
+   `sim.Machine._execute` does nothing to it — a visited-cells or occupancy
+   probe must drive `sim.Machine` directly. Cost me one empty scan.
+4. Depth is capped at 32 by the constraints; `(`*33+ overflows the base-3
+   packed stack by design. Fuzz generators must cap depth or they test
+   outside the contract.
+
+What is actually left in brackets: width is pinned by `sH` ending at room 2's
+col 24 on row 11, whose entry `>` at (11,14) is the A<0 landing pad of the
+`X` at (12,14) — so the tail cannot slide left without moving the X, which is
+embedded in row 12's chain, whose south branch lands on row 13's `W`. That is
+a walk-graph surgery project (map every landing pad, move the three chains
+together), not a layout move. Height similarly needs an interior row out of
+one of the three rooms. Parked with this note.
+
+### brackets b11: the ring is transport, not storage — 65 cells -> 49, live pending
+
+Alexey asked whether I/O and rooms 0/2 can be pressed closer. Measured every
+gap instead of answering from memory (b10_deadtrim coordinates):
+
+| gap | size | verdict |
+|---|---|---|
+| I room -> room 3 | pipe (23,21)-(23,20), 2 cells | legal minimum, flush |
+| O room -> room 2 | pipe (8,24)-(7,24), 2 cells; O floor row 6, room 2 roof row 9 | flush |
+| room 0 -> room 2 | rows 7-8, exactly 2 | minimum: their two pipes need >= 2 cells each; a 1-row gap means 1-cell pipes, which the server rejects |
+| room 2 -> room 3 | walls on rows 15/16 | already touching |
+
+Neither I nor O binds the box: O lives inside room 2's column band, I inside
+room 3's row band. Both dimensions are pinned elsewhere (room 2's interior
+content in width; the room stack plus the ring's roof-entry row in height).
+
+**But the occupancy probe that came with the measurement paid off.** Peak
+occupancy of the two long pipes on the heaviest cases (32-deep nests,
+full-length strings): **10 values of 78 cells of capacity**. Unlike
+reverse, brackets' 65-cell pipe is a data path, not a parking ring — its
+length is pure latency. We had been carefully preserving 65 cells all day
+for nothing. Shortest route is 49 cells (must still climb col 26 and run
+row 0 — both pinned): local 286,416 -> **277,830**, first tick win of the
+day. The 13-cell and two 5-cell pipes are already at their Manhattan
+minimum (13 = 9+3+1 exactly, 5 = 1+3+1 exactly), so nothing else to cut.
+
+Rule for the playbook: **measure a long pipe's peak occupancy before
+preserving its length.** `target=` is for pipes that store; pipes that
+merely carry should be as short as the pinned geometry allows.
+
+### brackets: can rooms 0 and 2 be flush, pipes through other walls? No — enumerated
+
+Alexey's question, and this time the answer is an exhaustive check, not a
+layout argument. The five `r` cells of room 0 pin where its incoming pipes
+may attach. Enumerating every non-floor port position for p1 (east wall rows
+2-5, roof cols 1-14) against the required bindings
+
+    (3,5)->ring   (3,7),(3,9),(4,8),(5,13)->p1
+
+leaves exactly three survivors: **roof cols 7, 8, 9**. But a roof port needs
+the row-0 corridor for its approach, and the ring already owns row 0 end to
+end (it must reach its own roof terminal at col 4 from the east). Two pipes
+cannot share or cross the single corridor, and swapping the two (ring east,
+p1 west) fails the bindings arithmetically ((3,7) flips to ring). The floor
+— the only wall that satisfies everything — is exactly what flushing removes:
+every floor port needs the cell below, and below is room 2's roof wall.
+
+So the 2-row gap is load-bearing three independent ways: pipe minimum
+length, r-cell bindings, and the row-0 corridor. AND the prize was zero
+anyway: height 27 -> 25 with width still 27 leaves fp at 729 — in brackets
+the width binds, and the width lives in room 2's interior.
+
+I & O were re-confirmed wall-to-wall already (2-cell pipes, both).
+
+### brackets b12: I and O pressed wall-to-wall, as asked — built, measured, recorded
+
+Alexey did not accept the "already minimal" answer without seeing the pressed
+layout, and building it taught the precise price of flushing an I/O room:
+
+* **O flush is free.** O's west wall now touches room 0's east wall, and a
+  straight 2-cell pipe drops from room 2's roof (col 17) into O's floor. All
+  eight of room 2's send bindings re-verified. Score identical: 277,830.
+  (`b12a_oflush.man`)
+* **I flush costs one tick per character.** The pipe's start arrow must point
+  away from the room it leaves, so with I's west wall against room 3's east
+  wall the pipe cannot exit west — it exits I's floor, bends, and enters
+  through room 3's south-east corner: 3 cells instead of 2, +1 tick latency
+  per input value. 278,559 vs 277,830, 0.26% worse. (`b12_io_flush.man`)
+  Corner entry itself is legal: the parser and judge both accept a terminal
+  whose forward cell is a room's corner `+`.
+
+Both recorded per the standing rule; neither submitted (one equal, one
+worse). `b12a` (O flush) is the preferred base for whatever comes next.
+
+Rule extracted: **flushing a room is free exactly when the pipe can leave
+straight; if the flush forces the pipe around a corner, each extra cell is
+a tick on every value that crosses it.** For an input room on a hot path,
+that is a tick per character.
+
+### brackets b13/b14: Alexey's row-7 question straightens both gap pipes
+
+He asked two things: slide O right (done — pipe col 20, bindings verified,
+score unchanged, `b13_oright`), and *how far right can the row-7 outgoing
+pipe move?* The answer turned into a win:
+
+* p1's **terminal** (room 0's floor) is pinned at col 8: the r at (3,7)
+  needs p1 within distance 5, and at col 9 the distance ties with the ring
+  at 6, and ties go to the ring by reading order. Cols {6,7,8} only.
+* But its **source** (room 2's roof) is free to slide right to col 13 —
+  and at col 8 it sits directly under the terminal, so the pipe becomes a
+  **straight 2-cell drop**. p0 mirrors at col 6 (its roof port may be
+  {6,7,8}, its floor port is free since room 0 has one outgoing pipe).
+* Safety measured first: peak occupancy of both 5-cell gap pipes is **2**,
+  so 2-cell capacity cannot deadlock.
+
+All 17 bindings in both rooms re-verified empirically. Local 277,830 ->
+**276,615** (-1.7 avg ticks: three cells of latency removed from each
+direction of the room0<->room2 exchange). Submitted as brackets_11; live **484,532.65** (26/26).
+
+The general form of the question, for the playbook: **a pipe's two ports
+have separate freedom; when their legal ranges overlap in a column, the
+pipe straightens to 2 cells.** Check the ports' ranges before accepting any
+bent gap pipe.
+
+## subset_sum_01 live: 91.77T -> 37.40T (2.45x), 20/20, 2316x2374
+
+The bisection did it: Alexey's M4 judged each group of deletable lines in
+~25 s (vs 32 min here), all 655 rows proved safe, 1330 of 3040 columns
+proved safe, and height was the binder anyway -- so the safe set delivers
+the FULL squeeze footprint (fp 13,293,316 -> 5,635,876) plus a tick
+improvement from the safely shortened transport pipes. Three dead ends
+paid for it: exact-length reinflation (router cannot rebuild 3-6k-cell
+serpentines -- confirmed by three independent runs), occupancy measurement
+(30+ hours of python sim), and the bare squeeze (deadlocks: storage pipes
+cut). The lesson for the playbook: **when the judge is cheap, bisect
+deletions with the judge instead of measuring occupancy.** Submission
+76d036a9-77cc-401b-adc9-3295bd08674c.

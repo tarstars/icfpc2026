@@ -1,6 +1,6 @@
 # Current State
 
-Updated: 2026-07-25
+Updated: 2026-07-26
 
 ## Objective
 
@@ -39,8 +39,16 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - Semester 4 added four graded 16×16-display problems: `snake`, `pathfinder`,
   `little-little-little-man` (LLLM), and `little-little-man` (LLM). Their
   exact API specifications and 36 total public cases are attached under
-  `data/small/problems/`; no Semester 4 solution is recorded yet. See
-  `reports/2026-07-25-semester-4-release.md`.
+  `data/small/problems/`. Snake `snake_04` is accepted 17/17 at 150×129 and
+  score 848,516,029.4117646; its four-cell state-ring reduction is documented
+  in `reports/2026-07-26-snake-ring-margin.md`. Pathfinder submission
+  `0c04a141-a73b-443c-a274-741bfe67d857` is accepted 18/18. Claude's pressed
+  LLLM submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d` is accepted 21/21
+  at 307×312 and score 22,187,469,586.285713. LLM submission
+  `be96c6eb-e2bd-40a7-b5d2-a3aadbaf2b9b` is accepted 28/28 at server score
+  8,775,033,253,482,888; its exact artifact and response are preserved. See
+  `reports/2026-07-25-semester-4-release.md` and the latest immutable
+  messages under `coordination/messages/`.
 - Before committing any solution version, agents must pull and integrate the
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
@@ -55,35 +63,36 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   pipe into an 18×18 square. It passes all public and 308 deterministic stress
   workloads at local score 778,062.86, 16.20% below `sort_03`; it has not been
   submitted.
-- The server-safe 89×89 History Lesson program passed 1/1 with footprint score
-  7,921.
+- History Lesson's live `history_04` repaired short-token archive is 83×83,
+  passed 1/1, and scores 6,889. Its 1,809-symbol stream fills exactly 201
+  parser-safe words and passes locally in 1,758,189 ticks; see
+  `reports/2026-07-26-history-83-square.md`.
 - Packet Reassembly `tcp_00` passed 20/20 at 38×41 and score 20,028,106.4.
   Five platform downloads recovered the missing tag-through-ring lineage:
   `tcp_01/tcp_05 -> tcp_04 -> tcp_03 -> tcp_02`. The 38×38 `tcp_02` is
   uniquely identified as the counted 5,981,625.6 winner and now reproduces
   byte-for-byte from a structural generator. All recovered sources have
   stable hashes, pass public cases and a 45-case boundary suite, and are
-  catalogued under `submissions/tcp/`. Only its submission UUID remains
-  unavailable.
+  catalogued under `submissions/tcp/`. The `tcp_08` geometry compacts the
+  machine to 31×31. Its `tcp_09` successor adds a two-cell shortcut to the
+  packed controller's insertion-return path without changing the footprint
+  or any pipe binding. It is the current live best: 20/20 at score
+  1,575,127.05 and rank 29/98 in the refreshed snapshot. Only the older
+  `tcp_02` submission UUID remains unavailable. See
+  `reports/2026-07-27-tcp-hotpath.md`.
 - Grade Book `gradebook_01` compacts the accepted four-worker baseline from
   494×462 to 454×450 without changing its protocols. It passed all 20 live
   cases and improved the server score 15.97%, from 124,123,713,433.2 to
   104,303,579,599.6. The exact variants are under
   `submissions/gradebook/`; the optimization is documented in
   `reports/2026-07-24-grade-book-optimization.md`.
-- Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
-  The best compact nested-ring geometry occupies 183×180, passes all seven
-  public cases, including 16×16×16 in 4,198,400 ticks, and improves the local
-  score 60.25× over the parallel baseline. Details are in
-  `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
-  cases at server score 33,286,994,352.
-- The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
-  average 529,549.7 ticks, and score 105,335,908,125.2. The unsubmitted
-  geometry-only `sudoku_01` folds its unchanged workers into two rows,
-  occupies 286×285, passes the focused compatibility and adversarial gates,
-  and improves measured local score 59.15%. Details and exact sources are in
-  `reports/2026-07-25-sudoku-two-row.md` and
-  `submissions/sudoku-validity/`.
+- Matrix Multiply `matmul_08` preserves the folded-controller logic and
+  compacts its rings to 99×98. It passed all 20 live cases at server score
+  5,931,034,965.9, improving the preceding counted score by 29.70%.
+- Sudoku Auditor `sudoku_05` uses one canonical 27-mask state ring in a
+  75×131 machine. It passed all 20 live cases at server score 9,290,407,667.5,
+  improving the preceding counted score by 17.84%. Its algorithm replacement
+  also passed 17 directed order and duplicate workloads locally.
 - Memory `memory_01` preserves the submitted pipeline logic but relocates one
   room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
   improved the server score from 181,952,075.875 to 91,372,247.625. Details
@@ -117,6 +126,19 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - `littleman.server_compat` is the pre-submission judge for the two confirmed
   parser differences: it rejects locally accepted shared-wall rooms and
   permits a final wall step after a send while the output pipe drains.
+- The exact Rust executor on `agent/codex-rust` retains the Python parser,
+  lowers to a versioned dense IR, and executes through PyO3 or a standalone
+  Rayon CLI. It reduced the expanded 2,012-test LLM suite from 858.86 to
+  53.08 seconds, and ran all 14 public LLM cases (173.6 million judged ticks)
+  deterministically in 4.93 seconds with eight workers. Acceptance evidence
+  is in `reports/2026-07-26-rust-executor.md`. A missing-extension fallback
+  found by Claude's independent review is fixed in `a899e03`; forced fallback
+  now passes 108 tests with 11 native-only skips. The clean
+  `agent/codex-main-integration` candidate merges current `origin/main`, both
+  agent lineages, and passes the full repository suite: 3,822 passed, two
+  skipped, four expected xfails, zero failures. Peer review is approved;
+  the guarded non-force promotion placed release commit `6efbc49` on
+  `origin/main`.
 
 ## Storage
 

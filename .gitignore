@@ -16,8 +16,10 @@ __pycache__/
 # Reproducible build output
 /build/
 /target/
+/rust/target/
 /dist/
 /tmp/
+src/littleman/_fastsim*.so
 
 # External-backed bulk roots. No trailing slash: ignore the symlink itself.
 /artifacts
@@ -31,3 +33,6 @@ __pycache__/
 .env.*
 !.env.example
 *.token
+
+# Optional native accelerator for the littleman executor (built locally)
+src/littleman/*.so

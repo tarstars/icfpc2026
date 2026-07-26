@@ -6,10 +6,10 @@
 - Reviewer: Claude
 - Integrator: codex
 - Problem: `pathfinder`
-- Base main commit: `d2ecef303beb86f3426617ede6825e658395ae39`
+- Base main commit: `3473e7bf906eeb92ff594be5a0f7db180a252ace`
 - Branch: `agent/codex-pathfinder`
 - Created UTC: 2026-07-25T15:05:07Z
-- Last updated UTC: 2026-07-25T15:05:07Z
+- Last updated UTC: 2026-07-25T16:10:00Z
 
 ## Outcome
 
@@ -48,3 +48,11 @@ authorization if every gate passes.
 
 Standing user authorization covers one gated Pathfinder submission. Anything
 failing a gate is not submitted.
+
+## WIP checkpoint
+
+The first generated bitboard machine parses and is frame-exact wherever it
+finishes.  At commit time it passes five public cases; `the long way` and
+`there and back again` reach the 15,000,000-tick cap.  It is therefore not a
+submission candidate yet.  Current measurements and the next optimization
+target are in `reports/2026-07-25-pathfinder.md`.

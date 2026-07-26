@@ -90,6 +90,22 @@ Agent-private bookkeeping remains private:
 Saved solution versions and live submission responses are immutable. Create a
 new numbered version rather than overwriting an earlier artifact.
 
+### Merge name collisions
+
+Before integration, hash any same-path artifacts added independently on both
+branches. Different bytes under one filename are two immutable versions, not
+a file-level conflict to resolve by choosing one.
+
+- Keep the target branch's existing filename unchanged.
+- Rename the incoming Tarstars/Codex artifact with a `tarstars_` prefix:
+  `<name>` becomes `tarstars_<name>`.
+- Prefix companion catalogs or submission responses too when their paths
+  conflict, and update source, tests, reports, and current metadata.
+- Never rewrite a pushed immutable message merely to change its old path.
+  Publish a correction message that names both the old and new paths.
+- Verify that the rename preserves the artifact hash, then rerun its focused
+  reproduction test before merging.
+
 ## 4. Synchronization artifacts
 
 The repository contains four kinds of coordination artifact.

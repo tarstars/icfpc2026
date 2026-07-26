@@ -27,3 +27,4 @@
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.zst filter=lfs diff=lfs merge=lfs -text
 submissions/subset-sum/*.man filter=lfs diff=lfs merge=lfs -text
+submissions/llm/*.man filter=lfs diff=lfs merge=lfs -text

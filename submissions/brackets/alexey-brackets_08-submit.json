@@ -1,0 +1,22 @@
+submission status: pending
+submission status: pending
+submission status: running
+submission status: done
+{
+  "area2": 841,
+  "avgTicks": 683.9615384615385,
+  "casesPassed": 26,
+  "casesTotal": 26,
+  "createdAt": "2026-07-26T15:10:42.519Z",
+  "error": null,
+  "height": 27,
+  "id": "2b40dd1c-861d-425c-adb4-1840f90346d4",
+  "loadError": null,
+  "output": "Passed 26/26 test cases",
+  "problemId": "5977822a-7bab-4fc5-9fe8-f79583113072",
+  "score": 575211.6538461539,
+  "status": "done",
+  "uberStrictPassed": null,
+  "updatedAt": "2026-07-26T15:11:27.916Z",
+  "width": 29
+}

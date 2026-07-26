@@ -229,13 +229,144 @@ def test_integration_rig_with_real_fetch():
         )
 
 
-def test_build_step_room_reports_its_blocker():
-    from littleman.lllm_step import build_step_room
+# --------------------------------------------------- phase 2: the STEP room
+from littleman.lllm_step import (  # noqa: E402
+    STEP_AT, STEP_COLS, STEP_ROWS, Tape, build_step_rig, build_step_room,
+)
+from littleman.sim import Machine  # noqa: E402
 
-    if _module("lllm_fetch") is not None:
-        pytest.skip("claude_11a landed: transcription is now unblocked")
-    with pytest.raises(NotImplementedError, match="lllm_fetch"):
-        build_step_room()
+RIG = build_step_rig()
+SR, SC = STEP_AT
+
+
+def intended_port(row, col, op):
+    """The room's three-zone layout rule, stated once and asserted for real.
+
+    Right of SCR_COL is the scratch loop; left of it, the top rows reach
+    FETCH (REQ out / RESP in) and the lower rows reach the outside world
+    (DRAW out / LOADER in).
+    """
+    from littleman.lllm_step import REQ_MAX_ROW, SCR_COL
+
+    if col >= SCR_COL:
+        return "SCR_OUT" if op == "s" else "SCR"
+    if row <= REQ_MAX_ROW:
+        return "REQ" if op == "s" else "RESP"
+    return "DRAW" if op == "s" else "LOAD"
+
+
+def step_bindings():
+    """{(room row, col): (op, port actually reached)} from the engine's map."""
+    from littleman.ir_export import machine_ir
+
+    ir = machine_ir(RIG)
+    out = {}
+    for key, entry in ir["resolution"].items():
+        r, c = (int(v) for v in key.split(","))
+        if not (SR < r < SR + STEP_ROWS + 1 and SC < c < SC + STEP_COLS + 1):
+            continue
+        cells = ir["pipes"][entry["pipe"]]["cells"]
+        end = cells[0] if entry["op"] == "s" else cells[-1]
+        out[(r - SR, c - SC)] = (entry["op"], PORTS[tuple(end)])
+    return out
+PORTS = {
+    (SR + 2, SC - 1): "REQ", (SR + 20, SC - 1): "DRAW", (SR + 21, SC - 1): "LOAD",
+    (SR - 1, SC + 8): "RESP", (SR + 30, SC + 74): "SCR_OUT",
+    (SR + 33, SC + 74): "SCR",
+}
+
+
+def test_rig_layout_gates():
+    from littleman import alexey_pipecheck, server_compat
+
+    machine = Machine.parse(RIG)
+    assert len(machine.rooms) == 6 and len(machine.pipes) == 8
+    assert server_compat.validate_layout(RIG) is None
+    assert alexey_pipecheck.check(RIG) is None
+
+
+def test_rig_is_deterministic():
+    assert build_step_rig() == RIG
+    assert build_step_room().render() == build_step_room().render()
+
+
+def test_binding_audit_is_engine_true():
+    """Every s/r resolves to its zone's port (ir_export map, no hand math)."""
+    bound = step_bindings()
+    assert len(bound) >= 11
+    wrong = {
+        cell: got
+        for cell, (op, got) in bound.items()
+        if got != intended_port(cell[0], cell[1], op)
+    }
+    assert wrong == {}
+
+
+def test_binding_margins():
+    """room_ports margin: how far a port may slide before a binding flips."""
+    from littleman.room_ports import Op, audit
+
+    machine = Machine.parse(RIG)
+    step = next(r for r in machine.rooms if (r.top, r.left) == (SR, SC))
+    ops = [
+        Op((SR + r, SC + c), port, port in ("REQ", "DRAW", "SCR_OUT"))
+        for (r, c), (_, port) in step_bindings().items()
+    ]
+    report = audit(machine, step, ops)
+    assert report["satisfied"]
+    assert report["margin"] >= 2, report["margin"]
+
+
+@pytest.mark.parametrize("case", CASES, ids=[c["name"] for c in CASES])
+def test_rig_round_one_matches_model(case):
+    """The real FETCH station drives the room to a byte-exact first frame."""
+    rows = rows_of(case)
+    res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
+    assert res.output == run_case(rows, []).deltas
+
+
+def test_rig_round_one_matches_model_on_fuzz():
+    bad = [
+        i for i, case in enumerate(FUZZ[:30])
+        if Machine.parse(RIG).run(
+            max_ticks=300_000, inputs=loader_stream(rows_of(case))
+        ).output != run_case(rows_of(case), []).deltas
+    ]
+    assert bad == []
+
+
+def test_tick_interpreter_not_transcribed_yet():
+    """Explicit: the room halts after round 1's sentinel (see build_step_room)."""
+    rows = rows_of(CASES[1])
+    res = Machine.parse(RIG).run(max_ticks=300_000, inputs=loader_stream(rows))
+    assert len(res.output) == 258 and res.output[-1] == -1
+
+
+def test_round_loop_tapes_place_without_collision():
+    """The seed / round-in choreography is placeable, and the round loop it
+    starts now closes: seed -> round-in -> tick -> class -> move -> EMIT."""
+    from littleman.lllm_fetch import Room
+    from littleman.lllm_step import (
+        EMIT_DRAW_ROW, STEP_COLS, STEP_ROWS, _step_seed)
+
+    room = Room(STEP_ROWS, STEP_COLS)
+    room.put(23, 3, ">")
+    _step_seed(room)
+    grid = room.render()
+    assert grid[23].count("r") + grid[24].count("r") >= 1     # ring reads
+    assert "sN1s" in grid[EMIT_DRAW_ROW + 2]                  # EMIT's commit
+    assert "H" not in "".join(grid)                           # no stub left
+
+
+def test_tape_snakes_and_reverses_literals():
+    from littleman.lllm_fetch import Room
+
+    room = Room(4, 12)
+    Tape(room, 1, 5, 5, 11).emit("M", "#256", "+", "#16", "s")
+    grid = room.render()
+    assert "`256`" in grid[1]                    # left-to-right lap
+    assert "`61`" in grid[2]                     # digits reversed walking west
+    assert "v" in grid[1] and "<" in grid[2]     # the lap turned at the edge
 
 
 def test_class_table_is_the_frozen_one():

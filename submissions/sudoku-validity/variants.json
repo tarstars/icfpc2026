@@ -102,19 +102,73 @@
         }
       },
       "liveSubmission": null
+    },
+    {
+      "version": "sudoku_05",
+      "label": "single canonical mask ring",
+      "parent": "sudoku_04",
+      "changeType": "algorithm-and-geometry",
+      "architecture": "one canonical 27-mask FIFO state ring; row, column, and box masks updated during one scan; folded and squeezed complete geometry",
+      "source": {
+        "path": "submissions/sudoku-validity/sudoku_05.man",
+        "generator": "experiments/gpt-submission-candidates/generate_sudoku_05.py",
+        "sha256": "16860f965aa0e57c1b2e031a6a650c3bde2ae195961e8a164a2fe8e1cc58b49d",
+        "bytes": 9854,
+        "width": 75,
+        "height": 131,
+        "maxDimension": 131,
+        "footprint": 17161
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": {
+          "a valid grid": 904546,
+          "early row violation": 40888,
+          "late box violation": 849168,
+          "checksum-tie trap": 51958,
+          "col violation": 450588,
+          "violation on final cell": 904538
+        },
+        "averageTicks": 533614.3333333334,
+        "score": 9157355574.333334,
+        "directedCasesPassed": 17,
+        "serverCompatibility": "passed",
+        "minimumPipeLength": 2
+      },
+      "improvementFromParent": {
+        "footprintPercent": 53.44780815972222,
+        "averageTicksPercent": -76.50597461306286,
+        "localScorePercent": 17.832600088574992,
+        "liveScorePercent": 17.83739150164466
+      },
+      "liveSubmission": {
+        "id": "fb745779-f719-440e-828a-281583afe964",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 75,
+        "height": 131,
+        "area2": 17161,
+        "averageTicks": 541367.5,
+        "score": 9290407667.5,
+        "createdAt": "2026-07-26T20:40:42.111Z",
+        "updatedAt": "2026-07-26T20:40:59.177Z",
+        "fullResponse": "submissions/sudoku-validity/sudoku_05-submit.json"
+      }
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-25T08:26:57.258Z",
+    "updatedAt": "2026-07-26T20:42:05.711Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 46,
+    "rank": 69,
     "casesPassed": 20,
     "casesTotal": 20,
-    "score": 105335908125.2,
+    "score": 9290407667.5,
     "passPoints": 1.0,
-    "rankPoints": 0.0625,
-    "points": 1.0625,
-    "rows": 50
+    "rankPoints": 0.17073170731707318,
+    "points": 1.170731707317073,
+    "rows": 84
   }
 }

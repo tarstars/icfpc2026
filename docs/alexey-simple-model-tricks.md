@@ -272,3 +272,221 @@ B. Still prefer re-establishing B with an explicit `M` when it is free.
 - One experiment = one new variant file + one metadata note; measure
   (local judge) before and after every change.
 - If the sim and server disagree, suspect edges 2–3 above first.
+
+## Geometry work — start here (updated 2026-07-25)
+
+The full recipe is `docs/alexey-room-folding.md`. The short version, in the
+order you should try things:
+
+**0. Which dimension are you paid for?** Score is `max(w,h)² × avgTicks`.
+Shrinking the short side buys nothing today (though it is still worth
+committing — it becomes a win when a neighbour moves into the space).
+
+**1. Are the pipes the problem?** Compare the bounding box of the rooms
+alone against the program's box:
+
+```python
+m = Machine.parse(text)
+print(max(r.bottom for r in m.rooms)+1, max(r.right for r in m.rooms)+1)
+```
+
+If the rooms are much smaller, the footprint is being paid for pipes that
+wander outside. That was matmul: rooms 109×144, program 183×185. Re-routing
+three pipes took it from 33.29B to 20.04B. Everywhere else the rooms *are*
+the box — checked, do not re-check.
+
+**2. Re-route with the tool, never by hand.**
+
+```python
+from littleman.alexey_piperoute import Router
+rt = Router(text)
+rt.erase(old_pipe.cells)
+cells = rt.route_via([start, waypoint, end], into=(-1,0), target=268, out=(1,0))
+text  = rt.apply(cells, into=(-1,0))
+```
+
+* `target` — **keep the pipe's original cell count**. Length is buffer
+  capacity, and often delay too. Same length ⇒ identical tick counts.
+* `out` — the direction of the first step. Mandatory. A pipe is only
+  recognised when the cell touching the room carries an arrow pointing
+  *away* from it.
+* `route_via` waypoints — inflation only thickens a path where it already
+  runs, so drop a waypoint in the middle of the big empty region you want
+  it to burn cells in.
+* Pipes cannot cross. If several leave the same wall, the one exiting
+  furthest along takes the shallowest lane.
+
+**3. Empty rows/columns inside a room.** Safe to delete *if every pipe on
+that room meets the same pair of walls*: all on top/bottom ⇒ rows are safe;
+all on left/right ⇒ columns are safe. Otherwise it changes nearest-pipe
+resolution and you must re-audit every `r`/`s`.
+
+**4. `alexey_squeeze` is exhausted** on every live program as of
+2026-07-25. Re-run it only after you have moved something.
+
+**5. Folding a room** (last resort, most work): §3 of the recipe for
+straight-line rooms, §4 for a room with one branch (perimeter corridor).
+Always compare the per-case tick lists before and after — a correct fold is
+behaviour-neutral, so a tick change means you got something wrong even if
+the cases still pass.
+
+Live scores from this line after the 2026-07-25 geometry session:
+memory **20,491,008** (24/24), matmul **20,042,330,424** (20/20),
+tcp 5,655,750, brackets 3,494,864, sort 1,367,454, triangle 832.
+
+## The staircase fold (added 2026-07-25) — biggest single win of the session
+
+If a room spends two rows per instruction:
+
+```
+row A:   .....v(p) ................. <(q)     west leg, carries nothing
+row B:   .....>(p) INSTR ........... v(q)     east leg, ONE instruction
+```
+
+then two consecutive east legs share a row whenever their instruction
+columns increase across the join:
+
+```python
+from littleman.alexey_stairfold import fold_room, ports_are_single_walled
+m = Machine.parse(text)
+for i, r in enumerate(m.rooms):
+    if ports_are_single_walled(m, r) and r.bottom - r.top >= 8:
+        text, freed = fold_room(text, i)
+        # JUDGE HERE. If it fails, binary-search the safe merge prefix.
+squeezed, dr, dc = squeeze(text, rows=True, cols=False)   # rows ONLY
+```
+
+Live results, all 20/20: plotter 3.08B → **1.67B**, sudoku 25.5B → **11.3B**,
+gradebook 81.9B → **54.4B**.
+
+Three rules:
+
+1. **Precondition** — `ports_are_single_walled`: all inbound pipes on one
+   wall, all outbound on the opposite. Then rows are free and columns are
+   frozen.
+2. **Rows-only squeeze.** The column pass drops plotter to 1/6 because
+   columns are what decide which pipe an `r`/`s` talks to.
+3. **Judge every room.** The merge condition is nearly sufficient, not
+   provably so — gradebook's R1 has 35 merges of which exactly the last one
+   is unsafe. Binary-search the prefix when a room fails.
+
+## Ring machines, second generation (2026-07-26) — reverse_06
+
+The shrinking ring got two structural upgrades. Both apply to sort/tcp.
+
+- **Extract TWO values per pass** (tarstars' reverse_05): relay `k-2`
+  instead of `k-1`, fall out of the loop holding `v_{k-1}` in B via `M`,
+  read `v_k`, print, `W`, print. Halves the passes: `n^2/2 -> n^2/4`
+  relays.
+- **Send-then-read loop.** Walk the relay loop as `> s U d m ^`: it sends
+  what is already in A, then reads the next value. Enter with A = the new
+  head and BP = k-2 and it sends `head + v1..v_{k-2}` and reads
+  `v1..v_{k-1}` with no separate head-send cell. The whole approach lane
+  disappears — that is a row and a column.
+- **Put the three-way `X` one row directly above the loop's `U`,** in the
+  same column. The `k == 2` arm (A = 0, straight) then falls onto `U`
+  with BP already 0 (the loop always drains BP, so it is 0 at the start of
+  every pass), and `d` falls through into the shared tail. A whole fall
+  lane and its zeroing `m` cost nothing.
+- Constant **2** in B instead of 1 turns `-b-` into `-`; reload it with
+  `2` on the climb and `M` on the head row.
+
+## Settled: arithmetic packing does NOT pay on a tight ring
+
+Packing two values into one cell (`P = x*K + (y+S)`, `K = 2^21`,
+`S = 2^20`, unpack with a single `/`) costs **~20-30 ticks per value**.
+The floor is the offset: values up to 1e6 need `S > 1e6`, a 7-digit
+literal (9 cells) walked once to add and once to remove, and no cheaper
+form exists (shifts need a second constant live at the same time, masks
+need a mask literal, folding S into the multiplier needs a 13-digit
+constant). Plus a packer and an unpacker room.
+
+So packing only wins against a ring whose lap is **>= 10 ticks**. It
+would have paid on reverse_01 (10 ticks/relay); it loses on reverse_06
+(6 ticks/relay, and only `n^2/4` relays). Measured, written up in
+`docs/alexey-worklog.md` under 2026-07-26. Do not rebuild it.
+
+## Server rule: ONE pipe may touch an input room (adjacency, not ends)
+
+The server counts a pipe that merely runs flush along an INPUT room's
+wall as a second connection and rejects the program (`the input room has
+more than one outgoing pipe`). Our simulator attributes pipes to the
+rooms at their ends only, so it never sees it. Output rooms are exempt
+(tcp_06 is live with two pipes against its output wall). Check it:
+`server_compat.validate_io_pipe_counts` on tarstars' branch, or the
+copy in `tests/test_alexey_reverse6.py`.
+
+Related, and cost 5 pipes instead of 4 during the reverse_06 re-lay: a
+pipe BEND whose backward cell is a room wall parses as a NEW pipe out of
+that room. Keep bends at least one cell clear of every wall.
+
+## Measured: three-to-a-cell packing costs 34 ticks/value (2026-07-26)
+
+Built as a real machine, not estimated. `I -> packer -> O`, Horner base
+`K = 2^21`, judged against Python. Two things to keep:
+
+- **The bound is fine.** Digits `v + 2^20` fit; worst-case word
+  9,009,736,825,708,692,032 vs the signed limit 9,223,372,036,854,775,807.
+- **The price is not.** 103 ticks for three values. The per-value sequence
+  is forced to ten cells:
+
+      M `21` W { M r +     park T in B, load 21, swap back, shift, park, read, add
+
+  four of them a literal, purely to get a constant into B without losing the
+  accumulator. **A constant costs a literal walk, because a literal writes A
+  and A is where the accumulator lives.** Unpacking is worse: `/` writes both
+  A and B, so reloading the base after a division destroys the rest of the
+  stack — each digit needs the word re-sent or a partner room to park the
+  quotient.
+
+Worth stealing if you ever do need base-K packing: add
+`C = S*(K^2+K+1)` **once per word** instead of `+S` per digit. That keeps
+the >1e6 offset off the per-value path — one 19-digit literal per word
+instead of three 7-digit ones.
+
+Rule: packing pays only against a ring whose lap is >= 10 ticks.
+
+## The step ladder (2026-07-26) — how both wins today were actually found
+
+Do not design the final layout and prove it impossible. **Move one thing,
+judge, record, move the next thing relative to that.** I wrote a structural
+proof that reverse could not reach 13x13 and it was wrong; six small moves
+got there. Labs: `experiments/alexey-reverse06/`, `experiments/alexey-brackets04/`.
+
+Canonical order for a machine with two rooms plus I/O:
+1. Output flush — bend its pipe into a SIDE wall instead of dropping into the
+   roof, and the room climbs two rows.
+2. Small room down/flush against the big one. Two free rows above a room let
+   its pipe leave through the ROOF, which is what makes a gap column between
+   two rooms unnecessary. This step usually makes the score *worse* and pays
+   three steps later.
+3. Input up.
+4. Re-lay pipes **keeping total length** (`alexey_piperoute` with `target=`).
+
+Then, for a width-bound program, the **shift ladder**: move the widest room
+one column at a time toward the wall and fold the pipe that was climbing past
+it into the freed column. Measure at every rung — brackets paid at shifts
+1, 2, 3 and regressed at 4. Keep every pipe's attachment offset *inside* the
+moved room (nearest-pipe resolution reads those cells); a room with a single
+outgoing pipe is the free variable that makes the jog possible.
+
+**Re-run `alexey_squeeze` after every move.** It found nothing on brackets_04
+and 3 rows + 2 columns on the same program once the rooms had moved. It is
+exhausted for a *layout*, never for a *program*.
+
+Two more things measured today:
+
+- **A longer pipe can be faster.** reverse_07's ring-out went 11 -> 13 cells
+  and got 0.6% quicker: pipe cells are parking space, not just delay.
+- **Check capacity, do not guess it.** Instrument the sim and take the peak
+  occupancy across the ring pipes at the worst case (reverse_07: peak 16,
+  capacity 19). The old ">= 15 cells" rule of thumb was wrong in both
+  directions.
+
+Traps re-paid, all three now cheap to avoid:
+- erase a pipe BEFORE moving a room onto its cells, or you delete a wall;
+- two pipes jogging in the same direction between the same two walls collide
+  — send one along row N and the other along row N-1;
+- `route_safe` refuses every arrowhead beside a room; the actual rule is only
+  that it must not point AWAY from that room, so short jogs can be
+  hand-placed and audited.

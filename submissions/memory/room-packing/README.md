@@ -139,3 +139,85 @@ That empties columns 0-1 completely and the squeeze takes them:
 
 Against `memory_04` (37x37, fp 1,369, ~27.8M) — **no machine logic touched at
 any point**, only where the rooms sit and which wall each pipe uses.
+
+## `alexey-memory-b2narrow.man` — block 2 folded in WIDTH only
+
+Block 2 was 4x29 with a 17-cell blank run on its return leg: 32 instructions,
+zero branches, spread over one long row and one nearly empty one. Walking the
+room from its `@` gives the sequence
+
+    M r s r - M `34` W % s r M 1 + M `34` W % M r s r s r s W
+
+Re-balanced 16 cells per row, keeping the height at 4 so **both ports stay on
+their own rows and neither pipe needs re-routing**:
+
+    +-------------------+
+    |>@Mrsr-M`34`W%srM1v|
+    |^ WsrsrsrM%W`43`M+<|
+    +-------------------+
+
+**4x21, eight columns narrower.** 7/7, ticks 4,143.6.
+
+The literal on the westbound row is written reversed (`43`), because a literal
+is read in walk order. The one pipe that entered the old right wall is simply
+extended eight cells to reach the new one.
+
+Footprint unchanged at 1,156 — block 2 was never the binder; block 5 sets the
+right edge at column 33. Banked, not cashed: eight columns are now free at
+rows 5-8, which is where a later repack can put something.
+
+## Folding a room that branches — block 1 (29 → 17 wide)
+
+`alexey-memory-b1narrow.man`. Same goal as `alexey-memory-b2narrow.man`
+(width only, height untouched), but block 1 is not straight-line code: it
+has a `d`, so the room holds a main path *and* a branch arm.
+
+Block 1's body is `PREFIX(19 cells) d ARM(4)`, where the two arms are
+`0sWs` (BP == 0, straight on) and `rsWs` (BP > 0, turned clockwise).
+
+Three facts make the fold work:
+
+1. **`d` turns clockwise only.** On an eastbound row that means *south*.
+   So `d` must sit on an eastbound row whose row below is not on the main
+   corridor — otherwise the main pass would execute the arm's cells.
+2. **Use the perimeter as the corridor.** Row 1 eastbound, right column
+   down, row 3 westbound, left column up. The whole of row 2 is then
+   *inside* the loop and off the corridor — free real estate for the arm.
+   Both arms are made to converge on the corner cell `(2, W-1) = v`, which
+   passes the straight path through southbound and turns the arm path
+   south, so after that cell the two are indistinguishable.
+3. **The loop body may be rotated, and `@` marks the rotation point.**
+   The corridor executes `X d ARM Z`; the truth is `PREFIX d ARM`. Putting
+   `@` on the *westbound* row splits the prefix: everything west of `@` on
+   row 3 runs first, then row 1 runs the rest. Cells east of `@` on row 3
+   must stay empty, or they would run after the arm instead of before it.
+
+Balancing the two halves is what sets the width: row 1 needs
+`|X| + 5 + 3` columns, row 3 needs `|Z| + 3`, with `|X| + |Z| = 19`.
+Equal at `|X| = 7`, `|Z| = 12` → interior 15, room 17. The 12/7 split
+lands exactly between `M` and the `` `21` `` literal, so no literal is
+broken across rows.
+
+```
++---------------+
+|> `21`*sMd0sWsv|
+|^        >rsWsv|
+|^MWss/W3Mrbsr@<|
++---------------+
+```
+
+Row 3 is written right-to-left because the man walks it westbound. He
+starts at `@` facing east, immediately meets the `<` corner, turns round
+and comes back over `@` — one wasted tick, no wasted cell.
+
+The outgoing pipe had to move: it used to leave the bottom wall at col 30,
+which no longer exists, and block 2 sits directly under rows 3..19, so
+there is no room for a pipe below. It now leaves the **right** wall and
+goes round: `(3,20) → east → (3,24) → south → (6,24) → west → (6,22)`.
+Kept at 10 cells, exactly the old length, because pipe length is buffer
+capacity.
+
+7/7, and the tick counts are identical to the source in every case
+(263, 613, 1591, 1141, 1567, 911, 22919) — the fold is behaviour-neutral.
+Footprint is still 1156: block 5 holds the right edge at col 33 and the
+lower blocks hold the width. Banked, not cashed.

@@ -1,0 +1,63 @@
+{
+ "schemaVersion": 1,
+ "problem": {
+  "id": "58f54636-3ec4-497d-8102-b486f13a1ed1",
+  "slug": "matmul",
+  "name": "Matrix Multiply",
+  "scoring": "footprint-tick"
+ },
+ "note": "Alexey's line. matmul_03 is tarstars' independent press (128x145, 20,898,177,200) -- both of us re-routed the three long pipes on the same day, hence the numbering collision. matmul_06 is the current team best.",
+ "variants": [
+  {
+   "version": "matmul_05",
+   "label": "three delay pipes re-routed inside the box; O room brought home",
+   "changeType": "geometry",
+   "architecture": "No algorithm change. The 268/334/106-cell delay pipes and the O room made the program 183x185; the rooms alone fit in 109x144. All three re-routed with src/littleman/alexey_piperoute.py at their exact original lengths, O moved to rows 100-102 cols 140-142. Lane assignment is the hard part: the three leave adjacent bottom walls at cols 77/85/91 and two must finish west of col 77, so the westernmost exit takes the shallowest lane.",
+   "source": {
+    "path": "submissions/matmul/matmul_05.man",
+    "width": 143,
+    "height": 147,
+    "footprintBefore": 33489,
+    "footprintAfter": 21609
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "note": "tick counts identical to matmul_02 in all seven cases"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 33286994352,
+    "score": 21478654512,
+    "casesPassed": 20,
+    "casesTotal": 20
+   },
+   "verdict": "superseded by matmul_06"
+  },
+  {
+   "version": "matmul_06",
+   "label": "row squeeze + O room magnetised to the body",
+   "changeType": "geometry",
+   "architecture": "matmul_05 plus two safe moves. (1) Rows-only squeeze drops 10 rows -- room0's empty interior rows. Provably resolution-safe here: every one of room0's eighteen pipes attaches to its BOTTOM wall, so the row term of the Manhattan distance is identical for all of them and the zone is decided by column alone. (2) O moved from cols 140-142 to 112-114, its pipe re-routed at its exact length (104) and entering through the TOP wall -- a terminal in the one-cell gap between two rooms is claimed by both and parses as a spurious 1-cell pipe.",
+   "source": {
+    "path": "submissions/matmul/matmul_06.man",
+    "width": 115,
+    "height": 142,
+    "footprintBefore": 21609,
+    "footprintAfter": 20164
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 21478654512,
+    "score": 20042330424,
+    "casesPassed": 20,
+    "casesTotal": 20
+   },
+   "verdict": "TEAM BEST (vs matmul_03's 20,898,177,200). Height 142 binds, set by room0 (119 rows, density 0.01)."
+  }
+ ]
+}

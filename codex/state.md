@@ -1,11 +1,12 @@
 # Codex State
 
-Updated: 2026-07-25
+Updated: 2026-07-26
 
 ## Objective
 
-Provide safe, reusable contest API access while Claude develops littleman
-solutions.
+Integrate the two-agent contest effort, secure complete graded coverage,
+accelerate exact execution, preserve live improvements, and keep reviewed
+release state on `main`.
 
 ## Completed
 
@@ -109,6 +110,25 @@ solutions.
   adversarial, exact-reproduction, capacity, and server-compatibility gates,
   and improve measured local score 59.15% over `sudoku_00`. It remains
   unsubmitted.
+- Built and submitted the complete physical LLM machine
+  `llm_codex_01`: 28/28 live, exact SHA-256 and terminal response preserved.
+- Added the exact Rust executor: Python-authored versioned IR, PyO3 tick loop,
+  standalone Rayon CLI, compressed IR cache, deterministic independent-job
+  parallelism, legacy semantics, and official Split/annihilation semantics.
+- Reduced the frozen 46-module LLM workload from 621.31 to 17.53 seconds and
+  the expanded 69-module workload from 858.86 to 53.08 seconds. A complete
+  14-case LLM batch is identical at one/eight workers and runs in 4.93
+  seconds with eight workers.
+- Closed Claude's clean-checkout review finding with a tested `fastsim`
+  fallback when PyO3 is absent; native-only cache/Split APIs remain explicit.
+- Integrated five accepted score streams. Current preserved live results
+  include Reverse 117,213.75, Brackets 836,345.19, TCP 1,575,127.05, Sort
+  896,305.24, and Snake 915,991,438.35, all with full case coverage.
+- Passed the final integrated repository gate: 3,822 passed, 2 intentional
+  skips, 4 documented xfails, and no failures in 527.02 seconds.
+- Received independent Claude approval, reconciled both agent lineages, and
+  promoted the clean release to `origin/main` without force or modifying the
+  user's dirty local `main` worktree.
 
 ## Blockers
 
@@ -116,12 +136,9 @@ solutions.
 
 ## Next steps
 
-1. Recover the submission UUID for the now-preserved `tcp_02` source from the
-   contest web submission history.
-2. Submit `plotter_01`, `sort_05`, or `reverse_02` only with explicit user
-   authorization and after the
-   mandatory freshness checks.
-3. Build a guarded packed `memory_02` prototype; keep it only if station width
-   and measured decode overhead satisfy the feasibility report.
-4. Regenerate the colliding Subset Sum routes after higher-priority
-   submission dossiers and Memory integration are complete.
+1. Preserve the user's manually submitted Memory source as
+   `submissions/memory/memory_11.man` if it can be recovered.
+2. Continue compact LLM only as a fully gated score-improvement lane; the
+   accepted 28/28 baseline is secure.
+3. Use the Rust executor and cached CLI for bounded search and optimization,
+   promoting only reproducible candidates with lower accepted server scores.

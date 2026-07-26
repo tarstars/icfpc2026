@@ -1,0 +1,18 @@
+{
+  "area2": null,
+  "avgTicks": null,
+  "casesPassed": 0,
+  "casesTotal": 0,
+  "createdAt": "2026-07-26T04:06:54.625Z",
+  "error": null,
+  "height": 0,
+  "id": "0d426251-531c-45fc-8eb1-9224edcabe20",
+  "loadError": "the input room has more than one outgoing pipe — connect exactly one at (0, 8)",
+  "output": "Your program failed to load: the input room has more than one outgoing pipe — connect exactly one at (0, 8)",
+  "problemId": "537ec979-d883-40f3-9663-b59579a0682c",
+  "score": null,
+  "status": "done",
+  "uberStrictPassed": null,
+  "updatedAt": "2026-07-26T04:06:57.792Z",
+  "width": 0
+}

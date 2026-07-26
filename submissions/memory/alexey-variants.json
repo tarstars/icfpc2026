@@ -104,6 +104,112 @@
     "fullResponse": "submissions/memory/alexey-memory_02-submit.json"
    },
    "verdict": "SUPERSEDED by memory_04 (~27.8M). This was the pipeline-ring line; the geometry work on it was correct but applied to a baseline already beaten 3x."
+  },
+  {
+   "version": "memory_07",
+   "label": "block1+block2 folded, room4 de-columned, block5 magnetised left",
+   "changeType": "geometry",
+   "architecture": "Three independent geometry moves on memory_06's packed-storage machine, no algorithm change. (1) Block 2 folded width-only 4x29 -> 4x21 by re-dealing its straight-line body across the same rows. (2) Block 1 folded 5x29 -> 5x17 using the perimeter-corridor layout for its single `d` branch (docs/alexey-room-folding.md sec.4). (3) Block 4's three empty interior columns removed and block 5 slid two columns left into the freed space, with both of its pipes re-routed by src/littleman/alexey_piperoute.py at their original lengths (28->29, 19) so no buffer shrank.",
+   "source": {
+    "path": "submissions/memory/memory_07.man",
+    "width": 32,
+    "height": 31,
+    "footprintBefore": 1156,
+    "footprintAfter": 1024
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 23344360,
+    "score": 20491008,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "gain": 1.14
+   },
+   "verdict": "BEST. Width now 32 and height 31 -- height binds, so further width folds (block 3 is 7x26) are banked, not cashed, until a row comes out."
+  },
+  {
+   "version": "memory_08",
+   "label": "block 3 re-laid 26->23 wide; block 5 slid left",
+   "changeType": "geometry",
+   "architecture": "Block 3 (50 instruction cells, one `d`) re-laid with the perimeter-corridor pattern: prologue + d + the short BP==0 arm on the perimeter, the 34-cell BP>0 arm serpentined through the inside, both arms converging on the bottom-right corner. Its two pipes both meet the LEFT wall and it has one pipe each way (port freedom), so the fold needed no pipe work at all. Block 5 then slid one column left and its two pipes were re-routed in separate lanes (cols 28-30 for the inbound, 24-27 for the outbound) at 30 and 21 cells -- both slightly longer than before, never shorter.",
+   "source": {
+    "path": "submissions/memory/memory_08.man",
+    "width": 31,
+    "height": 31,
+    "footprintBefore": 1024,
+    "footprintAfter": 961
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "note": "tick counts identical to memory_07 in all seven cases"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 20491008,
+    "score": 19230331,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "gain": 1.07
+   },
+   "verdict": "BEST. Both dimensions are now 31 and block 4 is what holds them: 15 of the 31 rows and 21 of the 31 columns. Everything else is folded out."
+  },
+  {
+   "version": "memory_09",
+   "label": "block 4: loop units and TAIL pulled in toward the instructions",
+   "changeType": "geometry",
+   "architecture": "Profiling showed block 4 is the bottleneck (100% busy, every other room idle 65-82% of the time waiting on it) and that 55.6% of its ticks are spent walking cells that execute nothing. The loop units themselves are at their geometric floor (8 cells for 4 operations), so the work went into the gaps: loop2 moved from rel cols 14-17 to 11-14, loop3 from 14-17 to 11-14, B4's row pulled in to end at rel 14, and TAIL's two legs pulled from rel 3-18 to rel 6-16. Columns rel 4 and 6 kept clear -- they carry X1's clockwise descent and X2's counter-clockwise halt path. Every r/s zone re-audited cell by cell against memory_08; all fifteen unchanged.",
+   "source": {
+    "path": "submissions/memory/memory_09.man",
+    "width": 31,
+    "height": 31,
+    "footprintBefore": 961,
+    "footprintAfter": 961
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "note": "big case 22719 -> 21469 ticks"
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 19230331,
+    "score": 18284707,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "gain": 1.05
+   },
+   "verdict": "superseded by memory_10"
+  },
+  {
+   "version": "memory_10",
+   "label": "block 4 one row shorter; block 5 slid left",
+   "changeType": "geometry",
+   "architecture": "With the interior tightened, block 4's carriage-return row could go: B0's loop unit moved to rel cols 16-18 so d1's straight jump falls down the now-clear rel column 18 to the bottom return row instead of needing a row of its own. Block 4 15 rows -> 14. The O pipe had to move -- its old attachment sat beside the new bottom-left corner -- and went to the TOP of the left wall, which also separates the write zones with more margin. Block 5 then slid one column left and its two pipes were re-routed in disjoint lanes (cols 27-29 inbound, 24-26 outbound).",
+   "source": {
+    "path": "submissions/memory/memory_10.man",
+    "width": 30,
+    "height": 30,
+    "footprintBefore": 961,
+    "footprintAfter": 900
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7
+   },
+   "liveSubmission": {
+    "status": "done",
+    "scoreBefore": 18284707,
+    "score": 17236875,
+    "casesPassed": 24,
+    "casesTotal": 24,
+    "gain": 1.06
+   },
+   "verdict": "BEST. 19,230,331 -> 17,236,875 overall. Both dimensions now 30; block 4 is 14x21 and still holds them."
   }
  ],
  "note": "Alexey research line for memory. memory_06 is the current best at 23,344,360 (34x32), reached from memory_04 (37x37, ~27.8M) purely by room packing -- no machine logic touched. Intermediates in submissions/memory/room-packing/."

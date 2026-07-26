@@ -62,8 +62,8 @@ messages/status, and submission serialization.
   another agent's in-flight paths.
 - If either agent has no new inspectable progress for 15 minutes, the other
   agent checks its branch/status and offers one bounded, non-overlapping
-  subtask: reproduce a failure, add an adversarial test, inspect geometry,
-  or review a component.
+  subtask: reproduce a failure, add an adversarial test, inspect geometry, or
+  review a component.
 - After two failed attempts on the same blocker, record the evidence and
   change the approach. Transfer ownership explicitly if the peer is better
   positioned to continue.

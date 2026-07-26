@@ -1,25 +1,40 @@
 {
  "schemaVersion": 1,
+ "problem": {
+  "id": "f66c928f-3369-4870-9153-8b20cafc2ecd",
+  "slug": "sudoku-validity",
+  "name": "Sudoku Auditor",
+  "scoring": "footprint-tick"
+ },
+ "note": "Alexey's line. Built from sudoku_02, not from tarstars' sudoku_03: their repack leaves fewer globally-empty rows after the fold (fp 39204 vs 36864), so the older base wins once the staircase is folded.",
  "variants": [
   {
-   "version": "sudoku_02",
-   "label": "mechanical squeeze of empty rows/columns",
+   "version": "sudoku_04",
+   "label": "staircase fold of the four single-walled rooms + row squeeze",
    "changeType": "geometry",
-   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (full): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "architecture": "Same fold as plotter_06 (src/littleman/alexey_stairfold.py): the four big rooms spend two rows per instruction, a west leg carrying only a carriage return and an east leg carrying one instruction. All four pass ports_are_single_walled, so rows are free and columns frozen. 80 rows freed, 56 removed globally by a rows-only squeeze. Column squeeze must not be run.",
    "source": {
-    "path": "submissions/sudoku-validity/sudoku_02.man",
-    "footprintBefore": 81796,
-    "footprintAfter": 61504
+    "path": "submissions/sudoku-validity/sudoku_04.man",
+    "width": 184,
+    "height": 192,
+    "footprintBefore": 61504,
+    "footprintAfter": 36864
+   },
+   "localValidation": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "note": "ticks fell 26%"
    },
    "liveSubmission": {
     "status": "done",
-    "scoreBefore": 105335908125,
-    "score": 25480732026,
-    "gain": 4.13,
-    "fullResponse": "submissions/sudoku-validity/alexey-sudoku_02-submit.json"
+    "scoreBefore": 25480732026,
+    "score": 11307342643,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "uberStrictPassed": true,
+    "gain": 2.25
    },
-   "verdict": "TEAM BEST for sudoku-validity: 105,335,908,125 -> 25,480,732,026 (4.13x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+   "verdict": "BEST (vs tarstars' sudoku_03 at 16.1B). Width 184 now binds."
   }
- ],
- "note": "Alexey research line for sudoku-validity."
+ ]
 }
