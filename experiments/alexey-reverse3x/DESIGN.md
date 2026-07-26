@@ -29,3 +29,35 @@ resolution (stash room adds 2 pipes to pump: nearest-pipe re-audit ALL);
 round_sim: relay k-3, emit [v_k, v_{k-1}, v_{k-2}]; k<=2 -> emit reversed
 remainder directly. Correct for all n=1..16. n=16: 35 relays (was 64),
 6 passes (was 8).
+
+## steps 2-3 RESULT: triple extraction is NOT worth building -- proven during layout
+
+**1. The third slot cannot be free.** Print order v_k, v_{k-1}, v_{k-2}
+forces holding TWO values while reading the third. Registers give A+B only
+(BP is write-only). Every alternative stash was eliminated:
+- ring-as-stash: the deferred value lands BEHIND the next frame; re-deriving
+  the protocol shows "defer one into the ring" collapses into EXACTLY the
+  reverse_07 protocol (send head+k-2, hold v_{k-1}) -- reverse_07 is already
+  the optimum for 2 registers. n^2/4 is the 2-register floor.
+- output-pipe-as-stash: O admits one pipe; FIFO order wrong.
+- relay-as-stash: relay man's R reads any-ready -> would forward stash into
+  the ring; a routing relay needs a bigger program and its own resolution
+  audit -- a second room in disguise.
+
+**2. A stash ROOM forces the box past the profit line.** The tail becomes
+`M r W s' r s W s r'' s` (10 work cells vs 6) and the k<=2 spur needs its
+own x-branch (+ b m m r x + two arms) -- pump interior 7x6 -> at least
+9-10 wide even before the stash. The stash room itself (4x6 minimal relay)
+needs 2-row pipe gaps on both ports. Every packing attempt lands at 15x15+:
+fp 225 x ~340 avg = ~76k vs live 84,922 = 1.11x -- for hours of high-risk
+walk-graph work. 14x14 does not fit the stash at all; 13x13 has zero free
+4x6 regions.
+
+**3. The register-count law (worth keeping):** with s spare slots the ring
+family costs ~n^2/(2s). reverse_01 was s=1 (n^2/2 -> 5n^2 with overhead),
+reverse_07 is s=2 (n^2/4), triple needs s=3 and the 3rd slot costs more fp
+than it saves ticks at n<=16. The 15.3k leader is NOT in this family --
+that is linear time, i.e. Theta(n) storage slots, i.e. an architecture with
+~n cells of addressable state in <=13x13, which no bound I have covers.
+
+Step 1's protocol sim remains valid if anyone finds a free third slot.
