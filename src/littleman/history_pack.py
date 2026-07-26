@@ -26,9 +26,17 @@ must themselves be stored, packed over the base alphabet):
         56     127      1761   4116     462    4578   <- optimum
         96     167      1608   4020     672    4692
 
-56 tokens is the minimum. Beyond it the radix grows enough to cost a
-symbol per word (floor(63 / log2(radix)) drops), and the table grows
-faster than the data shrinks.
+56 tokens is the optimum, and the reason is a CLIFF, not a smooth curve:
+**127 is the largest radix that still packs 9 symbols into a signed-64
+literal** (127^9 = 8.60e18 <= 9.22e18, while 128^9 = 9.22e18 exceeds it).
+Crossing it costs a ninth of every word's capacity at once, which is why
+64 tokens is worse than 56 even though its bits/char is better.
+
+The alphabet is **71 distinct characters**, so the slot budget is exactly
+`127 - 71 = 56`. The next gain is therefore NOT more tokens but a SMALLER
+ALPHABET: 11 characters cover only 31 of 2,810 positions, and escaping
+them would free 10 more token slots at unchanged word capacity. See
+`docs/architecture/claude_33_history_encoding_frontier.md`.
 
 Decoding stays trivial *in cells* because ticks are free: to emit token
 k, walk the table from the start counting separators until the k-th is
