@@ -2026,3 +2026,45 @@ footprint; the tick average never moved.
 Remaining: 30 wide against 27 tall, so the width still binds. The next
 column would have to come out of the middle room's interior (29 wide),
 which is program surgery, not layout.
+
+### brackets_08/09: the two tricks that were still missing — 30x27 -> 27x27
+
+Alexey caught that I had jumped to subset-sum with brackets tricks unapplied.
+He was right; two of the four playbook moves had never been run on it.
+
+**Room-edge trimming** (playbook move 2). `alexey_trimrooms` applied whole
+destroys this program — it loses a pipe and moves resolution — so it was done
+by hand, one room and one edge at a time, with `alexey_resolveaudit` as the
+gate:
+
+| step | move | box | local |
+|---|---|---|---|
+| brackets_07 | (was) | 30x27 | 353,600 |
+| brackets_08 | R2's right wall in by 1, return pipe re-folded at 65 cells | 29x27 | 330,420 |
+| brackets_09 | R2's right wall in by 2 more, O slid 2 left with it, re-fold | **27x27** | **286,416** |
+
+The blocker at the first attempt is worth keeping: **a room's blank edge
+columns are only trimmable up to its outermost PORT.** R2 had three blank
+right columns but a pipe to the output room attached to its roof at the
+second of them; trimming past it orphaned that pipe (5 pipes instead of 6).
+The fix was to trim two more only after sliding O — and its pipe — left as
+well. O has a single pipe, so its resolution cannot be ambiguous; that is the
+free variable again.
+
+Two more things the gates caught before the judge did:
+
+* the first re-fold routed the return pipe flush past the input room —
+  `server_compat` rejects that (the rule tarstars paid a submission for), so
+  the input room's neighbourhood is now blocked before routing;
+* `route_safe` could not place any of these folds (it refuses every arrowhead
+  beside a room). Plain `route` plus a retry loop that blocks only the
+  arrowheads which actually created a phantom pipe works, and the pipe-count
+  gate is what makes that safe.
+
+**The staircase fold does not apply here**: no room in brackets has
+single-walled ports (checked all three).
+
+Live: 836,345 -> 789,237 -> 660,983 -> 615,565 -> **498,608**, i.e. **1.68x
+today**, all footprint, tick average untouched. 27x27 is square now, so the
+next gain needs BOTH dimensions, which means interior surgery on the 25-wide
+middle room rather than layout work.
