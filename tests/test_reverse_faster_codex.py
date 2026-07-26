@@ -45,6 +45,20 @@ def test_exact_geometry_structure_and_server_layout():
     validate_layout(source)
 
 
+def test_no_pipe_grazes_an_unintended_room():
+    machine = Machine.parse(build_reverse_faster_codex())
+    neighbors = ((-1, 0), (1, 0), (0, -1), (0, 1))
+    for pipe in machine.pipes:
+        intended = (pipe.source, pipe.dest)
+        for row, column in pipe.cells:
+            for room in machine.rooms:
+                if room in intended:
+                    continue
+                assert not any(
+                    room.on_border(row + dr, column + dc) for dr, dc in neighbors
+                )
+
+
 def test_every_pipe_operation_keeps_its_protocol_role():
     machine = Machine.parse(build_reverse_faster_codex())
     expected = {
@@ -75,6 +89,12 @@ def test_every_pipe_operation_keeps_its_protocol_role():
                 )
                 actual[(row, column, operation)] = machine.pipes.index(pipe)
     assert actual == expected
+    relay = machine.men[1]
+    incoming = machine._incoming(relay)
+    assert [
+        machine.pipes.index(pipe)
+        for pipe in sorted(incoming, key=lambda pipe: pipe.cells[-1])
+    ] == [0, 1]
 
 
 def test_public_cases_pass_and_beat_parent():
@@ -112,6 +132,26 @@ def test_edge_shapes_multiround_and_fuzz():
     for lists in workloads:
         result = judge_case(source, [_round(values) for values in lists], 200_000)
         assert result.passed, (lists, result.reason)
+
+
+def test_full_size_ring_reaches_exact_capacity():
+    source = build_reverse_faster_codex()
+    machine = Machine.parse(source)
+    ring = machine.pipes[1]
+    maximum = 0
+    original_put = ring.put
+
+    def tracked_put(index, value):
+        nonlocal maximum
+        original_put(index, value)
+        maximum = max(maximum, ring.count)
+
+    ring.put = tracked_put
+    rounds = [_round(list(range(16)))]
+    controller = judge.RoundController(rounds)
+    result = machine.run(max_ticks=200_000, controller=controller)
+    assert result.status == "passed"
+    assert maximum == len(ring.cells) == 15
 
 
 @pytest.mark.skipif(not rustexec.HAVE_RUST, reason="native executor is not built")
