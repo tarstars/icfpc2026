@@ -26,9 +26,12 @@ must themselves be stored, packed over the base alphabet):
         56     127      1755   4095     525    4620   <- optimum
         96     167      1601   4221     576    4797
 
-56 tokens is the minimum. Beyond it the radix grows enough to cost a
-symbol per word (floor(63 / log2(radix)) drops), and the table grows
-faster than the data shrinks.
+The 56-token point is a packing cliff, not a smooth minimum. The source
+alphabet has 71 characters, so 56 tokens give radix 127: the largest radix
+whose ninth power fits in a signed-64 literal. A 57th token raises the radix
+to 128, where a general word holds only eight symbols, and the table also
+keeps growing. The full frontier and the next smaller-alphabet direction are
+recorded in `docs/architecture/claude_33_history_encoding_frontier.md`.
 
 Decoding stays trivial *in cells* because ticks are free: to emit token
 k, walk the table from the start counting separators until the k-th is
