@@ -1527,3 +1527,37 @@ The 2x on `memory` has to come from somewhere else:
   cycle, i.e. five ticks per value against eight, a 37% cut. That is an
   **algorithm change**, not geometry: the counter would have to handle odd
   lengths. It is where the 2x actually lives.
+
+## 2026-07-26 — memory_09 and _10: 19,230,331 -> 17,236,875 (24/24, 30x30)
+
+The profile said the loops were untouchable and the carriage returns were
+only 8%. Both were true, and there was still 10% between them: **the gaps**.
+
+`memory_09` (-4.9%): the loop units sat four and three columns to the right
+of the instructions feeding them, so the man walked blanks to reach them on
+every outer iteration. Pulled loop2 and loop3 from rel cols 14-17 to 11-14,
+pulled B4's row in to end at rel 14, and pulled TAIL's two legs from rel
+3-18 to 6-16. Big case 22,719 -> 21,469 ticks.
+
+Two columns had to stay clear and knowing which mattered: **rel 4 carries
+X1's clockwise descent and rel 6 carries X2's counter-clockwise halt path.**
+Putting an instruction in either changes what a branch arm executes. Every
+`r`/`s` zone was re-audited cell by cell against memory_08 -- all fifteen
+resolve to the same pipe.
+
+`memory_10` (-5.7% more): with the interior tight, the carriage-return row
+could finally go. B0's loop unit moved to rel 16-18 so `d1`'s straight jump
+falls down rel column 18 -- clear only *after* the previous step -- to the
+bottom return row, instead of needing a row of its own. Block 4: 15 rows ->
+14, footprint 961 -> 900.
+
+**Trap:** the `O` pipe's attachment ended up beside block 4's new
+bottom-left corner, where the O room also claims it. Moved it to the top of
+the left wall, which as a bonus widens the margin between the two write
+zones.
+
+First attempt at all this failed 2/7 for a reason worth recording: `d3`'s
+straight jump lands on TAIL's entry cell, and pulling TAIL left removed the
+cell it lands on. **A branch's straight arm is a jump with a landing pad;
+move the pad and the jump falls through.** Both entry points (X2's descent
+and d3's jump) now have their own `<`.
