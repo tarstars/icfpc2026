@@ -19,3 +19,9 @@ inside it, and output uses a side corridor. Its occupied bounds are 183×180
 and its local score is 2.41 times smaller than `matmul_01` (60.25 times smaller
 than `matmul_00`). It passed all 20 live cases as submission
 `c2e95f37-585d-41b2-8f71-a255345fa784`.
+
+`matmul_07.man` starts from the later 115×142 `matmul_06` geometry. It folds
+the controller as a separately tested component, removes the resulting empty
+rows, and gives the 256-value A ring a strict input-room-safe route. It is
+115×98, passes public and deterministic 16×16×16 gates, and improves local
+score by 58.26% over `matmul_06`.

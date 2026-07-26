@@ -128,6 +128,44 @@
         "updatedAt": "2026-07-24T20:16:21.269Z",
         "fullResponse": "submissions/matmul/matmul_02-submit.json"
       }
+    },
+    {
+      "version": "matmul_07",
+      "label": "folded single-wall controller",
+      "parent": "matmul_06",
+      "changeType": "component",
+      "architecture": "fold the controller staircase with all 18 ports fixed on its bottom wall; rows-only squeeze; server-safe A-ring route trimmed to the exact 256-value capacity",
+      "source": {
+        "path": "submissions/matmul/matmul_07.man",
+        "generator": "src/littleman/matmul_components.py:build_matmul_controller_folded",
+        "sha256": "9deb5b44092e1099e09de12ca4fee7ab71811e6187392e76482ef070c01e51d3",
+        "bytes": 10668,
+        "width": 115,
+        "height": 98,
+        "maxDimension": 115,
+        "footprint": 13225
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "2x2 warm up": 16882,
+          "non-square 2x3x2": 22698,
+          "identity": 76614,
+          "16x16x16 full size": 2610270,
+          "skinny 16x2x16": 484958,
+          "negative heavy": 131968,
+          "max magnitude 7x5x9": 268790
+        },
+        "averageTicks": 516025.71428571426,
+        "score": 6824440071.428572
+      },
+      "improvementFromParent": {
+        "footprintPercent": 34.412814917675064,
+        "averageTicksPercent": 36.36272986761218,
+        "localScorePercent": 58.26210585693171
+      },
+      "liveSubmission": null
     }
   ],
   "standingsSnapshot": {
