@@ -100,6 +100,6 @@ Exact submission `95c909b1-1449-4b28-9c7d-9612462bad36` completed at
 | Score | 1,640,475.05 | 1,575,127.05 | -3.9841% |
 
 The live tick reduction exceeded the public projection and crossed the prior
-rank-29 score of 1,618,346.25. The exact terminal API document is preserved
-at `submissions/tcp/tcp_09-submit.json`; the standings snapshot had not yet
-refreshed at the time of this report update.
+rank-29 score of 1,618,346.25. The refreshed 98-team standings placed
+`wheezards` 29th with 1.702127659574468 points. The exact terminal API
+document is preserved at `submissions/tcp/tcp_09-submit.json`.

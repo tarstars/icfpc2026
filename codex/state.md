@@ -122,7 +122,7 @@ release state on `main`.
 - Closed Claude's clean-checkout review finding with a tested `fastsim`
   fallback when PyO3 is absent; native-only cache/Split APIs remain explicit.
 - Integrated five accepted score streams. Current preserved live results
-  include Reverse 117,213.75, Brackets 836,345.19, TCP 1,640,475.05, Sort
+  include Reverse 117,213.75, Brackets 836,345.19, TCP 1,575,127.05, Sort
   896,305.24, and Snake 915,991,438.35, all with full case coverage.
 - Passed the final integrated repository gate: 3,822 passed, 2 intentional
   skips, 4 documented xfails, and no failures in 527.02 seconds.

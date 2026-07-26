@@ -73,11 +73,13 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   uniquely identified as the counted 5,981,625.6 winner and now reproduces
   byte-for-byte from a structural generator. All recovered sources have
   stable hashes, pass public cases and a 45-case boundary suite, and are
-  catalogued under `submissions/tcp/`. The later `tcp_08` geometry keeps all
-  six room interiors unchanged, compacts the machine to 31×31, and is the
-  current live best: 20/20 at score 1,640,475.05, independently refreshed
-  through the API. Only the older `tcp_02` submission UUID remains
-  unavailable.
+  catalogued under `submissions/tcp/`. The `tcp_08` geometry compacts the
+  machine to 31×31. Its `tcp_09` successor adds a two-cell shortcut to the
+  packed controller's insertion-return path without changing the footprint
+  or any pipe binding. It is the current live best: 20/20 at score
+  1,575,127.05 and rank 29/98 in the refreshed snapshot. Only the older
+  `tcp_02` submission UUID remains unavailable. See
+  `reports/2026-07-27-tcp-hotpath.md`.
 - Grade Book `gradebook_01` compacts the accepted four-worker baseline from
   494×462 to 454×450 without changing its protocols. It passed all 20 live
   cases and improved the server score 15.97%, from 124,123,713,433.2 to
