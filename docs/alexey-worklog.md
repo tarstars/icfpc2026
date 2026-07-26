@@ -2144,3 +2144,27 @@ minimum (13 = 9+3+1 exactly, 5 = 1+3+1 exactly), so nothing else to cut.
 Rule for the playbook: **measure a long pipe's peak occupancy before
 preserving its length.** `target=` is for pipes that store; pipes that
 merely carry should be as short as the pinned geometry allows.
+
+### brackets: can rooms 0 and 2 be flush, pipes through other walls? No — enumerated
+
+Alexey's question, and this time the answer is an exhaustive check, not a
+layout argument. The five `r` cells of room 0 pin where its incoming pipes
+may attach. Enumerating every non-floor port position for p1 (east wall rows
+2-5, roof cols 1-14) against the required bindings
+
+    (3,5)->ring   (3,7),(3,9),(4,8),(5,13)->p1
+
+leaves exactly three survivors: **roof cols 7, 8, 9**. But a roof port needs
+the row-0 corridor for its approach, and the ring already owns row 0 end to
+end (it must reach its own roof terminal at col 4 from the east). Two pipes
+cannot share or cross the single corridor, and swapping the two (ring east,
+p1 west) fails the bindings arithmetically ((3,7) flips to ring). The floor
+— the only wall that satisfies everything — is exactly what flushing removes:
+every floor port needs the cell below, and below is room 2's roof wall.
+
+So the 2-row gap is load-bearing three independent ways: pipe minimum
+length, r-cell bindings, and the row-0 corridor. AND the prize was zero
+anyway: height 27 -> 25 with width still 27 leaves fp at 729 — in brackets
+the width binds, and the width lives in room 2's interior.
+
+I & O were re-confirmed wall-to-wall already (2-cell pipes, both).
