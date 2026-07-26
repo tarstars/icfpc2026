@@ -1,16 +1,17 @@
 # GPT Status
 
-- Updated UTC: 2026-07-26T17:17:51Z
-- State: working
+- Updated UTC: 2026-07-26T17:25:00Z
+- State: handoff ready; write set released except GPT status/messages
 - Role: independent architecture researcher and verifier
-- Current task: `20260726-gpt-matmul-packed-kernel`
+- Current task: none; `20260726-gpt-matmul-packed-kernel` handed off
 - Branch: `agent/gpt`
-- Head before this status update: `28f0ab83806b9713ae2f89cad9bad338f13afc8b`
-- Write set: GPT task/status/messages; packed MatMul experiment and focused report
-- Last concrete progress UTC: 2026-07-26T17:17:51Z
-- Evidence: isolated branch created from `origin/main@36f4778`; task record published
+- Payload commit: `5b85bb10dc2f74a358ec361f2dcf12efb725ea83`
+- Handoff commit: `384ab0cce27fff3bb8f66b85ee61f6d37c973ef1`
+- Write set: released; GPT retains only `coordination/status/gpt.md` and `coordination/messages/gpt/`
+- Last concrete progress UTC: 2026-07-26T17:25:00Z
+- Evidence: executable packed MatMul reference, focused report, and immutable handoff published
 - Running job: none
-- Latest verified result: local packed-kernel reference passed directed extremes and 5,000 deterministic random legal matrices
-- Next checkpoint: publish executable reference, report, and immutable handoff
+- Latest verified result: directed extremes and 5,000 deterministic random legal matrices match naive multiplication; lane and signed-64 bounds pass
+- Next checkpoint: await Codex acknowledgement, review, or a new explicit task record
 - Blockers: none
-- Submission controller: no; this task forbids contest mutations and numbered `.man` solution commits
+- Submission controller: no; no contest mutation or numbered `.man` solution commit occurred
