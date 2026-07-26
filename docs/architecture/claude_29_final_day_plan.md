@@ -70,3 +70,40 @@ rig-scoped tasks (emit, round-in, tick-pass, phase-B integration,
 phase-C integration), each with its own oracle slice and agent. Never
 again "finish the room". Post-contest: the block-graph compiler + (nop n)
 direction removes this task class entirely.
+
+## Addendum 2 (11:40Z): sort k-rings KILLED by arithmetic; dispatch policy changed
+
+Two more agents died at the 64k ceiling (tcp pass-2, sort k-ring), both
+during the ANALYSIS phase, both leaving zero files. Total ceiling deaths:
+six. The pattern is now unambiguous: the modelling phase is where agents
+die, because modelling generates long output.
+
+**Policy change, effective now: the supervisor does the analysis; agents
+get build-only briefs whose first action is a WRITE.** A brief that says
+"measure X, then decide" is a brief that kills its agent.
+
+### The sort k-ring idea is dead -- arithmetic, done here in 2 minutes
+
+Model: `ticks(n,k) = A*ceil(n/k)*(ceil(n/k)+1)/2 + B*n` with the measured
+A=10.60, B=29.64, over the 19 real public lists (n from 1 to 16, **mean
+6.3**):
+
+| k | tick factor | box | fp factor | NET |
+|---|---|---|---|---|
+| 2 | 1.90 | 22x22 | 1.34 | **1.42x** |
+| 2 | 1.90 | 24x24 | 1.60 | 1.19x |
+| 2 | 1.90 | 26x26 | 1.87 | 1.01x |
+| 3 | 2.24 | 26x26 | 1.87 | 1.20x |
+
+Top-5 needs 2.8x. Best case is 1.42x, and only if a second pump, a
+second man and a merger fit in 22x22 (they will not comfortably).
+
+The previous builder's "2.5-3x realistic" estimate was anchored on the
+**n=16** case, where the quadratic term dominates. Averaged over the real
+distribution (mean n=6.3) the quadratic term is minor, so parallel rings
+buy far less than they appear to. **Check the estimate against the actual
+input distribution before believing any asymptotic argument.**
+
+Sort stays at 896,305; the slot went to a tcp geometry repack instead
+(C room is 18x14 at 40.1% interior fill, and its 14 rows set the box's
+bottom edge; 35 -> 31 is 1.27x, a contained press-shaped task).
