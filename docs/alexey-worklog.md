@@ -1879,3 +1879,49 @@ between adjacent walls. Every alternative was walked:
 
 Both dimensions are therefore pinned: 7x6 is the floor for the pump interior
 (proven above) and 4+9 is the floor for the width.
+
+## 2026-07-26 — reverse_07: 13x13 by moving one room at a time
+
+**I was wrong about 13x13 being impossible.** The proof I wrote earlier
+assumed the gap column between the relay and the pump was mandatory, because
+the ring-in leaves the relay's right wall. Alexey's method — move one thing,
+judge, then move the next thing relative to that, without designing the final
+layout first — found the way through in six steps. Every step is preserved in
+`experiments/alexey-reverse06/` with its `.man` and a note.
+
+| step | move | box | score |
+|---|---|---|---|
+| 0 | reverse_06 as submitted | 14x14 | 62,769 |
+| 1 | Output flush: its pipe bends into O's right wall instead of dropping into the roof, so O climbs two rows | 14x14 | 62,769 |
+| 2 | Relay down two rows (rows 2-7); ring-in now leaves the ROOF and is 7 cells | 14x14 | 63,161 |
+| 3 | Input up one row; ring-out re-terminates on the relay floor | 14x14 | 62,744 |
+| 4 | Ring-out out of the last row | 14x13 | 62,891 |
+| 5 | Pump one column left — relay FLUSH, no gap column | **13x13** | 53,911 |
+| 6 | Ring-out serpentined: 13 cells instead of 11 | 13x13 | **53,594** |
+
+Step 2 is the one that mattered and it looked pointless at the time (the
+score got *worse*). Two free rows above the relay let the ring-in leave
+through its roof, and that is what makes the gap column unnecessary — which
+only becomes visible three steps later.
+
+Step 6 is worth remembering on its own: **a longer pipe was both more
+capacious and faster.** Pipe cells are parking space as well as delay, so the
+serpentine (13 cells vs 11) removed blocking that the short route caused.
+
+Two traps re-paid, both already in the trick sheet: a bend flush against the
+pump's bottom wall parsed as a fifth pipe (fixed by moving the jog off row
+8), and the ring-out could not climb the column beside the input room.
+
+Also learned: reverse_06's `(1,4)` was a **dead glyph** — the ring-in
+actually starts at `(0,4)`, sourced from the relay's top-right corner. The
+parser wants an arrowhead adjacent to a border cell pointing away from the
+room; `(1,4)`'s `^` matched no room, so it was never part of a pipe.
+
+Capacity checked properly instead of by rule of thumb: peak occupancy across
+both ring pipes is **16** on three consecutive n=16 rounds (the frame is at
+most 17 values and the pump always holds one), against a capacity of 19.
+
+`src/littleman/alexey_reverse7.py`, `tests/test_alexey_reverse7.py` (8 tests),
+`submissions/reverse-a-list/reverse_07.man`. 8/8 public, every length 1..16
+against three value patterns, 250-case fuzz, CLI preflight 53,594.1.
+Live estimate: 98,676 / 1.171 ~ **84,000**. Not submitted yet.
