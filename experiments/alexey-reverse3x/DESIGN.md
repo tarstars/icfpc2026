@@ -24,3 +24,8 @@ experiments/alexey-reverse06/lab.py (copy check/save/stress); (3) audit
 resolution (stash room adds 2 pipes to pump: nearest-pipe re-audit ALL);
 (4) fuzz every length 1..16 x3 patterns + 250 multi-round; (5) submit if
 < 84,922 local-equivalent.
+
+## step 1 DONE: protocol verified in python
+round_sim: relay k-3, emit [v_k, v_{k-1}, v_{k-2}]; k<=2 -> emit reversed
+remainder directly. Correct for all n=1..16. n=16: 35 relays (was 64),
+6 passes (was 8).
