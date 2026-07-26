@@ -217,3 +217,37 @@ Dead-cell scan (Python sim, 460 constraint-respecting cases): room 0 has exactly
     |^ <           |
     +--------------+
 ```
+
+## b11_shortring
+
+Peak ring occupancy measured at 10 of 65 -- the long pipe is transport, not storage. Shortened to the 49-cell shortest route: 286,416 -> 277,830 local, pure ticks. The 13- and 5-cell pipes are already at their Manhattan minimum.
+
+```
+    v---------------------<
++--------------+          |
+|@ssv      <   |          |
+|   >rXrsrs^   |          |
+|     >MrW+++sv|       +-+|
+|   ^    s+1Mr<|       |O||
++--------------+       +-+|
+     >--^ v             ^ |
+     ^ v--<             ^ |
+ +-----------------------+|
+ |         >rM1+ sH      ||
+>|>@rXrsrsv   >+MrXrM1+sH||
+||   >    M4W-XrX  sH    ||
+||^ s+1MrsWXW/W3M-<      ||
+||^       <     >rM1+sH  ||
+|+-----------------------+|
+^-< +--------------+ >----^
+  | |H  s4    s <  | |
+  | |v  s  0  s<   | |
+  | |>qd0       ^  | |
+  ^<|  >rbM5W} x   |>^
+    |          ]   |
+    |^  s  0  sxM0v|  +-+
+    |^  s    Ws   <|<<|I|
+    |@rv           |  +-+
+    |^ <           |
+    +--------------+
+```
