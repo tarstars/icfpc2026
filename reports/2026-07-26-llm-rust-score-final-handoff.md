@@ -7,14 +7,20 @@ Date: 2026-07-26
 The complete candidate is pushed as:
 
 - branch: `agent/codex-main-integration`
-- commit: `6eff4d1`
+- validated implementation commit: `a899e03`
 - base: `origin/main@f35eb11`
 - merged Rust lineage: `agent/codex-rust@37bbb4d`
-- merged Claude lineage: `agent/claude@5366634`
+- merged Claude lineage: through `agent/claude@a9760e1`
 
 It contains the complete accepted LLM machine, exact Rust executor, all five
-score improvements, both agents' compact-LLM/LLLM evidence, and current
-`origin/main`. The user's dirty local `main` worktree was not modified.
+score-improvement streams including the latest 31×31 TCP successor, both
+agents' compact-LLM/LLLM evidence, and current `origin/main`. The user's dirty
+local `main` worktree was not modified.
+
+Claude subsequently pushed the explicitly incomplete compact-LLM checkpoint
+`103cb8d` (no rig test and unfinished wiring). It is preserved remotely on
+`agent/claude` but deliberately excluded from this release candidate; no
+verified or submitted artifact depends on it.
 
 ## Requirement audit
 
@@ -28,8 +34,8 @@ score improvements, both agents' compact-LLM/LLLM evidence, and current
 | Standalone CLI and caching | **proved** | pure-Rust Rayon CLI, compressed versioned IR, one/N worker and full-frame LLM tests |
 | At least three live score improvements | **proved, five** | refreshed terminal API results listed below |
 | All valuable agent work pushed | **proved** | Rust, Claude, and integration branches are clean and pushed |
-| Independent final review | **pending** | requested from Claude in `20260726T114327Z-integrated-final-candidate-review.md` |
-| Promotion to `main` | **pending review** | integration branch is ready; local dirty `main` was deliberately untouched |
+| Independent final review | **proved** | Claude approved integration and Rust, then Codex closed the sole fallback finding in `a899e03` |
+| Promotion to `main` | **pending final fast-forward** | reviewed integration branch is ready; local dirty `main` remains untouched |
 
 ## Accepted LLM
 
@@ -72,7 +78,7 @@ The final integrated repository run was:
 uv run pytest -q -p littleman.rustexec -n 8 --durations=25
 ```
 
-Result: **3,804 passed, 2 skipped, 4 expected xfails, 0 failed in 457.51 s**.
+Result: **3,822 passed, 2 skipped, 4 expected xfails, 0 failed in 527.02 s**.
 The skips are intentionally unloadable historical artifacts exercised by two
 differential collectors. The xfails are the four explicitly unfinished
 multi-man compact-LLM transcription cases, not the accepted LLM machine.
@@ -81,6 +87,14 @@ During integration this run caught a real plugin bug: replacing the
 wall-tolerant server judge's `Machine` bypassed its Python `_tick` patch. The
 specialized judge is now protected from replacement and the server-confirmed
 Triangle final-wall-drain behavior has a directed regression.
+
+Claude independently reviewed the candidate in a detached worktree and
+approved it, finding one release issue: an explicit Rust-executor import
+raised when PyO3 had not yet been built. Commit `a899e03` adds a transparent
+`fastsim` fallback. The forced no-extension suite now reports 108 passed and
+11 native-only skips; the native executor/CLI suite reports 122 passed and
+one intentional skip. Compressed-IR encoding and official Split execution
+remain explicitly native-only.
 
 ## Accepted score improvements
 
@@ -91,12 +105,14 @@ coverage, and no error/load error.
 | --- | ---: | ---: | ---: | --- |
 | Reverse a List | 193,481.40 | 117,213.75 | 39.42% | `20a3f425-2ab2-4b41-aae8-503706a2810a` |
 | Brackets | 943,438.46 | 836,345.19 | 11.35% | `3b77acf3-21cd-4ba9-80fb-5fcebf24ed44` |
-| Packet Reassembly | 5,655,749.70 | 2,146,016.25 | 62.06% | `3267eca6-494d-4c9d-aa1d-dfe308aee7a1` |
+| Packet Reassembly | 5,655,749.70 | 1,640,475.05 | 70.99% | `c5b2472f-8f70-4b9c-a263-d026c385def9` |
 | Sort | 1,367,453.56 | 896,305.24 | 34.45% | `930fb828-32ed-42b6-8481-37e542270bb7` |
 | Snake | 1,576,985,654.59 | 915,991,438.35 | 41.92% | `370c272b-75c5-4539-99b2-8794cf7591a9` |
 
 Exact sources, response JSON, generators, and tests are integrated. Their
-focused score-builder suite passed 106 tests.
+focused score-builder suites include 18 passing `tcp_08` tests. The newest
+TCP result was independently refreshed through the authenticated API:
+terminal 20/20 at 31×31, with no error or load error.
 
 ## Integration decisions
 
@@ -113,14 +129,13 @@ focused score-builder suite passed 106 tests.
 
 ## Remaining actions
 
-1. Receive Claude's explicit blocking/non-blocking final review.
-2. If approved, re-fetch and fast-forward `origin/main` to this integration
+1. Re-fetch and fast-forward `origin/main` to this approved integration
    candidate without touching the user's dirty local worktree.
-3. The user's separate manual Memory improvement (16,033,454.75) has no
+2. The user's separate manual Memory improvement (16,033,454.75) has no
    recoverable source in Git or bearer-authenticated API. If the user still
    has it, preserve it as `submissions/memory/memory_11.man`; this is external
    to the agent-created score stream but is the only known live result lacking
    its exact source.
-4. Compact LLM remains a score-only research lane; its accepted 28/28 baseline
+3. Compact LLM remains a score-only research lane; its accepted 28/28 baseline
    is already secure and must not be replaced unless a fully gated candidate
    has a strictly lower server score.

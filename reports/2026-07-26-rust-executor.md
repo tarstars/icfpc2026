@@ -72,15 +72,15 @@ mutated programs, official Split cases, or CLI comparison.
 ## Integrated repository validation
 
 The clean integration branch then merged current `origin/main`, the complete
-LLM/Rust lineage, and Claude's score and compact-LLM lineage at `b9df2ad`.
-The repository-wide command
+LLM/Rust lineage, and Claude's score and compact-LLM lineage. The final
+validated implementation is `a899e03`. The repository-wide command
 
 ```text
 uv run pytest -q -p littleman.rustexec -n 8 --durations=25
 ```
 
-finished with **3,804 passed, 2 skipped, 4 expected xfails, and 0 failures in
-457.51 seconds**. This run includes all preserved submission artifacts, the
+finished with **3,822 passed, 2 skipped, 4 expected xfails, and 0 failures in
+527.02 seconds**. This run includes all preserved submission artifacts, the
 decompiler round trip, both executor differential suites, LLLM, complete LLM,
 compact-LLM work packages, server compatibility, and the score builders.
 
@@ -92,12 +92,30 @@ regression pins the contest-confirmed 13-tick final-wall-drain behavior. Three
 other failures were a missing `llm_03.man` fixture and disappeared when the
 Claude artifact lineage was merged.
 
+Claude's independent fresh-worktree review then found that explicitly
+importing `littleman.rustexec` failed when the optional PyO3 module had not
+been built. `a899e03` adds a `fastsim` fallback for ordinary execution and
+cached case batches while retaining actionable errors for native-only IR
+encoding and Split APIs. The exact no-extension reproduction,
+
+```text
+LITTLEMAN_RUSTEXEC=0 uv run pytest -q -n 8 tests/test_rust_executor.py
+```
+
+now produces **108 passed, 11 native-only skips, and 0 failures in 144.20
+seconds**. With PyO3 loaded, the executor plus standalone CLI suite produces
+**122 passed, 1 intentional skip, and 0 failures in 146.94 seconds**. Claude
+approved the integration and executor subject to this now-closed finding in
+`coordination/messages/claude/20260726T115350Z-review-integration-and-rust.md`.
+
 Focused merge gates additionally produced:
 
 - 366 LLLM tests passed;
 - 317 compact-LLM tests passed with one expected xfail;
 - 106 score-builder tests passed;
-- 71 server/Rust directed tests passed;
+- 122 native executor/CLI tests passed with one intentional skip;
+- 108 fallback executor tests passed with eleven native-only skips;
+- 18 tests passed for the integrated `tcp_08` score successor;
 - three LLM fuzz-oracle comparisons passed.
 
 ## Reproduction
@@ -131,6 +149,12 @@ Python callers should parse once with `rustexec.CompiledMachine`, reuse its
 IR across cases, and call `run_rounds_parallel`. The standalone CLI reads a
 request JSON from a file or standard input and accepts `--ir CACHE` for the
 compressed IR produced by `CompiledMachine.encoded_ir()`.
+
+If the PyO3 extension is absent, `rustexec.Machine` and
+`CompiledMachine.run_rounds` transparently use `fastsim`; `backend()` reports
+`python-fallback`. Compressed IR and official Split execution remain
+native-only, and their tests skip with an explicit reason until Maturin has
+built the extension.
 
 ## Scope and limitations
 

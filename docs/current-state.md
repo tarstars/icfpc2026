@@ -69,7 +69,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   uniquely identified as the counted 5,981,625.6 winner and now reproduces
   byte-for-byte from a structural generator. All recovered sources have
   stable hashes, pass public cases and a 45-case boundary suite, and are
-  catalogued under `submissions/tcp/`. Only its submission UUID remains
+  catalogued under `submissions/tcp/`. The later `tcp_08` geometry keeps all
+  six room interiors unchanged, compacts the machine to 31×31, and is the
+  current live best: 20/20 at score 1,640,475.05, independently refreshed
+  through the API. Only the older `tcp_02` submission UUID remains
   unavailable.
 - Grade Book `gradebook_01` compacts the accepted four-worker baseline from
   494×462 to 454×450 without changing its protocols. It passed all 20 live
@@ -128,11 +131,13 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   Rayon CLI. It reduced the expanded 2,012-test LLM suite from 858.86 to
   53.08 seconds, and ran all 14 public LLM cases (173.6 million judged ticks)
   deterministically in 4.93 seconds with eight workers. Acceptance evidence
-  is in `reports/2026-07-26-rust-executor.md`. The clean
+  is in `reports/2026-07-26-rust-executor.md`. A missing-extension fallback
+  found by Claude's independent review is fixed in `a899e03`; forced fallback
+  now passes 108 tests with 11 native-only skips. The clean
   `agent/codex-main-integration` candidate merges current `origin/main`, both
-  agent lineages, and passes the full repository suite: 3,804 passed, two
-  skipped, four expected xfails, zero failures. Peer review and promotion to
-  `main` remain pending.
+  agent lineages, and passes the full repository suite: 3,822 passed, two
+  skipped, four expected xfails, zero failures. Peer review is approved;
+  promotion to `main` is the remaining Git step.
 
 ## Storage
 
