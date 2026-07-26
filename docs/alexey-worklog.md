@@ -2218,3 +2218,17 @@ The general form of the question, for the playbook: **a pipe's two ports
 have separate freedom; when their legal ranges overlap in a column, the
 pipe straightens to 2 cells.** Check the ports' ranges before accepting any
 bent gap pipe.
+
+## subset_sum_01 live: 91.77T -> 37.40T (2.45x), 20/20, 2316x2374
+
+The bisection did it: Alexey's M4 judged each group of deletable lines in
+~25 s (vs 32 min here), all 655 rows proved safe, 1330 of 3040 columns
+proved safe, and height was the binder anyway -- so the safe set delivers
+the FULL squeeze footprint (fp 13,293,316 -> 5,635,876) plus a tick
+improvement from the safely shortened transport pipes. Three dead ends
+paid for it: exact-length reinflation (router cannot rebuild 3-6k-cell
+serpentines -- confirmed by three independent runs), occupancy measurement
+(30+ hours of python sim), and the bare squeeze (deadlocks: storage pipes
+cut). The lesson for the playbook: **when the judge is cheap, bisect
+deletions with the judge instead of measuring occupancy.** Submission
+76d036a9-77cc-401b-adc9-3295bd08674c.
