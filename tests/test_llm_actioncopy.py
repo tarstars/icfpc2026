@@ -1,4 +1,4 @@
-"""Physical gates for indexed LLM state duplication."""
+"""Physical gates for selected-action indexed duplication."""
 
 from __future__ import annotations
 
@@ -8,9 +8,8 @@ from pathlib import Path
 import pytest
 
 from littleman import alexey_pipecheck, server_compat
+from littleman.llm_actioncopy import actioncopy_reference, build_actioncopy_rig
 from littleman.llm_fetchjoin import fetchjoin_reference
-from littleman.llm_fuzz import llm_corpus
-from littleman.llm_indexcopy import build_indexcopy_rig, indexcopy_reference
 from littleman.llm_maskmap import maskmap_reference
 from littleman.llm_packraw import pack_reference
 from littleman.llm_perimeter import perimeter_reference
@@ -18,7 +17,7 @@ from littleman.llm_pipestarts import pipestarts_reference
 from littleman.llm_pipetrace import pipetrace_dest_reference
 from littleman.llm_roomfind import roomfind_reference
 from littleman.llm_scan import scan_reference
-from littleman.llm_statebuild import PIPE_VALUES, statebuild_reference
+from littleman.llm_statebuild import statebuild_reference
 from littleman.llm_stateindex import stateindex_reference
 from littleman.sim import Machine
 
@@ -26,7 +25,6 @@ ROOT = Path(__file__).resolve().parents[1]
 CASES = json.loads((ROOT / "data/small/problems/little-little-man.json").read_text())[
     "publicTestData"
 ]
-FUZZ = llm_corpus(20260726, 20)
 
 
 def indexed_state(case):
@@ -43,9 +41,11 @@ def indexed_state(case):
 
 
 class Script:
-    def __init__(self, tokens):
-        self.input = list(tokens)
-        self.expected = indexcopy_reference(tokens)
+    def __init__(self, requests):
+        self.input = [item for request in requests for item in request]
+        self.expected = [
+            item for request in requests for item in actioncopy_reference(request)
+        ]
         self.output = []
 
     def pop_input(self):
@@ -58,35 +58,22 @@ class Script:
 
 @pytest.fixture(scope="module")
 def text():
-    return build_indexcopy_rig()
+    return build_actioncopy_rig()
 
 
 def test_generator_is_deterministic_and_server_safe(text):
-    assert build_indexcopy_rig() == text
+    assert build_actioncopy_rig() == text
     server_compat.validate_layout(text)
     alexey_pipecheck.check(text)
 
 
-@pytest.mark.parametrize("case", [*CASES, *FUZZ], ids=lambda case: case["name"])
-def test_physical_index_copy(text, case):
-    state = indexed_state(case)
-    script = Script(state)
-    result = Machine.parse(text).run(max_ticks=10_000_000, controller=script)
-    assert result.error is None
-    assert result.status == "passed"
-    assert script.output == script.expected
-
-
-def test_physical_payloads_may_equal_copy_markers(text):
-    state = next(
-        indexed_state(case) for case in FUZZ if PIPE_VALUES in indexed_state(case)
-    )
-    values = state.index(PIPE_VALUES)
-    assert state[values + 1] == 0
-    state[values + 1] = 4
-    state[values + 2 : values + 2] = [-4900, -5000, -5100, -1000]
-    script = Script(state)
-    result = Machine.parse(text).run(max_ticks=10_000_000, controller=script)
+def test_physical_prefix_and_copy(text):
+    requests = []
+    for index, case in enumerate(CASES):
+        prefix = [index % 2, index % 2, index % 4, -index, index % 2]
+        requests.append([*prefix, *indexed_state(case)])
+    script = Script(requests)
+    result = Machine.parse(text).run(max_ticks=50_000_000, controller=script)
     assert result.error is None
     assert result.status == "passed"
     assert script.output == script.expected

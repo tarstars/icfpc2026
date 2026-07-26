@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from .canvas import Canvas
 from .lllm_fetch import build_relay
-from .lllm_scan import _compile, _Fsm
+from .lllm_scan import _compile, _Fsm, _layout
+from .llm_roomfind import SETUP_END
+from .llm_statebuild import PIPE_MASK
 from .llm_stateindex import INDEX_END
 
 INDEX_COPY_SPLIT = -5000
@@ -17,81 +19,218 @@ def indexcopy_reference(tokens: list[int]) -> list[int]:
     return [*tokens, INDEX_COPY_SPLIT, *tokens, INDEX_COPY_END]
 
 
-def _build_fsm() -> _Fsm:
+def _build_fsm(prefix_words: int = 0) -> _Fsm:
+    if prefix_words < 0:
+        raise ValueError("prefix length must be non-negative")
     fsm = _Fsm()
-    fsm.go("boot", "left", "@", "item_r")
-    fsm.go("item_r", "left", "r", "item_cmp")
-    fsm.sign(
-        "item_cmp",
+    first = "prefix_0" if prefix_words else "load_header_r"
+    fsm.go("boot", "left", "@", first)
+    for index in range(prefix_words):
+        target = f"prefix_{index + 1}" if index + 1 < prefix_words else "load_header_r"
+        fsm.go(f"prefix_{index}", "left", "rs", target)
+
+    def plain(prefix: str, name: str, source: str, target: str, duplicate: bool):
+        fsm.go(f"{prefix}_{name}_r", source, "r", f"{prefix}_{name}_out")
+        after = f"{prefix}_{name}_scratch" if duplicate else target
+        fsm.go(f"{prefix}_{name}_out", "left", "s", after)
+        if duplicate:
+            fsm.go(f"{prefix}_{name}_scratch", "right", "s", target)
+
+    def restored(
+        prefix: str,
+        name: str,
+        target: str,
+        duplicate: bool,
+    ):
+        after = f"{prefix}_{name}_scratch" if duplicate else target
+        fsm.go(f"{prefix}_{name}_restore", "left", "Ws", after)
+        if duplicate:
+            fsm.go(f"{prefix}_{name}_scratch", "right", "s", target)
+
+    def indexed_pass(prefix: str, source: str, duplicate: bool, done: str):
+        fsm.go(f"{prefix}_header_r", source, "r", f"{prefix}_header_cmp")
+        fsm.sign(
+            f"{prefix}_header_cmp",
+            "lit_l" if source == "left" else "lit_r",
+            f"M`{abs(SETUP_END)}`+",
+            neg="bad_stream",
+            zero=f"{prefix}_setup_restore",
+            pos=f"{prefix}_event_restore",
+        )
+        restored(prefix, "event", f"{prefix}_field_0_r", duplicate)
+        for index in range(11):
+            target = (
+                f"{prefix}_field_{index + 1}_r"
+                if index < 10
+                else f"{prefix}_header_r"
+            )
+            plain(prefix, f"field_{index}", source, target, duplicate)
+        restored(prefix, "setup", f"{prefix}_split_r", duplicate)
+        plain(prefix, "split", source, f"{prefix}_pipe_start_r", duplicate)
+
+        fsm.go(
+            f"{prefix}_pipe_start_r",
+            source,
+            "r",
+            f"{prefix}_pipe_start_cmp",
+        )
+        fsm.sign(
+            f"{prefix}_pipe_start_cmp",
+            "lit_l" if source == "left" else "lit_r",
+            f"M`{abs(INDEX_END)}`+",
+            neg="bad_stream",
+            zero=f"{prefix}_index_restore",
+            pos=f"{prefix}_start_restore",
+        )
+        restored(prefix, "start", f"{prefix}_source_r", duplicate)
+        plain(prefix, "source", source, f"{prefix}_body_r", duplicate)
+        fsm.go(f"{prefix}_body_r", source, "r", f"{prefix}_body_cmp")
+        fsm.sign(
+            f"{prefix}_body_cmp",
+            "lit_l" if source == "left" else "lit_r",
+            f"M`{abs(PIPE_MASK)}`+",
+            neg="bad_stream",
+            zero=f"{prefix}_mask_restore",
+            pos=f"{prefix}_body_restore",
+        )
+        restored(prefix, "body", f"{prefix}_bit_r", duplicate)
+        plain(prefix, "bit", source, f"{prefix}_body_r", duplicate)
+        restored(prefix, "mask", f"{prefix}_mask_value_r", duplicate)
+        plain(
+            prefix,
+            "mask_value",
+            source,
+            f"{prefix}_values_marker_r",
+            duplicate,
+        )
+        plain(
+            prefix,
+            "values_marker",
+            source,
+            f"{prefix}_count_r",
+            duplicate,
+        )
+        fsm.go(f"{prefix}_count_r", source, "rMb", f"{prefix}_count_out")
+        after_count = f"{prefix}_count_scratch" if duplicate else f"{prefix}_values"
+        fsm.go(f"{prefix}_count_out", "left", "s", after_count)
+        if duplicate:
+            fsm.go(
+                f"{prefix}_count_scratch",
+                "right",
+                "s",
+                f"{prefix}_values",
+            )
+        fsm.bp(
+            f"{prefix}_values",
+            "mid",
+            "",
+            zero=f"{prefix}_pipe_end_r",
+            pos=f"{prefix}_value_r",
+        )
+        plain(prefix, "value", source, f"{prefix}_value_dec", duplicate)
+        fsm.bp(
+            f"{prefix}_value_dec",
+            "mid",
+            "m",
+            zero=f"{prefix}_pipe_end_r",
+            pos=f"{prefix}_value_r",
+        )
+        plain(
+            prefix,
+            "pipe_end",
+            source,
+            f"{prefix}_pipe_start_r",
+            duplicate,
+        )
+        restored(prefix, "index", done, duplicate)
+
+    indexed_pass("load", "left", True, "split_out")
+    fsm.go(
+        "split_out",
         "lit_l",
-        f"M`{abs(INDEX_END)}`+",
-        neg="item_restore",
-        zero="end_restore",
-        pos="item_restore",
+        f" `{abs(INDEX_COPY_SPLIT)}`Ns",
+        "copy_header_r",
     )
-    fsm.go("item_restore", "left", "Ws", "scratch_s")
-    fsm.go("scratch_s", "right", "s", "item_r")
-    fsm.go("end_restore", "left", "Ws", "end_scratch")
-    fsm.go("end_scratch", "right", "s", "scratch_end")
-    fsm.go("scratch_end", "lit_r", f" `{abs(INDEX_COPY_END)}`Ns", "split_out")
-    fsm.go("split_out", "lit_l", f" `{abs(INDEX_COPY_SPLIT)}`Ns", "copy_r")
-    fsm.go("copy_r", "right", "r", "copy_cmp")
-    fsm.sign(
-        "copy_cmp",
-        "lit_r",
-        f"M`{abs(INDEX_COPY_END)}`+",
-        neg="copy_restore",
-        zero="copy_end",
-        pos="copy_restore",
-    )
-    fsm.go("copy_restore", "left", "Ws", "copy_r")
+    indexed_pass("copy", "right", False, "copy_end")
     fsm.go(
         "copy_end",
         "lit_l",
-        f"M`{abs(INDEX_COPY_END)}`NsH",
-        "copy_end",
+        f" `{abs(INDEX_COPY_END)}`Ns",
+        first,
     )
+    fsm.go("bad_stream", "left", "H", "bad_stream")
     return fsm
 
 
-def build_indexcopy_room() -> list[str]:
-    return _compile(_build_fsm())
+def build_indexcopy_room(prefix_words: int = 0) -> list[str]:
+    return _compile(_build_fsm(prefix_words), extra_gap=96)
 
 
-CTRL_LEFT = 5
-INPUT_ROW, OUTPUT_ROW = 2, 6
-RING_OUT_ROW, RING_IN_ROW = 2, 9
+def _port_rows(prefix_words: int = 0) -> tuple[int, int, int, int]:
+    fsm = _build_fsm(prefix_words)
+    _routes, blocks, _height = _layout(fsm)
+    groups = ([], [], [], [])
+    main_in, main_out, scratch_out, scratch_in = groups
+    for name, zone, code, _kind, _targets in fsm.blocks:
+        for char in code:
+            if char == "r":
+                (scratch_in if name.startswith("copy_") and zone == "right" else main_in).append(
+                    blocks[name]
+                )
+            elif char == "s":
+                (scratch_out if name.startswith("load_") and zone == "right" else main_out).append(
+                    blocks[name]
+                )
+
+    def middle(rows):
+        return (min(rows) + max(rows)) // 2
+
+    return tuple(middle(rows) for rows in groups)
+
+
+def add_indexcopy_network(
+    cv: Canvas,
+    *,
+    top: int,
+    left: int,
+    prefix_words: int = 0,
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    room = build_indexcopy_room(prefix_words)
+    right = left + len(room[0]) - 1
+    relay_left = right + 5
+    far = relay_left + 17
+    relay_top = top + len(room) + 20
+    input_row, output_row, scratch_out, scratch_in = _port_rows(prefix_words)
+    input_row += top
+    output_row += top
+    scratch_out += top
+    scratch_in += top
+    cv.put(top, left, room)
+    cv.put(relay_top, relay_left, build_relay().render())
+    cv.pipe(
+        [
+            (scratch_out, right + 1),
+            (scratch_out, far),
+            (relay_top + 1, far),
+            (relay_top + 1, relay_left + 6),
+        ]
+    )
+    cv.pipe(
+        [
+            (relay_top + 1, relay_left - 1),
+            (relay_top + 1, right + 2),
+            (scratch_in, right + 2),
+            (scratch_in, right + 1),
+        ]
+    )
+    return (input_row, left - 1), (output_row, left - 1)
 
 
 def build_indexcopy_rig() -> str:
-    room = build_indexcopy_room()
-    right = CTRL_LEFT + len(room[0]) - 1
-    relay_left = right + 5
-    far = relay_left + 17
-    buffer_bottom = 300
     cv = Canvas()
-    cv.put(0, CTRL_LEFT, room)
-    cv.put(20, relay_left, build_relay().render())
-    cv.put(INPUT_ROW - 1, 0, ["+-+", "|I|", "+-+"])
-    cv.put(OUTPUT_ROW - 1, 0, ["+-+", "|O|", "+-+"])
-    cv.pipe([(INPUT_ROW, 3), (INPUT_ROW, CTRL_LEFT - 1)])
-    cv.pipe([(OUTPUT_ROW, CTRL_LEFT - 1), (OUTPUT_ROW, 3)])
-    cv.pipe(
-        [
-            (RING_OUT_ROW, right + 1),
-            (RING_OUT_ROW, far),
-            (21, far),
-            (21, relay_left + 6),
-        ]
-    )
-    cv.pipe(
-        [
-            (21, relay_left - 1),
-            (21, right + 3),
-            (buffer_bottom, right + 3),
-            (buffer_bottom, right + 2),
-            (RING_IN_ROW, right + 2),
-            (RING_IN_ROW, right + 1),
-        ]
-    )
+    ingress, egress = add_indexcopy_network(cv, top=0, left=5)
+    cv.put(ingress[0] - 1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(egress[0] - 1, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(ingress[0], 3), ingress])
+    cv.pipe([egress, (egress[0], 3)])
     return cv.render()

@@ -1,4 +1,4 @@
-"""Physical gates for indexed LLM state duplication."""
+"""Physical gates for applying one selected indexed pipe record."""
 
 from __future__ import annotations
 
@@ -8,17 +8,23 @@ from pathlib import Path
 import pytest
 
 from littleman import alexey_pipecheck, server_compat
+from littleman.llm_actioncopy import actioncopy_reference
 from littleman.llm_fetchjoin import fetchjoin_reference
 from littleman.llm_fuzz import llm_corpus
-from littleman.llm_indexcopy import build_indexcopy_rig, indexcopy_reference
+from littleman.llm_indexdecision import _headers_and_pipes
 from littleman.llm_maskmap import maskmap_reference
 from littleman.llm_packraw import pack_reference
 from littleman.llm_perimeter import perimeter_reference
+from littleman.llm_pipeapply import OP_RECV, OP_SEND
 from littleman.llm_pipestarts import pipestarts_reference
 from littleman.llm_pipetrace import pipetrace_dest_reference
 from littleman.llm_roomfind import roomfind_reference
 from littleman.llm_scan import scan_reference
-from littleman.llm_statebuild import PIPE_VALUES, statebuild_reference
+from littleman.llm_selectedapply import (
+    build_selectedapply_rig,
+    selectedapply_reference,
+)
+from littleman.llm_statebuild import statebuild_reference
 from littleman.llm_stateindex import stateindex_reference
 from littleman.sim import Machine
 
@@ -43,9 +49,11 @@ def indexed_state(case):
 
 
 class Script:
-    def __init__(self, tokens):
-        self.input = list(tokens)
-        self.expected = indexcopy_reference(tokens)
+    def __init__(self, requests):
+        self.input = [item for request in requests for item in request]
+        self.expected = [
+            item for request in requests for item in selectedapply_reference(request)
+        ]
         self.output = []
 
     def pop_input(self):
@@ -58,35 +66,28 @@ class Script:
 
 @pytest.fixture(scope="module")
 def text():
-    return build_indexcopy_rig()
+    return build_selectedapply_rig()
 
 
 def test_generator_is_deterministic_and_server_safe(text):
-    assert build_indexcopy_rig() == text
+    assert build_selectedapply_rig() == text
     server_compat.validate_layout(text)
     alexey_pipecheck.check(text)
 
 
-@pytest.mark.parametrize("case", [*CASES, *FUZZ], ids=lambda case: case["name"])
-def test_physical_index_copy(text, case):
-    state = indexed_state(case)
-    script = Script(state)
-    result = Machine.parse(text).run(max_ticks=10_000_000, controller=script)
-    assert result.error is None
-    assert result.status == "passed"
-    assert script.output == script.expected
-
-
-def test_physical_payloads_may_equal_copy_markers(text):
-    state = next(
-        indexed_state(case) for case in FUZZ if PIPE_VALUES in indexed_state(case)
-    )
-    values = state.index(PIPE_VALUES)
-    assert state[values + 1] == 0
-    state[values + 1] = 4
-    state[values + 2 : values + 2] = [-4900, -5000, -5100, -1000]
-    script = Script(state)
-    result = Machine.parse(text).run(max_ticks=10_000_000, controller=script)
+def test_physical_inactive_send_receive_and_second_slot(text):
+    states = [indexed_state(case) for case in [*CASES, *FUZZ]]
+    no_pipe = next(state for state in states if not _headers_and_pipes(state)[1])
+    one_pipe = next(state for state in states if len(_headers_and_pipes(state)[1]) >= 1)
+    two_pipe = next(state for state in states if len(_headers_and_pipes(state)[1]) == 2)
+    requests = [
+        actioncopy_reference([0, 0, 0, 0, 0, *no_pipe]),
+        actioncopy_reference([1, OP_SEND, 1, -7, 0, *one_pipe]),
+        actioncopy_reference([1, OP_RECV, 2, 99, 0, *one_pipe]),
+        actioncopy_reference([1, OP_SEND, 3, 42, 1, *two_pipe]),
+    ]
+    script = Script(requests)
+    result = Machine.parse(text).run(max_ticks=100_000_000, controller=script)
     assert result.error is None
     assert result.status == "passed"
     assert script.output == script.expected
