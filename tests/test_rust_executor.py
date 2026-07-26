@@ -95,6 +95,22 @@ def test_ir_version_is_fail_closed():
         rustexec._rust.run(spec, None, None, [], 1)
 
 
+def test_cached_parallel_batch_is_deterministic():
+    text = (REPO / "submissions/max-element/max_00.man").read_text()
+    problem = json.loads((PROBLEMS / "max-element.json").read_text())
+    cases = [judge.normalize_case(case) for case in problem["publicTestData"]]
+    compiled = rustexec.CompiledMachine(text)
+    assert compiled.sha256 == __import__("hashlib").sha256(text.encode()).hexdigest()
+    sequential = rustexec.run_rounds_parallel(
+        compiled, cases, max_ticks=problem["tickCap"], workers=1
+    )
+    parallel = rustexec.run_rounds_parallel(
+        compiled, cases, max_ticks=problem["tickCap"], workers=2
+    )
+    assert sequential == parallel
+    assert all(result.status == "passed" for result in parallel)
+
+
 @pytest.mark.parametrize(
     "path,slug",
     ARTIFACTS,

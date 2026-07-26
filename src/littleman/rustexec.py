@@ -8,6 +8,10 @@ Python-to-Rust boundary. It never parses ``.man`` source in Rust.
 from __future__ import annotations
 
 from collections import deque
+from dataclasses import dataclass
+import hashlib
+import multiprocessing
+import sys
 
 from . import fastsim
 from .sim import Machine as ReferenceMachine
@@ -117,6 +121,119 @@ class Machine(ReferenceMachine):
 
     def run(self, inputs=None, max_ticks: int = 5_000_000, controller=None):
         return run_machine(self, inputs, max_ticks, controller)
+
+
+@dataclass(frozen=True)
+class BatchResult:
+    index: int
+    status: str
+    error: str | None
+    ticks: int
+    judged_ticks: int
+    output: tuple[int, ...]
+    output_ticks: tuple[int, ...]
+    frame_ticks: tuple[int, ...]
+
+
+class CompiledMachine:
+    """One parse/IR build reused across independent fresh executions."""
+
+    def __init__(self, text: str):
+        if _rust is None:
+            raise RuntimeError("Rust executor is not built")
+        self.sha256 = hashlib.sha256(text.encode()).hexdigest()
+        machine = ReferenceMachine.parse(text)
+        self.program = fastsim.compile_machine(machine)
+        self.spec = fastsim.build_spec(self.program)
+        self.spec["ir_version"] = IR_VERSION
+
+    def run_rounds(self, index, rounds, max_ticks=5_000_000):
+        from .judge import RoundController
+
+        controller = RoundController(rounds)
+        if controller.done:
+            return BatchResult(index, "passed", None, 0, 0, (), (), ())
+        raw = _rust.run(
+            self.spec,
+            controller,
+            controller.queue,
+            [],
+            max_ticks,
+        )
+        status, error, verdict, ticks = raw[:4]
+        final_status = "error" if error else (verdict or status)
+        return BatchResult(
+            index=index,
+            status=final_status,
+            error=error,
+            ticks=ticks,
+            judged_ticks=controller.last_output_tick if final_status == "passed" else ticks,
+            output=tuple(raw[4]),
+            output_ticks=tuple(raw[5]),
+            frame_ticks=tuple(raw[7]),
+        )
+
+
+_FORK_COMPILED = None
+_FORK_MAX_TICKS = 0
+
+
+def _fork_run_case(item):
+    index, rounds = item
+    return _FORK_COMPILED.run_rounds(index, rounds, _FORK_MAX_TICKS)
+
+
+def run_rounds_parallel(compiled, cases, *, max_ticks=5_000_000, workers=1):
+    """Run independent round cases deterministically, reusing one cached IR."""
+    max_ticks = max_ticks or 5_000_000
+    indexed = list(enumerate(cases))
+    if workers <= 1 or len(indexed) <= 1:
+        return [compiled.run_rounds(i, rounds, max_ticks) for i, rounds in indexed]
+    if "fork" not in multiprocessing.get_all_start_methods():
+        raise RuntimeError("multicore Rust batch execution requires multiprocessing fork")
+    global _FORK_COMPILED, _FORK_MAX_TICKS
+    _FORK_COMPILED = compiled
+    _FORK_MAX_TICKS = max_ticks
+    try:
+        with multiprocessing.get_context("fork").Pool(
+            processes=min(workers, len(indexed))
+        ) as pool:
+            return pool.map(_fork_run_case, indexed)
+    finally:
+        _FORK_COMPILED = None
+        _FORK_MAX_TICKS = 0
+
+
+def pytest_configure(config):
+    """Pytest plugin hook: redirect later ``sim.Machine`` imports to Rust."""
+    from . import sim
+
+    if _rust is None:
+        raise RuntimeError("littleman Rust pytest plugin requires the native extension")
+    sim.Machine = Machine
+    for name, module in list(sys.modules.items()):
+        if name.startswith("littleman.") and getattr(module, "Machine", None) is ReferenceMachine:
+            module.Machine = Machine
+
+
+def pytest_collection_modifyitems(session, config, items):
+    """Fail if a collected test module captured the Python executor."""
+    stale = sorted(
+        {
+            item.module.__name__
+            for item in items
+            if getattr(item.module, "Machine", None) is ReferenceMachine
+        }
+    )
+    if stale:
+        raise RuntimeError(
+            "Rust executor plugin found stale Python Machine bindings: "
+            + ", ".join(stale)
+        )
+
+
+def pytest_report_header(config):
+    return f"littleman executor: {backend()} (IR v{IR_VERSION})"
 
 
 def build_official_spec(machine):
