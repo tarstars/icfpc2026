@@ -1,0 +1,5 @@
+phase 1: measuring per-pipe peak occupancy (python sim, slow, once)
+  case: near-total-sum, 20 values
+  sampled 20000000 157.1 s
+  sampled 40000000 299.5 s
+  sampled 60000000 425.7 s
