@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
+import subprocess
+import sys
 from copy import deepcopy
 
 import pytest
@@ -85,13 +88,48 @@ def assert_same(text, *, rounds=None, inputs=None, cap=30_000, label="case"):
         )
 
 
-def test_native_backend_is_loaded():
-    assert rustexec.HAVE_RUST
-    assert rustexec.backend() == "rust"
+def test_backend_is_reported_and_plugin_updates_judge():
+    expected = "rust" if rustexec.HAVE_RUST else "python-fallback"
+    assert rustexec.backend() == expected
     if sim.Machine is rustexec.Machine:
         assert judge.Machine is rustexec.Machine
 
 
+def test_missing_extension_falls_back_to_python():
+    environment = os.environ.copy()
+    environment["LITTLEMAN_RUSTEXEC"] = "0"
+    code = """
+import json
+from pathlib import Path
+from littleman import judge, rustexec
+
+assert not rustexec.HAVE_RUST
+assert rustexec.backend() == "python-fallback"
+text = Path("submissions/max-element/max_00.man").read_text()
+problem = json.loads(Path("data/small/problems/max-element.json").read_text())
+rounds = judge.normalize_case(problem["publicTestData"][0])
+cap = problem["tickCap"] or 5_000_000
+compiled = rustexec.CompiledMachine(text)
+result = compiled.run_rounds(0, rounds, cap)
+assert result.status == "passed"
+machine = rustexec.Machine.parse(text)
+controller = judge.RoundController(rounds)
+direct = machine.run(max_ticks=cap, controller=controller)
+assert direct.status == "passed"
+assert direct.ticks == result.ticks
+"""
+    process = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=REPO,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert process.returncode == 0, process.stderr
+
+
+@pytest.mark.skipif(not rustexec.HAVE_RUST, reason="native IR API is not built")
 def test_ir_version_is_fail_closed():
     machine = sim.Machine.parse(
         (REPO / "submissions/max-element/max_00.man").read_text()
@@ -102,6 +140,7 @@ def test_ir_version_is_fail_closed():
         rustexec._rust.run(spec, None, None, [], 1)
 
 
+@pytest.mark.skipif(not rustexec.HAVE_RUST, reason="native IR API is not built")
 def test_malformed_ir_indices_and_shapes_fail_closed():
     machine = sim.Machine.parse(
         (REPO / "submissions/max-element/max_00.man").read_text()
@@ -216,6 +255,8 @@ def bordered_room(rows):
 def official_pair(
     rows, ticks, *, directions=None, registers=None, halted=None, cap=65_536
 ):
+    if not rustexec.HAVE_RUST:
+        pytest.skip("official Split executor requires the native extension")
     machine = sim.Machine.parse(bordered_room(rows))
     reference = YMachine(rows, cap=cap)
     directions = directions or [sim.RIGHT] * len(machine.men)

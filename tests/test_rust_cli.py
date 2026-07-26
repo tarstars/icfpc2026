@@ -6,9 +6,15 @@ import json
 import pathlib
 import subprocess
 
+import pytest
+
 from littleman import judge, rustexec
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
+pytestmark = pytest.mark.skipif(
+    not rustexec.HAVE_RUST,
+    reason="cached-IR CLI tests require the native PyO3 extension",
+)
 
 
 def cli_command(ir_path=None):

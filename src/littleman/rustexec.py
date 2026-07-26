@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import multiprocessing
+import os
 import sys
 from collections import deque
 from dataclasses import dataclass
@@ -17,9 +18,17 @@ from . import fastsim
 from .sim import Machine as ReferenceMachine
 from .sim import RunResult
 
+_RUST_ENABLED = os.environ.get("LITTLEMAN_RUSTEXEC", "1").lower() not in {
+    "0",
+    "false",
+    "no",
+    "off",
+}
 try:
+    if not _RUST_ENABLED:
+        raise ImportError("disabled by LITTLEMAN_RUSTEXEC")
     from . import _fastsim_rust as _rust
-except ImportError:  # pragma: no cover - depends on local build state
+except (ImportError, OSError):  # pragma: no cover - depends on local build state
     _rust = None
 
 HAVE_RUST = _rust is not None
@@ -29,16 +38,19 @@ OP_SPLIT = 35
 
 
 def backend() -> str:
-    """Return the active native backend name, or ``"unavailable"``."""
-    return _rust.backend() if _rust is not None else "unavailable"
+    """Return the active executor backend name."""
+    return _rust.backend() if _rust is not None else "python-fallback"
 
 
 def run_program(program, result, input_queue, controller, max_ticks):
     """Execute one compiled :class:`fastsim.Program` through Rust."""
     if _rust is None:
-        raise RuntimeError(
-            "Rust executor is not built; run "
-            "`uv run maturin develop --release --manifest-path rust/Cargo.toml`"
+        return fastsim.run_program(
+            program,
+            result,
+            input_queue,
+            controller,
+            max_ticks,
         )
     spec = fastsim.build_spec(program)
     spec["ir_version"] = IR_VERSION
@@ -139,8 +151,7 @@ class CompiledMachine:
     """One parse/IR build reused across independent fresh executions."""
 
     def __init__(self, text: str):
-        if _rust is None:
-            raise RuntimeError("Rust executor is not built")
+        self.text = text
         self.sha256 = hashlib.sha256(text.encode()).hexdigest()
         machine = ReferenceMachine.parse(text)
         self.program = fastsim.compile_machine(machine)
@@ -150,9 +161,29 @@ class CompiledMachine:
     def run_rounds(self, index, rounds, max_ticks=5_000_000):
         from .judge import RoundController
 
+        max_ticks = max_ticks or 5_000_000
         controller = RoundController(rounds)
         if controller.done:
             return BatchResult(index, "passed", None, 0, 0, (), (), ())
+        if _rust is None:
+            machine = ReferenceMachine.parse(self.text)
+            result = fastsim.run_machine(
+                machine,
+                max_ticks=max_ticks,
+                controller=controller,
+            )
+            return BatchResult(
+                index=index,
+                status=result.status,
+                error=result.error,
+                ticks=result.ticks,
+                judged_ticks=controller.last_output_tick
+                if result.status == "passed"
+                else result.ticks,
+                output=tuple(result.output),
+                output_ticks=tuple(result.output_ticks),
+                frame_ticks=tuple(result.frame_ticks),
+            )
         raw = _rust.run(
             self.spec,
             controller,
@@ -220,6 +251,11 @@ class CompiledMachine:
 
     def encoded_ir(self) -> bytes:
         """Return the versioned zstd-compressed native IR cache."""
+        if _rust is None:
+            raise RuntimeError(
+                "encoded Rust IR requires the native extension; run "
+                "`uv run maturin develop --release --manifest-path rust/Cargo.toml`"
+            )
         return bytes(_rust.encode_ir(self.spec))
 
 
@@ -266,8 +302,6 @@ def pytest_configure(config):
 
     protected = {alexey_walljudge.__name__, server_compat.__name__}
 
-    if _rust is None:
-        raise RuntimeError("littleman Rust pytest plugin requires the native extension")
     sim.Machine = Machine
     judge.Machine = Machine
     for name, module in list(sys.modules.items()):
