@@ -13,3 +13,9 @@ ring. It passed all 20 live cases as submission
 column workers above the centered box worker. It occupies 286×285, passes all
 focused local gates, and improves measured local score by 59.15%. It has not
 been submitted. See `reports/2026-07-25-sudoku-two-row.md`.
+
+`sudoku_05.man` replaces the three worker rings with one canonical 27-mask
+ring, then folds and squeezes the complete machine to 75×131. It passed the
+public cases and 17 directed order/duplicate workloads locally, then passed
+all 20 live cases as submission `fb745779-f719-440e-828a-281583afe964` at
+score 9,290,407,667.5.

@@ -83,19 +83,13 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   104,303,579,599.6. The exact variants are under
   `submissions/gradebook/`; the optimization is documented in
   `reports/2026-07-24-grade-book-optimization.md`.
-- Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
-  The best compact nested-ring geometry occupies 183×180, passes all seven
-  public cases, including 16×16×16 in 4,198,400 ticks, and improves the local
-  score 60.25× over the parallel baseline. Details are in
-  `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
-  cases at server score 33,286,994,352.
-- The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
-  average 529,549.7 ticks, and score 105,335,908,125.2. The unsubmitted
-  geometry-only `sudoku_01` folds its unchanged workers into two rows,
-  occupies 286×285, passes the focused compatibility and adversarial gates,
-  and improves measured local score 59.15%. Details and exact sources are in
-  `reports/2026-07-25-sudoku-two-row.md` and
-  `submissions/sudoku-validity/`.
+- Matrix Multiply `matmul_08` preserves the folded-controller logic and
+  compacts its rings to 99×98. It passed all 20 live cases at server score
+  5,931,034,965.9, improving the preceding counted score by 29.70%.
+- Sudoku Auditor `sudoku_05` uses one canonical 27-mask state ring in a
+  75×131 machine. It passed all 20 live cases at server score 9,290,407,667.5,
+  improving the preceding counted score by 17.84%. Its algorithm replacement
+  also passed 17 directed order and duplicate workloads locally.
 - Memory `memory_01` preserves the submitted pipeline logic but relocates one
   room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
   improved the server score from 181,952,075.875 to 91,372,247.625. Details

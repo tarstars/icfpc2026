@@ -13,11 +13,11 @@ candidates that had already been generated and locally validated from the
 uploaded repository snapshot. Their exact artifacts, generators and benchmark
 JSON are committed under `experiments/gpt-submission-candidates/`.
 
-These are **unsubmitted candidates**, not live results. GPT has GitHub access
-but no contest API connector or usable repository `.env` execution path, so the
-mandatory live-score freshness gate was not performed. No shared submission
-catalogue, terminal response JSON or `docs/current-state.md` entry was changed.
-Codex must query the live problem state before promotion or submission.
+GPT preserved these as unsubmitted candidates because it had no contest API
+connector. Codex subsequently integrated them, repeated the release gates,
+performed the mandatory GitHub and live-score freshness checks, and submitted
+the exact preserved bytes. Both passed all 20 live cases; the terminal results
+are recorded below.
 
 ## Exact preservation check
 
@@ -192,4 +192,18 @@ should:
 6. submit only with explicit user authorization for the exact SHA-256;
 7. preserve the terminal response JSON beside the promoted artifact.
 
-No contest-side mutation occurred in this task.
+## Codex integration and live results
+
+The release suite in `tests/test_gpt_submission_candidates.py` repeated
+byte-exact generation, layout and capacity checks, all public cases, six
+directed Matrix cases, and 17 directed Sudoku workloads.
+
+- `matmul_08`: submission `b281b2af-dae3-40da-bfc4-317e3ff3b4b2`,
+  20/20, 99×98, average 605,145.9 ticks, score 5,931,034,965.9. This is
+  29.70% below the preceding live score 8,436,652,022.5.
+- `sudoku_05`: submission `fb745779-f719-440e-828a-281583afe964`,
+  20/20, 75×131, average 541,367.5 ticks, score 9,290,407,667.5. This is
+  17.84% below the preceding live score 11,307,342,643.2.
+
+Exact terminal responses are preserved beside the promoted artifacts under
+`submissions/matmul/` and `submissions/sudoku-validity/`.
