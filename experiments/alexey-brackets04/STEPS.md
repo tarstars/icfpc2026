@@ -251,3 +251,71 @@ Peak ring occupancy measured at 10 of 65 -- the long pipe is transport, not stor
     |^ <           |
     +--------------+
 ```
+
+## b12_io_flush
+
+Both I and O pressed wall-to-wall. O: west wall against room 0 east wall, straight 2-cell pipe into room 2 roof col 17 (bindings re-verified). I: west wall against room 3 east wall; the pipe must exit the floor (start arrow points away from the room) and enter via the SE corner -- 3 cells, +1 tick per char. Score 278,559 vs 277,830: flush-I costs 0.26%. Recorded, not submitted.
+
+```
+    v---------------------<
++--------------+          |
+|@ssv      <   |          |
+|   >rXrsrs^   |          |
+|     >MrW+++sv|+-+       |
+|   ^    s+1Mr<||O|       |
++--------------++-+       |
+     >--^ v      ^        |
+     ^ v--<      ^        |
+ +-----------------------+|
+ |         >rM1+ sH      ||
+>|>@rXrsrsv   >+MrXrM1+sH||
+||   >    M4W-XrX  sH    ||
+||^ s+1MrsWXW/W3M-<      ||
+||^       <     >rM1+sH  ||
+|+-----------------------+|
+^-< +--------------+ >----^
+  | |H  s4    s <  | |
+  | |v  s  0  s<   | |
+  | |>qd0       ^  | |
+  ^<|  >rbM5W} x   |>^
+    |          ]   |
+    |^  s  0  sxM0v|+-+
+    |^  s    Ws   <||I|
+    |@rv           |+-+
+    |^ <           | v
+    +--------------+<<
+```
+
+## b12a_oflush
+
+O-only flush: score identical to b11 -- the press is free. Kept as the preferred base for future steps.
+
+```
+    v---------------------<
++--------------+          |
+|@ssv      <   |          |
+|   >rXrsrs^   |          |
+|     >MrW+++sv|+-+       |
+|   ^    s+1Mr<||O|       |
++--------------++-+       |
+     >--^ v      ^        |
+     ^ v--<      ^        |
+ +-----------------------+|
+ |         >rM1+ sH      ||
+>|>@rXrsrsv   >+MrXrM1+sH||
+||   >    M4W-XrX  sH    ||
+||^ s+1MrsWXW/W3M-<      ||
+||^       <     >rM1+sH  ||
+|+-----------------------+|
+^-< +--------------+ >----^
+  | |H  s4    s <  | |
+  | |v  s  0  s<   | |
+  | |>qd0       ^  | |
+  ^<|  >rbM5W} x   |>^
+    |          ]   |
+    |^  s  0  sxM0v|  +-+
+    |^  s    Ws   <|<<|I|
+    |@rv           |  +-+
+    |^ <           |
+    +--------------+
+```

@@ -2168,3 +2168,28 @@ anyway: height 27 -> 25 with width still 27 leaves fp at 729 — in brackets
 the width binds, and the width lives in room 2's interior.
 
 I & O were re-confirmed wall-to-wall already (2-cell pipes, both).
+
+### brackets b12: I and O pressed wall-to-wall, as asked — built, measured, recorded
+
+Alexey did not accept the "already minimal" answer without seeing the pressed
+layout, and building it taught the precise price of flushing an I/O room:
+
+* **O flush is free.** O's west wall now touches room 0's east wall, and a
+  straight 2-cell pipe drops from room 2's roof (col 17) into O's floor. All
+  eight of room 2's send bindings re-verified. Score identical: 277,830.
+  (`b12a_oflush.man`)
+* **I flush costs one tick per character.** The pipe's start arrow must point
+  away from the room it leaves, so with I's west wall against room 3's east
+  wall the pipe cannot exit west — it exits I's floor, bends, and enters
+  through room 3's south-east corner: 3 cells instead of 2, +1 tick latency
+  per input value. 278,559 vs 277,830, 0.26% worse. (`b12_io_flush.man`)
+  Corner entry itself is legal: the parser and judge both accept a terminal
+  whose forward cell is a room's corner `+`.
+
+Both recorded per the standing rule; neither submitted (one equal, one
+worse). `b12a` (O flush) is the preferred base for whatever comes next.
+
+Rule extracted: **flushing a room is free exactly when the pipe can leave
+straight; if the flush forces the pipe around a corner, each extra cell is
+a tick on every value that crosses it.** For an input room on a hot path,
+that is a tick per character.
