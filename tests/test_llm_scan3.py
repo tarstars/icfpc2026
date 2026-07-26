@@ -1,0 +1,84 @@
+"""SCAN v3 acceptance: model == machine_stream, then the rooms == model.
+
+The model gate runs the whole chain (v2 reference -> s2_pack ->
+p1_stream) against ``llm_lockstep.machine_stream`` byte for byte; the
+tail after the first-round tokens must be relayed verbatim.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from littleman import llm_fuzz
+from littleman.llm import program_grid
+from littleman.llm_lockstep import machine_stream
+from littleman.llm_scan3 import s2_pack, scan3_reference
+
+DATA = Path(__file__).resolve().parents[1] / "data/small/problems"
+LLM_CASES = json.loads(
+    (DATA / "little-little-man.json").read_text()
+)["publicTestData"]
+LLLM_CASES = json.loads(
+    (DATA / "little-little-little-man.json").read_text()
+)["publicTestData"]
+FUZZ = llm_fuzz.llm_corpus(20260726, 20) + llm_fuzz.corpus(
+    20260726, 15, tick_cap=100
+)
+ADV = [
+    ["+---+     +---+", "|>@v|>--->|>@v|", "|  5|     |  1|",
+     "|  s|   v<|  r|", "|   |   | |   |", "|^r<|   | |^s<|",
+     "+---+   | +---+", "  ^-----<      "],
+    ["+----+", "|>@7v|", "|^rs<|", "+----+", "  v^  ", "  v^  ",
+     "+----+", "|>@rv|", "|^ s<|", "+----+"],
+]
+TAIL = [3, 1, 64, 5]
+
+
+def rows_of(case):
+    return program_grid([int(v) for v in case["rounds"][0]["in"]])
+
+
+def tokens_of(rows):
+    width = max(len(r) for r in rows)
+    grid = [r.ljust(width) for r in rows]
+    return [width, len(rows)] + [ord(ch) for row in grid for ch in row]
+
+
+def model_check(rows):
+    got = scan3_reference(tokens_of(rows) + TAIL)
+    assert got == machine_stream(rows) + TAIL
+
+
+@pytest.mark.parametrize("case", LLM_CASES, ids=lambda c: c["name"])
+def test_model_llm_public(case):
+    model_check(rows_of(case))
+
+
+@pytest.mark.parametrize("case", LLLM_CASES, ids=lambda c: c["name"])
+def test_model_lllm_public(case):
+    model_check(rows_of(case))
+
+
+@pytest.mark.parametrize(
+    "case", FUZZ, ids=[f"fuzz-{i:02d}" for i in range(len(FUZZ))]
+)
+def test_model_fuzz(case):
+    model_check(rows_of(case))
+
+
+@pytest.mark.parametrize("rows", ADV, ids=["snake", "stacked"])
+def test_model_adversarial_bidirectional(rows):
+    model_check(rows)
+
+
+def test_s2_pack_is_pure_bit_surgery():
+    """Packing four stripped v2 cells per word, men and tail untouched."""
+    cells = [ord("+") + 256, ord("-"), 32 + 512, 64 + 256 + 512]
+    stream = cells * 64 + [17, 0, 0, 9, 9]
+    packed = s2_pack(stream)
+    word = (43 + (45 << 13) + ((32 + 512) << 26) + ((64 + 512) << 39))
+    assert packed[:64] == [word] * 64
+    assert packed[64:] == [17, 0, 0, 9, 9]
