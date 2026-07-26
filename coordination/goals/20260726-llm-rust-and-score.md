@@ -20,14 +20,17 @@ displace an unfinished LLM baseline.
 
 ## Current evidence
 
-- LLM live state: 2/28; 13/14 public and 13/14 private failures, all
-  `wrong-frames`.
+- LLM live state: 14/28 after submission
+  `f077726c-a3b9-4ad3-b106-83091add453d`; the accepted partial passes 6/14
+  public and 8/14 private cases. Remaining failures include step-cap and
+  wrong-frame cases.
 - LLLM: 21/21. Pathfinder: 18/18.
 - The existing Python command `uv run pytest -q tests/test_llm*.py` covers
   46 modules and passed 1,622 tests in 621.31 seconds.
-- Codex's physical LLM leaf services, state index, selector, pipe apply, wall
-  scan, and frame pipeline are preserved on `agent/codex-llm`; the missing
-  boundary is the whole-machine action coordinator.
+- Codex's complete raw-input physical LLM candidate, leaf services, state
+  index, selector, pipe apply, wall scan, and frame pipeline are preserved on
+  `agent/codex-llm`; the immediate task is to remove later-round frame
+  repainting costs and resolve the remaining wrong-frame semantics.
 - Claude has an independent incremental LLM stream on `agent/claude`.
 
 ## Parallel ownership
