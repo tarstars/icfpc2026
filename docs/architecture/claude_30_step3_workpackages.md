@@ -40,7 +40,16 @@ Verify command for every package:
 the package's own rig test; full-machine check when named:
 `uv run python scripts/build_llm3.py --case "first steps"`.
 
-### WP1 — round_in parking  [small; UNBLOCKS EVERYTHING]
+### CORRECTION 11:55Z — WP1 and WP2 are ONE package
+Inspecting the room proved WP1 cannot stand alone. `_round_in` ends with
+`rWs` at row 26 cols 82-84 and then keeps walking EAST into the wall at
+(26,96): its "head home" has no destination, because the destination is
+loop_top's entry — i.e. WP2. A builder given WP1 alone must invent a
+parking spot, which is a design decision and therefore a spec bug by our
+own rule. They are merged below as WP1+2. (Lesson: a package whose
+"done" depends on an unbuilt neighbour is not a package.)
+
+### WP1+2 — round_in home + loop_top scanner  [merged; UNBLOCKS EVERYTHING]
 Transcribe `Step3Model.round_in` (line ~548). The row-26 `rWs` lap must
 park and rejoin instead of running off its east end at (26,96). Done
 when: the harness advances past tick ~8.03M on `first steps` and stalls
