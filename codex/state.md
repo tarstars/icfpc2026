@@ -129,6 +129,9 @@ release state on `main`.
 - Received independent Claude approval, reconciled both agent lineages, and
   promoted the clean release to `origin/main` without force or modifying the
   user's dirty local `main` worktree.
+- Applied the Grade Book component method to Matrix Multiply. The folded,
+  input-safe `matmul_07` occupies 115×98 and passed 20/20 live at score
+  8,436,652,022.5, a 57.91% improvement over `matmul_06`.
 
 ## Blockers
 

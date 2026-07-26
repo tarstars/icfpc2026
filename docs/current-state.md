@@ -80,12 +80,12 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   104,303,579,599.6. The exact variants are under
   `submissions/gradebook/`; the optimization is documented in
   `reports/2026-07-24-grade-book-optimization.md`.
-- Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
-  The best compact nested-ring geometry occupies 183×180, passes all seven
-  public cases, including 16×16×16 in 4,198,400 ticks, and improves the local
-  score 60.25× over the parallel baseline. Details are in
-  `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
-  cases at server score 33,286,994,352.
+- Matrix Multiply `matmul_07` folds the single-wall controller as an isolated
+  component and gives the A ring a strict input-safe 256-cell route. It is
+  115×98 and passed all 20 live cases at score 8,436,652,022.5, improving
+  `matmul_06` by 57.91%. Exact variants and component evidence are under
+  `submissions/matmul/` and in
+  `reports/2026-07-26-matmul-components.md`.
 - The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
   average 529,549.7 ticks, and score 105,335,908,125.2. The unsubmitted
   geometry-only `sudoku_01` folds its unchanged workers into two rows,

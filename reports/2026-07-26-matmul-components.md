@@ -51,3 +51,10 @@ artifact SHA-256 is
 
 The mandatory freshness snapshot at 2026-07-26T15:02:05Z found the current
 team result at 20/20, score `20,042,330,424`, rank 48 before `matmul_07`.
+
+Submission `6ab675e8-2cf4-4639-9c07-c475e83be70a` completed at
+2026-07-26T15:06:46Z: 20/20, 115×98, average ticks `637,932.1`, score
+`8,436,652,022.5`. This is a 57.91% live improvement. The full terminal
+response is preserved in `submissions/matmul/matmul_07-submit.json`. The
+unfrozen standings refresh at 2026-07-26T15:08:06Z placed the team at rank
+47 of 71 rows.
