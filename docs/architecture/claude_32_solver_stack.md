@@ -218,3 +218,83 @@ The blanket ban made real placements unroutable. Note the GATE was
 already correct — `validate_io_pipe_counts` was narrowed to input rooms
 after tcp_06 disproved the output-room version — so no submission was
 ever blocked by this; only the router was over-constrained.
+
+## 8. The next approach: MUTATION SEARCH over .man text (user's proposal)
+
+M2 proved L0 modelling is exhausted (section 7). The reason is specific
+and it points straight at the remedy: **the CP-SAT model's floor equals
+the hand layout because the MODEL is missing tricks the humans use** —
+rooms touching with no gap, a pipe leaving through a roof, a port jog
+that changes a Voronoi split, an interior fold. Every one of those is
+expressible in the .man TEXT but not in my rectangle-and-connection
+abstraction.
+
+Mutation search needs no model at all. It needs only an oracle, and ours
+is unusually good.
+
+### Why it is viable here (measured, this session)
+
+    full judge of tcp_08 (6 cases)      0.11 s
+    parse-only structural pre-filter     1.3 ms  -> ~790 mutants/sec
+    tcp_08     31x31, 61% blank cells
+    plotter_05 175x185, 89% blank
+    sudoku_03  198x194, 90% blank
+
+A two-stage funnel — parse + `server_compat` + pipe-count/length checks
+at ~790/sec, then the judge at ~9/sec on survivors — makes tens of
+thousands of candidates per hour realistic on one core, and the suite
+already runs `-n auto` across 20. The artifacts are 61-90% blank, so the
+neighbourhood is enormous and mostly unexplored.
+
+This is superoptimization by stochastic search (cf. STOKE for x86):
+propose, filter cheaply, verify exactly, keep improvements.
+
+### The invariant that makes it safe: block-graph equivalence
+
+Random edits mostly break machines, and "passes the public cases" is a
+weak filter — we proved that twice today (a squeezed snake passed 5/5
+while failing at snake-length 68; the public suite never grows the snake
+past 3 cells). So the fitness function must not be the public judge
+alone.
+
+We already own the right invariant: `decompile.py` turns a machine into
+a block graph, and **a mutation that leaves the block graph unchanged has
+provably not altered the program** — only its geometry. That is an exact
+equivalence check costing ~1 s, far stronger than any test suite, and it
+is exactly the property a geometry mutation should have.
+
+So the accept rule is:
+
+1. parse + structural gates (cheap, ~790/sec);
+2. **block graph identical to the original** (exact semantics preservation);
+3. pipe-length multiset not shrunk on storage pipes (the snake trap);
+4. judge equal outputs, and score strictly better;
+5. binding roles unchanged (`ir_export.machine_ir`).
+
+Caveats to respect: `decompile` cannot yet lower `U` (strict xfail), and
+timing-sensitive machines (`q`/`R`/`U`) need exact pipe lengths, so for
+those the invariant degrades to "lengths identical" plus the judge.
+
+### Operators, cheapest first
+
+- delete a fully blank row/column (this is `alexey_squeeze`, i.e. the
+  move already proven to pay — mutation search generalises it);
+- translate one room by one cell and re-route only its pipes;
+- slide a port one cell along its wall;
+- re-route one pipe between fixed endpoints, preserving total length;
+- swap two rooms' positions;
+- interior: move one instruction cell and repair the walk — the highest
+  value and the only one that reaches L1, and the one that most needs
+  the block-graph check.
+
+### Why this is complementary, not a replacement
+
+CP-SAT explores the space I can DESCRIBE; mutation explores the space the
+oracle can VALIDATE. Today's result is that the describable space is
+already occupied by our hand layouts. The undescribable space is where
+alexey's playbook lives — and every move in that playbook is a mutation
+operator waiting to be automated.
+
+Honest cost note: this is post-contest infrastructure. Nothing here
+lands in the hours remaining, but of the directions on the table it is
+the one that turns the human tricks into a search the machine can run.
