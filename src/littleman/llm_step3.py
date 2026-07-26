@@ -948,7 +948,312 @@ def _loop_top(room) -> None:
     room.put(LT_TICK + 2, 58, "<")
     room.put(LT_TICK + 2, LT_CLIMB, "^")
     room.put(78, LT_CLIMB, "<")        # EMIT: join the col-5 climb
-    room.put(LT_TICK + 4, 26, ">")     # TICK: the passes are NOT BUILT
+    room.put(LT_TICK + 4, 26, ">")     # TICK: on into pass 1
+
+
+# ------------------------------------------------------------ the tick
+# Pass 1 (fetch + dispatch) and pass 2 (move + collide).  Geometry: the
+# built room leaves exactly one column clear wall to wall (96) and the
+# chain/intake wires cut every other one, so the passes live in four
+# yards stitched by one-way wires -- the WEST yard (rows 56..58, cols
+# 48..65) for pass 1's head test, the EAST yard (rows 36..64, cols
+# 67..92) for its class staircase and arms, the top band (rows 1..8,
+# where alone REQ and RESP both bind) for the FETCH round trip, and the
+# SOUTH yard (rows 82..98) for pass 2.  Every wire crosses a foreign
+# walkway on a BLANK cell, which diverts nobody.
+TK_HEAD = 58              # pass 1's head test, walked WEST from col 65
+TK_STAIR = 37             # class staircase: rung r fires on row 37 + r
+TK_MERGE = 92             # arms fall down this column to the return row
+TK_RET = 64               # ... and walk west along it to the col-65 climb
+TK_HI = 90                # tape zone: (turn column + 1) .. TK_HI
+P2_HEAD = 82              # pass 2's head test, walked EAST from col 73
+P2_UP = 73                # pass 2's return climb
+P2_RET = 98               # pass 2's return row
+P2_MERGE = 94
+P2_HI = 92
+P2_BUS = 92        # the three collision arms' shared descent
+_R3 = ["r", "s"]          # one ring1 relay
+
+
+def _tick_wires(room) -> None:
+    """The one-way wires between the yards.  Every crossing is blank."""
+    room.put(112, 95, "^")             # loop top -> head: climb col 95 ...
+    room.put(71, 95, "<")              # ... west on row 71 ...
+    room.put(71, 65, "^")              # ... and up col 65, past the chain
+    room.put(TK_RET, TK_MERGE, "<")    # arms: west on row 64 ...
+    room.put(TK_RET, 65, "^")          # ... and up the same climb
+    room.put(67, 48, ">")              # live arm -> FETCH: east on row 67
+    room.put(67, 62, "v")              # ... down col 62 ...
+    room.put(72, 62, ">")              # ... east on row 72 ...
+    room.put(72, 96, "^")              # ... and up the one clear column
+    room.put(2, 96, "<")
+    room.put(2, 44, "v")               # FETCH band -> the staircase ...
+    room.put(3, 44, ">")
+    room.put(3, 90, "v")               # ... down col 90 ...
+    room.put(28, 90, "<")              # ... west on row 28 ...
+    room.put(28, 76, "v")              # ... down col 76 ...
+    room.put(36, 76, ">")              # ... east on row 36 ...
+    room.put(36, TK_MERGE, "v")        # ... and into the staircase head
+    room.put(69, 51, ">")              # pass 1 -> pass 2: east on row 69 ...
+    room.put(69, 88, "v")              # ... down col 88 ...
+    room.put(81, 88, "<")              # ... west on row 81 ...
+    room.put(81, P2_UP, "v")           # ... and down onto pass 2's head
+    room.put(80, 78, "<")              # pass 2 -> loop top: west, climb ...
+    room.put(80, 76, "^")
+    room.put(79, 76, "<")              # ... west on row 79 ...
+    room.put(79, 23, "v")              # ... and fall into (80,23)
+
+
+def _tick_head(room) -> None:
+    """pass 1's head: MARK exits, frozen relays, live records its intent.
+
+    Walked WEST.  ``M `1` +`` leaves A = c+1 (MARK is the only zero) with
+    c parked in B, and ``M `12` &`` then splits live (0) from frozen with
+    c still in B, so neither test costs a copy of the CTRL word.
+    """
+    room.put(TK_HEAD, 65, "<")                     # merge: entry and arms
+    _put_w(room, TK_HEAD, 64, ["r", "M", "1", "+", "X"])
+    _put_w(room, TK_HEAD, 59, ["W", "s"] + _R3 * 3)     # MARK: c back, 3
+    room.put(TK_HEAD, 51, "v")                     # ... and off to pass 2
+    room.put(57, 60, "<")                          # live / frozen split
+    _put_w(room, 57, 59, ["#12", "&", "X"])
+    _put_w(room, 57, 53, ["8", "+", "s", "r", "s"])     # live: intent, ADDR
+    room.put(57, 48, "v")                          # ... and off to FETCH
+    room.put(56, 54, ">")                          # frozen: c back, relay 3
+    room.put(56, 55, "Wsrsrsrs")
+    room.put(56, 65, "v")                          # ... back onto the merge
+
+
+def _tick_fetch(room) -> None:
+    """The REQ/RESP band: rows <= 8 west of col 55 are the only cells that
+    reach both FETCH ports.  ``M `16` W /`` splits the answer into
+    A = class, B = value; ``b`` hands the class to the staircase."""
+    _put_w(room, 2, 54, ["s", "r", "M", "#16", "W", "/", "b"])
+
+
+# rung r fires on class r+1 (rung 0 also on class 0); classes >= 9 fall off
+# the end onto row 45, which carries a second copy of the nop tape until the
+# pipe arms are built.  Turn columns rise with the rung and tape rows fall
+# with it -- LLLM's planarity rule: a tape only runs EAST of its own turn
+# column, and a descent only crosses rows above its own tape.
+ARM3 = {
+    0: (68, 63, _R3 * 2),                                     # nop + move
+    1: (69, 60, _R3 * 14 + ["r", "W", "M", "8", "+", "s"]
+        + _R3 * 3),                                           # heading
+    2: (70, 59, ["r", "W", "s"] + _R3),                       # digit: AI = v
+    3: (71, 58, ["r", "M", "s", "r", "W", "s"]),              # M:  BI = AI
+    4: (72, 57, ["r", "M", "r", "+", "s", "-", "s"]),         # add
+    5: (73, 56, ["r", "M", "r", "W", "-", "s", "W", "s"]),    # sub
+    6: (74, 50, None),                                        # X: turn
+    7: (75, 46, _R3 * 14 + ["r", "M", "4", "W", "-", "s"]
+        + _R3 * 3),                                           # H: freeze
+}
+
+
+def _tick_stair(room) -> None:
+    """The class staircase (m a per rung, walked WEST) and its eight arms."""
+    from .lllm_step import Tape
+
+    room.put(TK_STAIR, TK_MERGE, "<")
+    for r in range(8):                             # `m` then `a`: BP > 0
+        room.put(TK_STAIR + r, 90 - 2 * r, "am")   # turns back to the next
+        if r < 7:
+            room.put(TK_STAIR + r + 1, 90 - 2 * r, "<")
+    room.put(45, 76, ">rsrs")                      # class >= 9: nop for now
+    room.put(45, TK_MERGE, "v")
+    for rung, (col, row, tokens) in ARM3.items():
+        for r in range(TK_STAIR + rung, row):
+            room.put(r, col, "v")
+        room.put(row, col, ">")
+        if tokens:
+            Tape(room, row, col + 1, col + 1, TK_HI).emit(
+                *tokens).down_at(TK_MERGE, TK_RET)
+    _tick_arm_branch(room)
+
+
+def _tick_arm_branch(room) -> None:
+    """class 7: turn by sign(AI).  Zero relays one slot and walks east into
+    the merge; the sign arms park the turn in B and share one tail."""
+    from .lllm_step import Tape
+
+    room.put(50, 75, "rMsX")           # r(AI) M s: A = B = AI, then the fan
+    room.put(50, 79, "rs")             # AI == 0: relay 1, then the merge
+    room.put(49, 78, ">3Mv")           # AI < 0: turn 3, drop onto the tail
+    room.put(51, 78, ">1M")            # AI > 0: turn 1, straight into it
+    room.put(51, 81, ">")
+    Tape(room, 51, 82, 76, TK_HI).emit(
+        *(_R3 * 13), "r", "+", "M", "4", "W", "%", "M", "8", "+", "s",
+        *(_R3 * 3)).down_at(TK_MERGE, TK_RET)
+
+
+def _tick_pass2(room) -> None:
+    """pass 2 in the SOUTH yard: intents become moves against a live map.
+
+    Head (row 82): ``M `1` +`` isolates MARK, then three ``& X`` peels --
+    16 (walled), 8 (no intent), 4 (collision-halted) -- each leaving the
+    CTRL word in B.  The mover pushes h, sets BP = h+1, peeks its ADDR
+    and the four-way heading staircase leaves B = TARGET, which survives
+    every relay; the three unrolled k blocks then compare +3/+7/+11 slots
+    on from the peek.  A hit pushes the other man's ADDR back, sets his
+    CTRL's frozen bit and freezes its own -- the only per-k difference is
+    the lap home, so all three arms set BP = 15-4k and share one tail.
+    """
+    from .lllm_step import Tape
+
+    room.put(P2_HEAD, P2_UP, ">")                  # merge: entry and arms
+    room.put(P2_HEAD, 74, "rM1+X")                 # A = v+1: MARK is zero
+    room.put(P2_HEAD, 79, "Wsrsrsrs")              # MARK: v back, relay 3
+    room.put(P2_HEAD, 87, "^")                     # ... and to the loop top
+    room.put(83, 78, ">`16`&X")                    # walled (>= 16): south
+    room.put(83, 85, "8&X")                        # no intent (< 8): east
+    room.put(83, 88, "v")
+    room.put(84, 88, "<")                          # both: v back, relay 3,
+    room.put(84, 84, "<")                          # then home to the head
+    _put_w(room, 84, 83, ["W", "s"] + _R3 * 3)
+    room.put(84, P2_UP, "^")
+    room.put(85, 87, "<")                          # A = -(v & 4): halted
+    _put_w(room, 85, 86, ["4", "&", "N", "X"])
+    room.put(85, 74, "v")                          # mover: on to the peek
+    room.put(86, 83, ">")                          # halted: push v-8, 3
+    Tape(room, 86, 84, 76, P2_HI).emit(
+        "W", "M", "8", "W", "-", "s", *(_R3 * 3)).down_at(P2_MERGE, P2_RET)
+    room.put(88, 74, ">")                          # mover: h, BP, ADDR peek
+    room.put(88, 75, "WM8W-sM1W+brs")
+    room.put(88, 88, "v")
+    for j, tape in enumerate((                     # the heading staircase
+            ["M", "#16", "W", "-", "M"], ["M", "1", "+", "M"],
+            ["M", "#16", "+", "M"], ["M", "1", "W", "-", "M"])):
+        room.put(89 + j, 88 - 2 * j, "<")          # rung j fires on h == j
+        room.put(89 + j, 86 - 2 * j, "am")
+        _put_w(room, 89 + j, 85 - 2 * j, tape)     # B = TARGET, then west
+        room.put(89 + j, 74, "v")                  # ... down the shared col
+    _p2_block(room, 1, 94, 74, True, 84, 99)       # the three k blocks
+    _p2_block(room, 2, 96, 88, False, 78, 101)
+    _p2_block(room, 3, 104, 78, True, 88, 107)
+    room.put(95, 88, "v")                          # block 1 -> block 2
+    room.put(96, 88, "<")
+    room.put(97, 74, "v")                          # block 2 -> block 3
+    room.put(99, 74, ">")
+    room.put(99, 78, "v")
+    room.put(104, 78, ">")
+    room.put(105, 93, "v")                         # no collision: the tail
+    room.put(110, 93, "<")
+    _put_w(room, 110, 92, _R3 * 3 + ["r", "W", "s"] + _R3 * 2)
+    room.put(110, 79, "v")
+    room.put(111, 79, ">")
+    room.put(111, 96, "^")                         # ... and home the long way
+    room.put(98, 96, "<")                          # the return row and climb
+    room.put(98, P2_MERGE, "<")
+    room.put(98, P2_UP, "^")
+    _p2_collide(room)
+
+
+def _p2_block(room, k: int, row: int, col: int, east: bool, cdesc: int,
+              crow: int) -> None:
+    """One k block: relay 3, compare the next ADDR with TARGET, and fan.
+
+    ``-`` leaves A = other - TARGET and B = TARGET, so both misses restore
+    the ADDR with one ``+``; the hit walks on to ``cdesc``, sets BP =
+    15-4k on row ``crow`` and drops onto the shared collision bus.
+    """
+    d = 1 if east else -1
+    put = (lambda c, t: room.put(row, c, t)) if east else (
+        lambda c, t: _put_w(room, row, c, list(t)))
+    room.put(row, col, ">" if east else "<")
+    for i, ch in enumerate(_R3 * 3 + ["r", "-", "X"]):
+        room.put(row, col + d * (i + 1), ch)
+    x = col + d * 9                                # the X cell
+    room.put(row, x + d, "v")                      # hit: down to its row
+    for r in range(row + 1, crow):
+        room.put(r, x + d, "v")
+    room.put(crow, x + d, ">")
+    room.put(crow, x + d + 1, "+s")
+    bp = "`%d`b" % (15 - 4 * k) if k == 1 else "%db" % (15 - 4 * k)
+    room.put(crow, x + d + 3, bp)
+    room.put(crow, P2_BUS, "v")
+    for sign, arm in ((1, row - 1), (-1, row + 1)):   # cw = A > 0, ccw < 0
+        room.put(arm, x, ">" if east else "<")
+        room.put(arm, x + d * (1 + (sign < 0)), "+")
+        room.put(arm, x + d * (2 + (sign < 0)), "s")
+    room.put(row - 1, x + d * 4, "v")              # the two misses merge
+    room.put(row + 1, x + d * 4, ">" if east else "<")
+
+
+def _p2_collide(room) -> None:
+    """The shared collision tail: relay to the other man's CTRL, set his
+    frozen bit, then BP slots home to freeze the mover in place."""
+    room.put(108, P2_BUS, "<")
+    room.put(108, 64, "sr" * 14)                   # walked west: relay 14
+    room.put(108, 63, "v")
+    room.put(109, 63, ">rM4|s")                    # C_j |= 4 (frozen)
+    room.put(109, 69, ">rsmd")                     # BP = 15-4k slots home
+    room.put(110, 73, "<")
+    room.put(110, 69, "^")
+    room.put(109, 74, "rM4+s")                     # own CTRL: 4 + h
+    room.put(109, 79, "rsrsrs")
+    room.put(109, 85, "v")
+    room.put(110, 85, ">")
+    room.put(110, 96, "^")                         # ... and home to the head
+
+
+def build_tick(room) -> None:
+    _tick_wires(room)
+    _tick_head(room)
+    _tick_fetch(room)
+    _tick_stair(room)
+    _tick_pass2(room)
+
+
+def build_tick_rig(bypass2: bool = False) -> str:
+    """Seed ring1 from I, run the tick, dump the FETCH requests and ring1.
+
+    The ports sit exactly where ``build_step3_rig`` puts them, so every
+    binding the tick block relies on is the assembled machine's binding;
+    I stands in for both the LOADER and FETCH's RESP, O for REQ.
+    """
+    from .canvas import Canvas
+    from .lllm_fetch import Room
+    from .lllm_step import build_step_relay
+
+    room = Room(ROWS3, COLS3)
+    build_tick(room)
+    room.put(20, 34, "@>")                    # seeder: BP = 16, then a lap
+    room.put(20, 36, "`16`b")
+    room.put(20, 41, ">")                     # r <- I, s -> ring, count down
+    room.put(20, 44, "r")
+    room.put(20, 50, "sma")
+    room.put(19, 52, "<")
+    room.put(19, 41, "v")
+    room.put(20, 53, "v")                     # done: on to the tick entry
+    room.put(21, 53, "<")
+    room.put(21, 40, "v")
+    room.put(112, 40, ">")
+    if bypass2:                               # rig-only: skip pass 2
+        room.put(P2_HEAD, P2_UP, "<")
+        room.put(P2_HEAD, 23, "v")
+    room.put(102, 23, ">")                    # dumper: BP = 16, then a lap
+    room.put(102, 58, "`16`b^")
+    room.put(100, 63, "<")
+    room.put(100, 55, "<")
+    room.put(100, 50, "r")
+    room.put(100, 28, "dms")               # walked west: s, m, then d
+    room.put(99, 28, ">")
+    room.put(99, 55, "v")
+    room.put(100, 20, "H")                    # dump done: halt the rig
+    cv = Canvas()
+    sr, sc = 28, 14
+    cv.put(sr, sc, room.render())
+    left, right = sc - 1, sc + COLS3 + 2
+    cv.put(sr + 1, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(sr + 2, left), (sr + 2, 3)])                  # REQ  -> O
+    cv.put(sr - 6, 0, ["+-+", "|I|", "+-+"])
+    cv.pipe([(sr - 5, 3), (sr - 5, 10), (sr - 1, 10), (sr - 1, sc + 8)])
+    cv.cells[(sr - 1, sc + 8)] = "v"                        # I -> RESP slot
+    cv.put(sr + 29, right + 6, build_step_relay().render())
+    cv.pipe([(sr + 30, right), (sr + 30, right + 5)])
+    cv.pipe([(sr + 31, right + 12), (sr + 31, right + 13),
+             (sr + 33, right + 13), (sr + 33, right)])
+    return cv.render()
 
 
 def build_step3_core(room) -> None:
