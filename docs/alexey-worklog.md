@@ -1813,3 +1813,69 @@ extractions per pass** — relays drop 56 -> 35 and passes 8 -> 6, about
 -33% — but it needs a third live value (`v_{k-2}` held while `v_{k-1}`
 and `v_k` are read), so it needs a one-value stash room off the ring, at
 20 cells plus two pipes.
+
+## 2026-07-26 — three-to-a-cell packing: BUILT and MEASURED, still loses
+
+Built the pack side for real rather than estimating again:
+`/tmp/.../scratchpad/pack3.py` (harness, not repo code). One room, one man,
+`I -> packer -> O`: read three values, Horner-pack base `K = 2^21`, add the
+per-word offset correction once, emit the word. The judge compares the word
+against the number Python computes, so the arithmetic is verified end to end.
+
+**The arithmetic is fine — the user's bound holds.** `K = 2^21`, `S = 2^20`,
+digits `v + S` in `[48576, 2048576]`, word `= (v1+S)K^2 + (v2+S)K + (v3+S)`.
+Worst case measured on the machine: `1000000,1000000,1000000` ->
+**9,009,736,825,708,692,032** against the signed limit
+9,223,372,036,854,775,807 — 2.3% of headroom, no wrap. All five probes pass
+(extremes, all-negative, all-zero, mixed sign).
+
+**The cost is the problem: 103 ticks for three values = 34 ticks per value,
+for PACKING ALONE.** The whole of reverse_06 costs 516 ticks for sixteen
+values = 32 ticks per value. Even a tight serpentine layout (fold the return
+leg) only gets packing to ~23/value, and unpacking is strictly worse.
+
+Why it cannot be made cheap — one sentence: **every constant costs a literal
+walk, because a literal writes A, and A is where the accumulator lives.**
+The per-value sequence is forced:
+
+    M `21` W { M r +      park T in B, load 21, swap back, shift, park, read, add
+
+Ten cells, of which four are the literal `21`, purely to get a constant into
+B without losing T. The >1e6 offset is kept off this path by adding
+`C = S*(K^2+K+1)` once per word (a 19-digit literal, 21 cells) instead of
+`+S` three times — that trick works and is worth remembering, but it still
+costs 8 ticks per value amortised.
+
+Unpacking is worse for a structural reason: `/` writes BOTH A and B, so
+after one division the base is gone from B and reloading it destroys the
+remaining stack. Every digit therefore needs the word re-sent (the pump
+sending it three times, i divisions on copy i) or a partner room to park the
+quotient. Six divisions per word, each with a base reload, plus removing the
+offset from each digit while the stack is live: ~30+ ticks per value.
+
+**Total, honestly: ~55-60 ticks/value of arithmetic against 32 ticks/value
+for the entire current machine, plus two or three new rooms.** The ring
+saving is real and large — 6 words instead of 16 values takes the relay laps
+from 336 ticks to ~36 at n=16 — but the ring is only 336 of 516 ticks, so
+even a FREE packer could not reach half. Packing is closed. It was the right
+idea against reverse_01's 10-tick lap and 5n^2; it cannot beat a 6-tick lap
+with double extraction.
+
+### 13x13 by room repacking: also closed
+
+Tried the user's suggestion (move I/O flush against the rooms, re-route).
+13 columns = relay(4) + pump(9) exactly, so there is **no routing lane**:
+the relay's right wall touches the pump's left wall, and a pipe cannot pass
+between adjacent walls. Every alternative was walked:
+
+* pipe out of a room's roof needs TWO free rows (the first cell must point
+  away, the bend needs its own cell) — one free row above is not enough;
+* with the relay beside the pump, the only free columns spanning the pump's
+  rows are inside the relay, so a return pipe cannot climb from below the
+  pump back to its roof;
+* moving I and O into the bottom band blocks the westward corridor the
+  ring-out needs, and routing around them runs the pipe flush past the input
+  room's wall, which the server rejects.
+
+Both dimensions are therefore pinned: 7x6 is the floor for the pump interior
+(proven above) and 4+9 is the floor for the width.
