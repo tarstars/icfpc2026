@@ -1925,3 +1925,42 @@ most 17 values and the pump always holds one), against a capacity of 19.
 `submissions/reverse-a-list/reverse_07.man`. 8/8 public, every length 1..16
 against three value patterns, 250-case fuzz, CLI preflight 53,594.1.
 Live estimate: 98,676 / 1.171 ~ **84,000**. Not submitted yet.
+
+## 2026-07-26 — brackets_05: 35x30 -> 34x29 by folding one pipe (fp 1225 -> 1156)
+
+Same method, applied to the current best (`brackets_04`, live 836,345).
+Steps in `experiments/alexey-brackets04/`.
+
+**Where the box was going:** brackets is width-bound (35 wide, 30 tall). The
+widest room spans cols 5-33, so **columns 34-35 were pure pipe** — the
+69-cell return from R3 to R1 climbed the far east column and ran back west
+along row 0.
+
+**Step 1** re-routed that pipe with `alexey_piperoute` under
+`bounds=(29, 34)` and `target=69` — same 69 cells, so identical buffering and
+identical tick counts — and the box became **34x29, fp 1156, local 482,514 ->
+455,336**. Row 0 emptied out as a side effect, which is where the extra row
+came from. Verified 9/9 public plus 200 fuzz strings (balanced generator and
+uniform random, lengths 0-64) and the edges: depth-32 nests, all-openers,
+lone closer, empty string, `([)]`, 64-char balanced.
+
+**Step 2 and 3 failed, and the reason is worth recording.** To get to 33 the
+pipe needs a northward corridor west of R2 (cols 1-4). Two things block it
+and they cannot both be moved:
+
+* the 14-cell R3->R2 pipe climbs that corridor and elbows east at row 12 to
+  reach R2's left wall — the elbow spans the whole corridor width, so any
+  pipe climbing beside it is cut off at row 12;
+* moving that pipe one column west (step 2, tried: it works, 16 cells, 9/9)
+  just moves the blockage — its vertical run then cuts row 18, which is the
+  only way from the east half to the west half, because R3 fills rows 19-29
+  below and R2 fills rows 10-17 above.
+
+So one of the two pipes always crosses the other. The next real move is to
+shift **R2 itself** one column left (cols 4-32), which frees col 33 for the
+climb; that needs its three roof pipes re-jogged by one column, and R2's
+nearest-pipe resolution re-audited, because two of them land on the same
+wall.
+
+`submissions/brackets/brackets_05.man`. Expected live: 836,345 x 0.944 ~
+**789,000** (the tick average is unchanged — this is pure footprint).
