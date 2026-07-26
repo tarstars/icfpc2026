@@ -212,3 +212,38 @@ def test_phase_b_fuzz_nopipe():
         except AssertionError:
             bad.append(i)
     assert bad == []
+
+
+# ------------------------------------------------- room: the tick loop top
+def loop_top_case(ctrls, k):
+    """Seed ring1 = [C,A,I,B]x3 + [MARK, SP, SHIFTM, K]; run the model."""
+    from littleman.llm_step3 import MARK, Step3Model
+    from littleman.lllm_step import ScriptedFetch
+
+    seed = []
+    for i, c in enumerate(ctrls):
+        seed += [c, 3 * i + 1, 3 * i + 2, 3 * i + 3]
+    seed += [MARK, 0, 4, k]
+    model = Step3Model(ScriptedFetch())
+    model.ring = list(seed)
+    tag = {"emit": 1, "idle": 2, "tick": 3}[model._loop_top()]
+    return seed, [tag] + list(model.ring)
+
+
+def test_loop_top_rig_matches_model():
+    from littleman.llm_step3 import build_loop_top_rig
+    from littleman.sim import Machine
+
+    rig = build_loop_top_rig()
+    cases = [([18, 5, 1], 3),        # walled found -> global freeze, emit
+             ([5, 6, 7], 2),         # all frozen, k > 0 -> idle
+             ([5, 1, 6], 2),         # a live man, k > 0 -> tick
+             ([5, 6, 7], 0),         # countdown done -> emit
+             ([5, 18, 1], 2),        # walled at man 1: A1 -> drain entry 1
+             ([5, 5, 18], 2),        # walled at man 2: A2 -> drain entry 2
+             ([1, 5, 18], 2),        # live then walled: B2 -> drain entry 2
+             ([5, 1, 6], 0)]         # live but k == 0 -> emit off the tick
+    for ctrls, k in cases:
+        seed, want = loop_top_case(ctrls, k)
+        res = Machine.parse(rig).run(max_ticks=120_000, inputs=seed)
+        assert res.output == want, (ctrls, k, res.output)

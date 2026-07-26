@@ -1070,3 +1070,54 @@ def _put_w(room, row: int, col: int, tokens: list[str]) -> int:
             room.put(row, c, token)
             c -= 1
     return c + 1
+
+
+def build_loop_top_rig() -> str:
+    """Seed ring1 from I, run one loop-top lap, dump tag + ring1 to O.
+
+    Rig-only cells intercept the three exits (emit climb, idle climb, tick
+    run-on), tag them 1/2/3 and funnel them into the dump serpentine.
+    """
+    from .canvas import Canvas
+    from .lllm_fetch import Room
+    from .lllm_step import build_step_relay
+
+    room = Room(ROWS3, COLS3)
+    _loop_top(room)
+    room.put(1, 24, "@v")                     # seeder: 16 x (r I, s ring)
+    for k in range(16):
+        row = 2 + 2 * k
+        room.put(row, 25, ">")
+        room.put(row, 30, "r")
+        room.put(row, 92, "s")
+        room.put(row, 94, "v")
+        room.put(row + 1, 94, "<")
+        room.put(row + 1, 25 if k < 15 else 23, "v")     # last: to the entry
+    for row, tag, turn in ((78, "1", 17), (81, "2", 22), (111, "3", 26)):
+        room.put(row, turn, "<")              # exit tags: emit / idle / tick
+        room.put(row, 14, "`" + tag + "`")
+        room.put(row, 12, "s")
+        room.put(row, 8, "^")
+    room.put(39, 8, ">")                      # climb col 8, then the dump
+    room.put(39, 90, "v")
+    for k in range(16):                       # dumper: 16 x (r ring, s O)
+        row = 40 + 2 * k
+        room.put(row, 90, "<")
+        room.put(row, 88, "r")
+        room.put(row, 20, "s")
+        if k < 15:
+            room.put(row, 12, "v")
+            room.put(row + 1, 12, ">")
+            room.put(row + 1, 90, "v")
+        else:
+            room.put(row, 5, "r")             # park on a dead LOAD read
+    cv = Canvas()
+    cv.put(0, 8, room.render())
+    cv.put(19, 0, ["+-+", "|I|", "+-+"])
+    cv.put(39, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(20, 3), (20, 7)])                             # I -> seeder
+    cv.pipe([(40, 7), (40, 3)])                             # dump -> O
+    cv.put(94, 119, build_step_relay().render())
+    cv.pipe([(95, 106), (95, 118)])                         # scratch out
+    cv.pipe([(96, 125), (96, 126), (98, 126), (98, 106)])   # ... and home
+    return cv.render()
