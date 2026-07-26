@@ -80,6 +80,17 @@ virtual environments, raw run outputs, and bulk datasets do not belong in Git.
 - Keep secrets, personal tokens, browser state, and session data out of Git
   and shared artifact storage.
 
+## Merge naming collisions
+
+Before merging, compare same-path artifacts by content hash. If two branches
+independently created different immutable files with the same name, preserve
+the target branch's filename and rename the incoming Tarstars/Codex file with
+the `tarstars_` prefix, for example `reverse_06.man` becomes
+`tarstars_reverse_06.man`. Apply the prefix to its companion catalog or
+response filenames when they also conflict, and update live code, tests, and
+reports. Do not rewrite already-published coordination messages; publish a
+new correction message naming the new path.
+
 ## Two-agent coordination
 
 When two agents are active, follow `docs/two-agent-protocol.md` and use the
