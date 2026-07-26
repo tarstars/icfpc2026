@@ -369,3 +369,53 @@ Three rules:
 3. **Judge every room.** The merge condition is nearly sufficient, not
    provably so — gradebook's R1 has 35 merges of which exactly the last one
    is unsafe. Binary-search the prefix when a room fails.
+
+## Ring machines, second generation (2026-07-26) — reverse_06
+
+The shrinking ring got two structural upgrades. Both apply to sort/tcp.
+
+- **Extract TWO values per pass** (tarstars' reverse_05): relay `k-2`
+  instead of `k-1`, fall out of the loop holding `v_{k-1}` in B via `M`,
+  read `v_k`, print, `W`, print. Halves the passes: `n^2/2 -> n^2/4`
+  relays.
+- **Send-then-read loop.** Walk the relay loop as `> s U d m ^`: it sends
+  what is already in A, then reads the next value. Enter with A = the new
+  head and BP = k-2 and it sends `head + v1..v_{k-2}` and reads
+  `v1..v_{k-1}` with no separate head-send cell. The whole approach lane
+  disappears — that is a row and a column.
+- **Put the three-way `X` one row directly above the loop's `U`,** in the
+  same column. The `k == 2` arm (A = 0, straight) then falls onto `U`
+  with BP already 0 (the loop always drains BP, so it is 0 at the start of
+  every pass), and `d` falls through into the shared tail. A whole fall
+  lane and its zeroing `m` cost nothing.
+- Constant **2** in B instead of 1 turns `-b-` into `-`; reload it with
+  `2` on the climb and `M` on the head row.
+
+## Settled: arithmetic packing does NOT pay on a tight ring
+
+Packing two values into one cell (`P = x*K + (y+S)`, `K = 2^21`,
+`S = 2^20`, unpack with a single `/`) costs **~20-30 ticks per value**.
+The floor is the offset: values up to 1e6 need `S > 1e6`, a 7-digit
+literal (9 cells) walked once to add and once to remove, and no cheaper
+form exists (shifts need a second constant live at the same time, masks
+need a mask literal, folding S into the multiplier needs a 13-digit
+constant). Plus a packer and an unpacker room.
+
+So packing only wins against a ring whose lap is **>= 10 ticks**. It
+would have paid on reverse_01 (10 ticks/relay); it loses on reverse_06
+(6 ticks/relay, and only `n^2/4` relays). Measured, written up in
+`docs/alexey-worklog.md` under 2026-07-26. Do not rebuild it.
+
+## Server rule: ONE pipe may touch an input room (adjacency, not ends)
+
+The server counts a pipe that merely runs flush along an INPUT room's
+wall as a second connection and rejects the program (`the input room has
+more than one outgoing pipe`). Our simulator attributes pipes to the
+rooms at their ends only, so it never sees it. Output rooms are exempt
+(tcp_06 is live with two pipes against its output wall). Check it:
+`server_compat.validate_io_pipe_counts` on tarstars' branch, or the
+copy in `tests/test_alexey_reverse6.py`.
+
+Related, and cost 5 pipes instead of 4 during the reverse_06 re-lay: a
+pipe BEND whose backward cell is a room wall parses as a NEW pipe out of
+that room. Keep bends at least one cell clear of every wall.

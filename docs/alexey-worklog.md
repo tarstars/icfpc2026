@@ -1661,3 +1661,99 @@ Encoding, bounded on paper: `P = (a+1e6) + (b+1e6)*B + f*B^2` with
 **first** input value goes in alone (`f=0`); being first in, it comes out
 last, which is where it belongs. The unpacker emits `b` then `a` for a pair,
 `a` alone for a singleton.
+
+## 2026-07-26 — reverse: packing is dead, geometry is not (reverse_06, 14x14)
+
+### The packing plan is obsolete — measured, not guessed
+
+While the packing design above was being worked out, tarstars replaced the
+machine underneath it. `reverse_05` (his branch, live **117,214**) is a
+different ring: **6 ticks per relayed value instead of 10, and each pass
+extracts TWO values**, so the cost is `1.5n^2 + 9n + 5` instead of
+`5n^2 + 32n`. Measured on synthetic single-round lists:
+
+```
+ n        1    2    4    8   12   16
+r_01     54  105  239  627 1175 1883
+r_05     21   30   65  173  329  533
+```
+
+Two-packing halves the ring term. At `n = 16` that saves `1.5*(256-64) =
+288` ticks. The arithmetic to buy it:
+
+| step | cells walked |
+|---|---|
+| pack `P = x*K + (y+S)` | `r { M r + M` + a 9-cell `S` literal + `+ s` = ~22 |
+| unpack, copy 1 (`y`) | build `B=K` (8) + `r / ` + `S` (9) + `- N s` = ~22 |
+| unpack, copy 2 (`x`) | `21` + `M r } s` = ~8 |
+
+**~50 ticks per pair against 36 saved.** It loses, and that is before the
+footprint: a packer and an unpacker are two more rooms, 225 -> 289 at
+best. The floor is the offset: values span `[-1e6, 1e6]`, so the low field
+needs `+S` with `S > 1e6` — a 7-digit literal, 9 cells, walked once to add
+it and once to remove it. There is no cheaper form (checked: `{`/`}` with
+a small shift needs a second constant live at the same time; `&` masking
+needs a mask; folding `S` into the multiplier needs `C = S*(K+1)`, 13-14
+digits; per-word correction `S*(K^2+K+1)` saves one walk in three and
+costs 21 cells). Three-to-a-cell is worse still — the stack digits must be
+peeled by repeated division, so a word must be re-sent once per digit.
+
+**Rule of thumb worth keeping: arithmetic packing costs ~20-30 ticks per
+value. It only pays against a ring whose lap is ~10 ticks or more.** It
+would have paid on reverse_01. It cannot pay on anything as tight as
+reverse_05. Do not rebuild it.
+
+### What did pay: reverse_06, 14x14, local 62,769
+
+tarstars' handoff (`docs/architecture/claude_27_reverse2_handoff.md`)
+named the next step exactly: width binds at relay(4) + gap(1) + pump(10),
+so the pump interior has to go 8 -> 7 wide. He was blocked on east-side
+convergence. Re-laying the pump from scratch got 7 wide **and** 6 tall
+(his was 8x7), which takes the box to 14x14 and the score to **62,769**
+(reverse_05: 74,390) — 1.185x, of which 1.148x is footprint and the rest
+ticks. Three ideas did it:
+
+1. **Fold the head send into the relay loop.** Walk the loop as
+   `> s U d m ^` — it SENDS what is already in A, then READS the next
+   value. Enter with `A = k-2` (the new head) and `BP = k-2`: lap j sends
+   value j-1 (lap 1 sends the head), reads value j, and `d` falls through
+   at lap k-1 holding `v_{k-1}`. That is exactly `head + v1..v_{k-2}` sent
+   and `v1..v_{k-1}` read. The dedicated head-`s` cell and its approach
+   lane disappear.
+2. **Load BP with k-2, not k-1.** Then `k == 2` needs no fixup: put `X`
+   one row directly above the loop's `U` and its straight-south arm drops
+   onto `U` with `BP = 0`, so `d` falls through into the shared tail.
+   Costs zero cells; reverse_05 spent a lane and a zeroing `m` there.
+   BP is 0 at the start of every pass anyway (the loop always drains it),
+   which is why only the k>=3 arm needs the `b`.
+3. **Constant 2 instead of 1**: one `-` replaces `-b-`. Reloaded by `2`
+   on the climb and `M` on the head row.
+
+```
+        c0 c1 c2 c3 c4 c5 c6
+    r0   .  .  v  -  r  M  <     head row, walked WEST: B=2, A=k, A=k-2
+    r1   .  .  b  .  .  .  2     BP = k-2 ; climb reloads A=2
+    r2   v  .  X  r  s  @  ^     three-way branch ; k==1 spur (r, print)
+    r3   >  s  U  .  .  .  s     loop top ; climb prints v_{k-1}
+    r4   ^  m  d  .  .  .  W     loop bottom ; climb swaps
+    r5   .  .  >  M  r  s  ^     tail: hold v_{k-1}, read+print v_k
+```
+
+Generator `src/littleman/alexey_reverse6.py`, tests
+`tests/test_alexey_reverse6.py` (8 tests: geometry, the input-room pipe
+rule, every `s`/`r`/`U` resolution, public 8/8, every length 1..16 with
+extremes, 120 fuzz rounds, branch-mix boundaries). 262-case stress green,
+max 1546 ticks.
+
+Two traps re-paid during the re-lay:
+
+* The return pipe's westward bend first sat at row 7, flush against the
+  pump's left wall — its backward cell IS the wall, so it parsed as a
+  second pipe out of the pump (5 pipes instead of 4). Moved the jog to
+  row 9, below the room.
+* The return pipe then wanted to climb column 3, flush past the input
+  room's right wall. The server counts a pipe merely PASSING an input
+  room's wall as a second connection and rejects the program (tarstars
+  paid a submission for that one). It climbs column 4 instead.
+
+Live estimate: 117,214 / 1.185 ~ **99,000**. Not submitted yet.
