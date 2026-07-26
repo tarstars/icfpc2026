@@ -33,6 +33,27 @@
         "casesTotal": 26,
         "serverScore": 7473269.2
       }
+    },
+    {
+      "version": "brackets_04",
+      "label": "folded CLOSE closer arm",
+      "parent": "brackets_03",
+      "changeType": "layout",
+      "architecture": "brackets_03 rooms/pipes byte-identical outside CLOSE; CLOSE act paths repacked onto rows 1-5 so the closer match lap is 38 ticks instead of 50 (detour rectangle folded); relay arm, ports and protocol unchanged",
+      "source": {
+        "path": "submissions/brackets/brackets_04.man",
+        "generator": "src/littleman/brackets_fast.py:build(ROOMS_05, PIPES_04)",
+        "width": 35,
+        "height": 30,
+        "footprint": 1225
+      },
+      "localValidation": {
+        "casesPassed": 9,
+        "casesTotal": 9,
+        "averageTicks": 393.889,
+        "score": 482513.89
+      },
+      "liveSubmission": null
     }
   ]
 }

@@ -93,6 +93,45 @@ def build_classify_fast() -> list:
     return _room(14, 9, cells)
 
 
+def build_close_fast() -> list:
+    """CLOSE interior with the closer detour folded: 50 -> 38 ticks/lap.
+
+    Same 27x6 box, ports and relay arm as brackets_03; only the act paths
+    moved.  Closer: X(cmd) drops to row3 (B=t, A=t-4), X rises to row2
+    (restore t, read S), X drops into the row4 westward work row:
+    (S-t) divmod 3 via floored '/', X on the remainder; a match sends S'
+    and p+1 to the state ring and climbs home at col1.  Mismatch rises at
+    col10 to the row1 arm (p+1 -> O, halt).  End (t=4) runs east on row3:
+    balanced sends 0; unclosed drops to the row5 arm.  Empty stack
+    continues east on row2.  Cells (3,9),(4,9),(4,1) are shared with the
+    relay descent/climb and are side-effect-free for it (A, B dead).
+    """
+    cells = {
+        # mismatch arm: p+1 -> O, halt
+        (1, 10): ">", (1, 11): "r", (1, 12): "M", (1, 13): "1", (1, 14): "+",
+        (1, 16): "s", (1, 17): "H",
+        # relay arm (byte-identical to brackets_03)
+        (2, 1): ">", (2, 2): "@", (2, 3): "r", (2, 4): "X", (2, 5): "r",
+        (2, 6): "s", (2, 7): "r", (2, 8): "s", (2, 9): "v",
+        # closer: restore t, read S; straight-on = empty stack (p+1 -> O)
+        (2, 13): ">", (2, 14): "+", (2, 15): "M", (2, 16): "r", (2, 17): "X",
+        (2, 18): "r", (2, 19): "M", (2, 20): "1", (2, 21): "+", (2, 22): "s",
+        (2, 23): "H",
+        # act entry: B=t, A=t-4; closers turn up, end (t=4) goes straight
+        (3, 4): ">", (3, 9): "M", (3, 10): "4", (3, 11): "W", (3, 12): "-",
+        (3, 13): "X", (3, 14): "r", (3, 15): "X", (3, 18): "s", (3, 19): "H",
+        # match work row (westward): pop, verify, resend state, go home
+        (4, 1): "^", (4, 3): "s", (4, 4): "+", (4, 5): "1", (4, 6): "M",
+        (4, 7): "r", (4, 8): "s", (4, 9): "W", (4, 10): "X", (4, 11): "W",
+        (4, 12): "/", (4, 13): "W", (4, 14): "3", (4, 15): "M", (4, 16): "-",
+        (4, 17): "<",
+        # relay return (unchanged) + end-unclosed arm (p+1 -> O)
+        (5, 1): "^", (5, 9): "<", (5, 15): ">", (5, 16): "r", (5, 17): "M",
+        (5, 18): "1", (5, 19): "+", (5, 20): "s", (5, 21): "H",
+    }
+    return _room(27, 6, cells)
+
+
 def _room(w, h, cells):
     grid = [[" "] * (w + 2) for _ in range(h + 2)]
     for c in range(w + 2):
@@ -144,7 +183,8 @@ def build(rooms=None, pipes=None) -> str:
     classify, cl, op = _rooms()
     art = {"I": ["+-+", "|I|", "+-+"], "O": ["+-+", "|O|", "+-+"],
            "classify": _box(classify), "close": _box(cl), "open": _box(op),
-           "fastclassify": build_classify_fast()}
+           "fastclassify": build_classify_fast(),
+           "fastclose": build_close_fast()}
     cv = Canvas()
     for r, c, name in rooms or ROOMS_02:
         cv.put(r, c, art[name])
@@ -168,5 +208,10 @@ PIPES_04 = [
 ]
 
 
+# brackets_05 art set: brackets_04 layout with the folded CLOSE room.
+ROOMS_05 = [(25, 23, "I"), (19, 5, "fastclassify"), (10, 5, "fastclose"),
+            (2, 1, "open"), (5, 29, "O")]
+
+
 if __name__ == "__main__":
-    print(build(ROOMS_04, PIPES_04), end="")
+    print(build(ROOMS_05, PIPES_04), end="")
