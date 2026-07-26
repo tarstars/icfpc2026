@@ -39,7 +39,8 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - Semester 4 added four graded 16×16-display problems: `snake`, `pathfinder`,
   `little-little-little-man` (LLLM), and `little-little-man` (LLM). Their
   exact API specifications and 36 total public cases are attached under
-  `data/small/problems/`. Snake is accepted 17/17. Pathfinder submission
+  `data/small/problems/`. Snake `snake_03` is accepted 17/17 at 150×129 and
+  score 854,937,794.1176472. Pathfinder submission
   `0c04a141-a73b-443c-a274-741bfe67d857` is accepted 18/18. Claude's pressed
   LLLM submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d` is accepted 21/21
   at 307×312 and score 22,187,469,586.285713. LLM submission

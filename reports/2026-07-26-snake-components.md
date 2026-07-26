@@ -19,6 +19,10 @@ then restores the three ring legs whose shorter buffers failed the established
 
 The exact artifact is `submissions/snake/snake_03.man`, SHA-256
 `1832842a722cfb942da9db70354287fd75a2ca7667304eb3e0380840fa85b360`.
+Submission `6086b11f-c948-4366-8aae-b0011994ae56` passed all 17 live
+cases at 150×129, average 37,997.2353 ticks, and score
+`854,937,794.1176472`. This is a 6.6653% reduction from the prior live
+`915,991,438.3529412`.
 
 ## Component contracts
 
@@ -62,6 +66,9 @@ The routes remain inside the 150-column bound. Total ring capacity becomes
   READY TO SUBMIT, 5/5 public cases.
 - Ruff check and format checks passed for the new source and tests.
 - `git diff --check` passed.
+- The exact terminal submission response is preserved in
+  `submissions/snake/snake_03-submit.json`; it reports 17/17, no error,
+  and no load error.
 
 Immediately before committing, `origin/main` and this branch had zero
 left/right commits. The authenticated standings snapshot at
