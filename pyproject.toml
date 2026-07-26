@@ -14,6 +14,7 @@ icfpc-api = "icfpc_api.cli:main"
 
 [dependency-groups]
 dev = [
+    "ortools>=9.15.6755",
     "pytest>=8",
     "pytest-xdist>=3.8.0",
 ]
