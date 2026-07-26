@@ -2068,3 +2068,49 @@ Live: 836,345 -> 789,237 -> 660,983 -> 615,565 -> **498,608**, i.e. **1.68x
 today**, all footprint, tick average untouched. 27x27 is square now, so the
 next gain needs BOTH dimensions, which means interior surgery on the 25-wide
 middle room rather than layout work.
+
+### brackets b10: the dead-cell scan — room 0 loses 6 columns of nothing
+
+Alexey spotted two useless arrows in the top room by eye. Measured properly
+(a visited-cells scan through the Python sim over 460 constraint-respecting
+cases: offender at every position 1..64, every unclosed depth 1..32 of each
+bracket type, balanced strings of every even length, 300 depth-capped random
+strings), room 0 has exactly **four** dead cells: the two `<` at (5,19),(5,20)
+he saw, plus an orphaned `>`(3,1) / `^`(5,1) — remains of a western return
+path that no longer exists. Blanked all four; room 0's right wall then trims
+21 -> 15 (the room was 22 wide for content that ends at col 14).
+
+Resolution map identical, 9/9, fuzz clean. Score unchanged — the box is
+bound by room 2 in width AND by the room stack in height — so per the
+standing rule this is recorded as an enabler step
+(`experiments/alexey-brackets04/b10_deadtrim.man`), not submitted.
+
+Four findings from the scan, all worth more than the columns:
+
+1. **brackets is single-round by contract.** All 9 public cases are one
+   round, the description has no round language (reverse's says "1-3 lists"),
+   and the machine deadlocks on ANY second round — in brackets_04, the
+   original live 26/26 artifact, identically. The server's private cases are
+   therefore single-round too. My earlier fuzzes were multi-round-free by
+   accident; now it is explicit.
+2. **The four `H` cells in room 2 never execute, but they are load-bearing.**
+   The judge passes the case the moment the output value is emitted — but the
+   value spends 2 ticks in the output pipe, and a man who walks into a wall
+   meanwhile is an ERROR, which kills the program including its pipes before
+   the value drains. `H` after the final `s` is what buys those 2 ticks. Do
+   not delete a trailing H to save a column unless the man can be turned
+   somewhere safe instead.
+3. **`judge_case` here is fastsim-backed (C).** Patching
+   `sim.Machine._execute` does nothing to it — a visited-cells or occupancy
+   probe must drive `sim.Machine` directly. Cost me one empty scan.
+4. Depth is capped at 32 by the constraints; `(`*33+ overflows the base-3
+   packed stack by design. Fuzz generators must cap depth or they test
+   outside the contract.
+
+What is actually left in brackets: width is pinned by `sH` ending at room 2's
+col 24 on row 11, whose entry `>` at (11,14) is the A<0 landing pad of the
+`X` at (12,14) — so the tail cannot slide left without moving the X, which is
+embedded in row 12's chain, whose south branch lands on row 13's `W`. That is
+a walk-graph surgery project (map every landing pad, move the three chains
+together), not a layout move. Height similarly needs an interior row out of
+one of the three rooms. Parked with this note.
