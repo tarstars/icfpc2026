@@ -21,6 +21,8 @@ local minutes.
    policy; GPU deferred.
 9. `codex_07_roadmap_and_questions.md` — vertical slices, gates, and debate
    agenda.
+10. `codex_08_y_memory_workers.md` — feasibility, architecture, score gates,
+    and staged validation for Y-spawned Memory worker farms.
 
 ## Existing notes that remain relevant
 

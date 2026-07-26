@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "variants": [
+    {
+      "version": "memory_11",
+      "label": "recovered counted 29-square source",
+      "parent": "memory_10",
+      "changeType": "geometry",
+      "source": {
+        "path": "submissions/memory/memory_11.man",
+        "sha256": "c9e2dea84fa3b6d809cfe85a02abfcf7e614349d5488432e776fdd256fbb41a4",
+        "bytes": 794,
+        "width": 29,
+        "height": 29,
+        "footprint": 841
+      },
+      "liveSubmission": {
+        "id": "89c637e7-7601-4637-a36f-07b94afeb12f",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "averageTicks": 19064.75,
+        "score": 16033454.75,
+        "fullResponse": "submissions/memory/memory_11-submit.json"
+      }
+    },
+    {
+      "version": "memory_12",
+      "label": "station READ, WRITE, and return shortcuts",
+      "parent": "memory_11",
+      "changeType": "geometry-only",
+      "source": {
+        "path": "submissions/memory/memory_12.man",
+        "generator": "src/littleman/memory_hotpath.py:build_memory_hotpath",
+        "sha256": "e63c3e20e824dec33861b04305a7785efb2912b3db761bc7c46b8d78203b592e",
+        "bytes": 794,
+        "width": 29,
+        "height": 29,
+        "footprint": 841
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [292, 608, 1510, 1082, 1512, 908, 20656],
+        "averageTicks": 3795.4285714285716,
+        "score": 3191955.4285714286,
+        "improvementPercent": 3.6238981390793414
+      },
+      "liveSubmission": {
+        "id": "397eaeb4-1236-4e0f-8b2d-b2ac089050f4",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 29,
+        "area2": 841,
+        "averageTicks": 18372.291666666668,
+        "score": 15451097.291666668,
+        "fullResponse": "submissions/memory/memory_12-submit.json"
+      }
+    }
+  ]
+}
