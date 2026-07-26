@@ -10,6 +10,7 @@ import pytest
 from littleman import alexey_pipecheck, server_compat
 from littleman.llm_fetchjoin import fetchjoin_reference
 from littleman.llm_fuzz import llm_corpus
+from littleman.llm_components import CLASS_RECV, CLASS_SEND
 from littleman.llm_maskmap import maskmap_reference
 from littleman.llm_packraw import pack_reference
 from littleman.llm_perimeter import ROOM_END, perimeter_reference
@@ -83,6 +84,25 @@ def text():
 def test_inactive_records_are_fixed_width():
     header = [-1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
     assert roomcontext_reference(header) == [0, 0, 0, 0]
+
+
+def test_physical_active_send_receive_and_stopped(text):
+    base = [-18, 16, 28, 0, 64, 1, 17, -7, 23, 17]
+    tokens = [
+        *base,
+        CLASS_SEND * 16,
+        *base,
+        CLASS_RECV * 16,
+        *base[:5],
+        base[5] | 4,
+        *base[6:],
+        CLASS_SEND * 16,
+    ]
+    script = Script(tokens)
+    result = Machine.parse(text).run(max_ticks=5_000_000, controller=script)
+    assert result.error is None
+    assert result.status == "passed"
+    assert script.output == script.expected
 
 
 def test_generator_is_deterministic_and_server_safe(text):

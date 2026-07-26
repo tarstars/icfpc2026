@@ -96,22 +96,22 @@ def _build_fsm() -> _Fsm:
     _scale(fsm, "addr_scale", 1 << 41, "bi_drop")
     fsm.go("bi_drop", "right", "r", "ai_rotate")
     fsm.go("ai_rotate", "right", "rs", "old_drop")
-    fsm.go("old_drop", "right", "r", "event_scale")
+    fsm.go("old_drop", "right", "r", "op_rotate_early")
+    fsm.go("op_rotate_early", "right", "rs", "event_scale")
     fsm.go("event_scale", "right", "rNM1W-M+s", "left_scale")
     _scale(fsm, "left_scale", 1 << 9, "right_scale")
     _scale(fsm, "right_scale", 1 << 17, "top_scale")
     _scale(fsm, "top_scale", 1 << 25, "bottom_scale")
     _scale(fsm, "bottom_scale", 1 << 33, "op_rotate")
-    fsm.go("op_rotate", "right", "rs", "ctrl_rotate_tail")
-    fsm.go("ctrl_rotate_tail", "right", "rs", "context_addr")
+    fsm.go("op_rotate", "right", "rs", "context_addr")
 
     # Ring:
     # scaled_addr, A, scaled_event, scaled_left, scaled_right, scaled_top,
     # scaled_bottom, op, ctrl.
     fsm.go("context_addr", "right", "rM", "ai_rotate_tail")
     fsm.go("ai_rotate_tail", "right", "rs", "context_add_0")
-    for index in range(7):
-        target = f"context_add_{index + 1}" if index < 6 else "context_out"
+    for index in range(6):
+        target = f"context_add_{index + 1}" if index < 5 else "context_out"
         fsm.go(f"context_add_{index}", "right", "r+M", target)
     fsm.go("context_out", "left", "s", "ctrl_out_r")
     fsm.go("ctrl_out_r", "right", "r", "ctrl_out")

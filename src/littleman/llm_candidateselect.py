@@ -53,15 +53,21 @@ def _add_ring(
     )
 
 
-def build_candidateselect_rig() -> str:
+def add_candidateselect_network(
+    cv: Canvas,
+    *,
+    top: int,
+    left: int,
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Place the selector network and return input/output exterior cells."""
     candidate = build_packedcandidate_echo_room()
     join = build_candidatejoin_room()
     select = build_selecteligible_room()
     score = build_bindscore_room()
 
-    left = 5
-    candidate_top = 0
+    candidate_top = top
     join_top = len(candidate) + 20
+    join_top += top
     select_top = join_top + len(join) + 20
     candidate_right = left + len(candidate[0]) - 1
     join_right = left + len(join[0]) - 1
@@ -69,7 +75,6 @@ def build_candidateselect_rig() -> str:
     score_left = select_right + 10
     score_right = score_left + len(score[0]) - 1
 
-    cv = Canvas()
     cv.put(candidate_top, left, candidate)
     cv.put(join_top, left, join)
     cv.put(select_top, left, select)
@@ -77,26 +82,20 @@ def build_candidateselect_rig() -> str:
     _add_ring(cv, top=candidate_top, right=candidate_right)
     _add_ring(cv, top=join_top, right=join_right)
 
-    # External input and final output.
-    cv.put(1, 0, ["+-+", "|I|", "+-+"])
-    cv.put(select_top + 5, 0, ["+-+", "|O|", "+-+"])
-    cv.pipe([(2, 3), (2, left - 1)])
-    cv.pipe([(select_top + 6, left - 1), (select_top + 6, 3)])
-
     # Candidate reply -> join input, then join reply -> selector input.
     cv.pipe(
         [
             (candidate_top + 6, left - 1),
-            (candidate_top + 6, 1),
-            (join_top + 2, 1),
+            (candidate_top + 6, left - 4),
+            (join_top + 2, left - 4),
             (join_top + 2, left - 1),
         ]
     )
     cv.pipe(
         [
             (join_top + 6, left - 1),
-            (join_top + 6, 2),
-            (select_top + 2, 2),
+            (join_top + 6, left - 3),
+            (select_top + 2, left - 3),
             (select_top + 2, left - 1),
         ]
     )
@@ -117,4 +116,14 @@ def build_candidateselect_rig() -> str:
         ]
     )
     _add_ring(cv, top=select_top, right=score_right)
+    return (candidate_top + 2, left - 1), (select_top + 6, left - 1)
+
+
+def build_candidateselect_rig() -> str:
+    cv = Canvas()
+    ingress, egress = add_candidateselect_network(cv, top=0, left=5)
+    cv.put(ingress[0] - 1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(egress[0] - 1, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(ingress[0], 3), ingress])
+    cv.pipe([egress, (egress[0], 3)])
     return cv.render()
