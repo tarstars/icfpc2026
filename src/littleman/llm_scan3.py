@@ -5,13 +5,19 @@ pattern), each function here the exact algorithm its room will run:
 
   S1  = build_scan_room_v2() VERBATIM: 256 cell tokens (char + heuristic
         wall bit + padding bit), 3 man addrs (0 = absent), then relay.
-  S2  strip+pack: drop v2's heuristic wall bit (bit 8) from every cell,
-        pack 4 cells per word in 13-bit fields; men + tail ride along.
-  P1  store-all room: ingest the 64 words + 3 men into one big scratch
-        ring, then run find_rooms / wall pokes / man->room / pipe-head
-        candidates / traces with random reads over the ring (a read =
-        one counted rotation), emit the full machine_stream, and relay
-        every later token forever.
+  P1  = controller + memory subsystem (memory.py's P3W/P3R/RELAY ring,
+        grown to N = 312 slots: 256 cells, 3 men, room/candidate/pipe
+        state).  Ingest strips the heuristic wall bit per cell
+        (t%256 + 512*(t>>9)); find_rooms walks cells by address; wall
+        pokes are fused into room acceptance (field := char + 256);
+        then man->room, pipe-head candidates, traces, descriptors; the
+        emit phase drains 256 corrected fields, men, count and
+        descriptors, then relays every later token forever.  Every
+        memory access is an op plus a dummy WRITE to pad slot N-2 so
+        the ring always rotates one full lap: the head position is an
+        invariant and reads never emit junk.
+  S2  = packer: the first 256 stream values are packed 4 per word in
+        13-bit fields (64 words out); everything after is relayed.
 
 Every stage keeps state within its room's scratch budget (asserted via
 the CAP constants) and touches values only in ways A/B/ring FIFOs can.
@@ -41,21 +47,13 @@ CAND_CAP = 8          # pipe-head candidate slots in P1
 SENT_KEY = 1 << 14    # sorts after every real candidate key
 
 
-def s2_pack(stream: list[int]) -> list[int]:
-    """Strip the heuristic wall bit, pack 4 cells per 13-bit-field word.
-
-    The room's per-cell strip is  t % 256  +  512 * (t >> 9)  — char plus
-    the padding bit re-attached — which equals dropping bit 8, but every
-    term is a one-literal A/B sequence with the raw token parked once.
-    """
-    out = []
-    for w in range(WORDS):
-        word = 0
-        for k in range(4):
-            t = stream[4 * w + k]
-            word += (t % CHAR + 512 * (t >> 9)) * FIELD**k
-        out.append(word)
-    return out + stream[4 * WORDS:]         # men, then every later token
+def pack64(stream: list[int]) -> list[int]:
+    """S2: pack the first 256 fields 4 per word, relay the rest."""
+    out = [
+        sum(stream[4 * w + k] * FIELD**k for k in range(4))
+        for w in range(WORDS)
+    ]
+    return out + stream[4 * WORDS:]
 
 
 def p1_rooms(words: list[int]) -> list[tuple[int, int, int, int]]:
@@ -105,21 +103,23 @@ def _on_border(rm, r, c):
     return _contains(rm, r, c) and (r in (rm[0], rm[2]) or c in (rm[1], rm[3]))
 
 
-def _char(words, addr):
-    return (words[addr >> 2] >> (13 * (addr & 3))) % CHAR
+def _char(cells, addr):
+    return cells[addr] % CHAR
 
 
-def _poke_wall(words, addr):
+def _poke_wall(cells, addr):
     """Idempotent: field := char + WALL (frame cells are never padding)."""
-    k = 13 * (addr & 3)
-    f = (words[addr >> 2] >> k) % FIELD
-    words[addr >> 2] += (f % CHAR + WALL - f) << k
+    cells[addr] = cells[addr] % CHAR + WALL
 
 
 def p1_stream(stream: list[int]) -> list[int]:
-    """Rooms, walls, man rooms, pipe discovery, emission, relay."""
-    words = list(stream[:WORDS])
-    men = stream[WORDS : WORDS + MEN]
+    """Rooms, walls, man rooms, pipe discovery, emission, relay.
+
+    Input is the raw v2 stream; the ingest strip is the room's exact
+    per-token formula  t % 256 + 512 * (t >> 9).
+    """
+    words = [t % CHAR + 512 * (t >> 9) for t in stream[: 4 * WORDS]]
+    men = stream[4 * WORDS : 4 * WORDS + MEN]
     rooms = p1_rooms(words)
     for t, l, b, r in rooms:                     # wall pokes, 4 runs a room
         for c in range(l, r + 1):
@@ -177,9 +177,151 @@ def p1_stream(stream: list[int]) -> list[int]:
         for base in range(0, 21, 3):
             out.append(sum(cells[base + k] << (21 * k) for k in range(3)
                            if base + k < len(cells)))
-    return out + stream[WORDS + MEN :]
+    return out + stream[4 * WORDS + MEN :]
 
 
 def scan3_reference(tokens: list[int]) -> list[int]:
-    """The whole chain: v2 ingest -> strip+pack -> rooms/walls/pipes."""
-    return p1_stream(s2_pack(scan_reference_v2(tokens)))
+    """The whole chain: v2 ingest -> rooms/walls/pipes -> pack."""
+    return pack64(p1_stream(scan_reference_v2(tokens)))
+
+
+# ------------------------------------------------------- FSM compiler, v3
+# lllm_scan's _Fsm/_layout/_tracks are reused verbatim; only the column
+# bands differ: v3 literals run up to 15 digits (bit masks to 2**47), so
+# the literal zones are wider, and the zone table is otherwise v2's.
+from .lllm_scan import ARMS, _Fsm, _layout, _tracks  # noqa: E402
+
+L_ZONES3 = {"lit_l": 3, "left": 25, "mid": 37}
+R_ZONES3 = ("lit_r", "right")
+Z_NAMES3 = (*L_ZONES3, *R_ZONES3)
+LIT_ZONES3 = ("lit_l", "lit_r")
+TICK_OFFSET3 = 1
+
+
+def _check3(fsm: _Fsm) -> None:
+    names = [b[0] for b in fsm.blocks]
+    if len(set(names)) != len(names):
+        raise ValueError("duplicate block name")
+    known = set(names)
+    for name, zone, code, _kind, targets in fsm.blocks:
+        if zone not in Z_NAMES3:
+            raise ValueError(f"{name}: unknown zone {zone}")
+        if ("`" in code) != (zone in LIT_ZONES3):
+            raise ValueError(f"{name}: literal/zone mismatch")
+        if "`" in code and code.index("`") != TICK_OFFSET3:
+            raise ValueError(f"{name}: literal not column aligned")
+        for target in targets:
+            if target not in known:
+                raise ValueError(f"{name}: unknown target {target}")
+
+
+def _columns3(tracks: int) -> tuple[dict[str, int], int, int]:
+    """lit zones hold 21 columns, op zones 11; ring ops stay right of the
+    midline for any track count (width = 94 + 2*tracks)."""
+    lit_r = 48 + tracks
+    zones = dict(L_ZONES3, lit_r=lit_r, right=lit_r + 22)
+    branch = lit_r + 42
+    return zones, branch, branch + 2
+
+
+def _compile3(fsm: _Fsm) -> list[str]:
+    """v2's renderer with the v3 zone tables (collision rules identical)."""
+    _check3(fsm)
+    route_rows, block_rows, height = _layout(fsm)
+    edge_track, tracks = _tracks(fsm, route_rows, block_rows)
+    zones, branch_col, edge_base = _columns3(tracks)
+    zone_of = {block[0]: block[1] for block in fsm.blocks}
+    width = edge_base + tracks + 2
+    grid = [[" "] * (width + 2) for _ in range(height + 2)]
+    for c in range(width + 2):
+        grid[0][c] = grid[height + 1][c] = "-"
+    for r in range(height + 2):
+        grid[r][0] = grid[r][width + 1] = "|"
+    for r, c in ((0, 0), (0, width + 1), (height + 1, 0),
+                 (height + 1, width + 1)):
+        grid[r][c] = "+"
+
+    def put(row: int, col: int, char: str) -> None:
+        old = grid[row][col]
+        if old not in (" ", char):
+            raise ValueError(f"collision at ({row},{col}): {old!r}/{char!r}")
+        grid[row][col] = char
+
+    for name, zone, code, kind, targets in fsm.blocks:
+        row, start = block_rows[name], zones[zone]
+        put(row, start - 1, ">")
+        for offset, char in enumerate(code):
+            if char != " ":
+                put(row, start + offset, char)
+        if kind != "goto":
+            put(row, branch_col, "X" if kind == "sign" else "d")
+        for (offset, label), target in zip(ARMS[kind], targets, strict=True):
+            if offset:
+                put(row + offset, branch_col, ">")
+            arm_row = row + offset
+            edge = edge_base + edge_track[(name, label)]
+            route, entry = route_rows[target], zones[zone_of[target]] - 1
+            put(arm_row, edge, "v" if route > arm_row else "^")
+            put(route, edge, "<")
+            for between in range(route, block_rows[target]):
+                put(between, entry, "v")
+            put(block_rows[target], entry, ">")
+    return ["".join(row) for row in grid]
+
+
+def _lit(n: int) -> str:
+    """15-digit literal, walked rightward (leading zeros are harmless)."""
+    return f"`{n:015d}`"
+
+
+# ------------------------------------------------------------ the S2 room
+# Per word, four statically unrolled phases k = 0..3.  Phase invariant:
+# the private ring holds [partial] on entry (empty for k = 0); the raw
+# token is parked once, char = t % 256 is parked once, and the ring FIFO
+# rotation e/f brings the partial behind them, so every value is in A
+# exactly when its literal step needs it.  Phase 3 sends to the OUTPUT
+# (left zone s) instead of re-parking, leaving the ring empty.
+def _s2_phase(fsm: _Fsm, tag: str, mult: int, last: bool, nxt: str) -> None:
+    fsm.go(f"{tag}a", "left", "r", f"{tag}b")            # A = field
+    if mult == 1:
+        fsm.go(f"{tag}b", "right", "s", nxt)             # becomes partial
+        return
+    fsm.go(f"{tag}b", "lit_r", "M" + _lit(mult) + "W*M", f"{tag}c")
+    fsm.go(f"{tag}c", "right", "r+", f"{tag}d")          # + old partial
+    fsm.go(f"{tag}d", "left" if last else "right", "s", nxt)
+
+
+def _build_s2_fsm() -> _Fsm:
+    fsm = _Fsm()
+    fsm.go("boot", "lit_l", "@" + _lit(WORDS) + "b", "k0a")
+    for k, nxt in ((0, "k1a"), (1, "k2a"), (2, "k3a"), (3, "wl")):
+        _s2_phase(fsm, f"k{k}", FIELD**k, k == 3, nxt)
+    fsm.bp("wl", "mid", "m", zero="relay", pos="k0a")
+    fsm.go("relay", "left", "rs", "relay")
+    return fsm
+
+
+def build_s2_room() -> list[str]:
+    """The strip+pack room: 256 v2 cell tokens in, 64 words out, relay."""
+    return _compile3(_build_s2_fsm())
+
+
+def build_s2_rig() -> str:
+    """``I -> S2 -> O`` plus the 3-deep private ring, for unit tests."""
+    from .canvas import Canvas
+    from .lllm_scan import build_relay
+
+    room = build_s2_room()
+    right = 5 + len(room[0]) - 1
+    cv = Canvas()
+    cv.put(0, 5, room)
+    cv.put(1, 0, ["+-+", "|I|", "+-+"])
+    cv.put(5, 0, ["+-+", "|O|", "+-+"])
+    cv.pipe([(2, 3), (2, 4)])
+    cv.pipe([(6, 4), (6, 3)])
+    relay_left = right + 5
+    cv.put(1, relay_left, build_relay())
+    cv.pipe([(2, right + 1), (2, relay_left - 1)])
+    far = relay_left + 8
+    cv.pipe([(3, relay_left + 6), (3, far), (9, far), (9, right + 1)])
+    return cv.render()

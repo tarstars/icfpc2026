@@ -15,7 +15,7 @@ import pytest
 from littleman import llm_fuzz
 from littleman.llm import program_grid
 from littleman.llm_lockstep import machine_stream
-from littleman.llm_scan3 import s2_pack, scan3_reference
+from littleman.llm_scan3 import pack64, scan3_reference
 
 DATA = Path(__file__).resolve().parents[1] / "data/small/problems"
 LLM_CASES = json.loads(
@@ -74,11 +74,10 @@ def test_model_adversarial_bidirectional(rows):
     model_check(rows)
 
 
-def test_s2_pack_is_pure_bit_surgery():
-    """Packing four stripped v2 cells per word, men and tail untouched."""
-    cells = [ord("+") + 256, ord("-"), 32 + 512, 64 + 256 + 512]
-    stream = cells * 64 + [17, 0, 0, 9, 9]
-    packed = s2_pack(stream)
-    word = (43 + (45 << 13) + ((32 + 512) << 26) + ((64 + 512) << 39))
+def test_pack64_is_pure_bit_surgery():
+    """Four fields per word, everything after cell 255 relayed."""
+    fields = [43, 45, 32 + 512, 64 + 256] * 64
+    packed = pack64(fields + [17, 0, 0, 1, 9])
+    word = 43 + (45 << 13) + ((32 + 512) << 26) + ((64 + 256) << 39)
     assert packed[:64] == [word] * 64
-    assert packed[64:] == [17, 0, 0, 9, 9]
+    assert packed[64:] == [17, 0, 0, 1, 9]
