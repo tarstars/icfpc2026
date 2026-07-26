@@ -124,10 +124,11 @@ cases, one number each. Scoring is footprint\,$\times$\,ticks.
 \textbf{Two of our machines} appear below. \texttt{triangle\_02.man}
 ($9\times 9$, 11 ticks, score 891) is the teaching machine: two rooms, two
 men, three pipes, visible blocking. The actual record holder --- rank 1 of
-about 240 --- is its smaller sibling \texttt{triangle\_03.man}
+about 240 --- is its smaller sibling \texttt{triangle\_04.man}
 ($8\times 8$, 13 ticks, score $64\times13=\textbf{832}$), explained in
 section~\ref{sec:tri3}: it wins with MORE ticks by exploiting the squared
-footprint, and it ends by deliberately sacrificing its man.
+footprint, it deliberately sacrifices its man, and it is invisible to the
+plain local judge --- a two-judge story worth reading.
 
 \subsection{The program, in both notations}
 
@@ -260,42 +261,32 @@ The lesson that generalises: \emph{overlap work across men, park constants
 in \op{B} before blocking, and remember the run is only as long as the judge
 needs it to be.}
 
-\subsection{The record holder: one room, no halt, a sacrificed man}
+\subsection{The record holder: no halt, a sacrificed man, and two judges}
 \label{sec:tri3}
 
-\texttt{triangle\_03.man} beats the machine above $891\to 832$ while
-taking \emph{more} ticks (13 vs 11) --- because the score squares the
-bounding box: $64\times13=832 < 81\times11=891$. Losing one column and one
-row was worth two extra ticks. Its other trick is more radical: it contains
-\textbf{no \op{H} at all}.
+\texttt{triangle\_04.man} beats the machine above $891\to 832$ while
+taking \emph{more} ticks (13 vs 11) --- the score squares the bounding
+box, so $64\times13=832 < 81\times11=891$: losing one row and one column
+was worth two extra ticks. It contains \textbf{no \op{H} at all}.
 
 \begin{verbatim}
 col  01234567
   0  +------+
   1  |@rM*+v|
-  2  |     M|
-  3  | s}W1<|
-  4  +------+
-  5  ^<+-+-+v
-  6    |I|O|<
-  7    +-+-+
+  2  |s}W1M<|
+  3  +------+
+  4  +-+>^  v
+  5  |I| +-+<
+  6  +-+ |O|
+  7      +-+
 \end{verbatim}
 
 \begin{verbatim}
-(mark L1_1_E) @ r M * + v M < 1 W } s (goto __wall)
+(mark L1_1_E) @ r M * + v < M 1 W } s (goto __wall)
 (mark __wall) (wall)
 \end{verbatim}
 
-The block-graph ends in \texttt{(goto \_\_wall) (wall)}: after \op{s},
-the man walks over a blank cell and \emph{into the west wall}. In the raw
-simulator that run's status is literally \texttt{error} --- and the case
-still passes, because the answer reaches \texttt{O} on the very tick of the
-fatal step, and the server accepts a run whose final tick both delivers the
-last output and steps into a wall (a behaviour we probed and encoded in
-\texttt{server\_compat} as final-wall-step semantics). The \op{H} cell,
-and the room width to reach it, are simply deleted.
-
-Trace for $n=3$ (single man; same column conventions as above):
+Trace for $n=3$ (registers after each tick):
 
 \begin{center}
 \small
@@ -306,26 +297,41 @@ tick & at & on & A & B & \\ \hline
 3 & (1,4) & \texttt{*} & 3 & 3 & \\
 4 & (1,5) & \texttt{+} & 9 & 3 & \\
 5 & (1,6) & \texttt{v} & 12 & 3 & \\
-6 & (2,6) & \texttt{M} & 12 & 3 & \\
-7 & (3,6) & \texttt{<} & 12 & 12 & \\
-8 & (3,5) & \texttt{1} & 12 & 12 & \\
-9 & (3,4) & \texttt{W} & 1 & 12 & \\
-10 & (3,3) & \texttt{\}} & 12 & 1 & \\
-11 & (3,2) & \texttt{s} & 6 & 1 & \\
-12 & (3,1) & \texttt{ } & 6 & 1 & \\
-13 & (3,1) & \texttt{ } & 6 & 1 & \\
+6 & (2,6) & \texttt{<} & 12 & 3 & \\
+7 & (2,5) & \texttt{M} & 12 & 3 & \\
+8 & (2,4) & \texttt{1} & 12 & 12 & \\
+9 & (2,3) & \texttt{W} & 1 & 12 & \\
+10 & (2,2) & \texttt{\}} & 12 & 1 & \\
+11 & (2,1) & \texttt{s} & 6 & 1 & \\
+12 & (2,1) & \texttt{s} & 6 & 1 & \\
 \end{tabular}
 \end{center}
 
-Ticks 1--5 are the same $n^2+n$ prologue as before, ending with \op{v}
-into row 2, whose lone \op{M} parks $n^2+n$ in \op{B} in passing; row 3
-walked westward reads \op{<\,1\,W\,\}\,s}: load 1, swap, halve, send.
-Ticks 12--13: the man crosses the blank cell and dies on the wall exactly
-as 6 arrives at \texttt{O}. Three lessons: \emph{the footprint is squared,
-so trade ticks for cells; a man you no longer need costs nothing to kill;
-and the scoring clock, not the man's fate, decides the run} --- but note
-the sibling \texttt{triangle\_04} fails 0/6 from getting exactly this
-timing wrong, so the sacrifice must be \emph{proven}, not eyeballed.
+Ticks 1--5 are the $n^2+n$ prologue; the westward row reads
+\op{<\,M\,1\,W\,\}\,s}: park $n^2+n$ in \op{B}, load 1, swap, halve,
+send. On tick 12 the man executes \op{s} --- and then steps into the west
+wall and dies \emph{with the answer still inside the output pipe}. The
+raw simulator calls this run \texttt{error} with \textbf{no output at
+all}. The server disagrees: when the last man stops, in-flight pipe
+values \emph{drain} --- 6 arrives at \texttt{O} on tick 13, the case
+passes, and the clock reads 13. Our \texttt{server\_compat} judge
+encodes exactly this (final wall step accepted, output drained); the
+plain \texttt{python -m littleman} judge does not, and scores this
+machine 0/6.
+
+The sibling \texttt{triangle\_03.man} is the mirror image: nearly the
+same program (\op{M} and \op{<} swap places, buying the man one extra
+blank cell to die on), it passes the \emph{plain} judge 6/6 --- but the
+server rejects its layout outright, because it fuses the I and O rooms
+into \texttt{|I|O|}, sharing three wall cells between rooms, which the
+server forbids. Two near-twin machines, each green under one judge and
+dead under the other, in opposite directions.
+
+Three lessons: \emph{the footprint is squared, so trade ticks for cells;
+a man you no longer need costs nothing to kill, because pipes drain
+after the last man stops; and always gate a wall-trick (or any layout
+trick) with the server-semantics judge --- local green is not server
+green in either direction.}
 
 \clearpage
 \section{Memory}
