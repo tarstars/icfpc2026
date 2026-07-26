@@ -134,7 +134,7 @@ def test_solver_chooses_ports_and_the_router_follows_them() -> None:
     assert place.ports is not None and len(place.ports) == len(layout.conns)
     src_free, dst_free = layout_solve.endpoint_freedom(layout)
     for index, conn in enumerate(layout.conns):
-        chosen_src, chosen_dst = place.ports[index]
+        chosen_src, chosen_dst = place.ports_for(index, conn)
         assert chosen_src.room == conn.src.room
         assert chosen_dst.room == conn.dst.room
         if not src_free[index]:
@@ -143,13 +143,12 @@ def test_solver_chooses_ports_and_the_router_follows_them() -> None:
         if not dst_free[index]:
             assert (chosen_dst.side, chosen_dst.offset) == (conn.dst.side,
                                                             conn.dst.offset)
-    paths, err = layout_route.route_with_ripup(layout, place, tries=6)
-    if err is not None:
-        paths, err = layout_route.route_negotiated(layout, place)
-    if err is not None:
-        pytest.skip(f"tcp did not route at channel 2: {err}")
+    place, paths, log = layout_route.place_route_repair(
+        layout, seconds=15.0, channel=1, rounds=14)
+    if place is None:
+        pytest.skip(f"tcp did not route: {log[-1][1]}")
     for index, path in paths:
-        chosen_src, chosen_dst = place.ports[index]
+        chosen_src, chosen_dst = place.ports_for(index, layout.conns[index])
         start = layout_solve._port_cell(
             place.tops[chosen_src.room], place.lefts[chosen_src.room],
             layout.rooms[chosen_src.room], chosen_src)
@@ -162,10 +161,11 @@ def test_a_routed_placement_survives_the_gate() -> None:
     """End to end: place, route, emit, and let the oracle judge the result."""
     text = _text("tcp")
     layout = layout_ir.parse(text)
-    place, paths, _log = layout_route.place_route_repair(
-        layout, seconds=15.0, channel=2, rounds=3, restarts=20)
+    place, paths, log = layout_route.place_route_repair(
+        layout, seconds=15.0, channel=1, rounds=14)
     if place is None:
-        pytest.skip("tcp did not route within the test's budget")
+        pytest.skip(f"tcp did not route within the test's budget: {log[-1][1]}")
+    assert not layout_route._violations(layout, place, paths)
     report = layout_gate.check(text, layout_route.emit(layout, place, paths),
                                "tcp", judge_original=False)
     assert report.passed, report.reasons

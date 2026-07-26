@@ -1,14 +1,32 @@
 """Route pipes for a solver placement, then re-emit the artifact.
 
-BFS per connection over the free grid, obstacles being room cells, cells
-adjacent to a NON-endpoint room, and cells already used by another pipe.
+Three routers over one primitive, plus a loop that re-places when routing
+proves the placement wrong:
 
-The adjacency obstacle is the expensive lesson: the server treats a pipe
-merely GRAZING a room's wall as connected to that room. That cost us a
-submission (reverse_03 was rejected 0/0 because an 18-cell return pipe
-ran flush past the input room's wall) and later killed a tcp variant that
-passed 6/6 locally. A router that only avoids overlap will keep
-reproducing it, so adjacency is a hard obstacle here.
+* `route` -- greedy, shortest-first, hard obstacles. Fast and usually
+  enough for small instances.
+* `route_negotiated` -- PathFinder. Every pipe takes its best path, then a
+  rising price on contested cells sorts the lanes out. Needed because a
+  greedy router loses whenever an early pipe takes the only lane a later
+  one wanted, and reordering only shuffles who loses.
+* `place_route_repair` -- feeds the contested cells back to the placer as
+  per-room clearance. Measured on plotter_05: a uniform channel and even a
+  20-cell frame margin left the SAME twelve cells contested, because the
+  shortage was one corridor rather than global space.
+
+What grazing actually costs, measured rather than assumed: our own live
+plotter_05 has 172 interior pipe cells flush against a room and loads
+fine, so a blanket ban on adjacency is far stricter than the server and
+made real placements unroutable. The rules that are real are narrower:
+
+* an ARROW next to a wall pointing away from it starts a whole extra pipe
+  in `sim._find_pipes`, whose trace then walks into this pipe's body and
+  the machine fails to load. Only bends carry arrows, so `_shortest`
+  searches over (cell, heading) and refuses to TURN where the cell behind
+  the new heading is a room;
+* an INPUT room counts a pipe merely running alongside it as connected,
+  and rejects the layout 0/0 -- that one cost us reverse_03 -- so input
+  rooms alone are fenced off.
 
 Bindings survive re-placement by construction: `sim._outgoing` considers
 only pipes attached to the man's OWN room, and ports keep their
@@ -270,17 +288,30 @@ def _shortest(first, first_dir, goal, blocked, cost, hi, owned):
 
 
 def route_negotiated(layout: Layout, place: Placement, *, iterations: int = 120,
-                     margin: int = 0, growth: float = 1.22,
-                     history_step: float = 0.7):
-    """PathFinder: route everything, then negotiate the shared cells away.
+                     margin: int = 0, growth: float = 1.3,
+                     history_step: float = 0.5, seed: int = 0):
+    """PathFinder (Ebeling/McMurchie): price the contested cells apart.
 
     A greedy router loses whenever an early pipe takes the only lane a
-    later one needed, and reordering only shuffles who loses. Negotiated
-    congestion lets every pipe take its best path, then charges a rising
-    price for cells more than one pipe wants until the contested lanes
-    sort themselves out. Hard obstacles stay hard: a cell inside a room,
-    or flush against a room this pipe does not terminate at, is never for
-    sale -- that is the server's grazing rule, not a preference.
+    later one needed, and reordering only shuffles who loses. Negotiation
+    lets every pipe take its best path, then charges a rising price for
+    cells more than one pipe wants. Hard obstacles stay hard: a cell
+    inside a room, or flush against an INPUT room this pipe does not
+    terminate at, is never for sale.
+
+    Two details are the whole algorithm, and getting them wrong is what
+    made the first version plateau. **Rip-up is per net, not per pass**:
+    occupancy persists across iterations and only the net being re-routed
+    is subtracted from it, so every net always sees all the others.
+    Clearing the field at the top of each pass instead made each iteration
+    a fresh greedy sweep whose first net saw an empty grid; plotter_05
+    stuck at 18 contested cells for 120 passes and 190s. Per-net rip-up
+    with a shuffled order took the same instance to 8 in 3s. **The price
+    is geometric and effectively uncapped** (0.5 -> 200), so a cell two
+    pipes both want ends up dearer than any detour that exists.
+
+    What survives that is not congestion, and no amount of routing fixes
+    it -- see `_crossings`.
     """
     owned = _room_cells(layout, place)
     hi = max(place.width, place.height, place.frame) + margin - 1
@@ -291,31 +322,34 @@ def route_negotiated(layout: Layout, place: Placement, *, iterations: int = 120,
     # never separate, and the router reported "cells still shared" forever.
     reserved = {cell for start, _f, goal, _e, _a in nets for cell in (start, goal)}
     blocked_for = []
-    for start, first, goal, ends, _away in nets:
+    for ci, (start, first, goal, ends, _away) in enumerate(nets):
         blocked = set(owned) | reserved | _forbidden_flanks(layout, owned, ends)
         blocked.discard(goal)
         blocked.add(start)
+        # `_shortest` seeds its search AT `first` without testing it, so an
+        # unchecked blocked `first` hands back a path whose second cell is
+        # inside a room or on another net's port -- a machine that will not
+        # load, and one `_violations` cannot phrase an explanation for.
+        if first in blocked and first != goal:
+            return None, RouteError(ci, "cannot leave source wall",
+                                    cells=(first,))
         blocked_for.append(blocked)
+    rng = random.Random(seed)
     history: dict = {}
     occupancy: dict = {}
+    routed: list = [None] * len(nets)
     penalty = 0.5
-    paths = None
     order = sorted(range(len(nets)), key=lambda i: -layout.conns[i].length)
-    # Where a net went last time, slightly discounted. Without this the
-    # shared-cell count oscillates (16-14-12-21-9-13 on tcp) because every
-    # net re-plans from scratch against a field that just changed.
-    settled_in: dict = {}
+    best = (1 << 30, None, None)
     for _ in range(iterations):
-        occupancy = {}
-        paths = []
         for ci in order:
-            start, first, goal, ends, away = nets[ci]
-            keep = settled_in.get(ci, frozenset())
+            if routed[ci] is not None:          # rip up THIS net only
+                for cell in routed[ci][1:]:
+                    occupancy[cell] -= 1
+            start, first, goal, _ends, away = nets[ci]
 
-            def cell_cost(cell, _h=history, _o=occupancy, _k=keep):
-                over = _o.get(cell, 0)
-                base = (1.0 + _h.get(cell, 0.0)) * (1.0 + penalty * over)
-                return base * 0.9 if cell in _k else base
+            def cell_cost(cell, _h=history, _o=occupancy, _p=penalty):
+                return (1.0 + _h.get(cell, 0.0)) * (1.0 + _p * _o.get(cell, 0))
             path = _shortest(first, away, goal, blocked_for[ci], cell_cost,
                              hi, owned)
             if path is None:
@@ -324,11 +358,17 @@ def route_negotiated(layout: Layout, place: Placement, *, iterations: int = 120,
             path = [start] + path
             for cell in path[1:]:
                 occupancy[cell] = occupancy.get(cell, 0) + 1
-            settled_in[ci] = frozenset(path)
-            paths.append((ci, path))
-        paths.sort()
+            routed[ci] = path
+        paths = [(ci, path) for ci, path in enumerate(routed)]
         shared = [cell for cell, n in occupancy.items() if n > 1]
-        if shared:
+        improved = len(shared) < best[0]
+        if improved:
+            best = (len(shared), [(ci, list(p)) for ci, p in paths],
+                    dict(occupancy))
+        # Only worth closing when negotiation has already got near, and only
+        # on a field it has not already tried: the settle pass is dozens of
+        # exact re-routes and dominates the run time otherwise.
+        if shared and improved and len(shared) <= _SETTLE_MAX:
             # Negotiation oscillates: the shared count on tcp went
             # 16-14-12-21-9-13 and never reached zero even with half the
             # frame empty. But most nets are already disjoint, so freeze
@@ -339,31 +379,76 @@ def route_negotiated(layout: Layout, place: Placement, *, iterations: int = 120,
             if settled is not None and not _violations(layout, place, settled):
                 paths, shared = settled, []
         if not shared:
-            for ci, path in paths:
-                if layout.conns[ci].exact and len(path) != layout.conns[ci].length:
-                    return None, RouteError(
-                        ci, f"timing-exact needs {layout.conns[ci].length}, "
-                            f"routed {len(path)}")
-                if len(path) < 2:
-                    return None, RouteError(ci, "degenerate path")
-            bad = _violations(layout, place, paths)
-            if bad:
-                return None, RouteError(bad[0][0], bad[0][1])
-            return paths, None
+            return _accept(layout, place, paths)
         for cell in shared:
             history[cell] = history.get(cell, 0.0) + history_step * (
                 occupancy[cell] - 1)
-        penalty = min(penalty * growth, 64.0)
+        penalty = min(penalty * growth, 200.0)
+        # A fixed order re-runs the same standoff forever; shuffling gives
+        # the loser of one pass first pick in the next.
+        rng.shuffle(order)
+    return None, _congestion_error(best)
+
+
+# Freezing the disjoint pipes and hard-routing the losers costs an A* per
+# contested net per random order, so it only pays once negotiation is near.
+_SETTLE_MAX = 24
+
+
+def _accept(layout: Layout, place: Placement, paths):
+    """The checks a conflict-free path set still has to pass."""
+    for ci, path in paths:
+        conn = layout.conns[ci]
+        if conn.exact and len(path) != conn.length:
+            return None, RouteError(
+                ci, f"timing-exact needs {conn.length}, routed {len(path)}")
+        if len(path) < 2:
+            return None, RouteError(ci, "degenerate path")
+    bad = _violations(layout, place, paths)
+    if bad:
+        return None, RouteError(bad[0][0], bad[0][1])
+    return paths, None
+
+
+def _crossings(paths, occupancy) -> int:
+    """How many contested cells are two pipes CROSSING at right angles.
+
+    The number that decides whether to keep routing or go back and re-place.
+    A cell two pipes want to run ALONG is congestion, and a price separates
+    them. A cell where one runs north-south and the other east-west is a
+    topological crossing, and the grid has exactly one layer. Measured on
+    plotter_05 at 129: all eight residual cells were crossings, every one in
+    open space with four free neighbours, and margins of 10, 20 and 40 left
+    the count at exactly eight -- space was never the constraint.
+    """
+    axis: dict = {}
+    for _ci, path in paths:
+        for i, cell in enumerate(path):
+            if occupancy.get(cell, 0) < 2:
+                continue
+            nxt = path[i + 1] if i + 1 < len(path) else cell
+            prv = path[i - 1] if i else cell
+            axis.setdefault(cell, set()).add(nxt[0] != cell[0]
+                                             or prv[0] != cell[0])
+    return sum(1 for kinds in axis.values() if len(kinds) > 1)
+
+
+def _congestion_error(best) -> RouteError:
+    count, paths, occupancy = best
+    if paths is None:                                    # pragma: no cover
+        return RouteError(0, "no iteration completed")
     contested = [cell for cell, n in occupancy.items() if n > 1]
     worst = max(occupancy.items(), key=lambda kv: kv[1])
-    return None, RouteError(
+    cross = _crossings(paths, occupancy)
+    return RouteError(
         paths[0][0],
-        f"{len(contested)} cells still shared, worst {worst[1]} pipes at "
-        f"{worst[0]}", cells=contested)
+        f"{count} cells still shared ({cross} of them right-angle CROSSINGS, "
+        f"which no single-layer router can price apart), worst {worst[1]} "
+        f"pipes at {worst[0]}", cells=contested)
 
 
 def _settle(layout, nets, blocked_for, paths, occupancy, hi, owned,
-            orders: int = 12):
+            orders: int = 40):
     """Keep the disjoint pipes, re-route the contested ones exactly."""
     contested = {ci for ci, path in paths
                  if any(occupancy.get(cell, 0) > 1 for cell in path[1:])}
@@ -489,6 +574,43 @@ def place_route_repair(layout: Layout, *, seconds: float = 25.0,
         for index in blamed:
             pads[index] = pads.get(index, 0) + 1
     return None, None, log
+
+
+def search_place_and_route(layout: Layout, *, seeds=range(16),
+                           channels=(3, 2, 4), seconds: float = 25.0,
+                           iterations: int = 60, margin: int = 0,
+                           report=None):
+    """Walk the family of equal-diameter placements until one ROUTES.
+
+    Negotiation's residue on plotter_05 was eight cells, every one of them
+    two pipes crossing at right angles in open space, and margins of 10, 20
+    and 40 left the count at eight. A crossing is a property of the cyclic
+    order the endpoints sit in, not of how much room the router has, so the
+    only lever left is the placement -- specifically which wall each port
+    ends up on. `layout_solve.solve(seed=...)` re-weights phase B to walk
+    that family; this loop routes each member and keeps the first that is
+    conflict-free. Returns (place, paths, attempts).
+    """
+    from .layout_solve import solve
+    attempts = []
+    for seed in seeds:
+        for channel in channels:
+            place = solve(layout, seconds=seconds, channel=channel, seed=seed)
+            if place is None:
+                attempts.append((seed, channel, 0, "no placement"))
+                continue
+            box = max(place.width, place.height, place.frame)
+            paths, err = route_with_ripup(layout, place, tries=4, margin=margin)
+            if err is not None:
+                paths, err = route_negotiated(layout, place, margin=margin,
+                                              iterations=iterations, seed=seed)
+            attempts.append((seed, channel, box, "ROUTED" if err is None
+                             else str(err)))
+            if report is not None:
+                report(attempts[-1])
+            if err is None:
+                return place, paths, attempts
+    return None, None, attempts
 
 
 def place_and_route(layout: Layout, *, seconds: float = 25.0,

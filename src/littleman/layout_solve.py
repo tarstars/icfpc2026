@@ -7,16 +7,29 @@ Design notes that matter (claude_32):
   Area-minimising packers systematically make the wrong trade here.
 * Rooms are rigid and never rotated: their text is copied verbatim, which
   is what makes a re-placement behaviour-preserving.
-* Rooms are inflated by one cell on every side before the no-overlap
-  constraint. That buys three things at once: the server's
-  no-shared-wall-cells rule, a lane for a pipe to leave any wall, and the
-  "a pipe grazing a wall counts as connected" hazard that cost us a
-  submission.
+* Rooms are inflated by `channel` cells before the no-overlap constraint,
+  plus a per-room `pads` term the routing repair loop feeds back. A
+  uniform channel is the wrong shape of answer when one corridor is short
+  of lanes, which is what plotter measured: a 20-cell frame margin left
+  exactly the same twelve cells contested.
+* **Ports are decision variables** (M2). Each endpoint gets a wall Boolean
+  and a channelled offset, unless `endpoint_freedom` says its room has a
+  binding to preserve, in which case it stays exactly where the IR found
+  it. Measured: freeing them does NOT shrink the box -- pinned and free
+  reach the identical diameter on tcp (32), plotter (125) and matmul (132)
+  -- it buys ROUTABILITY, which is what M1 actually lacked.
+* Every port cell, and the cell a pipe steps out to, is `AddAllDifferent`.
+  Without that two endpoints could land on one cell, which is a conflict
+  no router can negotiate away; chasing it grew tcp's box from 32 to 49.
 * Connections are modelled as a Manhattan-distance budget between the two
   ports, not as routed paths. Routing happens afterwards; the model only
   has to leave enough room for it. For timing-sensitive machines the
   distance is pinned to an equality so a `q`/`R`/`U` machine cannot have
   its meaning changed by a shorter path.
+
+Solving is two-phase and lexicographic: minimise the box, then spend what
+is left pointing the free ports at each other. A minimal box whose ports
+face outward is precisely the unroutable state M1 kept producing.
 
 The placer proposes; `layout_gate` disposes. Nothing here is trusted
 until the binding audit and the judge agree with the original artifact.
@@ -24,6 +37,7 @@ until the binding audit and the judge agree with the original artifact.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 
 from .layout_ir import Conn, Layout, Port
@@ -195,7 +209,7 @@ def endpoint_freedom(layout: Layout) -> tuple[list[bool], list[bool]]:
 def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
           workers: int = 8, channel: int = 1, free_ports: bool = True,
           diameter_hint: int | None = None,
-          pads: dict | None = None) -> Placement | None:
+          pads: dict | None = None, seed: int = 0) -> Placement | None:
     """Place `layout`'s rooms to minimise max(W,H). None if no model.
 
     `channel` is the guaranteed gap between rooms. 1 admits a pipe that
@@ -313,6 +327,7 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
 
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = workers
+    solver.parameters.random_seed = seed
     # Two phases, lexicographic. Phase A gets the box; phase B then spends
     # its budget pointing the free ports AT each other, which is what makes
     # the placement routable -- a minimal box with ports facing outward is
@@ -325,7 +340,14 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
     best = solver.Value(diameter)
     if dists:
         model.Add(diameter <= best)
-        model.Minimize(sum(dists))
+        # Weights, not a plain sum. At the same diameter this instance has
+        # thousands of optima that differ only in which port faces which,
+        # and THAT is what decides how many pipes have to cross -- the one
+        # thing routing cannot fix. Re-weighting is how the caller walks
+        # that family; a plain sum returns the same crossing pattern every
+        # time however the search is seeded.
+        weights = _weights(len(dists), seed)
+        model.Minimize(sum(w * d for w, d in zip(weights, dists)))
         solver.parameters.max_time_in_seconds = max(seconds * 0.4, 1.0)
         phase_b = solver.Solve(model)
         if phase_b not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -349,6 +371,14 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
         ))
     return Placement(tops=t, lefts=l, width=w, height=h, ports=ports,
                      frame=best)
+
+
+def _weights(count: int, seed: int) -> list[int]:
+    """Phase-B weights: all ones for seed 0, a reproducible spread after."""
+    if seed == 0:
+        return [1] * count
+    rng = random.Random(seed)
+    return [rng.randint(1, 5) for _ in range(count)]
 
 
 def _read_port(solver, original: Port, room, lits, top: int, left: int,

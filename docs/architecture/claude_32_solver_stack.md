@@ -152,3 +152,69 @@ Codex's `lane.py`; its known gap is nested arms and label/goto.
 
 Sequencing: M2+M2b together (one agent, coupled), M3 independently
 (different files, no overlap). M4 peepholes stay queued.
+
+## 7. M2 RESULT (2026-07-26 ~21:30Z): landed, and it does not beat hand layouts
+
+M2 + M2b are complete and tested (12 passed, 2 skipped): ports are
+decision variables (wall booleans + channelled offsets, `AddAllDifferent`
+over port and lead-out cells, two-phase lexicographic objective
+box -> wirelength), the router does heading-aware Dijkstra with
+PathFinder negotiation, a settle pass and a `place_route_repair` feedback
+loop, and `layout_gate` runs all six checks with structural room/pipe
+correspondence by WL colour refinement (indices come from a top-left scan
+and do NOT survive re-placement — that was a real bug).
+
+### The ablation that settles the M2 hypothesis: port freedom does not shrink the box
+
+Pinned vs free ports reach IDENTICAL diameters: tcp 32/32, plotter
+125/125, matmul 132/132. **Port assignment buys routability, not area.**
+My M1 conclusion — "better placements exist but cannot be routed because
+ports are pinned" — was half right: the placements were already
+reachable; only the routing needed the freedom.
+
+### Measured outcome per target
+
+- **tcp_08**: the full pipeline succeeded end to end and PASSED THE GATE
+  (34x34, 6/6, 0 binding diffs, no shrunk pipes) — and is still 0.52x,
+  i.e. WORSE (live is 31x31; avg ticks 997 -> 1592). The placement floor
+  is 31, exactly the hand layout. **tcp is unimprovable by rigid
+  re-placement.**
+- **plotter_05**: places at 125-136 against a live 185, but never
+  routes. 8-15 cells stay contested, always in the band at rows ~80-100
+  where every long pipe must cross. Channels 1-12, frame margins
+  4/8/14/20 and 22 repair rounds all leave **the same 12 cells
+  contested — the shortage is one corridor, not global space.**
+- **matmul**: floor 132 > matmul_07's 115. Out of reach.
+
+### The structural reason, and the honest conclusion
+
+Right-angle crossings cannot be priced apart by a single-layer router:
+two pipes that must cross have no legal way to do so, and no amount of
+congestion pricing invents one. Littleman has no vias.
+
+So **L0 rigid re-placement is exhausted as a source of gains.** Every
+hand layout we hold is at or below the solver's floor. This matches the
+REVOLUTIONARY roadmap's diagnosis from the other direction: the
+remaining wins are L1 (interior folds — where alexey and Codex are
+winning) and architecture, not placement.
+
+### A repo doctrine was TOO BROAD, and it cost us routability
+
+"A pipe grazing a wall counts as connected" — which I wrote into
+briefs after reverse_03 was rejected — is not what the server enforces.
+Measured on LIVE, loading artifacts:
+
+    plotter_05: 172 interior pipe cells flush against a room
+    matmul_03:   63
+    tcp_08:      14
+
+All load and score fine. The real rules are narrower:
+1. an **arrow** beside a wall pointing away starts a phantom pipe in
+   `sim._find_pipes`, so a router must refuse to TURN where the cell
+   behind the new heading is a room;
+2. **input rooms alone** are fenced (one pipe against the wall).
+
+The blanket ban made real placements unroutable. Note the GATE was
+already correct — `validate_io_pipe_counts` was narrowed to input rooms
+after tcp_06 disproved the output-room version — so no submission was
+ever blocked by this; only the router was over-constrained.
