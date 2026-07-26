@@ -31,3 +31,6 @@ __pycache__/
 .env.*
 !.env.example
 *.token
+
+# Optional native accelerator for the littleman executor (built locally)
+src/littleman/*.so

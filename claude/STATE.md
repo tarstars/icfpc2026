@@ -78,6 +78,16 @@ Practice: max-element solved (10/10, no submission possible).
 
 ## Completed since the previous state
 
+- **Simulation is no longer the bottleneck.** `littleman.fastsim` is a
+  bit-exact drop-in for `sim.Machine` (subclass, parsing inherited);
+  `judge.py`, `python -m littleman` and `scripts/preflight.py` already use
+  it. Run `uv run python scripts/build_fastsim_ext.py` once per checkout to
+  get the optional C accelerator — matmul judge 5.8 s -> 0.13 s,
+  subset-sum judge 15 m 25 s -> 41 s. Without it everything still works at
+  ~1.8x. Proof and known gaps:
+  `docs/architecture/claude_22_fast_executor.md`,
+  `tests/test_fast_sim_equivalence.py`. Do not "optimise" `sim.py` — it is
+  the specification the equivalence test checks against.
 - All twelve graded problems are solved.
 - Memory `memory_01` passed 24/24 live and improved the accepted score to
   91,372,247.625. `claude/memory-compaction-handoff.md` is historical.
