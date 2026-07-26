@@ -13,7 +13,10 @@ dependencies = [
 icfpc-api = "icfpc_api.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "pytest-xdist>=3.8.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -24,3 +27,7 @@ packages = ["src/icfpc_api", "src/littleman"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Parallel by default: the suite is CPU-bound tick simulation with no shared
+# state, and this took it from 476s to 107s on 20 cores. Use `-p no:xdist`
+# or `-n 0` when a failure's ordering or output needs to be read serially.
+addopts = "-n auto"
