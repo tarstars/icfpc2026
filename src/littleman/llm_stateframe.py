@@ -17,22 +17,32 @@ from .llm_wallgen import build_wallgen_room, wallgen_reference
 FRAME_END = -1
 
 
-def stateframe_reference(tokens: list[int]) -> list[int]:
+def stateframe_reference(
+    tokens: list[int],
+    *,
+    include_static: bool = True,
+) -> list[int]:
     """Emit repeated ``color, address`` pairs followed by :data:`FRAME_END`."""
     raw = unpack_raw_world(tokens[:WORLD_WORDS])
     out = []
-    for addr, value in enumerate(raw):
-        char = " " if value & 0xFF == ord("@") else chr(value & 0xFF)
-        out.extend((op_color(char), addr))
+    if include_static:
+        for addr, value in enumerate(raw):
+            char = " " if value & 0xFF == ord("@") else chr(value & 0xFF)
+            out.extend((op_color(char), addr))
 
     index = WORLD_WORDS
     while tokens[index] != SETUP_END:
         fields = tokens[index : index + 10]
         index += 10
-        for packed in wallgen_reference(fields[1:5])[:-1]:
-            addr, color = divmod(packed, 16)
-            out.extend((color, addr))
+        if include_static:
+            for packed in wallgen_reference(fields[1:5])[:-1]:
+                addr, color = divmod(packed, 16)
+                out.extend((color, addr))
         out.extend((COLOR_MAN, fields[6]))
+        if fields[9] != fields[6]:
+            value = raw[fields[9]]
+            char = " " if value & 0xFF == ord("@") else chr(value & 0xFF)
+            out.extend((op_color(char), fields[9]))
         while tokens[index] != ROOM_END:
             index += 1
             pairs = []
@@ -63,6 +73,19 @@ def _build_fsm() -> _Fsm:
     # color/address pair and reconstruct the next packed address.
     fsm.go("base_seed", "lit_r", " `0256`b0M", "base_request")
     fsm.go("base_request", "right", "sr", "base_color_out")
+
+    # Keep the later-frame restore lookup physically beside base_request.
+    # Both paths are sequential, so they can safely share COLORFETCH's single
+    # command/response pipe pair.  Defining these blocks near the service
+    # port is essential: their logical targets do not constrain placement.
+    fsm.go("old_restore", "right", "+M", "old_pack")
+    fsm.go("old_pack", "lit_r", " `0016`W*M", "old_request")
+    fsm.go("old_request", "right", "sr", "old_color_out")
+    fsm.go("old_color_out", "left", "sW", "old_addr_prepare")
+    fsm.go("old_addr_prepare", "right", "M", "old_addr_div")
+    fsm.go("old_addr_div", "lit_r", " `0016`W/", "old_addr_out")
+    fsm.go("old_addr_out", "left", "s", "start_r")
+
     fsm.go("base_color_out", "left", "sW", "base_addr_prepare")
     fsm.go("base_addr_prepare", "right", "M", "base_addr_div")
     fsm.go("base_addr_div", "lit_r", " `0016`W/", "base_addr_out")
@@ -80,12 +103,19 @@ def _build_fsm() -> _Fsm:
         pos="bound_r_0",
     )
     fsm.go("bad_item", "left", "H", "bad_item")
-    fsm.go("frame_end", "left", "1Ns", "base_seed")
+    fsm.go("frame_end", "left", "1Ns1b", "item_r")
     for index in range(4):
-        target = f"bound_r_{index + 1}" if index < 3 else "wall_r"
+        target = f"bound_r_{index + 1}" if index < 3 else "phase_branch"
         fsm.go(f"bound_r_{index}", "left", "r", f"bound_s_{index}")
         fsm.go(f"bound_s_{index}", "right", "s", target)
 
+    fsm.bp(
+        "phase_branch",
+        "mid",
+        "",
+        zero="wall_r",
+        pos="ctrl_drop",
+    )
     fsm.sign(
         "wall_r",
         "right",
@@ -102,7 +132,15 @@ def _build_fsm() -> _Fsm:
     fsm.go("ctrl_drop", "left", "r", "addr_r")
     fsm.go("addr_r", "left", "rM", "man_color")
     fsm.go("man_color", "left", f"{COLOR_MAN}sW", "man_addr_out")
-    fsm.go("man_addr_out", "left", "srrr", "start_r")
+    fsm.go("man_addr_out", "left", "sWrr", "old_r")
+    fsm.sign(
+        "old_r",
+        "left",
+        "r-",
+        neg="old_restore",
+        zero="start_r",
+        pos="old_restore",
+    )
 
     # These two output blocks also stay high enough to bind the external
     # output rather than PIPEFRAME's bottom-wall command pipe.
@@ -217,11 +255,14 @@ def _route_service(
     )
 
 
-CTRL_LEFT = 5
-INPUT_ROW, OUTPUT_ROW = 2, 6
+CTRL_LEFT = 20
+INPUT_ROW, OUTPUT_ROW = 2, 70
+CONTROLLER_INPUT_ROW = 64
 
 
 def build_stateframe_rig() -> str:
+    from .lllm_fetch import build_relay
+
     ctrl = build_stateframe_room()
     ctrl_right = CTRL_LEFT + len(ctrl[0]) - 1
     service_left = ctrl_right + 12
@@ -236,7 +277,23 @@ def build_stateframe_rig() -> str:
     cv.put(0, CTRL_LEFT, ctrl)
     cv.put(INPUT_ROW - 1, 0, ["+-+", "|I|", "+-+"])
     cv.put(OUTPUT_ROW - 1, 0, ["+-+", "|O|", "+-+"])
-    cv.pipe([(INPUT_ROW, 3), (INPUT_ROW, CTRL_LEFT - 1)])
+    # Preserve the component's conventional row-2 ingress while presenting
+    # the controller with a mid-wall endpoint.  Without this relay, the
+    # lower main-stream reads bind PIPEFRAME's nearer response pipe.
+    relay_left = 5
+    relay = build_relay().render()
+    relay_right = relay_left + len(relay[0]) - 1
+    input_track = CTRL_LEFT - 5
+    cv.put(0, relay_left, relay)
+    cv.pipe([(INPUT_ROW, 3), (INPUT_ROW, relay_left - 1)])
+    cv.pipe(
+        [
+            (INPUT_ROW, relay_right + 1),
+            (INPUT_ROW, input_track),
+            (CONTROLLER_INPUT_ROW, input_track),
+            (CONTROLLER_INPUT_ROW, CTRL_LEFT - 1),
+        ]
+    )
     cv.pipe([(OUTPUT_ROW, CTRL_LEFT - 1), (OUTPUT_ROW, 3)])
     for service, phase, top in (
         (color, color_phase, 0),
@@ -263,8 +320,6 @@ def build_stateframe_rig() -> str:
     top_turn = pipe_top - 10
     response_drop = pipe_left - 5
     cv.put(pipe_top, pipe_left, pipe)
-    from .lllm_fetch import build_relay
-
     cv.put(pipe_top + 20, relay_left, build_relay().render())
     cv.pipe(
         [

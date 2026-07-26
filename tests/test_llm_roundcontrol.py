@@ -26,9 +26,9 @@ from littleman.llm_statecopy import COPY_END, COPY_SPLIT, statecopy_reference
 from littleman.sim import Machine
 
 ROOT = Path(__file__).resolve().parents[1]
-CASE = json.loads(
-    (ROOT / "data/small/problems/little-little-man.json").read_text()
-)["publicTestData"][0]
+CASE = json.loads((ROOT / "data/small/problems/little-little-man.json").read_text())[
+    "publicTestData"
+][0]
 
 
 def state_stream() -> list[int]:
@@ -70,8 +70,8 @@ def test_generator_is_deterministic_below_limit_and_server_safe(text):
     assert build_runtime_loop_rig() == text
     assert len(text.encode()) < 10_000_000
     machine = Machine.parse(text)
-    assert len(machine.rooms) == 118
-    assert len(machine.pipes) == 190
+    assert len(machine.rooms) == 120
+    assert len(machine.pipes) == 192
     server_compat.validate_layout(text)
     alexey_pipecheck.check(text)
 

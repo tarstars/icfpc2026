@@ -14,9 +14,9 @@ from littleman.llm_roomfind import SETUP_END
 from littleman.sim import Machine
 
 ROOT = Path(__file__).resolve().parents[1]
-CASES = json.loads(
-    (ROOT / "data/small/problems/little-little-man.json").read_text()
-)["publicTestData"]
+CASES = json.loads((ROOT / "data/small/problems/little-little-man.json").read_text())[
+    "publicTestData"
+]
 
 
 @pytest.fixture(scope="module")
@@ -39,8 +39,8 @@ def test_generator_is_deterministic_below_limit_and_server_safe(text):
     assert len(text.splitlines()) == 25_207
     assert max(map(len, text.splitlines())) == 749
     machine = Machine.parse(text)
-    assert len(machine.rooms) == 135
-    assert len(machine.pipes) == 217
+    assert len(machine.rooms) == 137
+    assert len(machine.pipes) == 219
     server_compat.validate_layout(text)
     alexey_pipecheck.check(text)
 

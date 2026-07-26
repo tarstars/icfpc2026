@@ -9,8 +9,8 @@ import pytest
 
 from littleman import alexey_pipecheck, server_compat
 from littleman.judge import judge_case
-from littleman.llm_fulltick import fulltick_reference
 from littleman.llm_framerender import build_framerender_rig
+from littleman.llm_fulltick import fulltick_reference
 from littleman.llm_packraw import pack_reference
 from littleman.llm_perimeter import perimeter_reference
 from littleman.llm_pipestarts import pipestarts_reference
@@ -20,9 +20,9 @@ from littleman.llm_scan import scan_reference
 from littleman.llm_statebuild import statebuild_reference
 
 ROOT = Path(__file__).resolve().parents[1]
-CASE = json.loads(
-    (ROOT / "data/small/problems/little-little-man.json").read_text()
-)["publicTestData"][0]
+CASE = json.loads((ROOT / "data/small/problems/little-little-man.json").read_text())[
+    "publicTestData"
+][0]
 
 
 def state_stream() -> list[int]:
@@ -43,7 +43,7 @@ def text() -> str:
 def test_generator_is_deterministic_compact_and_server_safe(text):
     assert build_framerender_rig() == text
     assert len(text.splitlines()) == 452
-    assert max(map(len, text.splitlines())) == 394
+    assert max(map(len, text.splitlines())) == 409
     server_compat.validate_layout(text)
     alexey_pipecheck.check(text)
 
@@ -57,4 +57,3 @@ def test_two_consecutive_states_render_exact_frames(text):
     ]
     result = judge_case(text, rounds, max_ticks=12_000_000)
     assert result.passed, result.reason
-

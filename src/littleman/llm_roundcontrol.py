@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .canvas import Canvas
 from .lllm_scan import _compile, _Fsm, _layout
+from .llm_framebaseline import framebaseline_reference
 from .llm_fulltick import build_fulltick_rig, fulltick_reference
 from .llm_roomfind import SETUP_END
 from .llm_roomstage import _strip_io
@@ -35,12 +36,13 @@ def copydemux_reference(tokens: list[int]) -> tuple[list[int], list[int]]:
 def round_states_reference(tokens: list[int]) -> list[list[int]]:
     state, commands = setupdemux_reference(tokens)
     world = state[:64]
-    runtime = state[64:]
     out = [list(state)]
+    runtime = framebaseline_reference(state)[64:]
     for command in commands:
         for _ in range(command):
             runtime = fulltick_reference([*world, *runtime])
         out.append(list(runtime))
+        runtime = framebaseline_reference([*world, *runtime])[64:]
     return out
 
 
@@ -193,9 +195,7 @@ def _statecopy_rows() -> tuple[int, int, int, int]:
     fsm = _build_statecopy_fsm()
     main_in = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "left"
-        and name == "item_r"
-        and "r" in code,
+        lambda name, zone, code: zone == "left" and name == "item_r" and "r" in code,
     )
     main_out = _rows_for(
         fsm,
@@ -203,15 +203,17 @@ def _statecopy_rows() -> tuple[int, int, int, int]:
     )
     scratch_out = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right"
-        and name in {"scratch_s", "setup_scratch", "scratch_end"}
-        and "s" in code,
+        lambda name, zone, code: (
+            zone == "right"
+            and name in {"scratch_s", "setup_scratch", "scratch_end"}
+            and "s" in code
+        ),
     )
     scratch_in = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right"
-        and name.startswith("copy_")
-        and "r" in code,
+        lambda name, zone, code: (
+            zone == "right" and name.startswith("copy_") and "r" in code
+        ),
     )
     return main_in, main_out, scratch_out, scratch_in
 
@@ -287,15 +289,17 @@ def _setupdemux_rows() -> tuple[int, int, int]:
     )
     state_out = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "left"
-        and name in {"state_restore", "setup_restore"}
-        and "s" in code,
+        lambda name, zone, code: (
+            zone == "left"
+            and name in {"state_restore", "setup_restore"}
+            and "s" in code
+        ),
     )
     command_out = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right"
-        and name == "command_out"
-        and "s" in code,
+        lambda name, zone, code: (
+            zone == "right" and name == "command_out" and "s" in code
+        ),
     )
     return input_row, state_out, command_out
 
@@ -308,15 +312,15 @@ def _copydemux_rows() -> tuple[int, int, int]:
     )
     frame_out = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "left"
-        and name.startswith("first_")
-        and "s" in code,
+        lambda name, zone, code: (
+            zone == "left" and name.startswith("first_") and "s" in code
+        ),
     )
     state_out = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right"
-        and name.startswith("second_")
-        and "s" in code,
+        lambda name, zone, code: (
+            zone == "right" and name.startswith("second_") and "s" in code
+        ),
     )
     return input_row, frame_out, state_out
 
@@ -325,35 +329,39 @@ def _roundgate_rows() -> tuple[int, int, int, int, int]:
     fsm = _build_roundgate_fsm()
     state_in = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "left"
-        and name == "source_r"
-        and "r" in code,
+        lambda name, zone, code: zone == "left" and name == "source_r" and "r" in code,
     )
     command_in = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right"
-        and name == "ticks_r"
-        and "r" in code,
+        lambda name, zone, code: zone == "right" and name == "ticks_r" and "r" in code,
     )
     feedback_out = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right"
-        and name.startswith("final_")
-        and "s" in code,
+        lambda name, zone, code: (
+            zone == "right" and name.startswith("final_") and "s" in code
+        ),
     )
-    pipeline_out = _rows_for(
-        fsm,
-        lambda name, zone, code: zone == "right"
-        and name
-        in {"source_restore", "source_end", "recycle_restore", "recycle_end"}
-        and "s" in code,
-    ) + 3
-    pipeline_in = _rows_for(
-        fsm,
-        lambda name, zone, code: zone == "right"
-        and name in {"recycle_r", "final_r"}
-        and "r" in code,
-    ) - 1
+    pipeline_out = (
+        _rows_for(
+            fsm,
+            lambda name, zone, code: (
+                zone == "right"
+                and name
+                in {"source_restore", "source_end", "recycle_restore", "recycle_end"}
+                and "s" in code
+            ),
+        )
+        + 3
+    )
+    pipeline_in = (
+        _rows_for(
+            fsm,
+            lambda name, zone, code: (
+                zone == "right" and name in {"recycle_r", "final_r"} and "r" in code
+            ),
+        )
+        - 1
+    )
     return state_in, command_in, feedback_out, pipeline_out, pipeline_in
 
 
@@ -366,10 +374,7 @@ def _strip_input(text: str) -> tuple[list[str], tuple[int, int]]:
         (r, c)
         for r, row in enumerate(rows)
         for c, char in enumerate(row)
-        if char == "I"
-        and c
-        and c + 1 < width
-        and row[c - 1 : c + 2] == ["|", "I", "|"]
+        if char == "I" and c and c + 1 < width and row[c - 1 : c + 2] == ["|", "I", "|"]
     ]
     if len(matches) != 1:
         raise ValueError(f"expected one I box, found {matches}")
@@ -382,6 +387,7 @@ def _strip_input(text: str) -> tuple[list[str], tuple[int, int]]:
 
 
 def build_runtime_loop_rig() -> str:
+    from .llm_framebaseline import build_framebaseline_rig
     from .llm_framerender import build_framerender_rig
 
     cv = Canvas()
@@ -390,6 +396,7 @@ def build_runtime_loop_rig() -> str:
     copy_top = 60
     demux_top = 350
     frame_top = 430
+    baseline_top = 850
     gate_top = 950
     tick_top = 1030
     tick_left = 250
@@ -407,6 +414,8 @@ def build_runtime_loop_rig() -> str:
     cv.put(demux_top, control_left, demux)
     frame_rows, frame_in = _strip_input(build_framerender_rig())
     cv.put(frame_top, 20, frame_rows)
+    baseline_rows, baseline_in, baseline_out = _strip_io(build_framebaseline_rig())
+    cv.put(baseline_top, control_left, baseline_rows)
 
     gate = build_roundgate_room()
     state_in, command_in, feedback_out, tick_out, tick_in = _roundgate_rows()
@@ -426,6 +435,14 @@ def build_runtime_loop_rig() -> str:
         control_left + len(demux[0]),
     )
     frame_input = (frame_top + frame_in[0], 20 + frame_in[1])
+    baseline_input = (
+        baseline_top + baseline_in[0],
+        control_left + baseline_in[1],
+    )
+    baseline_output = (
+        baseline_top + baseline_out[0],
+        control_left + baseline_out[1],
+    )
     gate_state = (gate_top + state_in, control_left - 1)
     gate_command = (
         gate_top + command_in,
@@ -489,15 +506,26 @@ def build_runtime_loop_rig() -> str:
         ]
     )
 
-    # Second state copy enters ROUNDGATE on its left side.
+    # The second state copy refreshes OLD := ADDR before entering ROUNDGATE.
+    # The first copy has already rendered the just-finished round, so OLD is
+    # precisely the cell that must be restored by the next delta frame.
     state_right_track = control_left + 120
     state_left_track = control_left - 50
+    baseline_turn_row = baseline_top - 20
     cv.pipe(
         [
             state_output,
             (state_output[0], state_right_track),
-            (gate_top - 50, state_right_track),
-            (gate_top - 50, state_left_track),
+            (baseline_turn_row, state_right_track),
+            (baseline_turn_row, state_left_track),
+            (baseline_input[0], state_left_track),
+            baseline_input,
+        ]
+    )
+    cv.pipe(
+        [
+            baseline_output,
+            (baseline_output[0], state_left_track),
             (gate_state[0], state_left_track),
             gate_state,
         ]
