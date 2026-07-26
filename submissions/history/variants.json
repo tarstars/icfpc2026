@@ -118,20 +118,69 @@
         "score": 7225,
         "preflight": "READY TO SUBMIT"
       },
+      "liveSubmission": {
+        "id": "b8426386-da64-4210-978d-f30b23b231a1",
+        "status": "done",
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "width": 85,
+        "height": 85,
+        "area2": 7225,
+        "score": 7225,
+        "loadError": null,
+        "error": null,
+        "createdAt": "2026-07-26T15:08:30.515Z",
+        "updatedAt": "2026-07-26T15:08:44.343Z"
+      }
+    },
+    {
+      "version": "history_03",
+      "label": "asymmetric short-token lookup archive",
+      "parent": "history_02",
+      "architecture": "radix-128 main tape, cyclic 128-value lookup, selector, and shared radix-128 character/token splitter",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 128,
+        "dictionaryTokens": 56,
+        "maximumTokenLength": 5,
+        "symbols": 1812,
+        "packedWords": 204,
+        "lookupValues": 128,
+        "mainRows": 68,
+        "wordsPerRow": 3,
+        "decimalFieldWidth": 19
+      },
+      "source": {
+        "path": "submissions/history/history_03.man",
+        "generator": "src/littleman/history_compact.py:build_history_compact",
+        "sha256": "170a48ebc149dae11a37437d9b0695590fbc8bc42527b41fb131a833b52c7de7",
+        "bytes": 7029,
+        "width": 84,
+        "height": 84,
+        "footprint": 7056
+      },
+      "localValidation": {
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "ticks": 1783519,
+        "score": 7056,
+        "serverCompatible": true,
+        "pipeLengths": [2, 2, 2, 2, 36]
+      },
       "liveSubmission": null
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-24T17:02:12.107Z",
+    "updatedAt": "2026-07-26T18:08:05.738Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 7,
+    "rank": 29,
     "casesPassed": 1,
     "casesTotal": 1,
-    "score": 7921,
+    "score": 7225,
     "passPoints": 1.0,
-    "rankPoints": 0.8536585365853658,
-    "points": 1.8536585365853657,
-    "rows": 42
+    "rankPoints": 0.8095238095238095,
+    "points": 1.8095238095238095,
+    "rows": 149
   }
 }
