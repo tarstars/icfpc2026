@@ -81,3 +81,45 @@ def test_pack64_is_pure_bit_surgery():
     word = 43 + (45 << 13) + ((32 + 512) << 26) + ((64 + 256) << 39)
     assert packed[:64] == [word] * 64
     assert packed[64:] == [17, 0, 0, 1, 9]
+
+
+class _Script:
+    def __init__(self, tokens, want):
+        self.tokens, self.want, self.got = list(tokens), want, []
+
+    def pop_input(self):
+        return self.tokens.pop(0) if self.tokens else None
+
+    def on_output(self, value, tick):
+        self.got.append(value)
+        if value != self.want[len(self.got) - 1]:
+            return "failed"
+        return "passed" if len(self.got) >= len(self.want) else None
+
+
+CHAIN_ROOMS = [
+    ["+--+", "|@ |", "|  |", "+--+"],
+    ["+--+ +--+", "|@ |>|  |", "+--+ +--+"],          # one-cell pipe
+    ["+--+--+", "|@ |  |", "+--+--+"],                # shared wall column
+]
+
+
+@pytest.mark.parametrize(
+    "rows", CHAIN_ROOMS, ids=["tiny", "pipe1", "shared"]
+)
+def test_scan3_machine_room(rows):
+    """The composed chain emits machine_stream + relayed tail, in sim.
+
+    The full 61-case corpus and 35-case fuzz run of this gate lives in
+    the session gate scripts (worst observed 14.5M ticks, cap 50M).
+    """
+    from littleman.fastsim import Machine
+    from littleman.llm_scan3 import build_scan3_machine
+
+    want = machine_stream(rows) + TAIL
+    sc = _Script(tokens_of(rows) + TAIL, want)
+    res = Machine.parse(build_scan3_machine()).run(
+        max_ticks=30_000_000, controller=sc
+    )
+    assert res.error is None and res.status == "passed", (
+        res.error, res.status, len(sc.got), len(want))
