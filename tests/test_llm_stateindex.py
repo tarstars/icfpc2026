@@ -26,6 +26,7 @@ from littleman.llm_stateindex import (
     _build_fsm,
     build_stateindex_room,
     stateindex_reference,
+    stateunindex_reference,
 )
 from littleman.sim import Machine
 
@@ -131,3 +132,9 @@ def test_index_stream_has_explicit_table_boundaries():
     split = result.index(INDEX_SPLIT)
     assert result[split - 1] == -1000
     assert result[-1] == INDEX_END
+
+
+@pytest.mark.parametrize("case", [*CASES, *FUZZ], ids=lambda case: case["name"])
+def test_index_is_lossless(case):
+    state = fetched_state(case)
+    assert stateunindex_reference(stateindex_reference(state)) == state

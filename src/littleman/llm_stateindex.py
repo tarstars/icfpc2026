@@ -46,6 +46,59 @@ def stateindex_reference(tokens: list[int]) -> list[int]:
     return [*rooms, SETUP_END, INDEX_SPLIT, *pipes, INDEX_END]
 
 
+def stateunindex_reference(tokens: list[int]) -> list[int]:
+    """Restore source-grouped normalized state from an indexed stream."""
+    rooms: list[list[int]] = []
+    pipes: list[tuple[int, list[int]]] = []
+    index = 0
+    while tokens[index] != SETUP_END:
+        header = list(tokens[index : index + 11])
+        index += 11
+        if tokens[index] != ROOM_END:
+            raise ValueError(f"missing indexed room end: {tokens[index]}")
+        index += 1
+        rooms.append(header)
+    index += 1
+    if tokens[index] != INDEX_SPLIT:
+        raise ValueError(f"missing index split: {tokens[index]}")
+    index += 1
+    while tokens[index] != INDEX_END:
+        start, source_event = tokens[index : index + 2]
+        record = [start]
+        index += 2
+        while tokens[index] != PIPE_MASK:
+            record.extend(tokens[index : index + 2])
+            index += 2
+        record.extend(tokens[index : index + 2])
+        index += 2
+        if tokens[index] != PIPE_VALUES:
+            raise ValueError(f"missing indexed values marker: {tokens[index]}")
+        count = tokens[index + 1]
+        record.extend(tokens[index : index + 2 + count])
+        index += 2 + count
+        if tokens[index] != PIPE_END:
+            raise ValueError(f"missing indexed pipe end: {tokens[index]}")
+        record.append(PIPE_END)
+        index += 1
+        pipes.append((source_event, record))
+    if index + 1 != len(tokens):
+        raise ValueError("unexpected indexed-state tail")
+
+    out: list[int] = []
+    events = {header[0] for header in rooms}
+    if len(events) != len(rooms):
+        raise ValueError("room events are not unique")
+    if any(source not in events for source, _record in pipes):
+        raise ValueError("pipe has unknown source event")
+    for header in rooms:
+        out.extend(header)
+        for source, record in pipes:
+            if source == header[0]:
+                out.extend(record)
+        out.append(ROOM_END)
+    return [*out, SETUP_END]
+
+
 def _build_fsm() -> _Fsm:
     fsm = _Fsm()
     fsm.go("boot", "left", "@", "item_r")
