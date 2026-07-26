@@ -27,8 +27,20 @@ prints one line. See `experiments/alexey-reverse06/` and
 
 ### 1. Delete empty rows and columns
 
-`alexey_squeeze(text, rows=True, cols=True)`. Costs nothing, changes no
-behaviour, and shortens every pipe it crosses (so it usually buys ticks too).
+`alexey_squeeze(text, rows=True, cols=True)`. **It shortens every pipe it
+crosses, and that is a behaviour change when the pipe stores.** claude's
+measured counterexample (2026-07-26): squeezed snake passes 5/5 public and
+looks 1.16x better, but its ring lost capacity and the adversarial
+maximal-growth game fails at snake length 68 where the live artifact passes.
+My subset-sum data point is the same class: the full squeeze shortened 118
+pipes (39,755 -> 20,305 cells) while looking structurally identical.
+
+So the acceptance rule is: **diff the pipe-length multiset before accepting
+a squeeze** (`alexey_resolveaudit.structure` prints it). If no pipe shrank,
+the squeeze is free. If any pipe shrank, run the occupancy probe: peak well
+under the new length -> the pipe is transport and the squeeze also buys
+ticks; peak near the new length -> re-prove capacity adversarially, and
+never on the public suite alone.
 
 **Re-run it after EVERY move.** It is exhausted for a *layout*, never for a
 *program*: it found nothing on brackets_04, and 3 rows + 2 columns on the same
