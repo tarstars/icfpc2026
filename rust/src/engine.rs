@@ -1,7 +1,8 @@
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::sync::Arc;
 
-use pyo3::prelude::*;
+use serde::Serialize;
 
 use crate::spec::Spec;
 
@@ -52,10 +53,11 @@ struct Display {
     next: Vec<i8>,
 }
 
+#[derive(Serialize)]
 pub struct RunOutput {
     pub status: &'static str,
     pub error: Option<&'static str>,
-    pub verdict: Option<PyObject>,
+    pub hook_stopped: bool,
     pub ticks: i64,
     pub output: Vec<i64>,
     pub output_ticks: Vec<i64>,
@@ -76,8 +78,16 @@ pub struct RunOutput {
     pub disp_cursor: Vec<usize>,
 }
 
+pub trait Hooks {
+    type Error;
+
+    fn pop_input(&mut self) -> Result<Option<i64>, Self::Error>;
+    fn on_output(&mut self, value: i64, tick: i64) -> Result<bool, Self::Error>;
+    fn on_frame(&mut self, frame: &[Vec<i8>], tick: i64) -> Result<bool, Self::Error>;
+}
+
 pub struct Engine {
-    spec: Spec,
+    spec: Arc<Spec>,
     men: Vec<Man>,
     pipes: Vec<Pipe>,
     displays: Vec<Display>,
@@ -97,12 +107,13 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(spec: Spec) -> PyResult<Self> {
+    pub fn new(spec: Arc<Spec>) -> Self {
         let mut men = Vec::with_capacity(spec.mcell.len());
         let mut runnable_buf = Vec::new();
         let mut occupied = vec![-1; spec.w * spec.h];
         for i in 0..spec.mcell.len() {
-            let runnable = !spec.mhalt[i];
+            let halted = spec.mhalt[i] != 0;
+            let runnable = !halted;
             if runnable {
                 runnable_buf.push(i);
             }
@@ -111,7 +122,7 @@ impl Engine {
                 cell: spec.mcell[i],
                 dir: spec.mdir[i],
                 room: spec.mroom[i],
-                halted: spec.mhalt[i],
+                halted,
                 a: spec.ma[i],
                 b: spec.mb[i],
                 bp: spec.mbp[i],
@@ -162,7 +173,7 @@ impl Engine {
             })
             .collect();
         let n_cells = spec.n_cells;
-        Ok(Self {
+        Self {
             spec,
             men,
             pipes,
@@ -180,7 +191,7 @@ impl Engine {
             in_execute: false,
             current_man: -1,
             tick: 0,
-        })
+        }
     }
 
     fn pipe_active(pipe: &Pipe) -> bool {
@@ -814,19 +825,10 @@ impl Engine {
         None
     }
 
-    pub fn run(
-        mut self,
-        py: Python<'_>,
-        controller: &Bound<'_, PyAny>,
-        ctrl_queue: &Bound<'_, PyAny>,
-        input_queue: &Bound<'_, PyAny>,
-        max_ticks: i64,
-    ) -> PyResult<RunOutput> {
-        let has_controller = !controller.is_none();
-        let has_frame_callback = has_controller && controller.hasattr("on_frame")?;
+    pub fn run<H: Hooks>(mut self, hooks: &mut H, max_ticks: i64) -> Result<RunOutput, H::Error> {
         let mut status = "tick-cap";
         let mut error = None;
-        let mut verdict: Option<PyObject> = None;
+        let mut hook_stopped = false;
         let mut output = Vec::new();
         let mut output_ticks = Vec::new();
         let mut frames = Vec::new();
@@ -846,12 +848,9 @@ impl Engine {
                     let value = self.take_last(pipe);
                     output.push(value);
                     output_ticks.push(self.tick);
-                    if has_controller {
-                        let result = controller.call_method1("on_output", (value, self.tick))?;
-                        if result.is_truthy()? {
-                            verdict = Some(result.unbind());
-                            break 'ticks;
-                        }
+                    if hooks.on_output(value, self.tick)? {
+                        hook_stopped = true;
+                        break 'ticks;
                     }
                 }
             }
@@ -859,19 +858,10 @@ impl Engine {
             if self.spec.input_pipe >= 0 {
                 let pipe = self.spec.input_pipe as usize;
                 let open = self.pipes[pipe].runs.first().copied() != Some(0);
-                if open && has_controller {
-                    let skip_empty_round_queue =
-                        !ctrl_queue.is_none() && ctrl_queue.len().ok() == Some(0);
-                    if !skip_empty_round_queue {
-                        let value = controller.call_method0("pop_input")?;
-                        if !value.is_none() {
-                            self.put0(pipe, value.extract()?);
-                        }
+                if open {
+                    if let Some(value) = hooks.pop_input()? {
+                        self.put0(pipe, value);
                     }
-                } else if open && !has_controller && input_queue.len().ok().unwrap_or(0) > 0 {
-                    let value: i64 = input_queue.get_item(0)?.extract()?;
-                    input_queue.del_item(0)?;
-                    self.put0(pipe, value);
                 }
             }
 
@@ -958,13 +948,8 @@ impl Engine {
                             let frame: Vec<Vec<i8>> =
                                 d.current.chunks(d.w).map(|row| row.to_vec()).collect();
                             frame_ticks.push(self.tick);
-                            if has_frame_callback {
-                                let frame_obj = frame.clone().into_py(py);
-                                let result =
-                                    controller.call_method1("on_frame", (frame_obj, self.tick))?;
-                                if result.is_truthy()? {
-                                    verdict = Some(result.unbind());
-                                }
+                            if hooks.on_frame(&frame, self.tick)? {
+                                hook_stopped = true;
                             }
                             frames.push(frame);
                             if value == 0 {
@@ -987,7 +972,7 @@ impl Engine {
             } else {
                 self.move_legacy(movers)
             };
-            if error.is_some() || verdict.is_some() {
+            if error.is_some() || hook_stopped {
                 break;
             }
             if self.runnable_count == 0 && self.recv_wait_count == 0 && self.send_wait_count == 0 {
@@ -1010,7 +995,7 @@ impl Engine {
         Ok(self.finish(
             status,
             error,
-            verdict,
+            hook_stopped,
             output,
             output_ticks,
             frames,
@@ -1022,7 +1007,7 @@ impl Engine {
         self,
         status: &'static str,
         error: Option<&'static str>,
-        verdict: Option<PyObject>,
+        hook_stopped: bool,
         output: Vec<i64>,
         output_ticks: Vec<i64>,
         frames: Vec<Vec<Vec<i8>>>,
@@ -1031,7 +1016,7 @@ impl Engine {
         RunOutput {
             status,
             error,
-            verdict,
+            hook_stopped,
             ticks: self.tick,
             output,
             output_ticks,

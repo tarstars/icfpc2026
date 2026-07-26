@@ -173,6 +173,54 @@ class CompiledMachine:
             frame_ticks=tuple(raw[7]),
         )
 
+    def cli_request(
+        self,
+        cases,
+        *,
+        max_ticks=5_000_000,
+        workers=1,
+        include_state=False,
+        include_spec=True,
+    ):
+        """Build the JSON-serializable request consumed by ``littleman-rust``."""
+
+        def frame(value):
+            if value and isinstance(value[0], str):
+                return [[int(character, 16) for character in row] for row in value]
+            return [[int(character) for character in row] for row in value]
+
+        jobs = []
+        for index, rounds in enumerate(cases):
+            jobs.append(
+                {
+                    "id": str(index),
+                    "rounds": [
+                        {
+                            "in": [int(value) for value in round_["in"]],
+                            "out": [int(value) for value in round_.get("out", [])],
+                            "frames": [
+                                frame(expected)
+                                for expected in round_.get("frames", [])
+                            ],
+                        }
+                        for round_ in rounds
+                    ],
+                }
+            )
+        request = {
+            "jobs": jobs,
+            "max_ticks": max_ticks or 5_000_000,
+            "workers": workers,
+            "include_state": include_state,
+        }
+        if include_spec:
+            request["spec"] = self.spec
+        return request
+
+    def encoded_ir(self) -> bytes:
+        """Return the versioned zstd-compressed native IR cache."""
+        return bytes(_rust.encode_ir(self.spec))
+
 
 _FORK_COMPILED = None
 _FORK_MAX_TICKS = 0
