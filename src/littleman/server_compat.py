@@ -57,9 +57,52 @@ def find_shared_walls(text: str) -> list[SharedWall]:
     ]
 
 
+def validate_io_pipe_counts(text: str) -> None:
+    """Reject an I room with several outgoing pipes, or an O room with several in.
+
+    The server enforces this and our simulator does not.  A reverse-a-list
+    candidate passed the local judge 8/8 and preflight READY, then came back
+    from the server as ``the input room has more than one outgoing pipe --
+    connect exactly one at (0, 8)``, scoring 0/0.  Costing a submission to
+    learn a rule we can check locally in a few lines is not a trade worth
+    repeating.
+
+    The rule is about ADJACENCY, not about where a pipe starts and ends.
+    Our simulator attributes a pipe to the rooms at its two ends, so a pipe
+    that merely runs flush along an I/O room's wall on its way elsewhere is
+    invisible to us and is a second connection to the server.  That is
+    exactly what happened: an 18-cell return pipe ran up the column beside
+    the input room's wall, and its cells also passed directly over that
+    room's top wall.
+    """
+
+    machine = Machine.parse(text)
+    for room in machine.rooms:
+        kind = getattr(room, "kind", None)
+        if kind not in ("input", "output"):
+            continue
+        border = _border_cells(room)
+        touching = set()
+        for index, pipe in enumerate(machine.pipes):
+            for row, column in pipe.cells:
+                neighbours = ((row - 1, column), (row + 1, column),
+                              (row, column - 1), (row, column + 1))
+                if any(cell in border for cell in neighbours):
+                    touching.add(index)
+                    break
+        if len(touching) > 1:
+            corner = (room.top, room.left)
+            raise ServerCompatibilityError(
+                f"the {kind} room at {corner} has {len(touching)} pipes running "
+                "against its wall -- connect exactly one (a pipe merely passing "
+                "alongside still counts as connected to the server)"
+            )
+
+
 def validate_layout(text: str) -> None:
     """Reject layouts that exercise the server's stricter shared-wall rule."""
 
+    validate_io_pipe_counts(text)
     conflicts = find_shared_walls(text)
     if not conflicts:
         return
