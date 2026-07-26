@@ -137,7 +137,8 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   `agent/codex-main-integration` candidate merges current `origin/main`, both
   agent lineages, and passes the full repository suite: 3,822 passed, two
   skipped, four expected xfails, zero failures. Peer review is approved;
-  promotion to `main` is the remaining Git step.
+  the guarded non-force promotion placed release commit `6efbc49` on
+  `origin/main`.
 
 ## Storage
 

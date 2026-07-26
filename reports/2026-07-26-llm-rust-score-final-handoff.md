@@ -2,7 +2,7 @@
 
 Date: 2026-07-26
 
-## Release candidate
+## Release
 
 The complete candidate is pushed as:
 
@@ -16,6 +16,10 @@ It contains the complete accepted LLM machine, exact Rust executor, all five
 score-improvement streams including the latest 31×31 TCP successor, both
 agents' compact-LLM/LLLM evidence, and current `origin/main`. The user's dirty
 local `main` worktree was not modified.
+
+The guarded, non-force promotion fast-forwarded `origin/main` from `f35eb11`
+through release commit `6efbc49`. A post-promotion fetch verified both
+`origin/main` and `origin/agent/codex-main-integration` at that exact commit.
 
 Claude subsequently pushed the explicitly incomplete compact-LLM checkpoint
 `103cb8d` (no rig test and unfinished wiring). It is preserved remotely on
@@ -35,7 +39,7 @@ verified or submitted artifact depends on it.
 | At least three live score improvements | **proved, five** | refreshed terminal API results listed below |
 | All valuable goal work pushed | **proved** | LLM, Rust, LLLM integration, Claude, and final integration commits are reachable on `origin`; local-only files are classified below |
 | Independent final review | **proved** | Claude approved integration and Rust, then Codex closed the sole fallback finding in `a899e03` |
-| Promotion to `main` | **pending final fast-forward** | reviewed integration branch is ready; local dirty `main` remains untouched |
+| Promotion to `main` | **proved** | guarded non-force fast-forward placed release commit `6efbc49` on `origin/main`; post-push fetch matched both remote refs |
 
 ## Accepted LLM
 
@@ -150,13 +154,11 @@ release candidate intentionally excludes it.
 
 ## Remaining actions
 
-1. Re-fetch and fast-forward `origin/main` to this approved integration
-   candidate without touching the user's dirty local worktree.
-2. The user's separate manual Memory improvement (16,033,454.75) has no
+1. The user's separate manual Memory improvement (16,033,454.75) has no
    recoverable source in Git or bearer-authenticated API. If the user still
    has it, preserve it as `submissions/memory/memory_11.man`; this is external
    to the agent-created score stream but is the only known live result lacking
    its exact source.
-3. Compact LLM remains a score-only research lane; its accepted 28/28 baseline
+2. Compact LLM remains a score-only research lane; its accepted 28/28 baseline
    is already secure and must not be replaced unless a fully gated candidate
    has a strictly lower server score.

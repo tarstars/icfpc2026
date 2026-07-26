@@ -41,7 +41,8 @@ The current live coverage totals are respectively 20/20, 26/26, 20/20,
 minimum of three. The exact peer artifacts and responses are preserved in
 `agent/codex-main-integration@a899e03`; the final repository suite passed
 3,822 tests with no failure. Claude independently approved the integration;
-promotion of the reviewed candidate to `main` is the remaining Git step.
+the reviewed release was fast-forwarded without force to `origin/main`
+through `6efbc49`.
 
 The TCP result was independently refreshed through the authenticated API on
 2026-07-26: terminal `done`, 20/20, 31×31, average 1,707.05 ticks, no error or
