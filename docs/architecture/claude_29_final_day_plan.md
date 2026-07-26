@@ -107,3 +107,41 @@ input distribution before believing any asymptotic argument.**
 Sort stays at 896,305; the slot went to a tcp geometry repack instead
 (C room is 18x14 at 40.1% interior fill, and its 14 rows set the box's
 bottom edge; 35 -> 31 is 1.27x, a contained press-shaped task).
+
+
+## Addendum 3 (19:45Z): my k-ring economics were WRONG, in our favour
+
+The brief I gave the k-ring builder said 24x24 -> 1.19x net and 26x26 ->
+1.01x ("worthless"). Those came from the mis-calibrated tick model
+(factor 1.90). With the corrected model (factor 2.50, from the salvaged
+agent's concurrent-merger form) and sort_07's MEASURED avg of 1517:
+
+    22x22  fp 484  net 1.86x  -> local ~293,700
+    24x22  fp 576  net 1.57x  -> local ~349,500
+    26x26  fp 676  net 1.34x  -> local ~410,200
+
+**Even the fallback is worth having**, and I nearly told an agent to
+abandon at a box that is worth ~+0.10. The builder caught it and pushed
+back with its own derivation before dying -- exactly the behaviour the
+briefs ask for.
+
+Its fit derivation, worth preserving:
+- footprint is max(w,h)^2, so 22 wide x 18 tall scores the same 484 as
+  22x22 -- the minor dimension is free (this is the Chebyshev property
+  from claude_32 being used correctly);
+- pump room 12x15 outer (interior 10x13); two side by side = 24 wide,
+  plus a 7-row support band -> 24x22 = 576 as the SAFE fallback;
+- narrowing the pump interior 10 -> 9 columns gives 11x15 rooms, so
+  11+11 = 22 wide, 15 tall, leaving rows 15-21 (154 cells) for I, O,
+  merger and 2 relays (~101 cells of rooms, ~53 for pipes) -> 22x22;
+- interior columns 8-9 carry only the two ascent corridors, which merge
+  into one: that is the only surgery needed;
+- the splitter is FOLDED INTO pump A (it reads input and forwards
+  alternate values to pump B), so there is no splitter room -- that is
+  what buys the fit;
+- ring needs 9 cells (m1 = 8 values + token).
+
+Lesson, again: calibrate the model against a measured artifact before
+using it to set a threshold. I made this same error this morning killing
+the k-ring idea outright, corrected it, and then still shipped the stale
+numbers in a brief.
