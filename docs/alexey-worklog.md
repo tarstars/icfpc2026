@@ -1596,7 +1596,7 @@ average of 1162, so the server's cases are longer than the public ones and
 it should pay there — expect 20-30%, i.e. ~472k -> ~350k. It is a new
 machine, not an edit.
 
-**Cheaper thing first:** `reverse_02.man` already exists at **15x15, fp 225**
+**Correction:** `reverse_02.man` is not a candidate at all -- the server rejected it. reverse_01 is the base to work from.
 (against the live 256) and passes 8/8 locally — it was abandoned only
 because it has three one-cell pipes, which the server rejects at load. That
 is 12% for free if the pipes can be lengthened. They cannot be bent in
