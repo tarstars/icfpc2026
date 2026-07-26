@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "537ec979-d883-40f3-9663-b59579a0682c",
+    "slug": "reverse-a-list",
+    "name": "Reverse a List",
+    "scoring": "footprint-tick"
+  },
+  "note": "Tarstars lineage; prefixed because main already contains different immutable reverse_06 bytes.",
+  "variants": [
+    {
+      "version": "tarstars_reverse_06",
+      "label": "14-square compact relay",
+      "parent": "reverse_05",
+      "changeType": "algorithm-and-geometry",
+      "architecture": "double-extraction ring, six-tick 3x3 relay, left-entry pump cycle",
+      "source": {
+        "path": "submissions/reverse-a-list/tarstars_reverse_06.man",
+        "generator": "src/littleman/reverse_faster_codex.py:build_reverse_faster_codex",
+        "width": 14,
+        "height": 14,
+        "footprint": 196,
+        "sha256": "adfdb1a1aa73ffe81c6b59ee86b0739d1a0835766454428ed9f7acb7df30fcc9"
+      },
+      "localValidation": {
+        "casesPassed": 8,
+        "casesTotal": 8,
+        "averageTicks": 356.125,
+        "score": 69800.5,
+        "scoreImprovementPercent": 6.170300357067843,
+        "fuzzWorkloadsPassed": 308,
+        "preflight": "READY TO SUBMIT"
+      },
+      "liveSubmission": null,
+      "verdict": "Superseded by Alexey's live reverse lineage; preserve but do not submit."
+    }
+  ]
+}

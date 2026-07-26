@@ -17,7 +17,7 @@ from littleman.server_compat import validate_layout
 from littleman.sim import Machine, Man
 
 REPO = Path(__file__).resolve().parent.parent
-ARTIFACT = REPO / "submissions/reverse-a-list/reverse_06.man"
+ARTIFACT = REPO / "submissions/reverse-a-list/tarstars_reverse_06.man"
 PROBLEM = json.loads((REPO / "data/small/problems/reverse-a-list.json").read_text())
 
 
