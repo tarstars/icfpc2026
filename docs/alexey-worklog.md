@@ -2114,3 +2114,33 @@ embedded in row 12's chain, whose south branch lands on row 13's `W`. That is
 a walk-graph surgery project (map every landing pad, move the three chains
 together), not a layout move. Height similarly needs an interior row out of
 one of the three rooms. Parked with this note.
+
+### brackets b11: the ring is transport, not storage — 65 cells -> 49, live pending
+
+Alexey asked whether I/O and rooms 0/2 can be pressed closer. Measured every
+gap instead of answering from memory (b10_deadtrim coordinates):
+
+| gap | size | verdict |
+|---|---|---|
+| I room -> room 3 | pipe (23,21)-(23,20), 2 cells | legal minimum, flush |
+| O room -> room 2 | pipe (8,24)-(7,24), 2 cells; O floor row 6, room 2 roof row 9 | flush |
+| room 0 -> room 2 | rows 7-8, exactly 2 | minimum: their two pipes need >= 2 cells each; a 1-row gap means 1-cell pipes, which the server rejects |
+| room 2 -> room 3 | walls on rows 15/16 | already touching |
+
+Neither I nor O binds the box: O lives inside room 2's column band, I inside
+room 3's row band. Both dimensions are pinned elsewhere (room 2's interior
+content in width; the room stack plus the ring's roof-entry row in height).
+
+**But the occupancy probe that came with the measurement paid off.** Peak
+occupancy of the two long pipes on the heaviest cases (32-deep nests,
+full-length strings): **10 values of 78 cells of capacity**. Unlike
+reverse, brackets' 65-cell pipe is a data path, not a parking ring — its
+length is pure latency. We had been carefully preserving 65 cells all day
+for nothing. Shortest route is 49 cells (must still climb col 26 and run
+row 0 — both pinned): local 286,416 -> **277,830**, first tick win of the
+day. The 13-cell and two 5-cell pipes are already at their Manhattan
+minimum (13 = 9+3+1 exactly, 5 = 1+3+1 exactly), so nothing else to cut.
+
+Rule for the playbook: **measure a long pipe's peak occupancy before
+preserving its length.** `target=` is for pipes that store; pipes that
+merely carry should be as short as the pinned geometry allows.

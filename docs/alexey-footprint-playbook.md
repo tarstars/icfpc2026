@@ -89,6 +89,11 @@ cell, one cell per tick.
   occupancy of the ring pipes every tick and take the peak on the worst case
   (reverse_07: peak 16 against capacity 19, on three consecutive n=16 rounds).
   The old ">= 15 cells" rule of thumb was wrong in both directions.
+- **Measure occupancy BEFORE preserving length.** The same probe on brackets
+  showed peak 10 against 78 cells: that pipe was transport, not storage, and
+  16 cells of "carefully preserved capacity" were pure latency. Shortening
+  65 -> 49 was the first tick win of the day (-3%). `target=` is for pipes
+  that store; carriers should be as short as the pinned geometry allows.
 
 ## Gates every candidate must pass before it is submitted
 
