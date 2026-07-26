@@ -12,4 +12,10 @@ passes all archived public cases and passed all 20 live cases as submission
 chain, and collector. Its parameterized layout uses one-cell command
 corridors, minimum safe external clearances, a two-row parser/worker gap, and
 wall-adjacent rightmost FSM tracks to shrink the machine from 494×462 to
-454×450. It is the current best submitted variant.
+454×450.
+
+`gradebook_05.man` starts from the later folded `gradebook_04` architecture.
+Its subject engines rely on blocking ring receives instead of three fixed
+80-cell delays, then apply only the fold prefixes that pass the whole-program
+judge. It is 382×307, passes all seven public cases, and improves the measured
+local score by 13.44% over `gradebook_04`.

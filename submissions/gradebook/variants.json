@@ -112,6 +112,44 @@
         "updatedAt": "2026-07-25T01:12:38.194Z",
         "fullResponse": "submissions/gradebook/gradebook_01-submit.json"
       }
+    },
+    {
+      "version": "gradebook_05",
+      "label": "blocking-ring subject workers",
+      "parent": "gradebook_04",
+      "changeType": "component",
+      "architecture": "remove three fixed 80-cell worker delays and rely on blocking ring receives; retain judge-gated staircase prefixes 24/25/25/26 for the four workers and 34 for the frontend; rows-only squeeze",
+      "source": {
+        "path": "submissions/gradebook/gradebook_05.man",
+        "generator": "src/littleman/gradebook_components.py:build_gradebook_component_optimized",
+        "sha256": "315a41d54ffc7ed64b097dd2ffb83ca04f9ba579a15d3d1cb26c70542a8c825e",
+        "bytes": 115485,
+        "width": 382,
+        "height": 307,
+        "maxDimension": 382,
+        "footprint": 145924
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "tiny roster walkthrough": 25260,
+          "TOP demotion": 78696,
+          "tie-break": 82755,
+          "floor rounding": 66059,
+          "mixed batch": 91777,
+          "K=1 minimal": 42257,
+          "N=16 K=4 max": 281648
+        },
+        "averageTicks": 95493.14285714286,
+        "score": 13934741378.285715
+      },
+      "improvementFromParent": {
+        "footprintPercent": 2.061800316787028,
+        "averageTicksPercent": 11.613743496168773,
+        "localScorePercent": 13.43609161276095
+      },
+      "liveSubmission": null
     }
   ],
   "standingsSnapshot": {
