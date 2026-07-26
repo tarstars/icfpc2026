@@ -1,6 +1,6 @@
 # Current State
 
-Updated: 2026-07-25
+Updated: 2026-07-26
 
 ## Objective
 
@@ -39,8 +39,14 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - Semester 4 added four graded 16×16-display problems: `snake`, `pathfinder`,
   `little-little-little-man` (LLLM), and `little-little-man` (LLM). Their
   exact API specifications and 36 total public cases are attached under
-  `data/small/problems/`; no Semester 4 solution is recorded yet. See
-  `reports/2026-07-25-semester-4-release.md`.
+  `data/small/problems/`. Snake is accepted 17/17. Pathfinder submission
+  `0c04a141-a73b-443c-a274-741bfe67d857` is accepted 18/18. Claude's pressed
+  LLLM submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d` is accepted 21/21
+  at 307×312 and score 22,187,469,586.285713. LLM is the only unfinished
+  Semester 4 target: the shared LLLM artifact passes 2/28, while the physical
+  pipe/multi-man runtime is under construction on `agent/codex-llm`. See
+  `reports/2026-07-25-semester-4-release.md` and the latest immutable
+  messages under `coordination/messages/`.
 - Before committing any solution version, agents must pull and integrate the
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
