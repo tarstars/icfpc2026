@@ -352,3 +352,52 @@ def build() -> str:
     pipe([(20, 16), (19, 16), (19, 22), (20, 22)], "v")  # C.RING_OUT -> R
     pipe([(23, 25), (23, 26), (18, 26), (18, 14), (20, 14)], "v")  # R -> C
     return cv.render()
+
+
+# ------------------------------------------------- compact layout (tcp_08)
+# Identical room interiors, repacked.  Two observations drive it:
+#   * `_nearest_outgoing/incoming` look only at a pipe's END cell, so a port
+#     may sit anywhere on a wall as long as the ranking of the distances from
+#     each s/r cell is unchanged.  C's ring ports therefore move to its RIGHT
+#     wall (checked below), which puts the relay next door: the ring pipes go
+#     from 8 + 24 cells to 2 + 2.
+#   * E (13 wide) and P (17 wide) side by side is 31 columns; C (14 tall)
+#     underneath makes 31 rows.  35x35 -> 31x31, footprint 1225 -> 961.
+# C's ring ports on the right wall, interior rows: RING_IN 3, RING_OUT 5.
+# The binding constraints are the two `r` cells at interior (4,9) and (8,9),
+# which must still prefer RING_IN over FROM_P: |4-i| + 7 < 10 keeps i in
+# [2, 6].  Every other s/r cell has slack of three or more.
+LAYOUT_C = {
+    "E": (0, 0), "O": (12, 4), "I": (12, 8), "P": (6, 14),
+    "R": (20, 20), "C": (17, 0),
+}
+
+
+def build_compact() -> str:
+    """The 31x31 repack: same rooms, new placement and pipes."""
+    from .canvas import Canvas
+    cv = Canvas()
+    for name, room in (("E", build_e()), ("O", build_io("O")),
+                       ("I", build_io("I")), ("P", build_p()),
+                       ("R", build_r()), ("C", build_c())):
+        cv.put(*LAYOUT_C[name], room)
+
+    def pipe(points, last):
+        cv.pipe(points)
+        cv.cells[points[-1]] = last
+
+    # Three server rules shape the routing: a pipe's first cell must point
+    # away from its room's wall, a pipe that merely runs alongside a wall
+    # counts as connected to that room (so no pipe may graze a room it does
+    # not serve), and one-cell pipes are rejected.  E.TO_P moves one column
+    # east, to interior 10, which keeps every send margin at 2 or better.  P
+    # hangs two rows below E so that its west wall reaches past E's corner:
+    # a cell in the gap column beside E would parse as a second E -> P pipe.
+    pipe([(10, 11), (11, 11), (11, 13), (10, 13)], ">")  # E.TO_P -> P
+    pipe([(11, 9), (10, 9), (10, 7)], "^")              # I -> E.IN
+    pipe([(10, 3), (11, 3), (11, 5)], "v")              # E.TO_O -> O
+    pipe([(12, 15), (16, 15), (16, 5)], "v")            # P -> C.FROM_P
+    pipe([(16, 2), (10, 2)], "^")                       # C.FB -> E.FB
+    pipe([(23, 18), (23, 19)], ">")                     # C.RING_OUT -> R
+    pipe([(21, 19), (21, 18)], "<")                     # R -> C.RING_IN
+    return cv.render()
