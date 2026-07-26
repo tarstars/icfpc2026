@@ -1,5 +1,6 @@
 """Independent one-shot subset-sum candidate check."""
 import json
+import math
 import subprocess
 import sys
 import time
@@ -140,7 +141,7 @@ result = {
     "case_ticks": rep.case_ticks,
     "failures": [r.reason for r in rep.case_results if not r.passed],
     "fp": rep.footprint,
-    "score": rep.score,
+    "score": rep.score if math.isfinite(rep.score) else None,
     "judge_wall_s": round(time.time() - t_j, 1),
     "total_wall_s": round(time.time() - t_start, 1),
 }
