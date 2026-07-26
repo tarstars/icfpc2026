@@ -8,7 +8,7 @@ from .llm_candidatefetch import build_candidate_fetch_room
 from .llm_cmpfetch import build_compare_fetch_room
 from .llm_perimeter import build_perimeter_room
 from .llm_pipestarts import build_pipestarts_room
-from .llm_pipetrace import build_pipetrace_room
+from .llm_pipetrace import build_pipetrace_dest_room, build_pipetrace_room
 from .llm_rawfetch import build_raw_fetch
 from .llm_roomfind import build_roomfind_room
 
@@ -71,12 +71,21 @@ def _place_stage(
     )
 
 
-def build_geometry_pipeline() -> str:
+def build_geometry_pipeline(*, annotate_dest: bool = False) -> str:
     stages = [
         (build_roomfind_room(), build_raw_fetch().render(), 13, 5),
         (build_perimeter_room(), build_compare_fetch_room(), 6, 9),
         (build_pipestarts_room(), build_candidate_fetch_room(), 6, 9),
-        (build_pipetrace_room(), build_candidate_fetch_room(), 6, 9),
+        (
+            (
+                build_pipetrace_dest_room()
+                if annotate_dest
+                else build_pipetrace_room()
+            ),
+            build_candidate_fetch_room(),
+            6,
+            9,
+        ),
     ]
     cv = Canvas()
     ports = []

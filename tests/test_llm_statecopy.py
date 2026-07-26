@@ -54,6 +54,19 @@ class Script:
         return "passed" if value == COPY_END else None
 
 
+class SlowScript(Script):
+    def __init__(self, tokens, gap):
+        super().__init__(tokens)
+        self.gap = gap
+        self.calls = 0
+
+    def pop_input(self):
+        self.calls += 1
+        if self.calls % self.gap:
+            return None
+        return super().pop_input()
+
+
 @pytest.fixture(scope="module")
 def text():
     return build_statecopy_rig()
@@ -72,4 +85,14 @@ def test_physical_state_copy(text, case):
     result = Machine.parse(text).run(max_ticks=10_000_000, controller=script)
     assert result.error is None
     assert result.status == "passed"
+    assert script.output == script.expected
+
+
+def test_scratch_return_cannot_be_consumed_as_slow_external_input(text):
+    state = state_stream(CASES[0])
+    script = SlowScript(state, gap=1_000)
+    result = Machine.parse(text).run(max_ticks=1_000_000, controller=script)
+    assert result.error is None
+    assert result.status == "passed"
+    assert not script.input
     assert script.output == script.expected

@@ -164,6 +164,18 @@ def build_roundgate_room() -> list[str]:
     return _compile(_build_roundgate_fsm(), extra_gap=32)
 
 
+def _build_inputmerge_fsm() -> _Fsm:
+    fsm = _Fsm()
+    fsm.go("boot", "left", "@", "item_r")
+    fsm.go("item_r", "left", "R", "item_s")
+    fsm.go("item_s", "right", "s", "item_r")
+    return fsm
+
+
+def build_inputmerge_room() -> list[str]:
+    return _compile(_build_inputmerge_fsm())
+
+
 def _rows_for(
     fsm: _Fsm,
     predicate,
@@ -181,7 +193,9 @@ def _statecopy_rows() -> tuple[int, int, int, int]:
     fsm = _build_statecopy_fsm()
     main_in = _rows_for(
         fsm,
-        lambda _name, zone, code: zone == "left" and "R" in code,
+        lambda name, zone, code: zone == "left"
+        and name == "item_r"
+        and "r" in code,
     )
     main_out = _rows_for(
         fsm,
@@ -213,10 +227,31 @@ def add_statecopy_network(
     room = build_statecopy_room()
     right = left + len(room[0]) - 1
     main_in, main_out, scratch_out, scratch_in = _statecopy_rows()
+    merge = build_inputmerge_room()
+    merge_left = left - len(merge[0]) - 14
+    merge_right = merge_left + len(merge[0]) - 1
+    merge_in = _rows_for(
+        _build_inputmerge_fsm(),
+        lambda _name, zone, code: zone == "left" and "R" in code,
+    )
+    merge_out = _rows_for(
+        _build_inputmerge_fsm(),
+        lambda _name, zone, code: zone == "right" and "s" in code,
+    )
     relay_left = right + 5
     far = relay_left + 17
     buffer_bottom = top + max(len(room) + 20, 260)
+    cv.put(top, merge_left, merge)
     cv.put(top, left, room)
+    merge_track = left - 10
+    cv.pipe(
+        [
+            (top + merge_out, merge_right + 1),
+            (top + merge_out, merge_track),
+            (top + main_in, merge_track),
+            (top + main_in, left - 1),
+        ]
+    )
     cv.put(top + 20, relay_left, build_relay().render())
     cv.pipe(
         [
@@ -237,8 +272,8 @@ def add_statecopy_network(
         ]
     )
     return (
-        (top + main_in, left - 1),
-        (top + main_in + 5, left - 1),
+        (top + merge_in, merge_left - 1),
+        (top + merge_in + 3, merge_left - 1),
         (top + main_out, left - 1),
         buffer_bottom + 1,
     )
@@ -416,7 +451,7 @@ def build_runtime_loop_rig() -> str:
 
     # SETUPDEMUX -> STATECOPY.  The shared track is reusable below because
     # the two vertical spans are separated by ten rows.
-    control_track = control_left - 50
+    control_track = control_left - 100
     cv.pipe(
         [
             setup_state_out,

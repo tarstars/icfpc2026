@@ -70,8 +70,8 @@ def test_generator_is_deterministic_below_limit_and_server_safe(text):
     assert build_runtime_loop_rig() == text
     assert len(text.encode()) < 10_000_000
     machine = Machine.parse(text)
-    assert len(machine.rooms) == 117
-    assert len(machine.pipes) == 189
+    assert len(machine.rooms) == 118
+    assert len(machine.pipes) == 190
     server_compat.validate_layout(text)
     alexey_pipecheck.check(text)
 

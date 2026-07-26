@@ -18,7 +18,7 @@ def statecopy_reference(tokens: list[int]) -> list[int]:
 def _build_fsm() -> _Fsm:
     fsm = _Fsm()
     fsm.go("boot", "left", "@", "item_r")
-    fsm.go("item_r", "left", "R", "item_cmp")
+    fsm.go("item_r", "left", "r", "item_cmp")
     fsm.sign(
         "item_cmp",
         "lit_l",
