@@ -46,7 +46,7 @@ def opfetch_reference(world: list[int], requests: list[int]) -> list[int]:
     return out
 
 
-def _build_fsm() -> _Fsm:
+def _build_fsm(classification=CLASSIFICATION) -> _Fsm:
     fsm = _Fsm()
     fsm.go("boot", "lit_l", "@`0064`b", "load_r")
     fsm.go("load_r", "left", "r", "load_s")
@@ -72,8 +72,11 @@ def _build_fsm() -> _Fsm:
     fsm.go("peel_a", "right", "/M", "peel_b")
     fsm.go("peel_b", "lit_r", " `1023`&", "class_0")
 
-    entries = sorted(CLASSIFICATION.items())
-    for index, (char, (cls, value)) in enumerate(entries):
+    entries = sorted(classification.items())
+    for index, (char, payload) in enumerate(entries):
+        encoded = (
+            payload[0] * 16 + payload[1] if isinstance(payload, tuple) else payload
+        )
         next_name = (
             f"class_{index + 1}" if index + 1 < len(entries) else "class_default"
         )
@@ -89,7 +92,7 @@ def _build_fsm() -> _Fsm:
         fsm.go(
             f"class_match_{index}",
             "lit_l",
-            f" `{cls * 16 + value:04d}`",
+            f" `{encoded:04d}`",
             "output",
         )
     fsm.go("class_default", "left", "0", "output")
