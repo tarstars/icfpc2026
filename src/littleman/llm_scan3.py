@@ -112,13 +112,17 @@ def _poke_wall(cells, addr):
     cells[addr] = cells[addr] % CHAR + WALL
 
 
+def strip256(stream: list[int]) -> list[int]:
+    """SR room model: heuristic wall bit off the first 256 tokens."""
+    return [t % CHAR + 512 * (t >> 9) for t in stream[:256]] + stream[256:]
+
+
 def p1_stream(stream: list[int]) -> list[int]:
     """Rooms, walls, man rooms, pipe discovery, emission, relay.
 
-    Input is the raw v2 stream; the ingest strip is the room's exact
-    per-token formula  t % 256 + 512 * (t >> 9).
+    Input is the SR-stripped stream: 256 clean fields, 3 men, tail.
     """
-    words = [t % CHAR + 512 * (t >> 9) for t in stream[: 4 * WORDS]]
+    words = list(stream[: 4 * WORDS])
     men = stream[4 * WORDS : 4 * WORDS + MEN]
     rooms = p1_rooms(words)
     for t, l, b, r in rooms:                     # wall pokes, 4 runs a room
@@ -181,8 +185,8 @@ def p1_stream(stream: list[int]) -> list[int]:
 
 
 def scan3_reference(tokens: list[int]) -> list[int]:
-    """The whole chain: v2 ingest -> rooms/walls/pipes -> pack."""
-    return pack64(p1_stream(scan_reference_v2(tokens)))
+    """The whole chain: v2 -> strip -> rooms/walls/pipes -> pack."""
+    return pack64(p1_stream(strip256(scan_reference_v2(tokens))))
 
 
 # ------------------------------------------------------- FSM compiler, v3
@@ -301,6 +305,32 @@ def _build_s2_fsm() -> _Fsm:
     return fsm
 
 
+def _build_sr_fsm() -> _Fsm:
+    """SR: strip the heuristic wall bit off 256 tokens, then relay.
+
+    Per token the 2-deep private ring parks the raw token and the char
+    so  char + 512*(t>>9)  can be summed without losing either.
+    """
+    fsm = _Fsm()
+    fsm.go("boot", "lit_l", "@" + _lit(256) + "b", "t0")
+    fsm.go("t0", "left", "r", "t1")                  # A = t
+    fsm.go("t1", "right", "s", "t2")                 # park t
+    fsm.go("t2", "lit_r", "M" + _lit(256) + "W%", "t3")   # A = char
+    fsm.go("t3", "right", "s", "t4")                 # park char
+    fsm.go("t4", "right", "r", "t5")                 # A = t again
+    fsm.go("t5", "lit_r", "M" + _lit(9) + "W}", "t6")
+    fsm.go("t6", "lit_r", "M" + _lit(512) + "W*", "t7")   # A = 512*pad
+    fsm.go("t7", "right", "Mr+", "t8")               # + char
+    fsm.go("t8", "left", "s", "tl")                  # emit clean field
+    fsm.bp("tl", "mid", "m", zero="relay", pos="t0")
+    fsm.go("relay", "left", "rs", "relay")
+    return fsm
+
+
+def build_sr_room() -> list[str]:
+    return _compile3(_build_sr_fsm())
+
+
 def build_s2_room() -> list[str]:
     """The packer room: 256 fields in -> 64 words out, then pure relay."""
     return _compile3(_build_s2_fsm())
@@ -406,84 +436,54 @@ class _Asm:
         self.go("right", "", to=to)
 
 
-def _p1_ingest(a: _Asm, done: str) -> None:
-    """mem[0..255] := stripped cells, mem[256..258] := men; i in S0."""
-    a.label("ing_top")
-    a.rd_c(S0)
-    a.test(256 + MEN, "ing_body", done, done)
-    a.label("ing_body")
-    a.go("right", "+")                   # A = i again
-    a.wr_c(S3)
-    a.rd_c(S3)
-    a.test(256, "ing_strip", "ing_man", "ing_man")
-    a.label("ing_strip")
-    a.go("left", "r")                    # A = raw v2 token
-    a.wr_c(S1)
-    a.rd_c(S1)
-    a.op("}", 9)                         # padding bit
-    a.op("*", 512)
-    a.wr_c(S2)
-    a.rd_c(S1)
-    a.op("%", 256)                       # char
-    a.go("right", "M")
-    a.rd_c(S2)                           # A = 512*pad, B = char
-    a.go("right", "+M")                  # A = clean field, B = clean
-    a.rd_c(S3)                           # A = i, B = clean
-    a.wr_a()
-    a.jmp("ing_inc")
-    a.label("ing_man")
-    a.go("left", "r")
-    a.go("right", "M")
-    a.rd_c(S3)
-    a.wr_a()
-    a.label("ing_inc")
-    a.bump(S0, 1)
-    a.jmp("ing_top")
+def _p1_ingest(a: _Asm) -> None:
+    """259 rolling writes (k = 0 advances the head by one), realign."""
+    a.go("lit_l", " " + _lit(256 + MEN) + "b")
+    a.label("ing_t")
+    a.go("left", "r")                    # A = clean field / man addr
+    a.go("right", "M0sWs")               # write k=0: [0, value]
+    a.bp("mid", "m", zero="ing_fix", pos="ing_t")
+    a.label("ing_fix")                   # head = 259; write pad 311
+    a.go("lit_r", " " + _lit(NSLOT - 260) + "s0s")
 
 
 def _p1_emit(a: _Asm, relay: str) -> None:
-    """Drain fields+men, PC, then 8*PC descriptor words; then relay."""
+    """Rolling drain: fields+men, skip to PC, then 8*PC descriptors."""
     a.label("em0")
-    a.setc(S0, 0)
-    a.label("em_top")
-    a.rd_c(S0)
-    a.test(256 + MEN, "em_body", "em_pc", "em_pc")
-    a.label("em_body")
-    a.go("right", "+")
-    a.rd_a()
+    a.go("lit_l", " " + _lit(256 + MEN) + "b")
+    a.label("em_t")
+    a.go("lit_r", " " + _lit(1) + "Ns")  # read k=0: next slot
+    a.go("right", "r")
     a.go("left", "s")
-    a.bump(S0, 1)
-    a.jmp("em_top")
-    a.label("em_pc")
-    a.rd_c(PC_S)
+    a.bp("mid", "m", zero="em_pc", pos="em_t")
+    a.label("em_pc")                     # head = 259; PC sits at k = 25
+    a.go("lit_r", " " + _lit(PC_S - 259 + 1) + "Ns")
+    a.go("right", "r")
     a.go("left", "s")
     a.test(1, relay, "em_d8", "em_d16")
     a.label("em_d8")
-    a.setc(S1, D_S + 8)
-    a.jmp("em_dini")
+    a.go("lit_l", " " + _lit(8) + "b")
+    a.jmp("em_dt")
     a.label("em_d16")
-    a.setc(S1, D_S + 16)
-    a.label("em_dini")
-    a.setc(S0, D_S)
-    a.label("em_dtop")
-    a.rd_c(S0)
-    a.go("right", "M")
-    a.rd_c(S1)                           # A = limit, B = q
-    a.go("right", "W-")                  # A = q - limit
-    a.sign("mid", "", "em_dbody", relay, relay)
-    a.label("em_dbody")
-    a.go("right", "+")                   # A = q
-    a.rd_a()
+    a.go("lit_l", " " + _lit(16) + "b")
+    a.label("em_dt")                     # head = 285 = D_S: roll again
+    a.go("lit_r", " " + _lit(1) + "Ns")
+    a.go("right", "r")
     a.go("left", "s")
-    a.bump(S0, 1)
-    a.jmp("em_dtop")
+    a.bp("mid", "m", zero=relay, pos="em_dt")
 
 
 def _build_p1_asm(phases: int = 9) -> _Asm:
     """The controller program; ``phases`` gates how much is built."""
     a = _Asm()
     a.go("mid", "@")
-    _p1_ingest(a, "em0")
+    _p1_ingest(a)
+    if phases >= 2:
+        _p1_rooms_walls(a)
+    if phases >= 3:
+        _p1_manrooms(a)
+        _p1_cands(a)
+        _p1_traces(a)
     _p1_emit(a, "relay")
     a.label("relay")
     a.go("left", "rs", to="relay")
