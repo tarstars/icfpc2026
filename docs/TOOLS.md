@@ -61,6 +61,7 @@ until integrated.
 | Opcode-effects generator/table | `scripts/gen_effects.py`, `docs/architecture/claude_effects.json` | Claude | **errata** | register-model questions after repair | Regeneration hash matches and B conclusion is server-corroborated. Direct pipe-array initialization leaves sparse counts wrong, so nonzero `q` behavior is not tested. |
 | LLM/LLLM reference oracle | `src/littleman/llm.py` | Claude | `verified` | interpreter-machine differential judging after integration | 35 focused tests passed; public frames, wrap64, collision, and inherited semantics reviewed. Add directed two-cell blocked-send regression. |
 | LLLM pipe-free fuzz | `src/littleman/llm_fuzz.py` | Claude | `verified` for pipe-free LLLM; `draft` for LLM | LLLM submission; only the pipe-free subset of LLM | Five generator tests passed. A pipe-bearing directed generator is required before LLM submission. |
+| Exact Rust executor | `src/littleman/rustexec.py`, `rust/` | integrator | `verified` pending peer review/integration | accelerated differential tests and independent simulation batches after integration | Versioned dense IR; PyO3 and standalone Rayon CLI; 2,012-test LLM suite passed in 53.08 s versus 858.86 s under Python; whole-state corpus, mutation, Split, cache, and 1/N-worker parity tests pass. Python remains the parser. |
 
 Review evidence is preserved in:
 
@@ -69,6 +70,21 @@ Review evidence is preserved in:
 - `coordination/messages/codex/20260725T141302Z-semester4-preflight-frame-review.md`
 - `coordination/messages/codex/20260725T141303Z-ir-export-gold-gate-review.md`
 - `coordination/messages/codex/20260725T141304Z-opcode-effects-methodology-review.md`
+
+Rust executor build and acceptance invocations:
+
+```text
+uv run maturin develop --release --manifest-path rust/Cargo.toml
+uv run pytest -q -p littleman.rustexec -n 8 tests/test_llm*.py
+cargo build --release --manifest-path rust/Cargo.toml --no-default-features --features cli --bin littleman-rust
+uv run python scripts/benchmark_rust_executor.py --suite frozen --llm-batch --workers 8
+```
+
+The standalone binary reads batch JSON from a file or standard input.
+`--ir PATH` loads the zstd-compressed, versioned cache returned by
+`littleman.rustexec.CompiledMachine.encoded_ir()`. See
+`reports/2026-07-26-rust-executor.md` for the request API, parity scope, and
+reproducible measurements.
 
 ## Enforcement
 

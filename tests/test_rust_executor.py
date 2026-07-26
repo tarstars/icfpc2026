@@ -35,7 +35,9 @@ SLUG = {
 }
 ARTIFACTS = []
 for artifact in sorted((REPO / "submissions").rglob("*.man")):
-    problem_slug = SLUG.get(artifact.parent.name) or SLUG.get(artifact.parent.parent.name)
+    problem_slug = SLUG.get(artifact.parent.name) or SLUG.get(
+        artifact.parent.parent.name
+    )
     if problem_slug is not None:
         ARTIFACTS.append((artifact, problem_slug))
 
@@ -88,7 +90,9 @@ def test_native_backend_is_loaded():
 
 
 def test_ir_version_is_fail_closed():
-    machine = sim.Machine.parse((REPO / "submissions/max-element/max_00.man").read_text())
+    machine = sim.Machine.parse(
+        (REPO / "submissions/max-element/max_00.man").read_text()
+    )
     spec = fastsim.build_spec(fastsim.compile_machine(machine))
     spec["ir_version"] = 2
     with pytest.raises(ValueError, match="unsupported IR version 2"):
@@ -157,10 +161,18 @@ def test_completed_representative_cases(relative, slug, case_index, cap):
 def bordered_room(rows):
     width = len(rows[0])
     assert all(len(row) == width for row in rows)
-    return "\n".join(["+" + "-" * width + "+", *("|" + row + "|" for row in rows), "+" + "-" * width + "+"])
+    return "\n".join(
+        [
+            "+" + "-" * width + "+",
+            *("|" + row + "|" for row in rows),
+            "+" + "-" * width + "+",
+        ]
+    )
 
 
-def official_pair(rows, ticks, *, directions=None, registers=None, halted=None, cap=65_536):
+def official_pair(
+    rows, ticks, *, directions=None, registers=None, halted=None, cap=65_536
+):
     machine = sim.Machine.parse(bordered_room(rows))
     reference = YMachine(rows, cap=cap)
     directions = directions or [sim.RIGHT] * len(machine.men)

@@ -63,3 +63,27 @@ def test_cli_matches_python_binding_and_worker_counts(tmp_path):
     assert [result["output"] for result in one] == [
         list(result.output) for result in expected
     ]
+
+
+def test_cli_llm_frame_case_matches_python_binding(tmp_path):
+    text = (REPO / "submissions/llm/llm_codex_01.man").read_text()
+    problem = json.loads(
+        (REPO / "data/small/problems/little-little-man.json").read_text()
+    )
+    cases = [judge.normalize_case(problem["publicTestData"][0])]
+    compiled = rustexec.CompiledMachine(text)
+    expected = compiled.run_rounds(0, cases[0], problem["tickCap"])
+    ir_path = tmp_path / "llm.lmir.zst"
+    ir_path.write_bytes(compiled.encoded_ir())
+    request = compiled.cli_request(
+        cases,
+        max_ticks=problem["tickCap"],
+        workers=1,
+        include_spec=False,
+    )
+    actual = run_cli(request, ir_path)[0]
+    assert actual["status"] == expected.status == "passed"
+    assert actual["judged_ticks"] == expected.judged_ticks
+    assert actual["output"] == list(expected.output)
+    assert actual["output_ticks"] == list(expected.output_ticks)
+    assert actual["frame_ticks"] == list(expected.frame_ticks)

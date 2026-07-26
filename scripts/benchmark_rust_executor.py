@@ -100,8 +100,7 @@ def suite_files(mode):
     if mode == "frozen":
         return list(FROZEN_TESTS)
     return sorted(
-        str(path.relative_to(REPO))
-        for path in (REPO / "tests").glob("test_llm*.py")
+        str(path.relative_to(REPO)) for path in (REPO / "tests").glob("test_llm*.py")
     )
 
 
@@ -120,7 +119,9 @@ def run_suite(mode, workers):
         *files,
     ]
     started = time.perf_counter()
-    process = subprocess.run(command, cwd=REPO, capture_output=True, text=True)
+    process = subprocess.run(
+        command, cwd=REPO, capture_output=True, text=True, check=False
+    )
     elapsed = time.perf_counter() - started
     output = process.stdout + process.stderr
     print(output, end="")

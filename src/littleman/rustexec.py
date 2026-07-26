@@ -7,11 +7,11 @@ Python-to-Rust boundary. It never parses ``.man`` source in Rust.
 
 from __future__ import annotations
 
-from collections import deque
-from dataclasses import dataclass
 import hashlib
 import multiprocessing
 import sys
+from collections import deque
+from dataclasses import dataclass
 
 from . import fastsim
 from .sim import Machine as ReferenceMachine
@@ -167,7 +167,9 @@ class CompiledMachine:
             status=final_status,
             error=error,
             ticks=ticks,
-            judged_ticks=controller.last_output_tick if final_status == "passed" else ticks,
+            judged_ticks=controller.last_output_tick
+            if final_status == "passed"
+            else ticks,
             output=tuple(raw[4]),
             output_ticks=tuple(raw[5]),
             frame_ticks=tuple(raw[7]),
@@ -199,8 +201,7 @@ class CompiledMachine:
                             "in": [int(value) for value in round_["in"]],
                             "out": [int(value) for value in round_.get("out", [])],
                             "frames": [
-                                frame(expected)
-                                for expected in round_.get("frames", [])
+                                frame(expected) for expected in round_.get("frames", [])
                             ],
                         }
                         for round_ in rounds
@@ -238,7 +239,9 @@ def run_rounds_parallel(compiled, cases, *, max_ticks=5_000_000, workers=1):
     if workers <= 1 or len(indexed) <= 1:
         return [compiled.run_rounds(i, rounds, max_ticks) for i, rounds in indexed]
     if "fork" not in multiprocessing.get_all_start_methods():
-        raise RuntimeError("multicore Rust batch execution requires multiprocessing fork")
+        raise RuntimeError(
+            "multicore Rust batch execution requires multiprocessing fork"
+        )
     global _FORK_COMPILED, _FORK_MAX_TICKS
     _FORK_COMPILED = compiled
     _FORK_MAX_TICKS = max_ticks
@@ -260,7 +263,10 @@ def pytest_configure(config):
         raise RuntimeError("littleman Rust pytest plugin requires the native extension")
     sim.Machine = Machine
     for name, module in list(sys.modules.items()):
-        if name.startswith("littleman.") and getattr(module, "Machine", None) is ReferenceMachine:
+        if (
+            name.startswith("littleman.")
+            and getattr(module, "Machine", None) is ReferenceMachine
+        ):
             module.Machine = Machine
 
 
