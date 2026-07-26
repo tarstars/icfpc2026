@@ -1,0 +1,714 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{parskip}
+\usepackage{array}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\newcommand{\op}[1]{\texttt{#1}}
+\title{Little Man programming, super-detailed:\\the \textbf{Triangle} and \textbf{Memory} machines}
+\author{team wheezards --- ICFPC 2026 working notes}
+\date{2026-07-26}
+\begin{document}
+\maketitle
+
+\noindent This document explains two of our contest programs at full depth:
+the tiny \textbf{Triangle} machine (rank 1 of 239) and the packed
+\textbf{Memory} machine. Each program is shown twice --- as the literal
+\texttt{.man} grid and in our geometry-free \emph{block-graph} notation ---
+and each comes with an informal explanation, a step-by-step walkthrough, and
+a glossary of exactly the commands it uses. Every number in this document
+(traces, tick counts, packing arithmetic) was produced by running the real
+simulator and the real artifacts, not from memory.
+
+\section{The machine in ninety seconds}
+
+A \texttt{.man} program is an ASCII grid. \textbf{Rooms} are rectangles drawn
+with \op{+}\,\op{-}\,\op{|} walls. A little man spawns at every \op{@} inside
+a room and always starts facing \emph{East}. He carries three registers:
+
+\begin{center}
+\begin{tabular}{lll}
+\op{A} & main hand & almost every operation reads or writes it\\
+\op{B} & off hand & written \emph{only} by \op{M}, \op{W} and \op{/} (proven empirically)\\
+\op{BP} & backpack & a counter; written by \op{b}, \op{m}; branched on by \op{d}\\
+\end{tabular}
+\end{center}
+
+\textbf{Time} advances in ticks. On every tick, in this order:
+(1) every pipe shifts its values one cell forward;
+(2) the output room emits a finished value, the input room injects a waiting one;
+(3) every man \emph{executes the operation he is standing on, then steps one
+cell in his heading} --- unless he is halted or blocked.
+Two men colliding halt both. \emph{Walking into a wall is an error that fails
+the whole run} --- a correct program never does it (but see the Triangle
+section for why a program may legally be \emph{about} to do it when the judge
+stops the clock).
+
+\textbf{Pipes} are directed FIFO conveyors drawn outside rooms with
+\op{-}\,\op{|} bodies and arrowheads; each pipe cell holds at most one value,
+and values travel \emph{one cell per tick} --- a pipe of length $L$ is also a
+delay of $L$ ticks. \op{s} sends \op{A} into the \emph{nearest} outgoing pipe
+and blocks while the pipe's entry cell is occupied; \op{r} receives into
+\op{A} from the nearest incoming pipe and blocks until a value has arrived at
+its end. ``Nearest'' is Manhattan distance from the instruction cell to the
+point where the pipe crosses the room wall. The special rooms
+\texttt{|I|} and \texttt{|O|} are the program's input and output: the judge
+feeds values through the \texttt{I} room's pipe and reads answers arriving at
+\texttt{O}.
+
+\textbf{Numbers.} A bare digit sets $\op{A}=0..9$. A backtick literal like
+\verb|`123`| loads its number into \op{A} when the man walks onto the
+\emph{closing} backtick (so the same cells read differently walked
+left-to-right and right-to-left). All arithmetic is signed 64-bit.
+
+\textbf{Halting and scoring.} \op{H} halts one man forever; the run ends when
+every man has stopped --- or earlier, the moment the judge has seen the last
+expected output. The score of a passing program is
+\[
+  \max(\text{width},\text{height})^2 \times \text{average ticks},
+\]
+lower is better; the bounding box covers the \emph{entire} program including
+pipes and I/O rooms. Some problems (not these two) are footprint-only.
+
+\section{The geometry-free block-graph notation}
+
+The \texttt{.man} grid mixes two things: the \emph{algorithm} (the sequence
+of operations the man walks over) and the \emph{geometry} (where corridors
+turn). Our block-graph notation strips the geometry. A program becomes basic
+blocks of straight-line operations:
+
+\begin{itemize}
+  \item \texttt{(mark L1\_8\_E)} names a block --- auto-generated from the
+        cell (row 1, column 8) and heading (East) where the block starts;
+  \item operations follow in walking order; \texttt{(goto L)} is an
+        unconditional jump (in the grid: a corridor);
+  \item \texttt{(if NEG ZERO POS)} is the three-way branch of \op{X}
+        (turn by the sign of \op{A});
+  \item \texttt{(if-bp TURN STRAIGHT)} is the two-way branch of \op{d}
+        (turn clockwise if $\op{BP}>0$);
+  \item \texttt{(r p21\_8)} / \texttt{(s p23\_30)} name \emph{which} pipe an
+        \op{r}/\op{s} binds to, by the coordinates of the cell where that
+        pipe crosses the room wall --- in the grid this is implicit
+        nearest-pipe resolution, and making it explicit is exactly what a
+        binding audit checks;
+  \item \texttt{(wall)} marks a path that would run into a wall --- reaching
+        it is an error, so in a correct machine it is dead code.
+\end{itemize}
+
+A note on the bare heading ops (\op{<}\,\op{\^{}}\,\op{v}\,\op{>})
+that still appear inside blocks: every \emph{conditional} turn is lifted
+into an explicit branch form with absolute targets, and literal values are
+resolved, so heading carries no control-flow meaning in this notation. The
+remaining arrows are semantic no-ops kept deliberately, because one op is
+one tick: a block's length IS its cost, and every walked cell stays
+accounted for. Read as a language they are noise; read as a transcript with
+the geometry erased they are the cost model. A planned normalisation
+replaces each such run with \texttt{(nop $n$)} --- an explicit ``$n$ ticks
+pass here'' --- which keeps the cost model while cleaning the text, and
+doubles as a compile-side directive for timing-sensitive machines, where
+exact delays are today built by hand-counting corridor cells.
+
+Both notations below are generated mechanically from the artifacts by our
+decompiler, and the decompiled form re-validates against the simulator ---
+so what you read is what actually runs.
+
+\clearpage
+\section{Triangle}
+
+\textbf{The problem.} \emph{Output the $n$-th triangular number: read one
+integer $n$, output $1+2+\dots+n$; for $n=0$ output $0$.} Six public test
+cases, one number each. Scoring is footprint\,$\times$\,ticks.
+
+\textbf{Two of our machines} appear below. \texttt{triangle\_02.man}
+($9\times 9$, 11 ticks, score 891) is the teaching machine: two rooms, two
+men, three pipes, visible blocking. The actual record holder --- rank 1 of
+about 240 --- is its smaller sibling \texttt{triangle\_04.man}
+($8\times 8$, 13 ticks, score $64\times13=\textbf{832}$), explained in
+section~\ref{sec:tri3}: it wins with MORE ticks by exploiting the squared
+footprint, it deliberately sacrifices its man, and it is invisible to the
+plain local judge --- a two-judge story worth reading.
+
+\subsection{The program, in both notations}
+
+\begin{verbatim}
+col  012345678
+  0  +-------+
+  1  |@rM*+sH|
+  2  +-------+
+  3  +-+>^+-+v
+  4  |I| >|O||
+  5  +-+ ^+-+v
+  6  +-------+
+  7  |@1Mr}sH|
+  8  +-------+
+\end{verbatim}
+
+Two rooms (rows 0--2 and rows 6--8), each with one man; the \texttt{I} room
+feeds the top room through the 2-cell pipe \op{>}\op{\^{}} (row 3, cols
+3--4); the top room sends to the bottom room down the 3-cell pipe at column 8
+(rows 3--5); the bottom room sends to \texttt{O} through the 2-cell pipe
+\op{\^{}}\op{>} (rows 4--5, col 4). In block-graph form the geometry
+disappears and each man is one straight line:
+
+\begin{verbatim}
+man 1:  (mark L1_1_E) @ r M * + s H
+man 2:  (mark L7_1_E) @ 1 M r } s H
+\end{verbatim}
+
+\subsection{Glossary --- every operation this program uses}
+
+\begin{center}
+\begin{tabular}{ll}
+\op{@} & the man's start cell; ordinary space once he walks off it\\
+\op{r} & receive: \op{A} $\leftarrow$ next value from the nearest incoming pipe; \emph{blocks} until one arrives\\
+\op{M} & \op{B} $\leftarrow$ \op{A} \quad (\op{A} unchanged)\\
+\op{*} & \op{A} $\leftarrow$ \op{A}$\times$\op{B}\\
+\op{+} & \op{A} $\leftarrow$ \op{A}$+$\op{B}\\
+\op{1} & \op{A} $\leftarrow$ 1\\
+\op{\}} & arithmetic shift right: \op{A} $\leftarrow$ \op{A}$\gg$\op{B} (sign-preserving)\\
+\op{s} & send: push \op{A} into the nearest outgoing pipe; \emph{blocks} while its entry cell is full\\
+\op{H} & halt this man; he stays on the \op{H} forever\\
+\end{tabular}
+\end{center}
+
+\subsection{The algorithm, informally}
+
+The identity being computed is
+\[
+  T(n) \;=\; \frac{n(n+1)}{2} \;=\; \frac{n^2+n}{2}\;=\;(n^2+n)\gg 1 ,
+\]
+and the shift is exact because $n^2+n=n(n+1)$ is a product of consecutive
+integers, hence always even.
+
+The work is split between two specialists connected by a pipe:
+
+\begin{itemize}
+  \item \textbf{man 1} (top room) reads $n$, computes $n^2+n$ with three
+        register operations --- \op{M} parks $n$ in \op{B}, \op{*} squares,
+        \op{+} adds the parked $n$ --- sends the result downstream, halts.
+  \item \textbf{man 2} (bottom room) first loads the constant:
+        \op{1}\,\op{M} puts $1$ into \op{B}. \emph{He does this while man 1
+        is still computing} --- the two run in parallel. Then he blocks on
+        \op{r} until $n^2+n$ arrives, halves it with \op{\}} (shift right by
+        $\op{B}=1$), sends the answer to \texttt{O}, halts.
+\end{itemize}
+
+Why two rooms at all? A single-room version must fit
+\op{r\,M\,*\,+\,M\,1\,W\,\}\,s\,H} plus turns into one box and ends up no
+smaller, while the two-room split lets each room be a bare one-row corridor
+and overlaps man 2's constant-loading with man 1's arithmetic. Note also the
+register discipline: man 2 sets \op{B}=1 \emph{before} blocking on \op{r},
+because \op{r} only writes \op{A} --- \op{B} rides through the wait
+untouched.
+
+\subsection{Step by step: $n=3$, tick by tick}
+
+The table shows the state \emph{after} each tick: where the man stands, the
+operation now under his feet (executed on the \emph{next} tick), and his
+registers after this tick's execution. Input: 3. Expected output: 6.
+
+\begin{center}
+\small
+\begin{tabular}{r|llrrl|llrrl}
+\multicolumn{1}{c}{} & \multicolumn{5}{c}{man 1 (top room)} & \multicolumn{5}{c}{man 2 (bottom room)}\\
+tick & at & on & A & B & & at & on & A & B & \\ \hline
+1 & (1,2) & \texttt{r} & 0 & 0 &  & (7,2) & \texttt{1} & 0 & 0 & \\
+2 & (1,3) & \texttt{M} & 3 & 0 &  & (7,3) & \texttt{M} & 1 & 0 & \\
+3 & (1,4) & \texttt{*} & 3 & 3 &  & (7,4) & \texttt{r} & 1 & 1 & \\
+4 & (1,5) & \texttt{+} & 9 & 3 &  & (7,4) & \texttt{r} & 1 & 1 & \\
+5 & (1,6) & \texttt{s} & 12 & 3 &  & (7,4) & \texttt{r} & 1 & 1 & \\
+6 & (1,7) & \texttt{H} & 12 & 3 &  & (7,4) & \texttt{r} & 1 & 1 & \\
+7 & (1,7) & \texttt{H} & 12 & 3 & halted & (7,4) & \texttt{r} & 1 & 1 & \\
+8 & (1,7) & \texttt{H} & 12 & 3 & halted & (7,5) & \texttt{\}} & 12 & 1 & \\
+9 & (1,7) & \texttt{H} & 12 & 3 & halted & (7,6) & \texttt{s} & 6 & 1 & \\
+10 & (1,7) & \texttt{H} & 12 & 3 & halted & (7,7) & \texttt{H} & 6 & 1 & \\
+11 & (1,7) & \texttt{H} & 12 & 3 & halted & (7,7) & \texttt{H} & 6 & 1 & halted\\
+\end{tabular}
+\end{center}
+
+Reading it:
+
+\begin{itemize}
+  \item \textbf{tick 1--2:} the input value 3 travels the 2-cell input pipe
+        while man 1 walks off \op{@}; his \op{r} fires on tick 2
+        ($\op{A}=3$) with no waiting --- the pipe delay was hidden behind
+        his first step. Man 2 meanwhile loads \op{1} and copies it to
+        \op{B} (\op{M} on tick 2).
+  \item \textbf{tick 3--5, man 1:} \op{*} makes $9$, \op{+} makes $12$,
+        and on tick 5 he stands on \op{s}.
+  \item \textbf{tick 3--7, man 2:} he reached his \op{r} on tick 3 and
+        \emph{blocks} --- position frozen at $(7,4)$ --- because nothing has
+        arrived yet. Blocking costs him nothing: he got his constant ready
+        early.
+  \item \textbf{tick 6:} man 1 executes \op{s}: the value 12 enters the
+        3-cell pipe at column 8. He steps onto \op{H} and halts on tick 7.
+  \item \textbf{tick 6--8:} 12 rides the pipe one cell per tick and reaches
+        the pipe's end; man 2's \op{r} fires on tick 8 ($\op{A}=12$,
+        $\op{B}$ still 1).
+  \item \textbf{tick 9--10:} \op{\}} halves: $\op{A}=6$; \op{s} sends 6
+        into the output pipe.
+  \item \textbf{tick 11:} 6 arrives at \texttt{O}. The judge has now seen
+        every expected output and \emph{stops the clock}: 11 ticks. (Man 2
+        halts on his \op{H} the same tick; had he been about to walk into a
+        wall instead, it would not have mattered --- ticks after the last
+        output never run.)
+\end{itemize}
+
+Score: bounding box $9\times9\Rightarrow 81$; ticks 11; $81\times11=891$.
+The lesson that generalises: \emph{overlap work across men, park constants
+in \op{B} before blocking, and remember the run is only as long as the judge
+needs it to be.}
+
+\subsection{The record holder: no halt, a sacrificed man, and two judges}
+\label{sec:tri3}
+
+\texttt{triangle\_04.man} beats the machine above $891\to 832$ while
+taking \emph{more} ticks (13 vs 11) --- the score squares the bounding
+box, so $64\times13=832 < 81\times11=891$: losing one row and one column
+was worth two extra ticks. It contains \textbf{no \op{H} at all}.
+
+\begin{verbatim}
+col  01234567
+  0  +------+
+  1  |@rM*+v|
+  2  |s}W1M<|
+  3  +------+
+  4  +-+>^  v
+  5  |I| +-+<
+  6  +-+ |O|
+  7      +-+
+\end{verbatim}
+
+\begin{verbatim}
+(mark L1_1_E) @ r M * + v < M 1 W } s (goto __wall)
+(mark __wall) (wall)
+\end{verbatim}
+
+Trace for $n=3$ (registers after each tick):
+
+\begin{center}
+\small
+\begin{tabular}{r|llrrl}
+tick & at & on & A & B & \\ \hline
+1 & (1,2) & \texttt{r} & 0 & 0 & \\
+2 & (1,3) & \texttt{M} & 3 & 0 & \\
+3 & (1,4) & \texttt{*} & 3 & 3 & \\
+4 & (1,5) & \texttt{+} & 9 & 3 & \\
+5 & (1,6) & \texttt{v} & 12 & 3 & \\
+6 & (2,6) & \texttt{<} & 12 & 3 & \\
+7 & (2,5) & \texttt{M} & 12 & 3 & \\
+8 & (2,4) & \texttt{1} & 12 & 12 & \\
+9 & (2,3) & \texttt{W} & 1 & 12 & \\
+10 & (2,2) & \texttt{\}} & 12 & 1 & \\
+11 & (2,1) & \texttt{s} & 6 & 1 & \\
+12 & (2,1) & \texttt{s} & 6 & 1 & \\
+\end{tabular}
+\end{center}
+
+Ticks 1--5 are the $n^2+n$ prologue; the westward row reads
+\op{<\,M\,1\,W\,\}\,s}: park $n^2+n$ in \op{B}, load 1, swap, halve,
+send. On tick 12 the man executes \op{s} --- and then steps into the west
+wall and dies \emph{with the answer still inside the output pipe}. The
+raw simulator calls this run \texttt{error} with \textbf{no output at
+all}. The server disagrees: when the last man stops, in-flight pipe
+values \emph{drain} --- 6 arrives at \texttt{O} on tick 13, the case
+passes, and the clock reads 13. Our \texttt{server\_compat} judge
+encodes exactly this (final wall step accepted, output drained); the
+plain \texttt{python -m littleman} judge does not, and scores this
+machine 0/6.
+
+The sibling \texttt{triangle\_03.man} is the mirror image: nearly the
+same program (\op{M} and \op{<} swap places, buying the man one extra
+blank cell to die on), it passes the \emph{plain} judge 6/6 --- but the
+server rejects its layout outright, because it fuses the I and O rooms
+into \texttt{|I|O|}, sharing three wall cells between rooms, which the
+server forbids. Two near-twin machines, each green under one judge and
+dead under the other, in opposite directions.
+
+Three lessons: \emph{the footprint is squared, so trade ticks for cells;
+a man you no longer need costs nothing to kill, because pipes drain
+after the last man stops; and always gate a wall-trick (or any layout
+trick) with the server-semantics judge --- local green is not server
+green in either direction.}
+
+\clearpage
+\section{Memory}
+
+\textbf{The problem.} \emph{Simulate a 100-cell memory. The input is a
+stream of operations: a READ is the pair \texttt{0 addr}; a WRITE is the
+triple \texttt{1 addr value}. Every cell starts at 0. For each READ, output
+the current value at \texttt{addr}; a WRITE produces no output.} Example
+from the problem statement: the stream
+\texttt{0 5\ \ 1 5 10\ \ 1 6 9\ \ 0 6\ \ 0 5} outputs \texttt{0 9 10}.
+Values fit in $[-10^6,10^6]$; scoring is footprint\,$\times$\,ticks.
+
+\textbf{Our machine} here is \texttt{submissions/memory/memory\_04.man}
+($37\times 37$, 24/24 on the server), generated by
+\texttt{src/littleman/memory\_packed.py}. It is presented because every
+mechanism below is documented and asserted by that generator's tests. The
+team's actual record holder, \texttt{memory\_10.man} ($30\times30$, live
+score $\approx$17.2M), is \emph{this same machine} after two generations
+of room packing --- section~\ref{sec:mem10} closes with that story.
+
+\subsection{The two ideas}
+
+\textbf{Idea 1: memory as a circulating ring.} A littleman machine has no
+random access --- but a pipe is a FIFO, and two pipes plus two rooms make a
+\emph{ring} on which the whole memory circulates. To touch address $k$
+positions ahead of the ring's head you relay $k$ items from the incoming
+ring pipe to the outgoing one; each relay costs $\sim$9 ticks. The naive
+version circulates all 100 cells; profiling it showed ring relays were 93\%
+of all ticks. That measurement is what motivated idea 2.
+
+\textbf{Idea 2: pack three cells per word.} A value in $[-10^6,10^6]$ fits a
+signed 21-bit field (from $-1\,048\,576$ up to $1\,048\,575$). Three fields live in
+bits $[0,21)$, $[21,42)$, $[42,63)$ of one signed-64 word:
+\[
+  \mathit{word}=(f_0 \wedge M)\;\vee\;((f_1\wedge M)\ll 21)\;\vee\;((f_2\wedge M)\ll 42),
+\]
+with $M=2^{21}-1$.
+The ring shrinks from 100 items to $\lceil 100/3\rceil=34$, and the relay
+count on the profiled case drops $3.06\times$. Bit 63 is always zero, so no
+arithmetic ever wraps, and a freshly zeroed memory is simply the word 0 ---
+the ring seeds with 34 plain zeros instead of long literals.
+
+Address $a$ lives in word $\lfloor a/3\rfloor$, field $a\bmod 3$ --- both
+produced by \emph{one} \op{/} operation (which leaves the quotient in \op{A}
+and the remainder in \op{B}). With $\mathit{shift}=21\cdot(a\bmod3)$:
+\begin{align*}
+  \textbf{read:}\quad & v \;=\; \bigl(\mathit{word} \ll (43-\mathit{shift})\bigr) \gg 43\\
+  \textbf{write:}\quad & \mathit{word}' \;=\;
+     \bigl(\mathit{word} \wedge \lnot(M\ll \mathit{shift})\bigr)
+     \;\vee\; \bigl((v\wedge M)\ll \mathit{shift}\bigr)
+\end{align*}
+The read needs no mask and no bias: the left shift parks the field's sign
+bit in bit 63, and the \emph{arithmetic} right shift sign-extends it on the
+way down. Worked numbers, computed with the real formulas:
+
+\begin{center}
+\begin{tabular}{lll}
+write $10$ at addr 5 & word 1, field 2, shift 42 & word becomes $43\,980\,465\,111\,040 = 10\ll42$\\
+read addr 5 & $(\mathit{word}\ll 1)\gg 43$ & $=10$\\
+write $-7$ at addr 3 & word 1, field 0, shift 0 & field bits $(-7)\wedge M = 2\,097\,145$\\
+read addr 3 & $(\mathit{word}\ll 43)\gg 43$ & $=-7$ \quad (sign restored by the shift)\\
+read addr 5 again & & still $10$ --- the write of $-7$ touched only field 0\\
+\end{tabular}
+\end{center}
+
+\subsection{Architecture: five rooms in a pipeline}
+
+\begin{verbatim}
+    I -> P1 -> HEAD -> P2 -> STATION -> O
+                             STATION <-> RELAY     (the 34-word ring)
+\end{verbatim}
+
+\begin{center}
+\small
+\begin{tabular}{llll}
+room & grid position & man & job\\ \hline
+P1 & rows 0--4 & $(1,8)$ & parse one op; split addr into word+shift\\
+HEAD & rows 7--10 & $(8,8)$ & turn word index into ring distance $k$; advance head\\
+P2 & rows 13--19 & $(14,8)$ & precompute the constants the station needs\\
+STATION & rows 22--36 & $(23,7)$ & owns the ring; does the actual read/write\\
+RELAY & rows 30--33 (right) & $(31,32)$ & closes the ring (6-tick lap)\\
+\end{tabular}
+\end{center}
+
+Each stage passes a small integer stream to the next; all five men run
+concurrently, so the pipeline overlaps parsing of the next operation with
+ring work for the current one.
+
+\subsection{Glossary --- the additional operations Memory uses}
+
+\begin{center}
+\small
+\begin{tabular}{ll@{\quad}ll}
+\op{0}--\op{9} & $\op{A}\leftarrow$ digit &
+\verb|`123`| & $\op{A}\leftarrow$ literal at closing backtick\\
+\op{W} & swap \op{A} $\leftrightarrow$ \op{B} &
+\op{N} & $\op{A}\leftarrow-\op{A}$\\
+\op{-} & $\op{A}\leftarrow\op{A}-\op{B}$ &
+\op{/} & $\op{A}\leftarrow\lfloor\op{A}/\op{B}\rfloor$, remainder$\to$\op{B}\\
+\op{\%} & $\op{A}\leftarrow\op{A}\bmod \op{B}$ &
+\op{\&} & $\op{A}\leftarrow\op{A}\wedge\op{B}$ (bitwise AND)\\
+\op{|} & $\op{A}\leftarrow\op{A}\vee\op{B}$ (OR) &
+\op{\~{}} & $\op{A}\leftarrow\op{A}\oplus\op{B}$ (XOR)\\
+\op{\{} & $\op{A}\leftarrow\op{A}\ll\op{B}$ &
+\op{\}} & $\op{A}\leftarrow\op{A}\gg\op{B}$ (arithmetic)\\
+\op{b} & $\op{BP}\leftarrow\op{A}$ &
+\op{m} & $\op{BP}\leftarrow\op{BP}-1$\\
+\op{d} & turn clockwise if $\op{BP}>0$, else straight &
+\op{X} & turn by sign of \op{A} (CW/straight/CCW)\\
+\op{\^{}}\,\op{v}\,\op{<}\,\op{>} & set heading N/S/W/E &
+\op{r}\,\op{s}\,\op{M}\,\op{*}\,\op{+}\,\op{H} & as in Triangle\\
+\end{tabular}
+\end{center}
+
+Two facts do most of the planning work here: \op{B} is written \emph{only}
+by \op{M}, \op{W}, \op{/} --- so a value parked in \op{B} survives any
+amount of \op{r}/\op{s} relaying --- and \op{BP} is a countdown register
+whose \op{d}-branch turns straight-line corridors into loops.
+
+\subsection{Stage by stage, with block-graphs}
+
+\paragraph{P1 --- parse and pre-split.}
+{\footnotesize
+\begin{verbatim}
+(mark L1_8_E) @ r s b r M 3 W / s s W M `21` * s M (if-bp L2_28_S L1_29_E)
+(mark L1_29_E) 0 s W s v v (goto L3_33_S)
+(mark L2_28_S) > r s W s v (goto L3_33_S)
+(mark L3_33_S) < ^ ^ > (goto L1_8_E)
+\end{verbatim}
+}
+Reads the tag (0=READ, 1=WRITE), forwards it, and \emph{stashes it in the
+backpack} (\op{b}) so one \texttt{(if-bp ...)} at the end branches the whole
+room. Reads the address, and \op{M 3 W /} computes $a/3$ in one stroke:
+quotient $w$ in \op{A}, remainder (the field index) in \op{B}. It emits $w$
+twice (HEAD needs it once for the distance, once to advance the head), then
+$\mathit{shift}=21\cdot\mathit{field}$ via \op{W M `21` *}. The WRITE arm
+forwards the value $x$; the READ arm substitutes 0 --- so downstream always
+sees the same shape: $[\mathit{tag},\,w,\,w,\,\mathit{shift},\,x,\,\mathit{shift}]$.
+
+\paragraph{HEAD --- ring distance, and a register trick.}
+{\footnotesize
+\begin{verbatim}
+(mark L8_8_E) @ M r s r - M `34` W % s r M 1 + M `34` W % v < M r s r s r s W ^ > (goto L8_8_E)
+\end{verbatim}
+}
+The ring rotates as it is used, so the station never needs an absolute
+position --- only the \emph{distance} $k=(w-\mathit{hw})\bmod 34$ from the
+current head word $\mathit{hw}$. HEAD computes that with
+\op{-\,M\,`34`\,W\,\%}, then the new head $\mathit{hw}'=(w+1)\bmod 34$.
+The trick: $\mathit{hw}$ lives in \op{A} \emph{across laps} --- no storage
+pipe at all. When the tail $[\mathit{shift},x,\mathit{shift}]$ must be
+relayed (three \op{r}/\op{s} pairs, which clobber \op{A}), the man first
+parks $\mathit{hw}'$ in \op{B} with \op{M}, relays, and takes it back with
+\op{W} --- legal precisely because relaying never writes \op{B}.
+
+\paragraph{P2 --- precompute the station's constants.}
+{\footnotesize
+\begin{verbatim}
+(mark L14_8_E) @ r s b r s (if-bp L15_14_S L14_15_E)
+(mark L14_15_E) r M `43` - s r r v < ^ ^ (goto L16_7_N)
+(mark L15_14_S) v > r M `2097151` { M 1 v < N ~ s `2097151` M r & M r W { s ^ (goto L16_7_N)
+(mark L16_7_N) ^ ^ > (goto L14_8_E)
+\end{verbatim}
+}
+The station should do as little arithmetic as possible while it holds the
+ring, so P2 does it in advance. For a READ it sends $[0,\,k,\,43-\mathit{shift}]$
+(and discards the unused $x$). For a WRITE it builds both write-formula
+constants: \op{`2097151` \{} makes $M\ll\mathit{shift}$, and the pair
+\op{N \~{}} turns it into $\lnot(M\ll\mathit{shift})$ --- load $-1$ (all
+ones), XOR. Then $(x\wedge M)\ll\mathit{shift}$ via \op{\& \{}. It sends
+$[1,\,k,\,\lnot(M\ll s),\,(x\wedge M)\ll s]$.
+
+\paragraph{STATION --- seed, relay, read or splice.}
+{\footnotesize
+\begin{verbatim}
+(mark L23_7_E) @ `33` b 0 > (goto L23_16_E)
+(mark L23_16_E) (s p23_30) v (if-bp L24_16_W L25_17_S)
+(mark L24_16_W) m ^ > (goto L23_16_E)
+(mark L25_10_N) 3 (goto __wall)
+(mark L25_17_S) < v > (goto L26_9_E)
+(mark L26_9_E) (r p21_8) (if L25_10_N L26_11_E L27_10_S)
+(mark L26_11_E) (r p21_8) b (r p21_8) M v > (goto L27_21_E)
+(mark L27_10_S) v v > (r p21_8) (if L29_12_N L30_13_E L31_12_S)
+(mark L27_21_E) (r p24_30) (s p23_30) v (if-bp L28_22_W L29_23_S)
+(mark L28_7_N) ^ ^ > > (goto L26_9_E)
+(mark L28_22_W) m ^ > (goto L27_21_E)
+(mark L29_12_N) b b (goto __wall)
+(mark L29_23_S) < { M `43` W } (s p35_5) ^ (goto L28_7_N)
+(mark L30_13_E) (r p21_8) M v < < (goto L33_22_W)
+(mark L31_12_S) > b m (r p21_8) M > (goto L31_21_E)
+(mark L31_21_E) (r p24_30) (s p23_30) v (if-bp L32_22_W L33_23_S)
+(mark L32_22_W) m ^ > (goto L31_21_E)
+(mark L33_22_W) (r p24_30) & M (r p21_8) | v > (s p23_30) v < ^ ^ ^ ^ ^ ^ ^ (goto L28_7_N)
+(mark L33_23_S) < (goto L33_22_W)
+(mark __wall) (wall)
+\end{verbatim}
+}
+Reading this graph top to bottom:
+\begin{itemize}
+  \item \textbf{Seed} (\texttt{L23\_7\_E}): \op{`33` b 0} then a
+        send--decrement loop --- 34 zeros into the ring, i.e.\ the whole
+        zeroed memory in three cells of program text.
+  \item \textbf{Dispatch} (\texttt{L26\_9\_E}): read the tag,
+        \texttt{(if NEG ZERO POS)} --- 0 goes to the READ arm, 1 to the
+        WRITE arm. (The NEG arm runs into \texttt{(wall)}: dead code, since
+        tags are never negative.)
+  \item \textbf{READ arm}: \op{b} loads $k$ into the backpack; \op{M} parks
+        the decode constant $43-\mathit{shift}$ in \op{B}; then the relay
+        loop \texttt{(r ring-in)(s ring-out)(if-bp m,loop | exit)} runs
+        $k{+}1$ times. The subtlety: the \emph{target word itself} is also
+        received \emph{and re-sent} --- the ring stays intact --- and
+        because \op{r} leaves the received word in \op{A}, the man exits
+        the loop still holding it. Decode is then
+        \op{\{\,M\,`43`\,W\,\}}: shift left by $43-\mathit{shift}$
+        (parked in \op{B} through the whole relay loop), shift right by 43,
+        and the sign-extended field goes to \texttt{O}.
+  \item \textbf{WRITE arm}: \op{b m} sets the countdown to $k-1$, the mask
+        complement is parked in \op{B}, and the loop relays $k$ words
+        unchanged. The $(k{+}1)$-th word --- the target --- is received but
+        \emph{not} re-sent: \op{\&} clears the field, \op{|} splices in the
+        prebuilt $(x\wedge M)\ll\mathit{shift}$, and only the patched word
+        is sent back to the ring. No output is produced, matching the spec.
+  \item Both arms return to the dispatch block; the station is ready for
+        the next operation while upstream rooms are already parsing it.
+\end{itemize}
+
+\paragraph{RELAY --- closing the ring.}
+{\footnotesize
+\begin{verbatim}
+(mark L31_32_E) @ > (goto L31_34_E)
+(mark L31_34_E) r v < s ^ > (goto L31_34_E)
+\end{verbatim}
+}
+A pipe may not start and end at the same room, so the ring needs a second
+room: a minimal \op{r\,v\,<\,s\,\^{}\,>} lap, 6 ticks per word. Its man runs
+concurrently with the station's, so the ring keeps flowing while the
+station computes.
+
+\subsection{Step by step: the specification's own example}
+
+Feeding the example stream \texttt{0 5\ \ 1 5 10\ \ 1 6 9\ \ 0 6\ \ 0 5}
+to the real artifact produces exactly the specified output \texttt{0 9 10},
+at ticks 264, 1011 and 1305. Walking the first two operations through the
+pipeline, with the packing state:
+
+\begin{enumerate}
+  \item \texttt{0 5} (READ 5): P1 splits $5 \to w{=}1$,
+        field 2, $\mathit{shift}{=}42$; HEAD (head $\mathit{hw}{=}0$) makes
+        $k=(1-0)\bmod34=1$ and advances the head to 2; P2 sends
+        $[0,\,1,\,43{-}42{=}1]$. The station relays $k{+}1=2$ words ---
+        word 0 (now the ring's tail) and word 1, keeping word 1 in \op{A}:
+        it is 0, so $(0\ll1)\gg43=0$ is sent to \texttt{O}. Output
+        \textbf{0} at tick 264.
+  \item \texttt{1 5 10} (WRITE 10 at 5): same split ($w{=}1$, shift 42),
+        but the head is now 2, so $k=(1-2)\bmod 34=33$ --- the ring must
+        rotate almost a full turn, which is why this operation is the
+        expensive one ($\sim$747 ticks: 33 relays at $\sim$9 ticks each,
+        plus the pipeline). P2 sends
+        $\lnot(M\ll42)$ and $10\ll42=43\,980\,465\,111\,040$; the station
+        relays 33 words, patches word 1 to exactly that value, and sends it
+        back. No output.
+  \item The remaining three operations land the outputs \textbf{9}
+        (read of cell 6, field 0 of word 2) and \textbf{10} (read of cell
+        5 again) --- the packed word round-trips both fields
+        independently, which is the whole point of the mask-and-splice
+        write.
+\end{enumerate}
+
+The cost model this exposes --- \emph{an operation costs its ring distance}
+--- is also the machine's weakness: an adversarial address pattern
+(alternating between two cells 17 words apart) forces half-turns forever.
+Packing bought a flat $3\times$ on exactly that cost, which is why it was
+worth the extra arithmetic in P2.
+
+\subsection{The full program}
+
+{\footnotesize
+\begin{verbatim}
+col  0123456789012345678901234567890123456
+  0        +---------------------------+
+  1  +-+   |>@rsbrM3W/ssWM`21`*sMd0sWsv|
+  2  |I|>->|^                    >rsWsv|
+  3  +-+   |^                         <|
+  4        +---------------------------+
+  5            v
+  6            v
+  7        +---------------------------+
+  8        |>@Mrsr-M`34`W%srM1+M`34`W%v|
+  9        |^                 WsrsrsrM<|
+ 10        +---------------------------+
+ 11            v
+ 12            v
+ 13        +------------------------+
+ 14        |>@rsbrsdrM `43`-srr    v|
+ 15        |^      v                |
+ 16        |^      >rM`2097151`{M1v |
+ 17        |^s{WrM&rM`1517902` s~N< |
+ 18        |^                      <|
+ 19        +------------------------+
+ 20          v
+ 21          v
+ 22        +----------------------+
+ 23        |@`33`b0 >sv           |>-----v
+ 24        |        ^md           |<     |
+ 25        | v        <           ||     |
+ 26        |>>rXrbrM     v        ||v----<
+ 27        |^  v         >rsv     |||
+ 28        |^  v         ^ md     ||>----v
+ 29        |^s      }W`34`M{<     ||  v--<
+ 30        |^  >rXrM           v  ||+----+
+ 31        |^    >bmrM   >rsv     |||@>rv|
+ 32        |^            ^ md     ||| ^s<|
+ 33        |^ v|r        M&r<  <  ||+----+
+ 34  +-+   |^ >                sv ||   v
+ 35  |O|<-<|^                   < |^---<
+ 36  +-+   +----------------------+
+\end{verbatim}
+}
+
+Score: bounding box $37\times37 \Rightarrow 1369$; server average
+$\sim$20\,270 ticks over 24/24 cases; score $27\,753\,851$.
+
+\subsection{The champion is this same machine, packed}
+\label{sec:mem10}
+
+The live record holder, \texttt{memory\_10.man}, has the \emph{identical}
+architecture --- same 7 rooms, 7 pipes, 5 men, and exactly the same
+operation multiset --- with the room interiors repacked (P1 29\,$\to$\,17
+columns wide, HEAD 29\,$\to$\,21, STATION 24\,$\to$\,21) across the
+hand-tuned \texttt{room-packing/} lineage:
+
+\begin{center}
+\begin{tabular}{lrrrr}
+generation & box & footprint & server avg ticks & score\\ \hline
+\texttt{memory\_04} & $37\times37$ & 1369 & $\sim$20\,270 & 27\,753\,851\\
+\texttt{memory\_06} & $34\times32$ & 1156 & $\sim$20\,194 & 23\,344\,360\\
+\texttt{memory\_10} & $30\times30$ & 900 & $\sim$19\,152 & $\sim$17\,236\,875\\
+\end{tabular}
+\end{center}
+
+Ticks moved 5\%; the score moved $1.61\times$. Every gain in the lineage
+is \emph{geometry} --- the algorithm never changed --- which is the
+squared-footprint lesson from the Triangle section, measured across three
+generations of one real machine. Everything explained above (the ring, the
+packing formulas, the five-stage pipeline, the \op{B}-parking tricks)
+describes the champion too; it is simply wearing smaller rooms.
+
+\clearpage
+\section{Where everything lives, and how this document was made}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\texttt{submissions/triangle/triangle\_02.man} & the live Triangle artifact (rank 1/239)\\
+\texttt{submissions/memory/memory\_04.man} & the packed Memory artifact explained here\\
+\texttt{src/littleman/memory\_packed.py} & Memory generator; the packing formulas with tests\\
+\texttt{src/littleman/sim.py} & the reference simulator (the semantics authority)\\
+\texttt{src/littleman/fastsim.py} & the fast executor, proven bit-identical to \texttt{sim.py}\\
+\texttt{src/littleman/decompile.py} & \texttt{.man} $\to$ block-graph; round-trips the whole corpus\\
+\texttt{src/littleman/blockgraph.py} & the block-graph parser/interpreter (27 tests)\\
+\texttt{docs/language-reference.md} & the full operation table, verbatim from the contest\\
+\texttt{docs/architecture/claude\_effects.json} & the \emph{empirical} op-effect table (who writes B, etc.)\\
+\end{tabular}
+\end{center}
+
+Every grid, block-graph, trace row and number in this document was generated
+from those artifacts by the real toolchain at build time --- the traces by
+instrumenting \texttt{sim.py} tick by tick, the block-graphs by
+\texttt{decompile.py}, the packing arithmetic by executing the formulas ---
+so if it is written here, it ran.
+
+To re-verify the headline facts yourself:
+
+\begin{verbatim}
+uv run python -m littleman submissions/triangle/triangle_02.man triangle
+uv run python -m littleman submissions/memory/memory_04.man memory
+uv run pytest tests/test_memory_packed.py -q
+\end{verbatim}
+
+\end{document}

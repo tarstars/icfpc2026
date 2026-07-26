@@ -223,3 +223,62 @@ had `submission status:` lines ahead of their JSON, so every tool reading
 them silently skipped the record. snake_01 has been live all along at
 17/17, 153x154, **1,576,985,655**. Redirect stderr separately when
 submitting.
+
+### 2026-07-26T03:45Z — LLLM and LLM score for the first time
+
+`submissions/lllm/lllm_00.man`, one artifact, submitted to both:
+
+| problem | cases | submission |
+|---|---|---|
+| LLLM | **4/21** | `3b3b78d4-e172-4f1c-806a-802ea32c75a2` |
+| LLM | **1/28** | `cfa10558-52e8-4b88-915e-b2bb0d21032a` |
+
+Both were zero all contest. Locally it passes 3/10 — `first steps`,
+`off the edge`, `revolving door`. Submitted deliberately at a partial
+pass: preflight's NOT SUBMITTABLE assumes a full sweep, while parse,
+walls and pipes are all OK and only `cases` fails. With
+`cases_passed/cases_total` scoring and `privateTestCount: 0`, a partial
+artifact strictly dominates no artifact.
+
+**Our `data/small/problems` is a REDUCED copy** — 10 LLLM cases locally
+vs 21 on the server, 14 LLM vs 28. Local counts understate the result.
+
+The path that worked, after four failed attempts at "finish STEP":
+splitting the goal down to ONE 4x4 program, then handing each remaining
+phase to a fresh clock with the previous agent's own notes. The last
+three handoffs each landed in under an hour where the monolithic task had
+failed for a day.
+
+Two findings worth carrying forward:
+
+- **Long corridors must be left BLANK.** A man keeps his heading across
+  empty floor, so a blank column crosses every existing walkway without
+  diverting either man. Columns 71 and 61 and rows 147/148 became
+  corridors nothing else touches; drawing `v`/`^` there would have
+  hijacked the fetch band and the move arms.
+- A handoff note I relayed was **wrong**, and it was the blocker: row 8
+  is not usable at cols 42..59 for a REQ send, because `intended_port`
+  classifies any `col >= SCR_COL` (42) as the scratch loop. The agent
+  caught it and said so instead of working around it silently, which is
+  the behaviour that saved the night.
+
+### Presses: the full night
+
+| problem | was | now | factor | occupancy before |
+|---|---|---|---|---|
+| snake | 8,838,759,329 | 1,576,985,655 | 5.6x | height-dominated |
+| plotter | 9,367,793,668 | 3,076,834,345 | 3.04x | height-dominated |
+| matmul | 33,286,994,352 | 20,898,177,200 | 1.59x | **43.9%** |
+| sudoku | 25,480,732,026 | 16,126,208,644 | 1.58x | height-dominated |
+| gradebook | 81,914,188,255 | 74,257,771,460 | 1.10x | **90.4%** |
+
+**Measure occupancy FIRST** — it predicted every outcome. And the tick
+lever is a dud: cutting gradebook's command/ack loop and relay laps by
+25-40% moved avgTicks 0.5%, because ticks are intra-room walking and room
+interiors are off limits to a press.
+
+**Subset Sum was deliberately not attempted.** Its docstring admits to
+being "a correctness-first generated layout" so the slack is probably
+large, but one local judge run takes **15m25s**, which makes iteration
+impossible overnight — and it is worth at most one rank point like every
+other problem. Budget wall-clock, not difficulty, if picking it up.

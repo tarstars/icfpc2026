@@ -197,10 +197,18 @@ def _case_inputs(case: dict) -> list[int]:
     return setup + [int(round_["in"][0]) for round_ in rounds[1:]]
 
 
-def test_rig_matches_all_public_and_fifty_fuzz_cases(parsed_rig):
-    cases = PROBLEM["publicTestData"] + corpus(20260726, 50)
-    for case in cases:
-        _run_exact(parsed_rig, _case_inputs(case))
+def _all_rig_cases() -> list:
+    return PROBLEM["publicTestData"] + corpus(20260726, 50)
+
+
+# Parametrised rather than looped so `pytest -n auto` can spread these across
+# cores. As one test it was 199s of a 476s suite -- 42% of the whole run, and
+# an Amdahl floor no amount of parallelism could get under.
+@pytest.mark.parametrize(
+    "case", _all_rig_cases(), ids=lambda c: str(c.get("name", "fuzz"))
+)
+def test_rig_matches_all_public_and_fifty_fuzz_cases(parsed_rig, case):
+    _run_exact(parsed_rig, _case_inputs(case))
 
 
 @pytest.mark.parametrize(

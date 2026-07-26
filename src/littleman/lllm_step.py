@@ -369,7 +369,7 @@ class ReferenceFetch:
 # RIGHT wall and the four external ones on the LEFT, separated vertically
 # into a top zone (LOAD in / DRAW out) and a bottom zone (RESP in / REQ
 # out).  Every r/s cell therefore lives in exactly one of three regions.
-STEP_ROWS, STEP_COLS = 240, 72
+STEP_ROWS, STEP_COLS = 150, 72
 
 # The hot path is the per-tick FETCH transaction, so REQ and RESP share the
 # TOP zone; LOAD (once a round) and DRAW (twice a round) share the BOTTOM.
@@ -434,14 +434,19 @@ def _step_round1(room) -> None:
     room.put(20, 46, "s")                # park it in the scratch loop
     room.put(20, 47, "v")                # jog to row 21 for the run east, so
     room.put(21, 47, ">")                # column 3 stays blank at rows 20-22
+    # Two-stage ascent.  A single column from row 21 to row 4 would cross the
+    # FETCH band (row 10, columns 28..65) and pull every tick's response walk
+    # back into ROUND 1; so climb column 60 only as far as row 12, cross west
+    # UNDER the band to column 27 -- the one column free for rows 4..21 that
+    # lies west of the band -- and finish the climb there.
     room.put(21, 60, "^")
-    # Rows 10/11 are later crossed horizontally by FETCH.  Blank cells are
-    # intentional: both traversals already carry their required heading.
-    for r in range(5, 21):
-        if r in (8, 10, 11):
-            continue
+    for r in range(13, 21):
         room.put(r, 60, "^")
-    room.put(4, 60, "<")
+    room.put(12, 60, "<")
+    room.put(12, 27, "^")
+    for r in range(5, 12):
+        room.put(r, 27, "^")
+    room.put(4, 27, "<")
     room.put(4, 13, "vb`652`M0s N1<")    # BP=256, B=0, send -1 to FETCH
     room.put(5, 13, ">v")
     room.put(6, 14, ">r+v")              # colour -> p+colour, then south
@@ -461,13 +466,34 @@ def _step_round1(room) -> None:
 TAPE_LO, TAPE_HI = 42, 60   # the scratch-loop tape zone (rows 22+)
 # Vertical highways live in columns 61..71, the only band no horizontal
 # walkway in the room ever crosses; every phase-to-phase jump uses one.
-HW = dict(live=71, split=70, tick=69, frozen=68, arm=67, move=66,
-          loop=65, emit=64, round=63)
+HW = dict(arm=69, move=66, emit=64, round=63)
+# The live arm's ascent back to the FETCH band, and the band's descent to the
+# class staircase, are the room's two long vertical wires.  They cannot simply
+# be adjacent columns: the ascent spans rows 11..41 and the descent rows
+# 12..43, so whichever is further east is cut by the other's feeder run.  The
+# descent therefore DOG-LEGS west on row 34 -- above the tick block -- and
+# finishes in column 40, which no eastward run in rows 35..43 reaches.
+# The resolution is an ORDERING one, not a routing one: the tick block is
+# placed BELOW the class staircase, so its two eastward feeders (live and
+# frozen) run under the descent instead of through it.  Then the descent can
+# be a single straight wire and the ascent the single column east of it.
+ASC_COL = 70        # live arm: rows 11..TICK_ROW+5, north to the FETCH band
+# The band exit sits as far EAST as the ascent allows, because it is also the
+# class staircase's first rung: the staircase steps two columns west per rung,
+# so every column it borrows is one the nine arms cannot turn off in.  At 65
+# the eight rungs reach column 49 and leave only seven arm columns for eight
+# arms; at 67 they reach 51 and leave nine.
+DESC_COL = 67       # band exit: rows 12..43, south to the class staircase
+ROUND_EXIT_COL = 41  # round-in -> tick: west of the tape zone, so no
+                     # staircase rung (columns 42..60) ever crosses it
 SEED_ROW, ROUND_ROW = 23, 30
-# ROUND-IN's tape wraps through row 33, so the tick must start below it.
-TICK_ROW = 36
+# ROUND-IN's tape is 27 tokens wide, so it wraps to row 33; the tick must
+# start strictly below that (see Tape.down_at, which now refuses to "descend"
+# upwards rather than dropping the man into the next phase's westward lane).
+TICK_ROW = 140
 SCR_COL = 42        # first column whose r/s binds the scratch loop (rows 22+)
 REQ_MAX_ROW = 11    # last row whose left-wall s reaches REQ rather than DRAW
+FROZEN_COL = 67     # frozen tick -> MOVE: clear of every wire below row 44
 
 
 class Tape:
@@ -528,12 +554,18 @@ class Tape:
         return self
 
     def down_at(self, col: int, row: int) -> "Tape":
-        """Leave the tape at ``col`` and descend to a strictly lower row."""
+        """Leave the tape: walk on to ``col``, then descend to ``row``.
+
+        ``row`` must lie strictly BELOW the tape's last line.  When it does
+        not, the descent is empty and the man runs straight along the target
+        row into whatever the next phase placed there -- the characteristic
+        silent infinite loop of this room, so it is an error, not a no-op.
+        """
         while (col - self.col) * self.dir < 0:
             self._turn()
         if row <= self.row:
             raise ValueError(
-                f"tape reached row {self.row}; cannot descend to {row}"
+                "tape reached row %d; cannot descend to %d" % (self.row, row)
             )
         for r in range(self.row, row):
             self.room.put(r, col, "v")
@@ -541,9 +573,26 @@ class Tape:
         return self
 
 
-# The phase corridors deliberately share blank cells where one traversal is
-# horizontal and another vertical.  With one STEP man, the phases cannot
-# collide; retaining the incoming heading makes each blank a safe crossing.
+# ---------------------------------------------------------------- BLOCKER
+# The round loop below is register-correct (its tape drives the ring to
+# exactly [CTRL=1, ADDR=man_addr, BI=0, AI=0, OLD=man_addr, K=k], verified
+# in the rig) but CANNOT YET BE PLACED, for a purely geometric reason:
+#
+#   * ROUND 1's man_addr walkway occupies row 21, columns 2..60, so no
+#     vertical corridor may cross row 21 anywhere in that span; and
+#   * its ascent back to row 4 occupies column 60, rows 5..21, so no
+#     horizontal run in rows 5..20 may cross column 60.
+#
+# Together those leave no path from the ROUND 1 finish (rows 18-19, columns
+# <= 57) down to rows 23+: reaching a column > 60 at row 21 requires a
+# horizontal run that must first cross column 60.  Every variant tried --
+# exit on row 19, on row 20, ascent moved to columns 27/45/47/62, walkway
+# moved to row 22 -- reproduces the same crossing under a different name.
+#
+# THE FIX, for whoever picks this up: re-lay `_step_round1`'s post-pixel
+# path so the man_addr park and ascent live entirely inside the highway
+# band (columns 61..71), leaving rows 19..22 clear across columns 1..60.
+# Then `_step_seed` places unchanged and `HW` wires the rest.
 def _highway(room, col: int, top: int, bottom: int) -> None:
     """Fill one vertical highway segment (exclusive of ``bottom``)."""
     for r in range(top, bottom):
@@ -586,7 +635,7 @@ def _step_round_in(room) -> None:
     tape = Tape(room, ROUND_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
     tape.emit(*"rs" * 5, "r", "W", "s")                    # K = k
     tape.emit(*"rs", "r", "M", "s", *"rs" * 2, "r", "W", "s", *"rs")
-    _leave_tape(room, tape, 62, TICK_ROW)
+    _leave_tape(room, tape, ROUND_EXIT_COL, TICK_ROW)
     _step_tick_halt(room)
 
 
@@ -597,7 +646,8 @@ def _step_tick_halt(room) -> None:
     one X separates live (A < 0) from frozen (A >= 0), and the ring is left
     rotated by one with ADDR at the head.
     """
-    room.put(TICK_ROW, 62, "<")
+    # ROUND-IN's exit column IS the tape's western margin, so the man drops
+    # straight into the tick tape with no westward run to be crossed.
     room.put(TICK_ROW, TAPE_LO - 1, "v")
     room.put(TICK_ROW + 1, TAPE_LO - 1, ">")
     tape = Tape(room, TICK_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
@@ -609,33 +659,28 @@ def _step_tick_halt(room) -> None:
     # column 49 and drop to the countdown; the man does not move this tick.
     room.put(TICK_ROW + 2, 50, "<")
     room.put(TICK_ROW + 2, 49, "v")
-    room.put(TICK_ROW + 3, 49, "v")
-    room.put(TICK_ROW + 4, 49, ">")
-    room.put(TICK_ROW + 4, 67, "v")
-    # Live (A < 0): drop a row, then east to the northbound fetch highway.
+    for r in range(TICK_ROW + 3, TICK_ROW + 6):
+        room.put(r, 49, "v")
+    # The frozen arm crosses BELOW the live arm's ascent, so it must leave on
+    # a row the ascent no longer occupies -- hence TICK_ROW + 6, not + 4.
+    # ... and rejoins the round at MOVE, not after it: the tick-halt tape
+    # already leaves ADDR at the head, which is exactly what MOVE's align tape
+    # wants, and MOVE's rung 4 (no ``a``) is the catch-all every frozen CTRL
+    # falls through without moving.  The climb is a BLANK corridor: column
+    # FROZEN_COL is crossed by five MOVE arms and by kcount, and a man keeps
+    # his heading over empty floor, so only the two turns are drawn.
+    room.put(TICK_ROW + 6, 49, ">")
+    room.put(TICK_ROW + 6, FROZEN_COL, "^")
+    room.put(MOVE_ROW, FROZEN_COL, "<")
+    # Live (A < 0): east to the northbound fetch highway, which is the LAST
+    # column before the wall so no eastward run can be cut short by it.
     room.put(TICK_ROW + 5, 50, ">")
-    room.put(TICK_ROW + 5, 65, "^")
-    for r in range(12, TICK_ROW + 5):
-        if r != ROUND_ROW:
-            room.put(r, 65, "^")
+    for r in range(11, TICK_ROW + 6):
+        room.put(r, ASC_COL, "^")
     _step_fetch(room)
 
 
-CLASS_ROW = 44      # route from FETCH into the op-class staircase
-CLASS_FIRST_ROW = 45
-CLASS_FIRST_COL = 13
-CLASS_SPAN = 8      # rows reserved per class arm
-CLASS_JOIN_COL = 69
-CLASS_JOIN_ROW = 122
-MOVE_FIRST_ROW = 125
-MOVE_FIRST_COL = 13
-MOVE_SPAN = 6
-MOVE_JOIN_COL = 68
-MOVE_JOIN_ROW = 158
-COUNT_X_ROW = 162
-COUNT_X_COL = 50
-EMIT_START_ROW = COUNT_X_ROW + 1
-EMIT_START_COL = TAPE_LO
+CLASS_ROW = 44      # first rung of the op-class staircase
 
 
 def _step_fetch(room) -> None:
@@ -648,254 +693,346 @@ def _step_fetch(room) -> None:
     the class into BP so the staircase can branch nine ways while `value`
     stays untouched in B for the heading and digit arms.
     """
-    room.put(10, 65, "<")
+    room.put(10, ASC_COL, "<")
     room.put(10, 52, "sr")               # walked west: r(ADDR) then s(ADDR)
     room.put(10, 37, "rs")               # walked west: s(REQ) then r(RESP)
     room.put(10, 29, "b/W`61`M")         # walked west: M `16` W / b
     room.put(10, 28, "v")
     room.put(11, 28, ">")
-    room.put(11, 66, "v")
-    for r in range(12, CLASS_ROW):
-        if r != ROUND_ROW:
-            room.put(r, 66, "v")
-    _step_class_dispatch(room)
+    for r in range(11, CLASS_ROW):
+        room.put(r, DESC_COL, "v")
+    _step_class(room)
 
 
-def _class_tape(room, row: int) -> Tape:
-    """Turn a selected class east into the scratch-bound tape zone."""
-    room.put(row, TAPE_LO - 1, "v")
-    room.put(row + 1, TAPE_LO - 1, ">")
-    return Tape(room, row + 1, TAPE_LO, TAPE_LO, TAPE_HI)
+CLASS_RUNGS = 8     # rung r fires on class r+1; rung 0 also catches class 0
+ARM_LO = 42         # arms may not run west of the tape zone
 
 
-def _class_tokens(cls: int) -> tuple[str, ...] | None:
-    """Ring choreography for one class, from head BI back to head CTRL."""
-    relay2 = ("r", "s")
-    if cls == CLASS_SPACE:
-        return relay2 * 4
-    if cls in (CLASS_WALL, CLASS_HALT):
-        return relay2 * 4 + ("r", "M", "4", "+", "s") + relay2 * 5
-    if cls == CLASS_HEADING:
-        return relay2 * 4 + ("r", "W", "s") + relay2 * 5
-    if cls == CLASS_DIGIT:
-        return relay2 + ("r", "W", "s") + relay2 * 2
-    if cls == CLASS_M:
-        return ("r", "r", "s", "s") + relay2 * 2
-    if cls == CLASS_ADD:
-        return ("r", "M", "s", "r", "+", "s") + relay2 * 2
-    if cls == CLASS_SUB:
-        return ("r", "M", "s", "r", "-", "s") + relay2 * 2
-    return None                         # X gets its sign fork separately
+def _step_class(room) -> None:
+    """The op-class staircase: nine ways out of ``BP``, walked WEST.
 
+    ``b`` has already put the class in ``BP`` and left ``value`` in ``B``,
+    which no rung disturbs -- that is the whole reason the decode goes
+    through the backpack instead of through ``A``.
 
-def _branch_update_tokens(delta: int) -> tuple[str, ...]:
-    """Replace live CTRL by ``(CTRL + delta) % 4`` and normalize the ring."""
-    return (
-        "r", "M", str(delta), "+", "M", "4", "W", "%", "s",
-        *("r", "s") * 5,
-    )
+    Each rung is ``m a``: decrement, then turn counter-clockwise (west ->
+    south) while ``BP`` is still positive.  After rung ``r`` the backpack
+    holds ``class - (r+1)``, so the man falls through westward at the first
+    rung with ``class <= r+1`` -- rung ``r`` for class ``r+1``, and rung 0
+    for classes 0 and 1 together, which the arm splits again on ``A``.
 
-
-def _step_branch_arm(room, tape: Tape) -> None:
-    """Implement interpreted X while restoring the canonical CTRL head.
-
-    The prefix saves interpreted AI in host B, relays OLD/K, then swaps AI
-    back into A.  Native X splits it three ways.  Positive and negative
-    each use one otherwise-free horizontal tape; zero preserves CTRL
-    unchanged.  All three enter the existing class-join highway.
+    Rungs step two columns west per row so the southward turn lands exactly
+    on the next rung's ``<``; the room is 8 rungs deep and 16 columns wide.
     """
-    tape.emit("r", "s", "r", "s", "M", "r", "s", "r", "s", "W")
-    room.put(tape.row, tape.col, "^")
-    room.put(tape.row - 1, tape.col, "^")
-    x_row, x_col = tape.row - 2, 62
-    room.put(x_row, tape.col, ">")
-    room.put(x_row, x_col, "X")
-
-    # Negative: north from X, west on row 99, then east along row 98.
-    room.put(x_row - 1, x_col, "<")
-    room.put(x_row - 1, TAPE_LO - 1, "^")
-    room.put(x_row - 2, TAPE_LO - 1, ">")
-    Tape(
-        room, x_row - 2, TAPE_LO, TAPE_LO, TAPE_HI
-    ).emit(*_branch_update_tokens(3))
-
-    # Positive: south from X, jog around the prefix, then east on row 104.
-    room.put(x_row + 1, x_col, "<")
-    room.put(x_row + 1, x_col - 1, "v")
-    room.put(x_row + 3, x_col - 1, "<")
-    room.put(x_row + 3, TAPE_LO - 1, "v")
-    room.put(x_row + 4, TAPE_LO - 1, ">")
-    Tape(
-        room, x_row + 4, TAPE_LO, TAPE_LO, TAPE_HI
-    ).emit(*_branch_update_tokens(1))
+    room.put(CLASS_ROW, DESC_COL, "<")
+    for r in range(CLASS_RUNGS):
+        row, col = CLASS_ROW + r, DESC_COL - 1 - 2 * r
+        room.put(row, col - 1, "am")      # walked west: m at col, a at col-1
+        if r + 1 < CLASS_RUNGS:
+            room.put(row + 1, col - 1, "<")
+    _step_arms(room)
 
 
-def _step_class_dispatch(room) -> None:
-    """Decode BP=class with a decrement staircase and normalize each arm."""
-    room.put(CLASS_ROW, 66, "<")
-    room.put(CLASS_ROW, CLASS_FIRST_COL - 1, "v")
-    room.put(CLASS_FIRST_ROW, CLASS_FIRST_COL - 1, ">")
+# Every arm leaves the ring rotated FIVE slots on from the staircase's head
+# (``BI``), i.e. with ``ADDR`` at the head: five is the cheapest rotation that
+# both reaches ``CTRL`` and writes it, and paying the remaining lap once in
+# the shared MOVE row is far cheaper than paying it in every arm.
+MERGE_COL, MOVE_ROW = 62, 70
+ARM_MERGE = 68              # the class arms' own merge, east of MOVE's
+ARM_HI = 66                 # ... so their tapes get the width class 7 needs
+_R = list("rs")             # one ring relay
+# rung -> (turn column, tape row, opcode tape).  Rung r fires on class r+1
+# (rung 0 also on class 0).  EVERY tape must leave the ring rotated five slots
+# on from the staircase's head (BI), i.e. with ADDR at the head, because MOVE's
+# align tape is shared and starts from there.  ``value`` rides in B untouched.
+ARM_SPEC = {
+    0: (42, 69, []),                                      # space AND wall
+    1: (43, 67, _R * 4 + ["r", "W", "s"]),                # heading: CTRL=value
+    2: (44, 65, _R + ["r", "W", "s"] + _R * 3),           # digit:   AI=value
+    3: (45, 63, list("rrss") + _R * 3),                   # M:  BI=AI, AI=AI
+    4: (46, 61, list("rMsr+s") + _R * 3),                 # add: AI=AI+BI
+    5: (47, 59, list("rMsr-s") + _R * 3),                 # sub: AI=AI-BI
+    6: (48, 57, []),                                      # branch X: TODO
+    7: (49, 55, _R * 4 + ["r", "M", "4", "+", "s"]),      # halt: CTRL |= 4
+}
 
-    for cls in range(CLASS_HALT + 1):
-        row = CLASS_FIRST_ROW + cls * CLASS_SPAN
-        col = CLASS_FIRST_COL + cls * 2
-        room.put(row, col, "d")          # zero -> east arm; positive -> south
-        if cls < CLASS_HALT:
-            room.put(row + 1, col, "m")
-            room.put(row + CLASS_SPAN, col, ">")
 
-        tape = _class_tape(room, row)
-        tokens = _class_tokens(cls)
-        if tokens is None:
-            _step_branch_arm(room, tape)
-            continue
-        tape.emit(*tokens)
-        _leave_tape(room, tape, CLASS_JOIN_COL, CLASS_JOIN_ROW)
+def _step_arms(room) -> None:
+    """The class arms, and their merge into the shared MOVE row.
 
+    Column order is the whole trick: the arm that turns off FURTHEST WEST
+    gets the DEEPEST tape row.  A tape only ever runs east, so it can never
+    meet a descent that is west of its own column, and a descent can never
+    meet a tape that is below its own foot.  That one rule makes all four
+    arms planar without a single jog.
+    """
+    for rung, (col, arm_row, tokens) in ARM_SPEC.items():
+        for r in range(CLASS_ROW + rung, arm_row):
+            room.put(r, col, "v")
+        room.put(arm_row, col, ">")
+        if tokens:
+            Tape(room, arm_row, col + 1, col + 1, ARM_HI).emit(*tokens)
+        elif rung:
+            _step_branch(room, arm_row, col + 1)
+        else:
+            _step_wall(room, arm_row, col + 1)
+    for r in range(min(s[1] for s in ARM_SPEC.values()), MOVE_ROW):
+        room.put(r, ARM_MERGE, "v")
+    room.put(MOVE_ROW, ARM_MERGE, "<")    # west, on to MOVE's own merge
     _step_move(room)
 
 
-def _move_tokens(heading: int) -> tuple[str, ...]:
-    """Update ADDR for one heading and restore canonical head CTRL."""
-    relay2 = ("r", "s")
-    delta = {
-        0: ("#16", "N"),
-        1: ("1",),
-        2: ("#16",),
-        3: ("1", "N"),
-    }[heading]
-    return ("r", "M", *delta, "+", "s") + relay2 * 4
+def _step_wall(room, row: int, col: int) -> None:
+    """Rung 0 carries TWO classes -- 0 (space) and 1 (wall) -- so it splits.
+
+    ``b``/``m``/``a`` never touch A, so A is still the class here; ``N`` makes
+    it 0 or -1 and one ``X`` separates them.  Negated deliberately: rung 0 is
+    the DEEPEST arm, so the spare row is the one ABOVE it, and only a negative
+    A turns an eastbound man north.
+
+    Wall is the LLLM freeze: the man has already been moved onto the wall cell
+    by the previous tick's blind step, so setting the halt bit is the whole of
+    it -- he stays drawn there, on the wall, in every later frame.
+    """
+    room.put(row, col, "N")                   # A = -class
+    room.put(row, col + 1, "X")
+    room.put(row, col + 2, "rs" * 5)          # class 0: a bare lap, no write
+    room.put(row - 1, col + 1, ">")           # class 1: north onto the spare
+    room.put(row - 1, col + 2, "rs" * 4)      # row, then CTRL |= 4 as class 8
+    room.put(row - 1, col + 10, "rM4+s")
+
+
+def _step_branch(room, row: int, col: int) -> None:
+    """Class 7 (``X``): turn the interpreted man by ``sign(AI)``.
+
+    The only arm that is not a straight tape.  ``AI`` is read into A and left
+    in place, then one ``X`` fans three ways; because the ROWS BETWEEN the
+    arms are empty (each arm owns an odd row, so the even ones are spare),
+    the two sign arms simply step off onto the row above and the row below
+    and run east on their own, rejoining at the shared merge column.
+
+    A frozen man never ticks, so ``CTRL`` is 0..3 here and the halt bit needs
+    no masking: ``(CTRL + 1) % 4`` and ``(CTRL + 3) % 4`` are the whole job.
+    """
+    room.put(row, col, "rsrs")                # relay to AI, read it, keep it
+    xcol = col + 4
+    room.put(row, xcol, "X")
+    room.put(row, xcol + 1, "rsrsrs")         # AI == 0: no turn, just the lap
+    for drow, step in ((row - 1, "3"), (row + 1, "1")):
+        room.put(drow, xcol, ">")             # <0 counter-clockwise (north),
+        room.put(drow, xcol + 1, "rsrs")      # >0 clockwise (south)
+        room.put(drow, xcol + 5, "rM" + step + "+M4W%s")
+
+
+MOVE_CLASS_ROW = 76         # first rung of the heading staircase
+MOVE_MERGE, KCOUNT_ROW = 69, 132
+# Below row 70 the only wires east of the tape zone are MERGE_COL and
+# MOVE_MERGE, so the arm tapes may run out to column 64 -- they need the slack
+# because Tape shifts every literal off any column that already holds a
+# backtick, and by this depth the room has a lot of them.
+MOVE_HI = 68                # one clear column between the tapes and the merge
+# rung -> (turn column, tape row, the delta tape).  Rung r fires on CTRL == r
+# because the align tape leaves ``BP = CTRL + 1``; rung 4 has no ``a``, so
+# every frozen CTRL (4..7) falls through it and the man does not move.
+MOVE_SPEC = {
+    # The align tape leaves B = 1, so E and W need no literal at all -- which
+    # matters because rung order fixes the turn columns west-to-east, and the
+    # later rungs have the least tape left to shift a literal into.
+    0: (42, 122, ["r", "M", "#16", "N", "+", "s"]),     # N: ADDR - 16
+    1: (43, 112, ["r", "+", "s"]),                      # E: ADDR + 1
+    2: (44, 102, ["r", "M", "#16", "+", "s"]),          # S: ADDR + 16
+    3: (45, 92, ["r", "-", "s"]),                       # W: ADDR - 1
+    4: (46, 82, list("rs")),                            # frozen: no move
+}
+# Each arm makes exactly ONE ring pull, and the four that finish the lap back
+# to CTRL are paid once on the shared KCOUNT row -- keeping them in the arms
+# pushed every literal past the room's crowded backtick columns and wrapped
+# the tapes westward across their own descents.
+MOVE_TAIL = list("rs") * 4
+
+
+def _free_literal(room, digits: str, start: int, hi: int) -> int:
+    """First column at or after ``start`` where ``\\`digits\\`` may sit.
+
+    A literal's two backticks must each land in a column that holds no other
+    backtick, or the parser pairs them vertically with the wrong partner.
+    :class:`Tape` shifts for this too, but by MOVE's depth the room is dense
+    enough that its shift-then-wrap loop thrashes; a straight-line phase is
+    better served by choosing the column up front.
+    """
+    used = {c for (_, c), v in room.cells.items() if v == "`"}
+    width = len(digits) + 2
+    for col in range(start, hi - width + 2):
+        if col not in used and col + width - 1 not in used:
+            return col
+    raise ValueError("no room for `%s` in %d..%d" % (digits, start, hi))
+
+
+def _emit_row(room, row: int, col: int, tokens, hi: int) -> int:
+    """Place a straight-line opcode run on one row; ``#N`` is the literal N."""
+    for token in tokens:
+        if token.startswith("#"):
+            digits = token[1:]
+            col = _free_literal(room, digits, col, hi)
+            room.put(row, col, "`" + digits + "`")
+            col += len(digits) + 2
+        else:
+            room.put(row, col, token)
+            col += 1
+    return col
 
 
 def _step_move(room) -> None:
-    """Move a live interpreted man, or normalize a newly frozen one."""
-    room.put(CLASS_JOIN_ROW, CLASS_JOIN_COL, "<")
-    room.put(CLASS_JOIN_ROW, TAPE_LO - 1, "v")
-    room.put(CLASS_JOIN_ROW + 1, TAPE_LO - 1, ">")
-    init = Tape(
-        room, CLASS_JOIN_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI
-    )
-    init.emit("r", "s", "b")             # CTRL -> BP; head ADDR
-    room.put(init.row, 50, "v")
-    room.put(init.row + 1, 50, "<")
-    room.put(init.row + 1, MOVE_FIRST_COL - 1, "v")
-    room.put(MOVE_FIRST_ROW, MOVE_FIRST_COL - 1, ">")
+    """Blind step by heading -- the NEXT fetch is what discovers a wall.
 
-    for heading in range(4):
-        row = MOVE_FIRST_ROW + heading * MOVE_SPAN
-        col = MOVE_FIRST_COL + heading * 2
-        room.put(row, col, "d")
-        room.put(row + 1, col, "m")
-        if heading < 3:
-            room.put(row + MOVE_SPAN, col, ">")
-
-        tape = _class_tape(room, row)
-        tape.emit(*_move_tokens(heading))
-        _leave_tape(room, tape, MOVE_JOIN_COL, MOVE_JOIN_ROW)
-
-    # CTRL >= 4 takes the turned arm of the final rung: head is still ADDR.
-    frozen_row = MOVE_FIRST_ROW + 4 * MOVE_SPAN
-    frozen_col = MOVE_FIRST_COL + 3 * 2
-    room.put(frozen_row, frozen_col, ">")
-    frozen = _class_tape(room, frozen_row)
-    frozen.emit(*("r", "s") * 5)          # ADDR -> canonical CTRL
-    _leave_tape(room, frozen, MOVE_JOIN_COL, MOVE_JOIN_ROW)
-
-    _step_countdown(room)
+    ``r s M #1 + b`` leaves ``BP = CTRL + 1``, which is exactly the offset
+    the ``m a`` staircase needs: rung ``r`` fires on ``CTRL == r`` with no
+    off-by-one and no merged pair, unlike the class staircase's rung 0.
+    """
+    room.put(MOVE_ROW, MERGE_COL, "<")
+    room.put(MOVE_ROW, TAPE_LO, "v")
+    room.put(MOVE_ROW + 1, TAPE_LO, ">")
+    tape = Tape(room, MOVE_ROW + 1, TAPE_LO + 1, TAPE_LO + 1, MOVE_HI)
+    tape.emit(*list("rs") * 5, "r", "s", "M", "#1", "+", "b", "-", "M")
+    tape.down_at(MERGE_COL, MOVE_CLASS_ROW)
+    room.put(MOVE_CLASS_ROW, MERGE_COL, "<")
+    for r in range(4):                        # rung 4 needs no cells at all
+        row, col = MOVE_CLASS_ROW + r, MERGE_COL - 1 - 2 * r
+        room.put(row, col - 1, "am")
+        room.put(row + 1, col - 1, "<")
+    for r, (col, arm_row, tokens) in MOVE_SPEC.items():
+        room.put(MOVE_CLASS_ROW + r, col, "v")
+        for rr in range(MOVE_CLASS_ROW + r + 1, arm_row):
+            room.put(rr, col, "v")
+        room.put(arm_row, col, ">")
+        _emit_row(room, arm_row, col + 1, tokens, MOVE_HI)
+    for r in range(min(s[1] for s in MOVE_SPEC.values()), KCOUNT_ROW):
+        room.put(r, MOVE_MERGE, "v")
+    _step_kcount(room)
 
 
-def _loop_crossing_rows() -> set[int]:
-    """Rows whose horizontal paths cross the tick-loop return column."""
-    rows = {CLASS_ROW, CLASS_JOIN_ROW + 2}
-    rows.update(CLASS_FIRST_ROW + cls * CLASS_SPAN for cls in range(9))
-    rows.update(MOVE_FIRST_ROW + heading * MOVE_SPAN for heading in range(4))
-    rows.add(MOVE_FIRST_ROW + 4 * MOVE_SPAN)
-    return rows
+KLOOP_COL, KLOOP_ROW = 68, 138      # X's "more ticks" exit, back to the tick
 
 
-def _step_countdown(room) -> None:
-    """Decrement K; positive loops to the tick entry, zero enters emit."""
-    room.put(MOVE_JOIN_ROW, MOVE_JOIN_COL, "<")
-    room.put(MOVE_JOIN_ROW, TAPE_LO - 1, "v")
-    room.put(MOVE_JOIN_ROW + 1, TAPE_LO - 1, ">")
-    tape = Tape(room, MOVE_JOIN_ROW + 1, TAPE_LO, TAPE_LO, TAPE_HI)
-    tape.emit(*("r", "s") * 5, "r", "M", "1", "W", "-", "s")
-    tape.down_at(64, COUNT_X_ROW)
-    room.put(COUNT_X_ROW, 64, "<")
-    room.put(COUNT_X_ROW, COUNT_X_COL, "X")
+def _step_kcount(room) -> None:
+    """Count the round's ticks down and either loop or finish.
 
-    # K-1 > 0 turns north, then west to a dedicated return column.  Its
-    # blank crossings preserve both the northbound loop and earlier
-    # horizontal setup/class/move paths.
-    room.put(COUNT_X_ROW - 1, COUNT_X_COL, "<")
-    room.put(COUNT_X_ROW - 1, 30, "^")
-    blank = _loop_crossing_rows()
-    for row in range(36, COUNT_X_ROW - 1):
-        if row not in blank:
-            room.put(row, 30, "^")
-    room.put(35, 30, ">")                # row 35's existing c62 v re-enters
+    ``r M #1 W - s X`` leaves ``A = K - 1`` with the decremented count
+    already back in the ring, so one X both branches and commits.  Walked
+    EAST: ``A > 0`` turns clockwise (south, another tick), ``A == 0`` runs
+    straight on to EMIT.  The leading ``rs`` runs are MOVE's shared tail --
+    see :data:`MOVE_TAIL` -- plus the five that reach ``K``.
+    """
+    room.put(KCOUNT_ROW, MOVE_MERGE, "<")
+    room.put(KCOUNT_ROW, TAPE_LO, "v")
+    room.put(KCOUNT_ROW + 1, TAPE_LO, ">")
+    # Two rows: the pure rotation first, then the arithmetic.  One row cannot
+    # hold both once the literal has been shifted clear of the room's used
+    # backtick columns.
+    _emit_row(room, KCOUNT_ROW + 1, TAPE_LO + 1,
+              MOVE_TAIL + list("rs") * 5, MOVE_HI)
+    room.put(KCOUNT_ROW + 1, MOVE_MERGE, "v")
+    room.put(KCOUNT_ROW + 2, MOVE_MERGE, "<")
+    room.put(KCOUNT_ROW + 2, TAPE_LO, "v")
+    room.put(KCOUNT_ROW + 3, TAPE_LO, ">")
+    end = _emit_row(room, KCOUNT_ROW + 3, TAPE_LO + 1,
+                    ["r", "M", "#1", "W", "-", "s", "X"], MOVE_HI)
+    # A > 0: south, west along a clear row, and back onto ROUND-IN's own
+    # descent wire, which already runs all the way down to the tick tape.
+    xcol = end - 1                        # the X itself is the branch point
+    for r in range(KCOUNT_ROW + 4, KLOOP_ROW):
+        room.put(r, xcol, "v")
+    room.put(KLOOP_ROW, xcol, "<")
+    room.put(KCOUNT_ROW + 3, end, "v")    # A == 0: drop to EMIT's floor
+    _step_emit(room, end)
 
-    # K-1 == 0 continues west into the emit boundary.
-    room.put(COUNT_X_ROW, TAPE_LO - 1, "v")
-    room.put(EMIT_START_ROW, TAPE_LO - 1, ">")
-    _step_emit(room)
+
+# EMIT is three segments because its colour fetch is a REQ/RESP pair (row
+# <= REQ_MAX_ROW) while all three DRAW sends must sit BELOW the REQ/DRAW
+# Voronoi midpoint (row 11).  Getting from the kcount block at row 135 up to
+# the REQ band and back down is the room's longest journey, and exactly three
+# corridors survive every existing wire and every existing WALK:
+#
+#   * column ``EMIT_HW`` -- no run in the room reaches past column 70, so it
+#     is the one column that is neither occupied nor crossed at any row;
+#   * ``EMIT_FLOOR``/+1 -- below the tick block, the only clear east-west rows;
+#   * column ``EMIT_DESC_COL`` -- east of row 12's ROUND 1 crossing (which
+#     ends at column 60) and west of DESC_COL, clear from row 9 to row 30.
+#
+# The long legs are deliberately left BLANK: a man keeps his heading across
+# empty floor, so a blank corridor crosses every horizontal walkway it meets
+# without diverting either man.  Only the turns are drawn.
+EMIT_FLOOR = 147            # emit-a: below every wire, so the ring lap is free
+EMIT_HW = 71                # the one column no run in the room ever reaches
+EMIT_REQ_ROW = 8            # <= REQ_MAX_ROW, and clear of the row-10 band
+EMIT_DESC_COL = 61          # REQ band -> the DRAW rows
+EMIT_DRAW_ROW = 24          # first of four rows nothing else uses
+EMIT_SCR_LO = 42            # SCR_COL: r/s east of it reach the scratch loop
+EMIT_PORT_HI = 41           # ... and west of it, REQ/RESP/DRAW
 
 
-EMIT_CONT_ROW = 180
-EMIT_DRAW_ROW = 185
-EMIT_RETURN_ROW = 186
+def _step_emit(room, col: int) -> None:
+    """K == 0: colour-fetch OLD, draw old and new, commit, next round."""
+    _emit_a(room, col)
+    _emit_b(room)
+    _emit_c(room)
 
 
-def _step_emit(room) -> None:
-    """Restore OLD, draw ADDR, commit, then wait for the next round's k."""
-    # Preserve OLD in host B while K is relayed, restoring canonical CTRL
-    # head before the FETCH request.
-    prefix = Tape(
-        room, EMIT_START_ROW, EMIT_START_COL, TAPE_LO, TAPE_HI
-    )
-    prefix.emit(
-        *("r", "s") * 4,
-        "r", "s", "M",
-        "r", "s", "W", "M",
-    )
-    room.put(prefix.row, 71, "^")
-    for row in range(9, prefix.row):
-        room.put(row, 71, "^")
-    room.put(8, 71, "<")
+def _emit_a(room, col: int) -> None:
+    """Ring lap to OLD, then ``A = old + 256`` with ``old`` parked in B.
 
-    # Walked west: OLD+256 -> FETCH; response colour completes OLD*16+colour.
-    room.put(8, 39, "`652`")
-    room.put(8, 37, "s+")
-    room.put(8, 33, "`61`")
-    room.put(8, 29, "+rM*")
-    room.put(8, 27, "v")
-    room.put(22, 27, ">")
-    room.put(22, 38, "s")
-    room.put(22, 40, "v")
+    Walked WEST on the room's floor, where the whole width is free, so the
+    literal picks unused backtick columns instead of fighting for them.
+    """
+    room.put(EMIT_FLOOR, col, "<")
+    room.put(EMIT_FLOOR, 45, "srsrsrsrsr")   # walked west: (r s) x 5 -> OLD
+    room.put(EMIT_FLOOR, 44, "M")            # B = old
+    room.put(EMIT_FLOOR, 23, "`652`")        # walked west: the literal 256
+    room.put(EMIT_FLOOR, 22, "+")            # A = old + 256
+    room.put(EMIT_FLOOR, 21, "v")
+    room.put(EMIT_FLOOR + 1, 21, ">")        # the floor's return leg, east to
+    room.put(EMIT_FLOOR + 1, EMIT_HW, "^")   # the one uncrossed column
+    room.put(EMIT_REQ_ROW, EMIT_HW, "<")
 
-    # The old-cell DRAW token descends through blank crossings to the new
-    # address formatter.
-    room.put(EMIT_CONT_ROW, 40, ">")
-    new = Tape(room, EMIT_CONT_ROW, TAPE_LO, TAPE_LO, TAPE_HI)
-    new.emit(
-        "r", "s", "r", "s", "M",
-        *("r", "s") * 4, "W", "M",
-        "#16", "*", "M", "9", "+",
-    )
-    new.down_at(31, EMIT_DRAW_ROW)
-    room.put(EMIT_DRAW_ROW, 31, "<")
-    room.put(EMIT_DRAW_ROW, 28, "s")
-    room.put(EMIT_DRAW_ROW, 24, "sN1")   # walked west: 1, N, send -1
-    room.put(EMIT_DRAW_ROW, 22, "v")
-    room.put(EMIT_RETURN_ROW, 22, ">")
-    room.put(EMIT_RETURN_ROW, 70, "^")
 
-    # Return to ROUND-IN.  Row 163 is the one horizontal crossing of this
-    # highway; the northbound man retains its heading through the blank.
-    for row in range(31, EMIT_RETURN_ROW):
-        if row != EMIT_START_ROW:
-            room.put(row, 70, "^")
-    room.put(ROUND_ROW, 70, "<")
+def _emit_b(room) -> None:
+    """The colour fetch: ``old`` becomes ``old*16`` while RESP is in flight.
+
+    ``W`` recovers ``old`` from B the moment the request is away, so the ring
+    is read once for the whole of EMIT rather than once per DRAW send.
+    """
+    room.put(EMIT_REQ_ROW, 39, "MWs")        # walked west: s(REQ) W M
+    room.put(EMIT_REQ_ROW, 34, "`61`")       # walked west: the literal 16
+    room.put(EMIT_REQ_ROW, 32, "M*")         # walked west: * M -> B = old*16
+    room.put(EMIT_REQ_ROW, 31, "v")
+    room.put(EMIT_REQ_ROW + 1, 31, ">")
+    room.put(EMIT_REQ_ROW + 1, 32, "r+")     # r(RESP) = colour, A = old*16 + c
+    room.put(EMIT_REQ_ROW + 1, EMIT_DESC_COL, "v")
+
+
+def _emit_c(room) -> None:
+    """Restore-old, draw-new, commit -- then hand back to ROUND-IN.
+
+    Four rows, alternating west (the three DRAW sends, all at columns < 42 so
+    they cannot reach for the scratch loop) and east (the ring laps, all at
+    columns >= 42 so they cannot reach for DRAW).  The exit runs east into
+    SEED's own descent wire, which already lands on ROUND-IN's row.
+    """
+    row = EMIT_DRAW_ROW
+    room.put(row, EMIT_DESC_COL, "<")
+    room.put(row, 30, "s")                   # DRAW: old pixel repainted
+    room.put(row, 29, "v")
+    room.put(row + 1, 29, ">")
+    room.put(row + 1, 42, "rsrsrs")          # ring lap to ADDR, and read it
+    room.put(row + 1, 48, "v")
+    room.put(row + 2, 48, "<")
+    room.put(row + 2, 47, "M")
+    room.put(row + 2, 30, "`61`")            # walked west: the literal 16
+    room.put(row + 2, 26, "+9M*")            # walked west: * M 9 + -> addr*16+9
+    room.put(row + 2, 22, "sN1s")            # walked west: DRAW man, DRAW -1
+    room.put(row + 2, 21, "v")
+    room.put(row + 3, 21, ">")
+    room.put(row + 3, 42, "rsrsrsrs")        # finish the lap: head back at CTRL
 
 
 def build_step_room():
@@ -952,9 +1089,16 @@ def _step_main_plan() -> dict[str, str]:
         "branchX[BI]": "rs | r s | rs rs | X | r M #1 + M #4 W % s | rs rs rs rs rs",
         "move[CTRL]": "r s b | staircase 0..3 | r M #16N|#1|#16|#1N + s | rs rs rs rs",
         "kcount[CTRL]": "rs rs rs rs rs | r M #1 W - s X",
-        "emit[CTRL]": "rs rs rs rs | r s | rs | M #256 + ->REQ s"
-                      " | #16 * M <-RESP r + ->DRAW s"
-                      " | rs | r s | rs rs rs rs | M #16 * M #9 + s | #1 N s",
+        # CORRECTED, and the only phase still unplaced.  The colour fetch is
+        # a REQ/RESP pair, so it MUST sit on a row <= REQ_MAX_ROW while every
+        # DRAW send MUST sit on a row above it -- EMIT is therefore three
+        # segments, not one row.  B carries `old` across the round trip and
+        # is re-shaped into `old*16` while the response is still in flight,
+        # so the ring is read once, not twice.
+        "emit-a[CTRL] rows>11": "rs rs rs rs | r s | M #256 +",
+        "emit-b[K] rows<=11": "->REQ s | W M #16 * M | <-RESP r | +",
+        "emit-c[K] rows>11": "->DRAW s | rs rs | r s | M #16 * M #9 +"
+                             " | ->DRAW s | #1 N ->DRAW s | rs rs rs rs",
     }
 
 
@@ -1013,3 +1157,496 @@ def oracle_frames(rows: list[str], ks: list[int]) -> list[list[str]]:
         machine.run(int(k))
         out.append(machine.render())
     return out
+
+
+# =====================================================================
+# LLM (not LLLM): three independent interpreters behind one display
+# =====================================================================
+# `pileup` and `bounce house` are the two LLM cases with several men and no
+# pipes.  `bounce house` needs NOTHING from this room that LLLM did not
+# already need: with no pipes the men never interact, so three UNMODIFIED
+# copies of the LLLM STEP+FETCH complex reproduce it exactly (verified in
+# Python against `littleman.llm.LLM` through the real `StepModel`).  Only two
+# small rooms are new, and `lllm_step.build_step_room` is untouched, so
+# `submissions/lllm/lllm_03.man` keeps rebuilding byte for byte.
+#
+# `pileup` is NOT reachable this way and is deliberately out of scope here:
+# it needs the LLM rule that ONE man reaching a wall freezes ALL of them, and
+# that is cross-talk between the three interpreters.
+#
+#   LOADER --> TEE1 --+--> STEP0 ------------------> GATE1 --> GATE2 --> DRAW
+#                     |                              ^  ^       ^
+#                     +--> TEE2 --+--> STEP1 --------+  |       |
+#                                 +--> STEP2 -----------|-------+
+#
+# Surplus interpreters are not switched off: SCAN v2 reports address 0 for a
+# missing man, cell 0 is forced to be a wall, so the extra STEP freezes on
+# tick 1 and emits, every round, the pair (0*16+4, 0*16+9) = (4, 9).  A gate
+# forwards the restore pixel (which repaints cell 0 correctly) and drops the
+# man pixel by value: 9 means address 0 with the man colour, and no live man
+# can ever stand on cell 0 because arriving on a wall is what freezes him.
+MEN = 3
+
+
+TEE_ROWS, TEE_COLS = 13, 34
+TEE_IN_ROW = 12            # left wall, incoming from upstream
+TEE_NEAR_ROW = 2           # left wall, outgoing to the first consumer
+TEE_FAR_ROW = 12           # right wall, outgoing to the second consumer
+
+
+def build_tee(men: int = MEN):
+    """One stream in, two out: broadcast, then ``men`` addressed sends.
+
+    ``S`` puts a token on EVERY outgoing pipe, which covers the 64 world
+    tokens and every later round count; only the man tokens must pick a
+    single destination, and they do it by position -- the near send sits two
+    cells from the left wall and the far send three from the right, so
+    nearest-pipe resolution is a plain left/right split with a margin of
+    thirty cells.
+
+    ``men`` is how many addressed tokens THIS tee still has to place, and it
+    shrinks down the chain: the first tee sees all three and keeps one, so the
+    second sees two.  A tee that reads one address too many eats the first
+    round count as if it were a man -- which starves its NEAR consumer of that
+    round forever, and that is exactly the llm_04 deadlock.
+    """
+    from .lllm_fetch import Room
+
+    room = Room(TEE_ROWS, TEE_COLS)
+    # row 1: BP = 64, then the broadcast loop; `d` sends BP > 0 south so the
+    # fall-through can keep running east on the same row.
+    room.put(1, 1, "@`64`b>rSmd")
+    room.put(2, 11, "<")                 # loop return, west then back up
+    room.put(2, 7, "^")
+    room.put(1, 12, "v")                 # BP exhausted
+    room.put(2, 12, "v")
+    room.put(3, 12, "<")
+    room.put(3, 1, "v")
+    room.put(4, 1, ">rs")                # man 0 -> the near pipe
+    room.put(4, 20, "v")
+    room.put(5, 20, "<")
+    room.put(5, 1, "v")
+    room.put(6, 1, ">")                  # man 1 -> the far pipe
+    room.put(6, 30, "rs")
+    room.put(6, 32, "v")
+    room.put(7, 32, "<")
+    room.put(7, 1, "v")
+    if men > 2:
+        room.put(8, 1, ">")              # man 2 -> the far pipe
+        room.put(8, 30, "rs")
+        room.put(8, 32, "v")
+        room.put(9, 32, "<")
+    else:
+        room.put(8, 1, "v")              # no third address: fall straight past
+    room.put(9, 1, "v")
+    room.put(10, 1, ">rSv")              # every later token, broadcast forever
+    room.put(11, 4, "<")
+    room.put(11, 1, "^")
+    return room
+
+
+GATE_ROWS, GATE_COLS = 28, 56
+GATE_UP_ROW = 14           # left wall,  incoming <- the upstream delta stream
+GATE_OWN_ROW = 14          # right wall, incoming <- this gate\'s own STEP
+GATE_OUT_ROW = 22          # right wall, outgoing -> downstream
+
+
+def build_gate():
+    """Splice one interpreter\'s delta stream into the stream flowing past.
+
+    Two incoming pipes, one on each side wall, so nearest-pipe resolution is
+    a left/right split: every ``r`` at column <= 24 reads UPSTREAM and every
+    ``r`` at column >= 33 reads this gate\'s OWN interpreter.  There is only
+    one outgoing pipe, so an ``s`` may sit anywhere.
+
+    Per round the gate copies the upstream round through (recognising its end
+    by the negative commit sentinel, which it swallows), then splices in its
+    own man\'s two pixels, then re-issues one sentinel.  Round 1 is the only
+    asymmetry: every interpreter paints the same 256 static pixels, so this
+    gate must DROP its own copy or it would repaint over the men the upstream
+    gates have already spliced in.
+
+    BOTH the copy and the splice drop the token 9 -- address 0 carrying the
+    man colour, which only a parked surplus interpreter can emit.  The copy
+    has to do it too: the interpreter at the HEAD of the chain has no gate of
+    its own, so its man pixel is only ever seen as upstream traffic.
+    """
+    from .lllm_fetch import Room
+
+    room = Room(GATE_ROWS, GATE_COLS)
+    room.put(1, 1, "@v")                 # down column 2, which no phase uses
+    room.put(2, 2, "v")
+    room.put(3, 2, "<")
+    room.put(3, 1, "v")
+    room.put(4, 1, "v")
+    _gate_drain(room, 5, 50, 9, 10)      # round 1: copy the upstream round
+    # round 1: swallow this gate\'s own 256 static pixels.
+    room.put(10, 1, ">`256`b>")
+    room.put(10, 33, "rmd")
+    room.put(11, 35, "<")
+    room.put(11, 8, "^")
+    room.put(10, 36, "v")
+    room.put(11, 36, "v")
+    room.put(12, 36, "<")
+    room.put(12, 1, "v")
+    room.put(13, 1, "v")
+    _gate_splice(room, 14, 33, first=True)
+    room.put(14, 52, "v")
+    room.put(18, 52, "<")
+    room.put(18, 1, "v")
+    room.put(19, 1, "v")
+    _gate_drain(room, 20, 52, 24, 26)    # the endless round loop
+    room.put(25, 1, "v")
+    _gate_splice(room, 26, 33, first=False)
+    room.put(26, 54, "^")                # back to the drain, up a blank column
+    room.put(17, 54, "<")
+    room.put(17, 1, "v")
+    return room
+
+
+def _gate_drain(room, row: int, exit_col: int, land: int, nxt: int) -> None:
+    """Copy upstream tokens until the negative sentinel, which is dropped.
+
+    Five rows: the sentinel arm above, the read, the ``== 9`` test, the two
+    test arms, and one westbound return that every path falls onto.
+    """
+    room.put(row, 1, ">rXv")
+    room.put(row + 1, 3, ">")            # A > 0 joins the A == 0 fall-through
+    room.put(row + 1, 4, "M`0009`W-X")   # A = token - 9
+    for arm in (row, row + 2):
+        room.put(arm, 13, ">+sv")
+    room.put(row + 1, 16, "v")           # token == 9: nothing sent
+    room.put(row + 3, 16, "<")
+    for back in range(row + 1, row + 4):
+        room.put(back, 1, "^")
+    room.put(row - 1, 3, ">")            # A < 0: the sentinel, leave north
+    room.put(row - 1, exit_col, "v")
+    room.put(land, exit_col, "<")
+    room.put(land, 1, "v")
+    if nxt > land + 1:
+        room.put(land + 1, 1, "v")
+
+
+def _gate_splice(room, row: int, col: int, *, first: bool) -> None:
+    """This gate\'s own pixels: (round 1) the man only, else restore then man."""
+    room.put(row, 1, ">")
+    if not first:
+        room.put(row, col, "rs")         # the restore pixel, always kept
+        col += 2
+    room.put(row, col, "rM`0009`W-X")    # A = man pixel - 9
+    branch = col + 10
+    for arm, turn in ((row - 1, "v"), (row + 1, "^")):
+        room.put(arm, branch, ">+s" + turn)
+    room.put(row, branch + 3, ">r1Ns")   # sentinel dropped, commit emitted
+
+
+# ------------------------------------------------------------ llm_04 press
+# Row bands, not column bands: the three interpreter complexes are STACKED,
+# so each one may reuse the same two local margin columns (58 = LOAD, 60 =
+# DRAW) without ever meeting its neighbours.  Every long haul then runs in
+# the east margin, where the columns are assigned in leg order so the spans
+# NEST -- a leg at row R only ever reaches columns whose verticals stop above
+# R.  That is the whole routing discipline and it is checked mechanically by
+# :func:`_audit_llm` rather than by eye.
+LLM_COMPLEX_COL = 100          # bc for all three complexes
+LLM_COMPLEX_ROWS = (1100, 1300, 1500)
+LOCAL_LOAD_COL = 58
+LOCAL_DRAW_COL = 60
+
+
+def _place_complex(cv, br: int, bc: int) -> None:
+    """One FETCH + STEP + two relays, lifted byte-identical from lllm_press."""
+    from . import lllm_fetch
+
+    sr, sc = br + STEP_AT[0], bc + STEP_AT[1]
+    fr, fc = br + FETCH_AT[0], bc + FETCH_AT[1]
+    cv.put(fr, fc, lllm_fetch.build_fetch().render())
+    cv.put(sr, sc, build_step_room().render())
+    cv.put(fr + 20, fc + 50, lllm_fetch.build_relay().render())
+    cv.put(sr + SCR_OUT_ROW - 1, sc + 80, build_step_relay().render())
+    left, right = sc - 1, sc + STEP_COLS + 2
+    fleft = fc - 1
+    col_req = bc + 9
+    cv.pipe([(sr + REQ_ROW, left), (sr + REQ_ROW, col_req),
+             (fr + 2, col_req), (fr + 2, fleft)])
+    cv.pipe([(fr + 13, fleft), (fr + 13, fleft - 1), (sr - 1, fleft - 1),
+             (sr - 1, sc + RESP_COL)])
+    cv.cells[(sr - 1, sc + RESP_COL)] = "v"
+    cv.pipe([(fr + 2, fc + 47), (fr + 2, fc + 67), (fr + 21, fc + 67),
+             (fr + 21, fc + 56)])
+    cv.pipe([(fr + 21, fc + 49), (fr + 21, fc + 48), (fr + 5, fc + 48),
+             (fr + 5, fc + 47)])
+    cv.pipe([(sr + SCR_OUT_ROW, right), (sr + SCR_OUT_ROW, sc + 79)])
+    cv.pipe([(sr + SCR_OUT_ROW + 1, sc + 86), (sr + SCR_OUT_ROW + 1, sc + 87),
+             (sr + SCR_IN_ROW, sc + 87), (sr + SCR_IN_ROW, right)])
+
+
+def complex_ports(br: int, bc: int) -> dict[str, tuple[int, int]]:
+    """LOAD in / DRAW out, as canvas pipe cells on the STEP room's west wall."""
+    sr, sc = br + STEP_AT[0], bc + STEP_AT[1]
+    return {"load": (sr + LOAD_ROW, sc - 1), "draw": (sr + DRAW_ROW, sc - 1)}
+
+
+# --------------------------------------------------------------- autorouter
+# Hand-routing twenty inter-room pipes around three stacked interpreter
+# complexes is a planarity puzzle, not a design decision, so it is solved
+# mechanically: a breadth-first maze router over the canvas, with every
+# occupied cell dilated by one so a pipe never runs flush against a room wall
+# or against another pipe (either would change how `Machine.parse` binds it).
+def _blocked(cv, exempt, solid=()) -> set[tuple[int, int]]:
+    """Occupied cells, with ROOM cells dilated by one.
+
+    Only rooms get the halo: a pipe hugging a wall may bind to it, but two
+    pipes running side by side are ordinary -- the LLLM machine's own LOAD
+    and DRAW legs are on adjacent rows -- so pipe cells block only themselves.
+    """
+    halo = set(cv.cells)
+    for (r, c) in solid:
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                halo.add((r + dr, c + dc))
+    return halo - exempt
+
+
+def route(cv, spath, epath, bounds, reserved=(), solid=()) -> None:
+    """Draw one pipe: a fixed lane out of each port, a BFS path between them.
+
+    ``spath`` runs outward from the source port and ``epath`` inward to the
+    destination port; only the gap between their ends is searched, so the
+    arrowheads the parser reads always come from the lanes, which are chosen
+    by hand.
+    """
+    from collections import deque
+
+    start, end = spath[-1], epath[0]
+    exempt = set(spath) | set(epath)
+    for cell in (start, end):
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                exempt.add((cell[0] + dr, cell[1] + dc))
+    exempt -= set(cv.cells)
+    exempt |= {start, end}
+    blocked = _blocked(cv, exempt, solid) | (set(reserved) - exempt)
+    lo_r, hi_r, lo_c, hi_c = bounds
+    seen = {start: None}
+    queue = deque([start])
+    while queue:
+        cell = queue.popleft()
+        if cell == end:
+            break
+        r, c = cell
+        for nr, nc in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            nxt = (nr, nc)
+            if nxt in seen or not (lo_r <= nr <= hi_r and lo_c <= nc <= hi_c):
+                continue
+            if nxt in blocked and nxt != end:
+                continue
+            seen[nxt] = cell
+            queue.append(nxt)
+    if end not in seen:
+        raise ValueError("no route %s -> %s" % (start, end))
+    middle = []
+    cell = end
+    while cell is not None:
+        middle.append(cell)
+        cell = seen[cell]
+    middle.reverse()
+    full = spath[:-1] + middle + epath[1:]
+    out = [full[0]]
+    for prev, cur, nxt in zip(full, full[1:], full[2:]):
+        if (cur[0] - prev[0], cur[1] - prev[1]) != (nxt[0] - cur[0], nxt[1] - cur[1]):
+            out.append(cur)
+    out.append(full[-1])
+    cv.pipe(out)
+
+
+W_OUT, W_IN = (0, -1), (0, 1)      # west wall: leaving / entering
+E_OUT, E_IN = (0, 1), (0, -1)      # east wall: leaving / entering
+
+LLM_PLACE = {
+    "I": (20, 250),
+    "SCAN": (20, 300),
+    "CLASSIFY": (700, 300),
+    # Spread horizontally, not vertically: stacked in one column band these
+    # five rooms all shared one west margin, and the first pipe routed through
+    # it sealed the rest into a pocket the router could not escape.
+    "TEE1": (760, 500),
+    "TEE2": (760, 620),
+    # The gates sit BELOW the interpreter stack, not beside it: the three
+    # DRAW wires have to leave the stack southwards anyway (LOAD owns the
+    # north), and putting their consumers in the same open southern half is
+    # what keeps the router from fencing itself in.
+    "GATE1": (1750, 340),
+    "GATE2": (1750, 500),
+    "DIST": (1900, 340),
+}
+LLM_BOUNDS = (0, 2000, 0, 800)
+LANE = 8          # default escape lane reserved straight out of a port
+
+
+def _expand(waypoints):
+    """A waypoint list -> every cell on it, in order."""
+    cells = [waypoints[0]]
+    for a, b in zip(waypoints, waypoints[1:]):
+        dr = (b[0] > a[0]) - (b[0] < a[0])
+        dc = (b[1] > a[1]) - (b[1] < a[1])
+        cur = a
+        while cur != b:
+            cur = (cur[0] + dr, cur[1] + dc)
+            cells.append(cur)
+    return cells
+
+
+def _place_scan_v2(cv, mod, r0: int, c0: int) -> None:
+    room = mod.build_scan_room_v2()
+    right = c0 + len(room[0]) - 1
+    cv.put(r0, c0, room)
+    relay_left = right + 5
+    cv.put(r0 + 1, relay_left, mod.build_relay())
+    cv.pipe([(r0 + mod.RING_OUT_ROW, right + 1),
+             (r0 + mod.RING_OUT_ROW, relay_left - 1)])
+    far = relay_left + 12
+    cv.pipe([(r0 + 3, relay_left + 6), (r0 + 3, far),
+             (r0 + mod.RING_IN_ROW, far), (r0 + mod.RING_IN_ROW, right + 1)])
+
+
+def _llm_ports() -> dict:
+    """Every external port as an explicit ESCAPE LANE of canvas cells.
+
+    A lane is a fixed prologue the router may not deviate from; the maze
+    search only starts where the lane ends.  The complexes need this: LOAD
+    and DRAW sit on adjacent rows of the same wall, so left to itself the
+    router lays the first of them across the second\'s only way out.  Their
+    lanes therefore leave in opposite directions -- LOAD north over the
+    complex, DRAW south under it -- and never meet.
+    """
+    from . import lllm_classify, lllm_scan
+
+    sr, sc = LLM_PLACE["SCAN"]
+    cr, cc = LLM_PLACE["CLASSIFY"]
+
+    def lane(cell, direction, length=LANE):
+        """``direction`` always points OUT of the room; a destination lane is
+        reversed by the router, which is what makes its last step point in."""
+        return [cell, (cell[0] + direction[0] * length,
+                       cell[1] + direction[1] * length)]
+
+    ports = {
+        "I.out": lane((LLM_PLACE["I"][0] + 1, LLM_PLACE["I"][1] + 3), E_OUT, 4),
+        "SCAN.in": lane((sr + lllm_scan.CMD_ROW, sc - 1), W_OUT, 4),
+        "SCAN.out": lane((sr + lllm_scan.RESP_ROW, sc - 1), W_OUT, 4),
+        "CLASSIFY.in": lane((cr + lllm_classify.PIPE_ROW, cc - 1), W_OUT),
+        "CLASSIFY.out": lane((cr + lllm_classify.PIPE_ROW, cc + 86), E_OUT),
+        "DIST.in": [(LLM_PLACE["DIST"][0] + 2, LLM_PLACE["DIST"][1] - 1),
+                    (LLM_PLACE["DIST"][0] + 2, 320), (1970, 320)],
+    }
+    for tag in ("TEE1", "TEE2"):
+        tr, tc = LLM_PLACE[tag]
+        ports[f"{tag}.in"] = lane((tr + TEE_IN_ROW, tc - 1), W_OUT)  # noqa
+        ports[f"{tag}.near"] = lane((tr + TEE_NEAR_ROW, tc - 1), W_OUT)
+        ports[f"{tag}.far"] = lane((tr + TEE_FAR_ROW, tc + TEE_COLS + 2), E_OUT)
+    for tag in ("GATE1", "GATE2"):
+        gr, gc = LLM_PLACE[tag]
+        up = (gr + GATE_UP_ROW, gc - 1)
+        own = (gr + GATE_OWN_ROW, gc + GATE_COLS + 2)
+        out = (gr + GATE_OUT_ROW, gc + GATE_COLS + 2)
+        if tag == "GATE1":
+            ports["GATE1.up"] = [up, (up[0], 320)]
+            ports["GATE1.own"] = [own, (own[0], 420)]
+            ports["GATE1.out"] = [out, (out[0], 440), (1950, 440)]
+        else:
+            ports["GATE2.up"] = [up, (up[0], 480), (1950, 480)]
+            ports["GATE2.own"] = [own, (own[0], 580)]
+            ports["GATE2.out"] = [out, (out[0], 600), (1970, 600)]
+    for index, br in enumerate(LLM_COMPLEX_ROWS):
+        p = complex_ports(br, LLM_COMPLEX_COL)
+        lr, lc = p["load"]
+        dr_, dc_ = p["draw"]
+        # LOAD leaves north over its complex, DRAW south under it, and the
+        # DRAW lanes then fan into three private corridors east of the stack
+        # (deepest complex innermost, so the three eastward legs nest).
+        # LOAD and DRAW sit on adjacent rows of the same wall, so they must
+        # part company IMMEDIATELY or one lays itself across the other: DRAW
+        # turns north at the westernmost of the two columns and LOAD south at
+        # the easternmost, and neither horizontal ever reaches the other\'s
+        # turn.  DRAW then runs east into a private corridor (columns shrink
+        # with depth, so the three eastward legs nest) and LOAD west into one
+        # of its own before climbing back to the tees.
+        draw_turn, load_turn = 104 - 4 * index, 112 - 4 * index
+        west = 88 - 6 * index
+        corridor = 300 - 20 * index
+        bottom = 1720 + 10 * index
+        gate_col = (580, 420, 320)[index]
+        ports[f"C{index}.load"] = [
+            (lr, lc), (lr, load_turn), (br + 185, load_turn),
+            (br + 185, west), (700, west),
+        ]
+        # The fan-out below the stack is planar by construction: the deeper
+        # (and so more westerly) a corridor is, the LOWER it turns east, so it
+        # passes under every corridor it has to reach past.  That ordering is
+        # why complex 0 feeds the LAST gate and complex 2 the first -- the men
+        # are interchangeable, the geometry is not.
+        ports[f"C{index}.draw"] = [
+            (dr_, dc_), (dr_, draw_turn), (br - 12, draw_turn),
+            (br - 12, corridor), (bottom, corridor), (bottom, gate_col),
+            (LLM_PLACE["GATE1"][0] + GATE_UP_ROW, gate_col),
+        ]
+    return ports
+
+
+# Routed longest-haul first: the six wires that cross the whole canvas pick
+# their corridors before the short local hops can fence them in.
+LLM_LINKS = [
+    ("TEE1.near", "C0.load"),
+    ("TEE2.near", "C1.load"),
+    ("TEE2.far", "C2.load"),
+    ("GATE1.out", "GATE2.up"),
+    ("GATE2.out", "DIST.in"),
+    ("C2.draw", "GATE1.up"),
+    ("C1.draw", "GATE1.own"),
+    ("C0.draw", "GATE2.own"),
+    ("I.out", "SCAN.in"),
+    ("SCAN.out", "CLASSIFY.in"),
+    ("CLASSIFY.out", "TEE1.in"),
+    ("TEE1.far", "TEE2.in"),
+]
+
+
+def _route_llm(cv, solid) -> None:
+    ports = {name: _expand(way) for name, way in _llm_ports().items()}
+    for src, dst in LLM_LINKS:
+        keep = set(ports[src]) | set(ports[dst])
+        foreign = set()
+        for name, lane in ports.items():
+            if name in (src, dst):
+                continue
+            for (r, c) in lane:
+                for d_r in (-1, 0, 1):
+                    for d_c in (-1, 0, 1):
+                        foreign.add((r + d_r, c + d_c))
+        route(cv, ports[src], list(reversed(ports[dst])), LLM_BOUNDS,
+              foreign - keep, solid)
+
+
+def build_llm_machine() -> str:
+    """`submissions/llm/llm_04.man`: SCAN v2 -> CLASSIFY -> 3 interpreters."""
+    from .canvas import Canvas
+    from . import lllm_classify, lllm_draw, lllm_scan
+
+    cv = Canvas()
+    ir, ic = LLM_PLACE["I"]
+    cv.put(ir, ic, ["+-+", "|I|", "+-+"])
+    _place_scan_v2(cv, lllm_scan, *LLM_PLACE["SCAN"])
+    cv.put(*LLM_PLACE["CLASSIFY"], lllm_classify.build_classify_room())
+    # TEE1 places all three addresses (one near, two far); TEE2 is handed only
+    # the two that went far, so it must read exactly two.
+    for name, men in (("TEE1", MEN), ("TEE2", MEN - 1)):
+        cv.put(*LLM_PLACE[name], build_tee(men).render())
+    for name in ("GATE1", "GATE2"):
+        cv.put(*LLM_PLACE[name], build_gate().render())
+    lllm_draw.place_display_block(cv, *LLM_PLACE["DIST"])
+    for br in LLM_COMPLEX_ROWS:
+        _place_complex(cv, br, LLM_COMPLEX_COL)
+    solid = set(cv.cells)          # rooms and their tuned internal pipes
+    _route_llm(cv, solid)
+    return cv.render()

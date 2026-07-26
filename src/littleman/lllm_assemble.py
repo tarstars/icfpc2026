@@ -18,13 +18,12 @@ from .canvas import Canvas
 # Three row bands, so no two components can ever share a cell:
 #   band A rows    0.. 310  I, SCAN, SCAN's scratch relay
 #   band B rows  320.. 510  CLASSIFY
-#   band C rows  520.. 789  FETCH + relay, STEP + relay
-#   bypass row          800  CLASSIFY -> STEP east-to-west crossing
-#   band D rows  811.. 836  DIST + drivers + 16x16 display
+#   band C rows  520.. 650  FETCH + relay, STEP + relay
+#   band D rows  749.. 775  DIST + drivers + 16x16 display
 SCAN_AT = (0, 6)          # identical to lllm_scan's own rig placement
 CLASSIFY_AT = (320, 6)
 STEP_BASE = (520, 0)      # lllm_step's rig coordinates are relative to this
-DRAW_AT = (820, 20)       # place_display_block anchor (block: rows 811..836)
+DRAW_AT = (758, 20)       # place_display_block anchor (block: rows 749..774)
 
 # free vertical corridors, all west of / east of every room
 COL_SCAN_OUT = 4          # SCAN -> CLASSIFY
@@ -32,8 +31,8 @@ COL_REQ = 9               # STEP -> FETCH (from lllm_step's rig)
 COL_DRAW = 10             # STEP -> DIST
 COL_LOAD = 12             # CLASSIFY -> STEP, last leg
 COL_LOAD_FAR = 140        # CLASSIFY -> STEP, east bypass around STEP
-ROW_LOAD_FAR = 800        # ... and its southern crossing row, below STEP
-ROW_DRAW_IN = DRAW_AT[0] + 2
+ROW_LOAD_FAR = 700        # ... and its southern crossing row
+ROW_DRAW_IN = 760         # DIST attach row (DRAW_AT[0] + 2)
 
 
 def build_machine() -> str:

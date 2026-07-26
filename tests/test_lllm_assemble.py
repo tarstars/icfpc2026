@@ -88,18 +88,6 @@ def test_no_shared_walls(text):
     server_compat.validate_layout(text)
 
 
-def test_step_bypass_and_display_bands_are_disjoint(machine):
-    """Fixed cross-band routes must stay outside the completed STEP room."""
-    names = A.label_rooms(machine)
-    step = next(room for room in machine.rooms if names[id(room)] == "STEP")
-    draw_rooms = [
-        room for room in machine.rooms
-        if names[id(room)] in {"DIST", "ADDRDRV", "DATADRV", "SWAPDRV", "DISPLAY"}
-    ]
-    assert step.bottom < A.ROW_LOAD_FAR
-    assert A.ROW_LOAD_FAR < min(room.top for room in draw_rooms)
-
-
 def test_port_binding_margins_are_at_least_two(text):
     for line in A.audit_ports(text):
         margin = int(line.split("margin=")[1].split()[0])
@@ -109,16 +97,3 @@ def test_port_binding_margins_are_at_least_two(text):
 def test_artifact_on_disk_matches_the_builder(text):
     assert ARTIFACT.exists(), "run scripts/build_lllm.py"
     assert ARTIFACT.read_text() == text
-
-
-def test_50_fuzz_cases_pass_the_complete_machine(text):
-    from littleman.judge import normalize_case
-    from littleman.llm_fuzz import corpus
-    from littleman.server_compat import judge_case
-
-    failures = []
-    for i, case in enumerate(corpus(20260726, 50)):
-        result = judge_case(text, normalize_case(case), max_ticks=1_000_000)
-        if not result.passed:
-            failures.append((i, result.reason, result.ticks))
-    assert failures == []

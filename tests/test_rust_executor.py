@@ -115,6 +115,17 @@ def test_cached_parallel_batch_is_deterministic():
     assert all(result.status == "passed" for result in parallel)
 
 
+def test_pytest_plugin_preserves_wall_tolerant_server_judge():
+    from littleman import alexey_walljudge, server_compat
+
+    assert alexey_walljudge.Machine is rustexec.ReferenceMachine
+    source = (REPO / "submissions/triangle/triangle_04.man").read_text()
+    problem = json.loads((PROBLEMS / "triangle.json").read_text())
+    report = server_compat.judge_problem(source, problem)
+    assert report.cases_passed == report.cases_total == 6
+    assert report.case_ticks == [13] * 6
+
+
 @pytest.mark.parametrize(
     "path,slug",
     ARTIFACTS,

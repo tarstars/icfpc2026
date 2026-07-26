@@ -28,6 +28,9 @@ packages = ["src/icfpc_api", "src/littleman"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Parallel by default: the suite is CPU-bound tick simulation with no shared
+# state. Use `-p no:xdist` or `-n 0` when a failure needs serial diagnosis.
+addopts = "-n auto"
 
 [tool.maturin]
 manifest-path = "rust/Cargo.toml"

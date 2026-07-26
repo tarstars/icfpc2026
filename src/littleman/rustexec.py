@@ -257,14 +257,22 @@ def run_rounds_parallel(compiled, cases, *, max_ticks=5_000_000, workers=1):
 
 def pytest_configure(config):
     """Pytest plugin hook: redirect later ``sim.Machine`` imports to Rust."""
-    from . import sim
+    # The wall-tolerant server oracle monkey-patches ``Machine._tick``. Its
+    # behavior cannot be represented by replacing that class with this
+    # executor because the native loop never calls the Python method. Import
+    # both modules before redirecting ``sim.Machine`` and preserve their
+    # reference-class bindings.
+    from . import alexey_walljudge, server_compat, sim
+
+    protected = {alexey_walljudge.__name__, server_compat.__name__}
 
     if _rust is None:
         raise RuntimeError("littleman Rust pytest plugin requires the native extension")
     sim.Machine = Machine
     for name, module in list(sys.modules.items()):
         if (
-            name.startswith("littleman.")
+            name not in protected
+            and name.startswith("littleman.")
             and getattr(module, "Machine", None) is ReferenceMachine
         ):
             module.Machine = Machine
