@@ -8,7 +8,7 @@ from .llm_perimeter import ROOM_END
 from .llm_pipemask import advance_mask, build_pipemask_room
 from .llm_pipetrace import PIPE_END
 from .llm_roomfind import SETUP_END, WORLD_WORDS
-from .llm_statebuild import PIPE_MASK
+from .llm_statebuild import PIPE_MASK, PIPE_VALUES
 
 
 def maskmap_reference(tokens: list[int]) -> list[int]:
@@ -25,9 +25,14 @@ def maskmap_reference(tokens: list[int]) -> list[int]:
                 index += 2
             out.append(PIPE_MASK)
             out.append(advance_mask(tokens[index + 1]))
+            index += 2
+            assert tokens[index] == PIPE_VALUES
+            count = tokens[index + 1]
+            out.extend(tokens[index : index + 2 + count])
+            index += 2 + count
+            assert tokens[index] == PIPE_END
             out.append(PIPE_END)
-            assert tokens[index + 2] == PIPE_END
-            index += 3
+            index += 1
         out.append(ROOM_END)
         index += 1
     return [*out, SETUP_END]
@@ -87,7 +92,24 @@ def _build_fsm(*, prefix_world: bool = False) -> _Fsm:
     fsm.go("mask_r", "left", "r", "mask_send")
     fsm.go("mask_send", "right", "s", "mask_recv")
     fsm.go("mask_recv", "right", "r", "mask_out")
-    fsm.go("mask_out", "left", "s", "pipe_end_r")
+    fsm.go("mask_out", "left", "s", "values_marker_r")
+    fsm.go("values_marker_r", "left", "rs", "values_count_r")
+    fsm.go("values_count_r", "left", "rMs", "values_count")
+    fsm.bp(
+        "values_count",
+        "mid",
+        "",
+        zero="pipe_end_r",
+        pos="value_r",
+    )
+    fsm.go("value_r", "left", "rs", "values_dec")
+    fsm.bp(
+        "values_dec",
+        "mid",
+        "m",
+        zero="pipe_end_r",
+        pos="value_r",
+    )
     fsm.go("pipe_end_r", "left", "rs", "start_r")
     fsm.go("room_end", "left", "s", "item_r")
     fsm.go("setup_end", "left", "Ws", "item_r")

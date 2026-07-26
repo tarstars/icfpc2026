@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from .lllm_fetch import build_relay
-from .lllm_scan import _Fsm, _compile
+from .lllm_scan import _compile, _Fsm
 from .llm_candidatefetch import (
-    CMD_ROW as FETCH_CMD_ROW,
     RESP_ROW as FETCH_RESP_ROW,
+)
+from .llm_candidatefetch import (
     build_candidate_fetch_room,
 )
 from .llm_cmpfetch import EXPECTED
-from .llm_perimeter import ROOM_END, pack_candidate, unpack_candidate
-from .llm_roomfind import SETUP_END, WORLD_WORDS
+from .llm_perimeter import ROOM_END, unpack_candidate
 from .llm_rawfetch import unpack_raw_world
+from .llm_roomfind import SETUP_END, WORLD_WORDS
 
 PIPE_END = -3000
+PIPE_DEST = -3100
 DIRECTION_DELTA = {2: -16, 3: 16, 4: -1, 5: 1}
 
 
@@ -44,6 +46,38 @@ def pipetrace_reference(tokens: list[int]) -> list[int]:
                 out.append(addr)
                 addr += DIRECTION_DELTA[direction]
             out.append(PIPE_END)
+        out.append(ROOM_END)
+        index += 1
+    return [*out, SETUP_END, *tokens[index + 1 :]]
+
+
+def pipetrace_dest_reference(tokens: list[int]) -> list[int]:
+    """Trace pipes and preserve the destination-wall address after each."""
+    raw = unpack_raw_world(tokens[:WORLD_WORDS])
+    out = list(tokens[:WORLD_WORDS])
+    index = WORLD_WORDS
+    while tokens[index] != SETUP_END:
+        out.extend(tokens[index : index + 5])
+        index += 5
+        while tokens[index] != ROOM_END:
+            start = tokens[index]
+            index += 1
+            direction, addr = unpack_candidate(start)
+            out.append(start)
+            while 0 <= addr < 256:
+                code = raw[addr] & 0xFF
+                arrow = next(
+                    (kind for kind in range(2, 6) if code == EXPECTED[kind]),
+                    None,
+                )
+                body = 1 if direction in (2, 3) else 6
+                if arrow is not None:
+                    direction = arrow
+                elif code != EXPECTED[body]:
+                    break
+                out.append(addr)
+                addr += DIRECTION_DELTA[direction]
+            out.extend((PIPE_DEST, addr, PIPE_END))
         out.append(ROOM_END)
         index += 1
     return [*out, SETUP_END, *tokens[index + 1 :]]
@@ -85,7 +119,7 @@ def _probe(fsm: _Fsm, direction: int, kind: int, next_kind: int | None) -> None:
         fsm.go(miss, "right", "W", f"probe_{direction}_{next_kind}")
 
 
-def _build_fsm() -> _Fsm:
+def _build_fsm(*, annotate_dest: bool = False) -> _Fsm:
     fsm = _Fsm()
     fsm.go("boot", "left", "@", "load_r_0")
     for index in range(WORLD_WORDS):
@@ -130,17 +164,13 @@ def _build_fsm() -> _Fsm:
                 zero=f"start_arm_{kind}",
                 pos=f"start_kind_dec_{kind}",
             )
-            fsm.go(
-                f"start_kind_dec_{kind}", "mid", "m", f"start_kind_{kind + 1}"
-            )
+            fsm.go(f"start_kind_dec_{kind}", "mid", "m", f"start_kind_{kind + 1}")
         else:
             fsm.go(f"start_kind_{kind}", "mid", "", f"start_arm_{kind}")
         if kind < 2:
             fsm.go(f"start_arm_{kind}", "mid", "", "bad_start")
         else:
-            fsm.go(
-                f"start_arm_{kind}", "right", "W", f"start_shift_{kind}"
-            )
+            fsm.go(f"start_arm_{kind}", "right", "W", f"start_shift_{kind}")
             fsm.go(
                 f"start_shift_{kind}",
                 "lit_r",
@@ -158,7 +188,17 @@ def _build_fsm() -> _Fsm:
     for direction, delta in DIRECTION_DELTA.items():
         _step(fsm, f"step_{direction}", delta, f"probe_{direction}_2")
 
-    fsm.go("pipe_end", "lit_l", _literal(PIPE_END) + "s", "start_r")
+    if annotate_dest:
+        fsm.go("pipe_end", "lit_l", _literal(PIPE_DEST) + "s", "pipe_dest")
+        fsm.go("pipe_dest", "left", "Ws", "pipe_end_marker")
+        fsm.go(
+            "pipe_end_marker",
+            "lit_l",
+            _literal(PIPE_END) + "s",
+            "start_r",
+        )
+    else:
+        fsm.go("pipe_end", "lit_l", _literal(PIPE_END) + "s", "start_r")
     fsm.go("room_end", "left", "s", "item_r")
     fsm.go("setup_end", "left", "Ws", "relay_r")
     fsm.go("relay_r", "left", "r", "relay_s")
@@ -170,14 +210,18 @@ def build_pipetrace_room() -> list[str]:
     return _compile(_build_fsm())
 
 
+def build_pipetrace_dest_room() -> list[str]:
+    return _compile(_build_fsm(annotate_dest=True))
+
+
 CTRL_LEFT = 5
 CTRL_CMD_ROW, CTRL_RESP_ROW = 2, 9
 
 
-def build_pipetrace_rig() -> str:
+def build_pipetrace_rig(*, annotate_dest: bool = False) -> str:
     from .canvas import Canvas
 
-    ctrl = build_pipetrace_room()
+    ctrl = build_pipetrace_dest_room() if annotate_dest else build_pipetrace_room()
     ctrl_right = CTRL_LEFT + len(ctrl[0]) - 1
     fetch_left = ctrl_right + 10
     fetch = build_candidate_fetch_room()
@@ -202,5 +246,12 @@ def build_pipetrace_rig() -> str:
         ]
     )
     cv.pipe([(2, fetch_right + 1), (2, far), (21, far), (21, relay_left + 6)])
-    cv.pipe([(21, relay_left - 1), (21, fetch_right + 2), (9, fetch_right + 2), (9, fetch_right + 1)])
+    cv.pipe(
+        [
+            (21, relay_left - 1),
+            (21, fetch_right + 2),
+            (9, fetch_right + 2),
+            (9, fetch_right + 1),
+        ]
+    )
     return cv.render()

@@ -12,7 +12,7 @@ from littleman.llm_fuzz import llm_corpus
 from littleman.llm_packraw import pack_reference
 from littleman.llm_perimeter import perimeter_reference
 from littleman.llm_pipestarts import pipestarts_reference
-from littleman.llm_pipetrace import pipetrace_reference
+from littleman.llm_pipetrace import pipetrace_dest_reference
 from littleman.llm_roomfind import roomfind_reference
 from littleman.llm_scan import scan_reference
 from littleman.llm_statebuild import (
@@ -36,7 +36,7 @@ def rich_stream(case):
     stream = roomfind_reference(stream)
     stream = perimeter_reference(stream)
     stream = pipestarts_reference(stream)
-    return pipetrace_reference(stream)
+    return pipetrace_dest_reference(stream)
 
 
 class Script:

@@ -12,12 +12,12 @@ from .llm import (
     HEADINGS,
     op_color,
 )
-from .llm_perimeter import ROOM_END, unpack_candidate
+from .llm_perimeter import ROOM_END
 from .llm_pipemask import advance_mask
-from .llm_pipetrace import DIRECTION_DELTA, PIPE_END
+from .llm_pipetrace import PIPE_END
 from .llm_rawfetch import unpack_raw_world
 from .llm_roomfind import SETUP_END, WORLD_WORDS
-from .llm_statebuild import PIPE_MASK
+from .llm_statebuild import PIPE_DEST_STATE, PIPE_MASK, PIPE_VALUES
 from .sim import wrap64
 
 DISPLAY = 16
@@ -54,6 +54,7 @@ class RingPipe:
     start: int
     cells: list[int]
     bits: list[int]
+    dest_addr: int
     mask: int
     values: list[int]
     dest: int = -1
@@ -77,31 +78,42 @@ def parse_state_stream(tokens: list[int]):
             start = tokens[index]
             index += 1
             body = []
-            while tokens[index] != PIPE_END:
-                body.append(tokens[index])
-                index += 1
+            while tokens[index] != PIPE_MASK:
+                body.extend(tokens[index : index + 2])
+                index += 2
+            mask = tokens[index + 1]
+            index += 2
+            if tokens[index] != PIPE_VALUES:
+                raise ValueError(f"missing pipe-values marker: {tokens[index]}")
+            count = tokens[index + 1]
+            values = tokens[index + 2 : index + 2 + count]
+            index += 2 + count
+            if tokens[index] != PIPE_END:
+                raise ValueError(f"missing pipe-end marker: {tokens[index]}")
             index += 1
-            marker = body[-2]
-            mask = body[-1]
+            dest_marker = body[-2]
+            dest_addr = body[-1]
             body = body[:-2]
-            if marker != PIPE_MASK:
-                raise ValueError(f"missing pipe-mask marker: {marker}")
-            pipes.append(RingPipe(source, start, body[::2], body[1::2], mask, []))
+            if dest_marker != PIPE_DEST_STATE:
+                raise ValueError(f"missing pipe-destination marker: {dest_marker}")
+            pipes.append(
+                RingPipe(
+                    source,
+                    start,
+                    body[::2],
+                    body[1::2],
+                    dest_addr,
+                    mask,
+                    values,
+                )
+            )
         index += 1
 
     for pipe in pipes:
-        direction, _ = unpack_candidate(pipe.start)
-        tail = pipe.cells[-1]
-        code = raw[tail] & 0xFF
-        for arrow_kind, arrow in ((2, "^"), (3, "v"), (4, "<"), (5, ">")):
-            if code == ord(arrow):
-                direction = arrow_kind
-                break
-        forward = tail + DIRECTION_DELTA[direction]
         pipe.dest = next(
             room_no
             for room_no, room in enumerate(rooms)
-            if room_no != pipe.source and room.on_border(forward)
+            if room_no != pipe.source and room.on_border(pipe.dest_addr)
         )
     return raw, rooms, pipes, tokens[index + 1 :]
 

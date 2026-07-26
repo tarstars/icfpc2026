@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from .lllm_scan import _compile, _Fsm
 from .llm_perimeter import ROOM_END
-from .llm_pipetrace import PIPE_END
+from .llm_pipetrace import PIPE_DEST, PIPE_END
 from .llm_roomfind import SETUP_END, WORLD_WORDS
 
 CTRL_EAST = 1
 HEAD_BIT = 1 << 19
+PIPE_DEST_STATE = 9000
 PIPE_MASK = -3500
+PIPE_VALUES = -3600
 
 
 def statebuild_reference(tokens: list[int]) -> list[int]:
@@ -25,12 +27,15 @@ def statebuild_reference(tokens: list[int]) -> list[int]:
             out.append(tokens[index])
             index += 1
             bit = HEAD_BIT
-            while tokens[index] != PIPE_END:
+            while tokens[index] != PIPE_DEST:
                 out.extend((tokens[index], bit))
                 index += 1
                 bit //= 2
+            out.extend((PIPE_DEST_STATE, tokens[index + 1]))
+            index += 2
             tail_bit = bit * 2
-            out.extend((PIPE_MASK, tail_bit - 1, PIPE_END))
+            out.extend((PIPE_MASK, tail_bit - 1, PIPE_VALUES, 0, PIPE_END))
+            assert tokens[index] == PIPE_END
             index += 1
         out.append(ROOM_END)
         index += 1
@@ -75,14 +80,29 @@ def _build_fsm() -> _Fsm:
         "cell_r",
         "left",
         "r",
-        neg="pipe_mask",
+        neg="pipe_dest_marker",
         zero="cell_out",
         pos="cell_out",
     )
     fsm.go("cell_out", "left", "sWMs2W/M", "cell_r")
+    fsm.go(
+        "pipe_dest_marker",
+        "lit_l",
+        f" `{PIPE_DEST_STATE:04d}`s",
+        "pipe_dest_value",
+    )
+    fsm.go("pipe_dest_value", "left", "rs", "pipe_mask")
     fsm.go("pipe_mask", "left", "WM2W*M1W-", "pipe_mask_out")
     fsm.go("pipe_mask_out", "lit_l", "M`3500`NsW", "pipe_mask_value")
-    fsm.go("pipe_mask_value", "left", "s", "pipe_end")
+    fsm.go("pipe_mask_value", "left", "s", "pipe_values_marker")
+    fsm.go(
+        "pipe_values_marker",
+        "lit_l",
+        "M`3600`Ns",
+        "pipe_values_count",
+    )
+    fsm.go("pipe_values_count", "left", "0s", "pipe_end_input")
+    fsm.go("pipe_end_input", "left", "r", "pipe_end")
     fsm.go("pipe_end", "lit_l", " `3000`Ns", "start_r")
     fsm.go("room_end", "left", "s", "item_r")
     fsm.go("setup_end", "left", "Ws", "tail_r")

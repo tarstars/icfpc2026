@@ -11,7 +11,7 @@ from .llm_runtimefetch import (
     build_runtimefetch_room,
     runtimefetch_reference,
 )
-from .llm_statebuild import PIPE_MASK
+from .llm_statebuild import PIPE_MASK, PIPE_VALUES
 
 
 def fetchjoin_reference(tokens: list[int]) -> list[int]:
@@ -29,9 +29,15 @@ def fetchjoin_reference(tokens: list[int]) -> list[int]:
             while tokens[index] != PIPE_MASK:
                 out.extend(tokens[index : index + 2])
                 index += 2
-            out.extend(tokens[index : index + 3])
-            assert tokens[index + 2] == PIPE_END
-            index += 3
+            out.extend(tokens[index : index + 2])
+            index += 2
+            assert tokens[index] == PIPE_VALUES
+            count = tokens[index + 1]
+            out.extend(tokens[index : index + 2 + count])
+            index += 2 + count
+            assert tokens[index] == PIPE_END
+            out.append(PIPE_END)
+            index += 1
         out.append(ROOM_END)
         index += 1
     return [*out, SETUP_END]
@@ -86,7 +92,12 @@ def _build_fsm() -> _Fsm:
     fsm.go("cell_out", "left", "s", "bit_r")
     fsm.go("bit_r", "left", "rs", "body_r")
     fsm.go("mask_marker", "left", "s", "mask_r")
-    fsm.go("mask_r", "left", "rs", "pipe_end_r")
+    fsm.go("mask_r", "left", "rs", "values_marker_r")
+    fsm.go("values_marker_r", "left", "rs", "values_count_r")
+    fsm.go("values_count_r", "left", "rMs", "values_count")
+    fsm.bp("values_count", "mid", "", zero="pipe_end_r", pos="value_r")
+    fsm.go("value_r", "left", "rs", "values_dec")
+    fsm.bp("values_dec", "mid", "m", zero="pipe_end_r", pos="value_r")
     fsm.go("pipe_end_r", "left", "rs", "start_r")
     fsm.go("room_end", "left", "s", "item_r")
     fsm.go("setup_end", "left", "Ws", "item_r")
