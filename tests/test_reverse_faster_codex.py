@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import random
+from itertools import product
 from pathlib import Path
 
 import pytest
@@ -181,4 +182,36 @@ def test_complete_public_cases_match_rust():
             reference.ticks,
             reference.output,
             reference.output_ticks,
+        )
+
+
+@pytest.mark.skipif(not rustexec.HAVE_RUST, reason="native executor is not built")
+def test_every_legal_round_length_shape_beats_parent():
+    def round_of_length(length):
+        return _round(list(range(length)))
+
+    shapes = [
+        shape
+        for round_count in (1, 2, 3)
+        for shape in product(range(1, 17), repeat=round_count)
+    ]
+    cases = [[round_of_length(length) for length in shape] for shape in shapes]
+    parent = rustexec.run_rounds_parallel(
+        rustexec.CompiledMachine(build_reverse_faster()),
+        cases,
+        workers=1,
+    )
+    compact = rustexec.run_rounds_parallel(
+        rustexec.CompiledMachine(build_reverse_faster_codex()),
+        cases,
+        workers=1,
+    )
+    assert len(shapes) == 4_368
+    for shape, old, new in zip(shapes, parent, compact, strict=True):
+        assert old.status == new.status == "passed", shape
+        assert old.output == new.output, shape
+        assert 196 * new.judged_ticks < 225 * old.judged_ticks, (
+            shape,
+            old.judged_ticks,
+            new.judged_ticks,
         )
