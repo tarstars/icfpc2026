@@ -37,6 +37,18 @@ def statecycle_reference(world: list[int], state: list[int]) -> list[int]:
     return recordstrip_reference(stream)
 
 
+def full_statecycle_reference(world: list[int], state: list[int]) -> list[int]:
+    """One exact runtime cycle, including blocking pipe operations."""
+    from .llm_maskmap import maskmap_reference
+    from .llm_pipeaction import pipeaction_reference
+
+    stream = maskmap_reference(state)
+    stream = fetchjoin_reference([*world, *stream])
+    stream = pipeaction_reference(stream)
+    stream = manmap_reference(stream)
+    return recordstrip_reference(stream)
+
+
 def _place_service_stage(
     cv: Canvas,
     top: int,
