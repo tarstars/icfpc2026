@@ -129,6 +129,10 @@ release state on `main`.
 - Received independent Claude approval, reconciled both agent lineages, and
   promoted the clean release to `origin/main` without force or modifying the
   user's dirty local `main` worktree.
+- Decomposed Grade Book into named, independently tested components. The
+  blocking-ring `gradebook_05` removes fixed worker delays, occupies 382×307,
+  and passed 20/20 live at score 47,115,780,603.6, a 13.43% improvement over
+  `gradebook_04`.
 
 ## Blockers
 

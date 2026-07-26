@@ -74,12 +74,13 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   current live best: 20/20 at score 1,640,475.05, independently refreshed
   through the API. Only the older `tcp_02` submission UUID remains
   unavailable.
-- Grade Book `gradebook_01` compacts the accepted four-worker baseline from
-  494×462 to 454×450 without changing its protocols. It passed all 20 live
-  cases and improved the server score 15.97%, from 124,123,713,433.2 to
-  104,303,579,599.6. The exact variants are under
-  `submissions/gradebook/`; the optimization is documented in
-  `reports/2026-07-24-grade-book-optimization.md`.
+- Grade Book `gradebook_05` removes redundant fixed delays from the four
+  subject engines and relies on blocking ring receives, with judge-selected
+  staircase folds. It is 382×307 and passed all 20 live cases at score
+  47,115,780,603.6, improving the preceding `gradebook_04` score by 13.43%.
+  Component contracts, isolated tests, exact variants, and measurements are
+  under `submissions/gradebook/` and in
+  `reports/2026-07-26-gradebook-components.md`.
 - Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
   The best compact nested-ring geometry occupies 183×180, passes all seven
   public cases, including 16×16×16 in 4,198,400 ticks, and improves the local

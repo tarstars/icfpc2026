@@ -1,45 +1,40 @@
 # Codex Status
 
-- Updated UTC: 2026-07-25T20:52:01Z
+- Updated UTC: 2026-07-26T14:35:00Z
 - State: working
 - Role: integrator, submission controller, and adversarial reviewer
 - Active goal:
-  `coordination/goals/20260725-eight-hour-zero-first.md`
-- Branch: `agent/codex-pathfinder`
-- Head before this status update:
-  `745f6b03d7e5d00a2ec24ea7baa2b175f9425e92`
-- Write set: Codex coordination/status/review records; Pathfinder source,
-  tests, artifacts, and submission evidence; shared integration only after
-  peer review
-- Last concrete progress UTC: 2026-07-25T20:50:56Z
+  `coordination/goals/20260726-llm-rust-and-score.md`
+- Branch: `agent/codex-gradebook-components`
+- Head before this status update: `c46a84c`
+- Write set: Grade Book generator, component tests, artifacts, reports;
+  Codex coordination and state files
+- Last concrete progress UTC: 2026-07-26T14:34:13Z
 - Running job: none
 
 ## Latest verified results
 
-- Pathfinder `pathfinder_01` passed 18/18 live:
-  submission `0c04a141-a73b-443c-a274-741bfe67d857`, score
-  `17,546,210,849,166.055`; exact artifact and response are preserved.
-- Claude STEP checkpoint `ce890e7` is accepted: 70 tests pass, 43 bindings
-  are correct at margin 3, and the engine ring is exactly
-  `[CTRL=1, ADDR=17, BI=0, AI=0, OLD=17, K=1]`.
-- On the current post-`a6992c6` STEP work, three blank crossings at local
-  `(10,60)`, `(11,60)`, and `(11,65)` make the STEP man reach the class
-  `H` under the engine while preserving the exact 258-token initial frame.
-- Live standings snapshot `2026-07-25T20:38:45.743Z`: wheezards is absent
-  from LLLM and LLM; Pathfinder is 18/18 at rank 13.
+- Grade Book `gradebook_05`, submission
+  `010701d6-3d29-41e1-a09f-dae700e2f9ec`, passed 20/20 live at 382×307,
+  average ticks 322,878.9, and score 47,115,780,603.6.
+- The preceding live score was 54,422,867,494.2; improvement is 13.43%.
+- Exact artifact SHA-256:
+  `315a41d54ffc7ed64b097dd2ffb83ca04f9ba579a15d3d1cb26c70542a8c825e`.
+- Component and Grade Book suites pass 45/45; preflight is READY TO SUBMIT.
+- Alexey's third line is acknowledged. Reverse `reverse_07` is live at
+  84,922.5; Claude assigned Alexey the non-overlapping Subset Sum geometry
+  lane.
 
 ## Next checkpoint
 
-Review the fresh builder's pushed STEP class arm, then review final LLLM
-assembly/gates. Keep LLM ahead of all already-scored optimization work.
+Preserve and push the terminal Grade Book response, then evaluate safe
+subject-engine column relocation and cropped-frontend 2×2 recomposition.
 
 ## Blockers
 
-- LLLM STEP has no completed interpreter arm yet.
-- LLM has no assembled baseline yet.
-- Pathfinder main integration awaits Claude's peer-review acknowledgement.
+- None.
 
 ## Submission controller
 
-Standing authorization is active only after all goal gates. No LLLM or LLM
-contest mutation has occurred.
+Codex remains the serialized contest submission controller. Standing
+authorization applies only after freshness and validation gates.
