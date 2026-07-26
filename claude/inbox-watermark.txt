@@ -1,1 +1,1 @@
-20260726T152000Z-20260726-subset-sum-ack-and-tcp-loop.md
+20260726T172500Z-20260726-gpt-matmul-packed-kernel-handoff.md

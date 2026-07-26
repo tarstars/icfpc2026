@@ -33,28 +33,29 @@ def _room(interior: list[str]) -> list[str]:
     return [edge] + ["|" + row + "|" for row in interior] + [edge]
 
 
-# Pump interior, 10x13.  Protocol per round: read count m from the
-# splitter pipe (top wall); m==0: emit sentinel, park.  Else stream m
-# values to the ring (bottom wall out col 4, back in col 6), then run
-# the sort_07 shrinking-ring selection sort; emit mins to the merger
-# pipe (bottom wall col 0); after token 0, emit sentinel and park.
+# Pump interior, 10x13.  Protocol per round: read count m from the feed
+# pipe; m == 0: emit the sentinel and park.  Otherwise stream m values
+# into the ring, run the sort_07 shrinking-ring selection sort, emit the
+# minima to the merger, and after the 0 token emit the sentinel and park.
 #
-#  r0  sentinel emitter (W-run): 7 M 1 { { -> A=16384, s, park at r
-#  r1  prologue @ r M b d; d BP=m: m>0 turn S, m=0 straight E to r0
-#  r2-3   load loop (6 cells) entered via > m with BP=m-1
-#  r4  first-pass entry W-run: W b M 1 W -  (A=m-1, B=1, BP=m)
-#  r5  E-return corridor to the pass row
-#  r6  pass row W-run: m s r M (send token, take first value as min)
-#  r7-11  scan loop, verbatim sort_07 rows 6-10
-#  r12 token row: r b M 1 W - then a: BP>0 loop via col-8 ascent,
-#      BP=0 home via col-9 ascent to the r0 sentinel run
+#  r0  sentinel run (W): @ v s { { 1 M 7 <  -- boot and end-of-round path
+#      converge on the `v`, which drops onto the r1 `>`
+#  r1  prologue: > r M b m X; X on A=m: m>0 turn S into the load loop,
+#      m==0 straight E into the col-9 home ascent
+#  r2-3 load loop (W-run r s, return E-run through m, `a` is the test)
+#  r4-5 first-pass entry: W b M / 1 W -  (A=m-1, B=1, BP=m)
+#  r6  pass row (W): m s r M -- send the next token, take the first
+#      ring value as the running minimum
+#  r7-11 scan loop, verbatim sort_07 rows 6-10
+#  r12 token row: r b M 1 W - then `a`: BP>0 re-enters the pass row by
+#      the col-8 ascent, BP==0 goes home by the col-9 ascent
 PUMP_INTERIOR = [
-    " vs{{1M7<<",
-    "@rMbd   ^ ",
-    "    >mrsv ",
-    "      ^md ",
-    " v-W1MbW< ",
-    " >      v ",
+    " @vs{{1M7<",
+    "  >rMbmX ^",
+    "    vsr<  ",
+    "    am ^  ",
+    "vMbW<     ",
+    ">1W-    v ",
     " v  Mrsm< ",
     "v amsW<   ",
     "Wa v  +   ",
@@ -65,6 +66,35 @@ PUMP_INTERIOR = [
 ]
 
 RELAY = [
-    "@rv",
-    "^s<",
+    "@>rv",
+    " ^s<",
+]
+
+# Merger interior, 16x6.  Lane A arrives on the LEFT wall, lane B on the
+# RIGHT wall, the sorted stream leaves through the bottom wall.  Pump A
+# prefixes its stream with the round's total count n, so the merger emits
+# exactly n values and never reads past either sentinel.
+#
+#  r0  prologue: r n, b (BP=n), r a, M, ... r b, W  -> A=a, B=b
+#  r1  "emit b" arm (a > b): W s + M r W, then the shared tail
+#  r2  compare row (W-run): d test, m, ... , -, X
+#  r3  "emit a" arm (a <= b): + s r, then down to the return corridor
+#  r4  return corridor (E-run) climbing back into the tail
+#  r5  end-of-round path back to the prologue up column 0
+MERGER = [
+    ">@rbrM       rWv",
+    "      >Ws+MrW> v",
+    "     vX-      md",
+    " vrs+<<         ",
+    " >           ^  ",
+    "^              <",
+]
+
+# Feeder used only by the merger test rig: reads a lane tag then a value
+# and forwards it to the top (lane A) or bottom (lane B) pipe.
+FEEDER = [
+    ">@rXrs v",
+    "   r    ",
+    "   s    ",
+    "^  <   <",
 ]

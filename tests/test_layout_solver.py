@@ -169,3 +169,62 @@ def test_a_routed_placement_survives_the_gate() -> None:
     report = layout_gate.check(text, layout_route.emit(layout, place, paths),
                                "tcp", judge_original=False)
     assert report.passed, report.reasons
+
+
+@pytest.mark.skipif(not layout_solve.HAVE_ORTOOLS, reason="needs ortools")
+def test_negotiation_beats_the_greedy_router_on_a_box_it_loses() -> None:
+    """The reason PathFinder is here: a box greedy cannot route and it can.
+
+    Greedy takes each pipe's shortest path in turn and marks the cells
+    used, so an early pipe can take the only lane a later one needed and
+    reordering only shuffles who loses. Negotiation lets them share, then
+    prices the contested cells apart. tcp at channel 3 is the smallest
+    instance we have where that difference decides the outcome.
+    """
+    layout = layout_ir.parse(_text("tcp"))
+    # One worker, and greedy in its plain fixed-order form: both routers
+    # then see the same grid every run, so a failure here is a real one and
+    # not a re-roll of the placer's nondeterminism.
+    place = layout_solve.solve(layout, seconds=20.0, channel=3, workers=1)
+    assert place is not None
+    _greedy, greedy_err = layout_route.route(layout, place)
+    if greedy_err is None:
+        pytest.skip("this placement is easy enough for the greedy router")
+    paths, err = layout_route.route_negotiated(layout, place, iterations=60)
+    assert err is None, err
+    # Every hard constraint the greedy router enforces still holds.
+    assert not layout_route._violations(layout, place, paths)
+    seen = set()
+    for index, path in paths:
+        assert len(path) >= 2
+        assert not (seen & set(path)), "pipes must stay cell-disjoint"
+        seen |= set(path)
+        src, dst = place.ports_for(index, layout.conns[index])
+        assert path[0] == layout_solve._port_cell(
+            place.tops[src.room], place.lefts[src.room],
+            layout.rooms[src.room], src)
+        away = layout_route._AWAY[src.side]
+        assert (path[1][0] - path[0][0], path[1][1] - path[0][1]) == away
+    report = layout_gate.check(_text("tcp"),
+                               layout_route.emit(layout, place, paths),
+                               "tcp", judge_original=False)
+    assert report.passed, report.reasons
+
+
+def test_crossings_are_told_apart_from_congestion() -> None:
+    """Two pipes ALONG a cell can be priced apart; two ACROSS it cannot.
+
+    The distinction is the router's own stopping rule -- it is why
+    plotter_05 gets a re-place instead of more iterations -- so it is
+    asserted rather than trusted.
+    """
+    along = [(0, [(5, c) for c in range(3, 8)]),
+             (1, [(5, c) for c in range(5, 10)])]
+    across = [(0, [(5, c) for c in range(3, 8)]),
+              (1, [(r, 5) for r in range(3, 8)])]
+    for paths, expected in ((along, 0), (across, 1)):
+        occupancy = {}
+        for _ci, path in paths:
+            for cell in path:
+                occupancy[cell] = occupancy.get(cell, 0) + 1
+        assert layout_route._crossings(paths, occupancy) == expected

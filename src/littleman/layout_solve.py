@@ -209,13 +209,25 @@ def endpoint_freedom(layout: Layout) -> tuple[list[bool], list[bool]]:
 def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
           workers: int = 8, channel: int = 1, free_ports: bool = True,
           diameter_hint: int | None = None,
-          pads: dict | None = None, seed: int = 0) -> Placement | None:
+          pads: dict | None = None, seed: int = 0,
+          keep_order: bool = False) -> Placement | None:
     """Place `layout`'s rooms to minimise max(W,H). None if no model.
 
     `channel` is the guaranteed gap between rooms. 1 admits a pipe that
     TERMINATES at one of the two rooms; a pipe passing THROUGH between two
     rooms it does not terminate at needs 3, because it may not be adjacent
     to a non-endpoint room (the grazing rule). Callers escalate.
+
+    `keep_order` turns free placement into **floorplan-preserving
+    compaction**, which buys the one thing a free placement cannot supply:
+    a routing topology known to work, because the artifact it came from is
+    live. Free placement of plotter_05 reaches 129 and cannot be routed at
+    any margin -- eight pipes have to cross, and a grid with one layer has
+    no answer to that. `True` preserves every pair's left-of / above
+    relation, which on plotter compacts 185 to only 183: the original is
+    already tight given its own topology. `"conns"` preserves only the
+    pairs a pipe actually joins, which is what decides crossings, and
+    leaves the rest of the packing free.
     """
     if not HAVE_ORTOOLS:
         return None
@@ -245,6 +257,18 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
         xs.append(model.NewIntervalVar(
             left, room.width + gap, left + room.width + gap, f"x{room.index}"))
     model.AddNoOverlap2D(xs, ys)
+    if keep_order:
+        wired = None
+        if keep_order == "conns":
+            wired = {frozenset((c.src.room, c.dst.room)) for c in layout.conns}
+        for a, b, rel in _relative_order(rooms):
+            if wired is not None and frozenset((a, b)) not in wired:
+                continue
+            gap = channel + max((pads or {}).get(a, 0), (pads or {}).get(b, 0))
+            if rel == "L":
+                model.Add(lefts[a] + rooms[a].width + gap <= lefts[b])
+            else:
+                model.Add(tops[a] + rooms[a].height + gap <= tops[b])
 
     diameter = model.NewIntVar(1, ub, "D")
     for room, top, left in zip(rooms, tops, lefts):
@@ -319,9 +343,13 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
 
     # symmetry breaking: keep the largest room in the origin corner, but
     # leave it the two-cell slack a north/west port needs to exist at all.
+    # -- but not under `keep_order`, where the relative-position graph has
+    # already fixed every symmetry, and pinning a room that the original
+    # did not have in the corner makes the model instantly INFEASIBLE.
     biggest = max(rooms, key=lambda r: r.height * r.width).index
-    model.Add(tops[biggest] <= 2)
-    model.Add(lefts[biggest] <= 2)
+    if not keep_order:
+        model.Add(tops[biggest] <= 2)
+        model.Add(lefts[biggest] <= 2)
     if diameter_hint is not None:
         model.Add(diameter <= diameter_hint)
 
@@ -371,6 +399,31 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
         ))
     return Placement(tops=t, lefts=l, width=w, height=h, ports=ports,
                      frame=best)
+
+
+def _relative_order(rooms) -> list[tuple]:
+    """The original floorplan's relative-position graph, one edge per pair.
+
+    Classic constraint-graph compaction. Two rooms that do not overlap are
+    separated in at least one of four directions; the one with the LARGEST
+    original gap is taken as the relation to preserve, because it is the
+    one with the most slack to compact away and the least likely to be an
+    accident of a single cell. Edges are emitted so that `a` is the room
+    that must stay left of / above `b`.
+    """
+    out = []
+    for i, a in enumerate(rooms):
+        for b in rooms[i + 1:]:
+            gaps = {
+                ("L", a.index, b.index): b.left - (a.left + a.width),
+                ("L", b.index, a.index): a.left - (b.left + b.width),
+                ("A", a.index, b.index): b.top - (a.top + a.height),
+                ("A", b.index, a.index): a.top - (b.top + b.height),
+            }
+            (rel, first, second), gap = max(gaps.items(), key=lambda kv: kv[1])
+            if gap >= 0:
+                out.append((first, second, rel))
+    return out
 
 
 def _weights(count: int, seed: int) -> list[int]:
