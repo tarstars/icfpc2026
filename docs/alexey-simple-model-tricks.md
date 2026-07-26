@@ -419,3 +419,29 @@ copy in `tests/test_alexey_reverse6.py`.
 Related, and cost 5 pipes instead of 4 during the reverse_06 re-lay: a
 pipe BEND whose backward cell is a room wall parses as a NEW pipe out of
 that room. Keep bends at least one cell clear of every wall.
+
+## Measured: three-to-a-cell packing costs 34 ticks/value (2026-07-26)
+
+Built as a real machine, not estimated. `I -> packer -> O`, Horner base
+`K = 2^21`, judged against Python. Two things to keep:
+
+- **The bound is fine.** Digits `v + 2^20` fit; worst-case word
+  9,009,736,825,708,692,032 vs the signed limit 9,223,372,036,854,775,807.
+- **The price is not.** 103 ticks for three values. The per-value sequence
+  is forced to ten cells:
+
+      M `21` W { M r +     park T in B, load 21, swap back, shift, park, read, add
+
+  four of them a literal, purely to get a constant into B without losing the
+  accumulator. **A constant costs a literal walk, because a literal writes A
+  and A is where the accumulator lives.** Unpacking is worse: `/` writes both
+  A and B, so reloading the base after a division destroys the rest of the
+  stack — each digit needs the word re-sent or a partner room to park the
+  quotient.
+
+Worth stealing if you ever do need base-K packing: add
+`C = S*(K^2+K+1)` **once per word** instead of `+S` per digit. That keeps
+the >1e6 offset off the per-value path — one 19-digit literal per word
+instead of three 7-digit ones.
+
+Rule: packing pays only against a ring whose lap is >= 10 ticks.
