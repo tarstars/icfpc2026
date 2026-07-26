@@ -49,3 +49,24 @@ Verify in-tree before submitting; server_compat for anything
 wall-trick-adjacent (the triangle lesson); sweep the Codex inbox around
 every submission and every 30 minutes -- and never pipe the sweep
 through tail (that hid a stop order for 7 minutes today).
+
+## Addendum: the STEP3 post-mortem (user's diagnosis, confirmed)
+
+Three-plus agent lifetimes died on "finish the interpreter room"; zero
+tasks of that shape completed in one life, while narrow-lever and
+rig-per-room tasks shipped at ~90%. The proximate cause was always the
+64k output ceiling, but the task shape set the exposure: one large
+coupled room makes whole-grid inspection the natural move, and that move
+is the killer. The deeper error was conflating the MACHINE's
+architecture (one compact room -- correct for score) with the WORK's
+architecture (one task -- wrong for building). SCAN3 finished because it
+was four rigs; Codex's 145-room machine won the case race because every
+piece was trivially testable. claude_14's rule ("two failures -> change
+the task, not the prompt") was violated here: the third dispatch changed
+only the warnings.
+
+Binding decision: if the LLM score lane resumes, STEP3 is FIVE
+rig-scoped tasks (emit, round-in, tick-pass, phase-B integration,
+phase-C integration), each with its own oracle slice and agent. Never
+again "finish the room". Post-contest: the block-graph compiler + (nop n)
+direction removes this task class entirely.
