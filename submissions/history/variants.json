@@ -83,6 +83,42 @@
         "createdAt": "2026-07-24T17:04:00.040Z",
         "updatedAt": "2026-07-24T17:04:08.880Z"
       }
+    },
+    {
+      "version": "history_02",
+      "label": "transposed radix-77 tape with conditional-add mapper",
+      "parent": "history_01",
+      "architecture": "vertical serpentine literal tape, radix-77 splitter, non-destructive conditional-add ASCII chain, 3 dictionary tokens",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 77,
+        "asciiShift": 31,
+        "asciiPieces": 8,
+        "dictionaryTokens": 3,
+        "symbols": 2578,
+        "packedWords": 288,
+        "dataColumns": 72,
+        "wordsPerColumn": 4,
+        "decimalFieldWidth": 17,
+        "cellsPerCharacter": 2.05
+      },
+      "source": {
+        "path": "submissions/history/history_02.man",
+        "generator": "src/littleman/history_small.py:build_history_small",
+        "sha256": "d54719eb55cd0c6f6ce89cffc9568fcc31a925e56c0fe0889fc4216ab9be3aec",
+        "bytes": 7276,
+        "width": 85,
+        "height": 85,
+        "footprint": 7225
+      },
+      "localValidation": {
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "ticks": 469063,
+        "score": 7225,
+        "preflight": "READY TO SUBMIT"
+      },
+      "liveSubmission": null
     }
   ],
   "standingsSnapshot": {

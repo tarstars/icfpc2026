@@ -24,6 +24,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from littleman.canvas import Canvas
+
 REPO = Path(__file__).resolve().parent.parent.parent
 PROBLEM_PATH = REPO / "data" / "small" / "problems" / "history-lesson.json"
 
@@ -214,34 +216,219 @@ def build_encoding():
 
 
 # ---------------------------------------------------------------------------
-# Machine layout plan (encoder above is done and verified; rooms still to build)
+# Machine layout: 85x85, four rooms, three pipes (as built and verified)
 # ---------------------------------------------------------------------------
 #
 # Footprint arithmetic (all measured, see build_encoding()):
-#   FIELD=17 -> data line = 4*(17+2) + 5 s/turn cells = 83 interior, 85 total.
-#   RADIX=77 -> 9 symbols per word (77**9 = 9.5e16 < 1e17).  288 words.
-#   Vertical serpentine: interior height 4*(17+3)+3 = 83, room 85 tall;
-#   72 data columns + 1 entry column + 2 walls = 75 wide.
-#   Leftover is a TALL strip (S-76 wide, S tall) instead of a short wide band,
-#   which is the only shape that fits a stack of decoder rooms.
-#   S = 85 needs a 9-wide interior strip; S = 87 gives 11.
+#   FIELD=17 -> RADIX=77 gives 9 symbols per word (77**9 < 1e17).  288 words.
+#   Vertical serpentine: 4 slots of (1+17+1 literal + 1 send) = 80 data rows
+#   plus 3 turn rows = 83 interior, room 85 tall; 72 data columns + 1 entry
+#   column + 2 walls = 75 wide.  Leftover is a TALL strip, cols 75..84.
 #
-# Four rooms, three pipes, no relays and no pipe-nearest ambiguity (every room
-# has at most one incoming and one outgoing pipe):
+#   DATA(0,0 85x75) --> CORE(2,76 16x9) --> MAPPER(20,75 60x10) --> OUTPUT
 #
-#   DATA --> CORE --> MAPPER --> OUTPUT
+# Every room has at most one incoming and one outgoing pipe, so `s`/`r` never
+# need a nearest-pipe audit.
 #
-# The trick that removes every relay room: to get a constant into B while
-# keeping the accumulator, use  M , <literal> , W  --  M copies A into B, the
-# literal overwrites A, and W swaps them back.  Three cells, no pipe.
-#
-# CORE  (radix split):  r ; X ; if A>0: M `77` W / W s W  and loop back to X;
-#                       if A==0: loop back to r.
-# MAPPER (index -> ASCII, one man, one chain):
-#   r ; M `74` W - ; X
-#     A >= 0 : token t; a second X on (A-1) selects one of three straight-line
-#              emitters, each a row of  `nnn` s  pairs writing ASCII directly.
-#     A <  0 : M `72` W + rebases to (index - I_1), then the gap chain:
-#              node i:  X ; if A<0 leaf i (M `k` W + s), else M `d` W - and on
-#              to node i+1.  8 pieces -> 7 nodes, 8 leaves.
+# DATA: down- and up-columns carry backticks, digits and sends on exactly the
+#   same rows, so horizontal backtick pairs are always adjacent (empty) and can
+#   never straddle an `s`.  That is the parser trap that killed history_00.
+# CORE (radix split): r ; b ; d skips the zero padding word; otherwise the
+#   column M `77` W / W s W drops a digit, and X at its foot loops while the
+#   quotient is positive.
+# MAPPER (index -> ASCII): A = index + 31, then seven conditional-add nodes
+#   M `bound` - b W d  --  `-` leaves BP = bound - A while W restores A, so the
+#   test is non-destructive and a leaf needs no add-back at all: it just walks
+#   to the shared `s`.  Nodes run south in one column and north in the next so
+#   both 48-row runs fit the 58-row interior.  The eighth node (bound 123)
+#   separates characters from the three dictionary tokens, whose emitters are
+#   straight `nnn` s columns.
 # OUTPUT: 3x3 room with O.
+
+
+# ---------------------------------------------------------------------------
+# Room builders
+# ---------------------------------------------------------------------------
+
+DATA_HEIGHT = 85
+DATA_WIDTH = 75
+DATA_FIRST_COL = 2
+DATA_COLUMNS = 72
+
+
+def _blank_room(height: int, width: int) -> list[list[str]]:
+    edge = ["+"] + ["-"] * (width - 2) + ["+"]
+    return [
+        list(edge),
+        *[["|"] + [" "] * (width - 2) + ["|"] for _ in range(height - 2)],
+        list(edge),
+    ]
+
+
+def build_data_room(words: list[int]) -> list[str]:
+    """Vertical serpentine literal store: 75 wide x 85 tall, 4 words per column.
+
+    Every data column carries backticks on the same eight rows and digits on
+    the same rows, so horizontal backtick pairs are always adjacent (empty)
+    and never straddle an ``s``.
+    """
+
+    if len(words) != DATA_COLUMNS * SLOTS_PER_LINE:
+        raise ValueError("data room expects exactly 288 words")
+    grid = _blank_room(DATA_HEIGHT, DATA_WIDTH)
+    grid[1][1] = "@"
+    for index in range(DATA_COLUMNS):
+        col = DATA_FIRST_COL + index
+        chunk = words[SLOTS_PER_LINE * index : SLOTS_PER_LINE * (index + 1)]
+        last = index == DATA_COLUMNS - 1
+        if index % 2 == 0:
+            grid[1][col] = "v"
+            grid[83][col] = ">"
+            for slot, value in enumerate(chunk):
+                head = 3 + 20 * slot
+                tail = 21 + 20 * slot
+                grid[head][col] = "`"
+                grid[tail][col] = "`"
+                for offset, digit in enumerate(str(value).rjust(FIELD)):
+                    grid[head + 1 + offset][col] = digit
+                grid[tail + 1][col] = "s"
+        else:
+            grid[83][col] = "^"
+            grid[1][col] = "H" if last else ">"
+            for slot, value in enumerate(chunk):
+                head = 81 - 20 * slot
+                tail = 63 - 20 * slot
+                grid[head][col] = "`"
+                grid[tail][col] = "`"
+                for offset, digit in enumerate(str(value).rjust(FIELD)):
+                    grid[head - 1 - offset][col] = digit
+                grid[tail - 1][col] = "s"
+    return ["".join(row) for row in grid]
+
+
+CORE_HEIGHT = 16
+CORE_WIDTH = 9
+
+
+def build_core_room() -> list[str]:
+    """Radix-77 splitter: receive a word, emit its little-endian digits.
+
+    ``r`` sits on the northbound entry lane and a ``b``/``d`` pair skips the
+    divide chain for the zero padding word.  The chain runs south in one
+    column; the ``X`` at its foot loops back while the quotient is positive
+    and drops through to the receive lane when it reaches zero.
+    """
+
+    grid = _blank_room(CORE_HEIGHT, CORE_WIDTH)
+    cells = {
+        (1, 2): ">",
+        (1, 3): "v",
+        (1, 5): "<",
+        (2, 3): "v",
+        (10, 4): ">",
+        (10, 6): "v",
+        (11, 4): "d",
+        (11, 5): "^",
+        (12, 4): "b",
+        (13, 2): "^",
+        (13, 3): "X",
+        (13, 4): "r",
+        (14, 2): "@",
+        (14, 3): ">",
+        (14, 4): "^",
+        (14, 6): "<",
+    }
+    for offset, char in enumerate("M`77`W/W" + "sW"):
+        cells[(3 + offset, 3)] = char
+    for (row, col), char in cells.items():
+        grid[row][col] = char
+    return ["".join(row) for row in grid]
+
+
+MAPPER_HEIGHT = 60
+MAPPER_WIDTH = 10
+CHAIN_BOUNDS = [35, 42, 60, 64, 89, 91, 113]
+CHAIN_GAPS = [4, 2, 3, 1, 1, 6, 1]
+TOKEN_BASE_VALUE = 123
+EMITTER_START = 20
+
+
+def _node_cells(bound: int, gap: int | None) -> list[str]:
+    """One conditional-add node: BP = bound - A, keep A, branch, then add gap."""
+
+    cells = ["M", "`", *str(bound), "`", "-", "b", "W", "d"]
+    if gap is not None:
+        cells += ["M", str(gap), "+"]
+    return cells
+
+
+def _emitter_cells(text: str) -> list[str]:
+    """Straight-line ASCII emitter: six cells per character, uniform width."""
+
+    cells: list[str] = []
+    for character in text:
+        cells += ["`", *str(ord(character)).rjust(3), "`", "s"]
+    return cells
+
+
+def build_mapper_room(tokens: list[str]) -> list[str]:
+    """Index -> ASCII decoder: two conditional-add runs plus token emitters."""
+
+    if [len(token) for token in tokens] != [5, 4, 2]:
+        raise ValueError("mapper layout is tuned to the 5/4/2 token lengths")
+    grid = _blank_room(MAPPER_HEIGHT, MAPPER_WIDTH)
+    cells: dict[tuple[int, int], str] = {(1, 1): "@", (1, 2): "v", (2, 2): "r"}
+    for col in range(3, 9):
+        cells[(1, col)] = "<"
+    for offset, char in enumerate("M`31`+"):
+        cells[(3 + offset, 2)] = char
+    for row, bound, gap in ((9, 35, 4), (21, 42, 2), (33, 60, 3), (45, 64, 1)):
+        node = _node_cells(bound, gap)
+        for offset, char in enumerate(node):
+            cells[(row + offset, 2)] = char
+        cells[(row + node.index("d"), 1)] = "v"
+    cells[(57, 2)] = ">"
+    cells[(57, 3)] = "^"
+    for row, bound, gap in ((56, 89, 1), (44, 91, 6), (32, 113, 1), (19, 123, None)):
+        node = _node_cells(bound, gap)
+        for offset, char in enumerate(node):
+            cells[(row - offset, 3)] = char
+        cells[(row - node.index("d"), 4)] = "v"
+    cells[(9, 3)] = ">"
+    cells[(9, 6)] = "v"
+    for offset, char in enumerate("M`124`W-X"):
+        cells[(10 + offset, 6)] = char
+    cells[(18, 5)] = "v"
+    cells[(18, 7)] = "v"
+    for col, token in ((7, tokens[0]), (6, tokens[1]), (5, tokens[2])):
+        for offset, char in enumerate(_emitter_cells(token)):
+            cells[(EMITTER_START + offset, col)] = char
+    for col in (5, 6, 7):
+        cells[(57, col)] = ">"
+    cells[(57, 8)] = "^"
+    cells[(58, 1)] = ">"
+    cells[(58, 4)] = ">"
+    cells[(58, 7)] = "s"
+    cells[(58, 8)] = "^"
+    for (row, col), char in cells.items():
+        grid[row][col] = char
+    return ["".join(row) for row in grid]
+
+
+OUTPUT_ROOM = ["+-+", "|O|", "+-+"]
+
+
+def build_history_small() -> str:
+    """Assemble the 85x85 machine: DATA -> CORE -> MAPPER -> OUTPUT."""
+
+    _, _, tokens, _, words = build_encoding()
+    canvas = Canvas()
+    canvas.put(0, 0, build_data_room(words))
+    canvas.put(2, 76, build_core_room())
+    canvas.put(20, 75, build_mapper_room(tokens))
+    canvas.put(82, 81, OUTPUT_ROOM)
+    canvas.pipe([(1, 75), (1, 77)])
+    canvas.cells[(1, 77)] = "v"  # terminal arrowhead doubles as the bend
+    canvas.pipe([(18, 79), (19, 79)])
+    canvas.pipe([(80, 82), (81, 82)])
+    return canvas.render()
