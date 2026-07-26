@@ -1756,4 +1756,14 @@ Two traps re-paid during the re-lay:
   room's wall as a second connection and rejects the program (tarstars
   paid a submission for that one). It climbs column 4 instead.
 
-Live estimate: 117,214 / 1.185 ~ **99,000**. Not submitted yet.
+**Submitted 2026-07-26T12:36Z**, id `e338fb00-7962-432f-9c30-77baff5ce603`:
+20/20, width 14, height 14, avgTicks 503.45, **server score 98,676.2**
+(reverse_05: 117,214) — 1.188x live, and the estimate from the local
+ratio was 99,000, so the server's case mix tracks the public one.
+
+Next lever if anyone picks it up: 13x13 = fp 169, another 1.16x. Needs
+either a 6-wide pump interior (the head row alone wants 5 cells plus the
+drop column, and the loop wants 2 more to its west — it does not fit as
+laid out) or the relay moved BELOW the pump so width stops being
+relay + gap + pump. The latter flips the ring-in to the pump's floor,
+which turns `U` north and needs the interior re-walked.
