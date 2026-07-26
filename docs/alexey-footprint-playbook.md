@@ -145,3 +145,32 @@ the mechanical ceiling is ~9x on footprint alone. Live 91,769,596,778,390,
 rank 44/65. Caveat: one local judge run is 15m25s (48.9M ticks) — use the C
 fastsim (44s) or the Rust executor for iteration, and only confirm with the
 real judge.
+
+## The cheap oracle: audit resolution statically instead of judging
+
+`src/littleman/alexey_resolveaudit.py` (added 2026-07-26). On a big program a
+judge run is minutes to a quarter of an hour, which kills the step ladder. But
+if the room and pipe counts are unchanged, the only thing a row/column
+deletion or a re-route can break is **which pipe an instruction resolves to**.
+
+Rooms and pipes leave the parser in reading order, which a deletion preserves,
+so room *i* before is room *i* after. `compare(before, after)` walks every
+`s`/`S`/`r`/`R`/`U`/`q` cell in each room's own reading order and reports any
+that changed pipe. Identical maps ⇒ identical behaviour.
+
+    ok, diffs = compare(before_text, after_text)      # 68 s on subset-sum
+    structure(text)                                   # rooms/pipes/men/lengths
+
+Use it as the gate between steps, and spend the real judge only on the
+candidate you intend to submit.
+
+**It immediately paid for itself on subset-sum**: the full squeeze looked like
+a free 2.36x (fp 13,293,316 -> 5,635,876, structure identical: 2121 rooms,
+2164 pipes, 2119 men) and the audit showed it was not free at all —
+
+* one room's `r` cells changed which pipe they read, and
+* **118 pipes changed length**, total pipe cells 39,755 -> 20,305.
+
+The second one is the pipe-length rule biting: on a program with 2048 systolic
+cells you cannot assume a shorter pipe is harmless. Always print the
+before/after pipe-length vector, not just the box.
