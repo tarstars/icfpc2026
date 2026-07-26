@@ -1562,7 +1562,7 @@ cell it lands on. **A branch's straight arm is a jump with a landing pad;
 move the pad and the jump falls through.** Both entry points (X2's descent
 and d3's jump) now have their own `<`.
 
-## 2026-07-26 — reverse-a-list: quick assessment of packing three-to-a-cell
+## 2026-07-26 — reverse-a-list: packing assessed, and a correction
 
 **The cost is quadratic in the list length**, measured on reverse_01 with
 synthetic single-round lists:
@@ -1572,35 +1572,50 @@ synthetic single-round lists:
 ticks 54  105  167  239  413  627  881 1175 1509 1883
 ```
 
-The per-element cost grows linearly (51, 62, 72, ..., 187), so
-`ticks ≈ 5n² + 32n`. That is the ring re-circulating to reverse.
+Per-element cost grows linearly (51, 62, 72, ..., 187), so
+`ticks = 5n^2 + 32n`. That is the ring re-circulating to reverse, and
+packing k values into one cell cuts the quadratic term by k^2.
 
-So the idea is right: packing three values into one makes the ring carry
-`⌈n/3⌉` items and **cuts the quadratic term nine-fold** — 1280 ticks of the
-1883 at n=16 become ~142. Packing is arithmetically free here: the simulator
-uses unbounded integers (no clamp anywhere in `sim.py`), and even in 64 bits
-three values would fit — shift by +1,000,000 into 0..2,000,000 and use base
-2,000,001, whose cube is 8.0e18 against the signed limit of 9.2e18.
+### The 64-bit limit is real and the simulator hides it
 
-The catch is the linear term. Each value costs a multiply-add going in and a
-divmod coming out, so roughly +30n. Net against `5n² + 32n`:
+Registers are **64-bit signed** and `sim.py` wraps them **silently** --
+`wrap64()` sits on every arithmetic op including the multiply. An overflow
+does not raise; it returns a wrong answer, and only on values near the
++/-1,000,000 extremes. The public cases use 42, 100, 10, 20, 30, so **a
+local 8/8 would not catch it.** Any packed design has to be bounded on
+paper and then stress-tested at the extremes by hand.
 
-| n | now | packed (est.) |
-|---|---|---|
-| 4 | 239 | ~288 *worse* |
-| 8 | 627 | ~636 *level* |
-| 16 | 1883 | ~1220 **-35%** |
+Bounds, shifting by +1,000,000 into 0..2,000,000:
 
-It only pays for long lists. The live avgTicks is 1845 against a local
-average of 1162, so the server's cases are longer than the public ones and
-it should pay there — expect 20-30%, i.e. ~472k -> ~350k. It is a new
-machine, not an edit.
+| pack | base | max value | headroom vs 9.223e18 |
+|---|---|---|---|
+| 2 | 2,000,001 | 4.00e12 | **6 orders of magnitude** |
+| 3 | 2,000,001 | 8.000012e18 | 13.3% |
+| 3 | 2^21 fields | 8.796e18 | 4.6% |
+| 4 | any | 1.6e25 | impossible, 1.7 million x over |
 
-**Correction:** `reverse_02.man` is not a candidate at all -- the server rejected it. reverse_01 is the base to work from.
-(against the live 256) and passes 8/8 locally — it was abandoned only
-because it has three one-cell pipes, which the server rejects at load. That
-is 12% for free if the pipes can be lengthened. They cannot be bent in
-place: each gap is exactly one column or row wide, and `I` and `O` are 3x3
-so each has only a single usable side-wall cell. It needs the rooms moved —
-a repack of a 15x15 machine, and `R1` has two outgoing pipes so moving a
-port means re-auditing its `s` cells. Worth doing before the packing rewrite.
+Three fits only with Horner's scheme, `((v2*B)+v1)*B+v0`, so no intermediate
+exceeds the final value -- and nothing may ever be added to a packed value
+afterwards. Note the 21-bit-field variant is *tighter* than base 2,000,001,
+not looser: three 21-bit fields is 63 bits, one bit past the sign.
+
+### Two-packing, not three
+
+The quadratic saving saturates while the packing overhead keeps growing:
+
+| | ring term at n=16 | overhead | net |
+|---|---|---|---|
+| now | 1280 | -- | 1883 |
+| 2-pack | 320 | ~240 | ~1160 (-38%) |
+| 3-pack | 180 | ~360 | ~1140 (-39%) |
+
+One point apart, and two-packing has six orders of magnitude of headroom
+against three-packing's 13%. Take the safe one.
+
+It only pays for long lists -- at n=4 packing is a loss, at n=8 a wash. The
+live avgTicks is 1845 against a local average of 1162, so the server's cases
+are longer than the public ones and it should pay there: expect 20-30%,
+roughly 472k -> 350k. It is a new machine, not an edit.
+
+`reverse_02.man` is **not** a candidate -- the server rejected it. reverse_01
+is the base.
