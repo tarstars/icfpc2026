@@ -319,3 +319,71 @@ O-only flush: score identical to b11 -- the press is free. Kept as the preferred
     |^ <           |
     +--------------+
 ```
+
+## b13_oright
+
+O slid right: (4,19)-(6,21), straight 2-cell pipe at col 20. Bindings verified, score unchanged.
+
+```
+    v---------------------<
++--------------+          |
+|@ssv      <   |          |
+|   >rXrsrs^   |          |
+|     >MrW+++sv|   +-+    |
+|   ^    s+1Mr<|   |O|    |
++--------------+   +-+    |
+     >--^ v         ^     |
+     ^ v--<         ^     |
+ +-----------------------+|
+ |         >rM1+ sH      ||
+>|>@rXrsrsv   >+MrXrM1+sH||
+||   >    M4W-XrX  sH    ||
+||^ s+1MrsWXW/W3M-<      ||
+||^       <     >rM1+sH  ||
+|+-----------------------+|
+^-< +--------------+ >----^
+  | |H  s4    s <  | |
+  | |v  s  0  s<   | |
+  | |>qd0       ^  | |
+  ^<|  >rbM5W} x   |>^
+    |          ]   |
+    |^  s  0  sxM0v|  +-+
+    |^  s    Ws   <|<<|I|
+    |@rv           |  +-+
+    |^ <           |
+    +--------------+
+```
+
+## b14_straight
+
+Answer to the row-7 question: p1 terminal is pinned at floor col 8 (col 9 flips (3,7) to the ring by tie-break), so slide its SOURCE right to col 8 -> straight 2-cell pipe. p0 mirrors at col 6. Peak occupancy of both was 2 of 5, so capacity is safe. 277,830 -> 276,615.
+
+```
+    v---------------------<
++--------------+          |
+|@ssv      <   |          |
+|   >rXrsrs^   |          |
+|     >MrW+++sv|   +-+    |
+|   ^    s+1Mr<|   |O|    |
++--------------+   +-+    |
+      v ^           ^     |
+      v ^           ^     |
+ +-----------------------+|
+ |         >rM1+ sH      ||
+>|>@rXrsrsv   >+MrXrM1+sH||
+||   >    M4W-XrX  sH    ||
+||^ s+1MrsWXW/W3M-<      ||
+||^       <     >rM1+sH  ||
+|+-----------------------+|
+^-< +--------------+ >----^
+  | |H  s4    s <  | |
+  | |v  s  0  s<   | |
+  | |>qd0       ^  | |
+  ^<|  >rbM5W} x   |>^
+    |          ]   |
+    |^  s  0  sxM0v|  +-+
+    |^  s    Ws   <|<<|I|
+    |@rv           |  +-+
+    |^ <           |
+    +--------------+
+```

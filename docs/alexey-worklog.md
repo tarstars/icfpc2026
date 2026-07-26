@@ -2193,3 +2193,28 @@ Rule extracted: **flushing a room is free exactly when the pipe can leave
 straight; if the flush forces the pipe around a corner, each extra cell is
 a tick on every value that crosses it.** For an input room on a hot path,
 that is a tick per character.
+
+### brackets b13/b14: Alexey's row-7 question straightens both gap pipes
+
+He asked two things: slide O right (done — pipe col 20, bindings verified,
+score unchanged, `b13_oright`), and *how far right can the row-7 outgoing
+pipe move?* The answer turned into a win:
+
+* p1's **terminal** (room 0's floor) is pinned at col 8: the r at (3,7)
+  needs p1 within distance 5, and at col 9 the distance ties with the ring
+  at 6, and ties go to the ring by reading order. Cols {6,7,8} only.
+* But its **source** (room 2's roof) is free to slide right to col 13 —
+  and at col 8 it sits directly under the terminal, so the pipe becomes a
+  **straight 2-cell drop**. p0 mirrors at col 6 (its roof port may be
+  {6,7,8}, its floor port is free since room 0 has one outgoing pipe).
+* Safety measured first: peak occupancy of both 5-cell gap pipes is **2**,
+  so 2-cell capacity cannot deadlock.
+
+All 17 bindings in both rooms re-verified empirically. Local 277,830 ->
+**276,615** (-1.7 avg ticks: three cells of latency removed from each
+direction of the room0<->room2 exchange). Submitted as brackets_11.
+
+The general form of the question, for the playbook: **a pipe's two ports
+have separate freedom; when their legal ranges overlap in a column, the
+pipe straightens to 2 cells.** Check the ports' ranges before accepting any
+bent gap pipe.
