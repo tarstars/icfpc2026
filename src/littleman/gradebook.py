@@ -360,7 +360,9 @@ WORKER_ZONES = {
 }
 
 
-def build_worker_fsm(subject: int) -> Fsm:
+def build_worker_fsm(subject: int, delay_cells: int = 80) -> Fsm:
+    if delay_cells < 0:
+        raise ValueError("delay_cells cannot be negative")
     fsm = Fsm()
     roster_ack_target = "roster_ack" if subject == 1 else "roster_ack_in"
     operation_ack_target = "operation_ack" if subject == 1 else "operation_ack_in"
@@ -389,13 +391,13 @@ def build_worker_fsm(subject: int) -> Fsm:
         zero="roster_delay",
         positive="load_id",
     )
-    fsm.go("roster_delay", "logic", "." * 80, "roster_marker_r")
+    fsm.go("roster_delay", "logic", "." * delay_cells, "roster_marker_r")
     fsm.go("roster_marker_r", "data_in", "r", "roster_marker_s")
     fsm.go("roster_marker_s", "data_out", "s", "roster_orient_delay")
     fsm.go(
         "roster_orient_delay",
         "logic",
-        "." * 80,
+        "." * delay_cells,
         roster_ack_target,
     )
     if subject > 1:
@@ -540,7 +542,7 @@ def build_worker_fsm(subject: int) -> Fsm:
     fsm.go(
         "operation_delay",
         "logic",
-        "." * 80,
+        "." * delay_cells,
         operation_ack_target,
     )
     if subject > 1:
@@ -631,11 +633,15 @@ def build_result_collector(width: int) -> list[str]:
     return ["".join(row) for row in grid]
 
 
-def _build_gradebook(layout: GradebookLayout) -> str:
+def _build_gradebook(
+    layout: GradebookLayout,
+    *,
+    worker_delay_cells: int = 80,
+) -> str:
     layout.validate()
     workers = [
         compile_fsm(
-            build_worker_fsm(subject),
+            build_worker_fsm(subject, delay_cells=worker_delay_cells),
             WORKER_ZONES,
             right_padding=layout.fsm_right_padding,
         )
@@ -809,3 +815,8 @@ def build_gradebook() -> str:
 def build_gradebook_compact() -> str:
     """Build the tighter geometry-only successor to ``gradebook_00``."""
     return _build_gradebook(COMPACT_LAYOUT)
+
+
+def build_gradebook_no_delay() -> str:
+    """Build workers that rely on blocking ring reads instead of fixed waits."""
+    return _build_gradebook(COMPACT_LAYOUT, worker_delay_cells=0)
