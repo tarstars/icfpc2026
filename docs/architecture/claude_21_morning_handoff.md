@@ -34,7 +34,9 @@ assuming it is the pressed one.
 Untouched: subset-sum, tcp, brackets, sort, reverse-a-list, memory,
 triangle, history — all still at 100% of cases.
 
-**Pathfinder is the only graded problem still at zero.** It is Codex's.
+**CORRECTION (06:20Z): pathfinder is NOT at zero** — it passes 18/18,
+rank 20/24. Codex solved it. Every graded problem now passes 100% of its
+cases except LLM at 2/28.
 
 ## What to do next, in value order
 
@@ -145,6 +147,15 @@ ticks ⇒ traversed once per pixel, so its 233 cells were kept exact). The
 snake press earlier found the public cases never stress the ring at all,
 and needed a purpose-built 48-cell maximal-growth game to justify a
 change.
+
+## CORRECTION 06:20Z — standings ARE readable, by UUID
+
+`icfpc-api standings <slug>` silently returns `{"rows": []}`. Given a
+problem **UUID** it returns the full table. Every "rank is unmeasured"
+caveat below is therefore wrong, and the measured position is in
+`coordination/goals/20260726-llm-and-rank.md`: team **wheezards**,
+**22.86 of 32 points**, and the gap to the best team is 1,000x-227,421x
+on the mid-size problems — a gap no geometry press can close.
 
 ## Closing board, 2026-07-26T05:30Z
 
