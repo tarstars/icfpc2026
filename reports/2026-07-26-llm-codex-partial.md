@@ -66,3 +66,17 @@ The live freshness read immediately before preservation still showed
 submission `25e57bf4-1596-49ae-8f50-3cc9ad980926` terminal at 4/28. A
 partial submission is justified only if the terminal server result improves
 that pass count.
+
+## Live result
+
+Submitted once as `f077726c-a3b9-4ad3-b106-83091add453d`. The terminal server
+result is **14/28**, improving the prior 4/28 result:
+
+- public: 6/14, with five step-cap and three wrong-frame failures;
+- private: 8/14, with five step-cap and one wrong-frame failure;
+- dimensions: 749 × 25,207;
+- `error: null`, `loadError: null`.
+
+The CLI's initial 600-second wait expired while the submission was still
+running. No duplicate was created; a read-only continuation poll produced
+`submissions/llm/llm_codex_00-terminal.json`.
