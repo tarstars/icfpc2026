@@ -1767,3 +1767,49 @@ drop column, and the loop wants 2 more to its west — it does not fit as
 laid out) or the relay moved BELOW the pump so width stops being
 relay + gap + pump. The latter flips the ring-in to the pump's floor,
 which turns `U` north and needs the interior re-walked.
+
+### 13x13 attempt: why 7x6 interior is the floor for this architecture
+
+Tried, does not close. fp 169 needs BOTH dimensions at 13, i.e. relay(4) +
+gap(1) + pump(8) wide and one row less tall — a **6x5 pump interior**.
+The two blockers are structural, not a lack of cells (24 used of 30):
+
+**Columns: 7 is the floor.** The head row is 5 cells — `<` (the climb's
+turn), `M`, `r`, `-`, and the drop `v` — and it must run from the climb
+column *west* to the drop column, so `cE = cU + 4`. The loop is a 2x3
+block whose `>` sits at `cU - 2`, so `cU >= 2`. Union = `cU-2 .. cU+4` =
+**7 columns**. Every way out was tried and closes worse:
+
+* Drop `M` from the head row (compute `2-k` with `r M 2 -`, no preset B):
+  needs `N` to get `k-2` back for the head send and `b`, and the branch
+  arms swap sides, which puts the k=1 spur into the wall.
+* Mirror the loop (`a` instead of `d`) so it sits east of `U` and `cU`
+  can be 1: the main arm then needs two cells (`N`, `b`) between `X` and
+  the loop entry but only one exists. Widening the loop's top row to make
+  room turns the lap from 6 cells into 8 — +2 ticks on every one of the
+  56 relays at n=16, which eats most of the 14% the area would buy.
+* A 2x2 loop leaves no cell for `s` and `m`.
+
+**Rows: 6 is the floor.** `b` can indeed move off its own row onto the
+main arm (BP is 0 at the start of every pass, so the k=2 arm needs no
+`b`), which is what a 5-row layout needs. But then the climb column must
+carry `W`, the `s` that prints `v_{k-1}`, the k=1 spur's join turn, and
+the `2` — four cells between the tail's turn and the head row's `<`, and
+a 5-row interior offers three.
+
+The only route left is a different *room* layout: relay under the pump so
+width stops being relay+gap+pump. That flips the ring-in to the pump's
+floor (so `U` turns north and the interior must be re-walked) and then
+runs out of pipe space — with the pump against the box edge there is no
+floor row left for the ring-out and the output, and putting both on the
+side wall makes the ROW decide nearest-pipe, which collides: the loop's
+`s` and the climb's `s` share a row.
+
+**Where the remaining ticks are** (profiled, n=16, 516 ticks): blocking is
+1-3 ticks total, so the machine is walk-bound, not transit-bound. 336
+ticks are the 56 relay laps (6 each) and ~180 the 8 passes' fixed cost
+(head row 5, tail 4, climb 5, arms 4). The real lever is **three
+extractions per pass** — relays drop 56 -> 35 and passes 8 -> 6, about
+-33% — but it needs a third live value (`v_{k-2}` held while `v_{k-1}`
+and `v_k` are read), so it needs a one-value stash room off the ring, at
+20 cells plus two pipes.
