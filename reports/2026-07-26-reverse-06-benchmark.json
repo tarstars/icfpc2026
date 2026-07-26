@@ -1,0 +1,162 @@
+{
+  "candidates": [
+    {
+      "averageTicks": 356.125,
+      "bytes": 208,
+      "cases": [
+        {
+          "name": "warm up",
+          "passed": true,
+          "reason": null,
+          "ticks": 99
+        },
+        {
+          "name": "a single list",
+          "passed": true,
+          "reason": null,
+          "ticks": 162
+        },
+        {
+          "name": "mixed sizes",
+          "passed": true,
+          "reason": null,
+          "ticks": 172
+        },
+        {
+          "name": "repeats and palindromes",
+          "passed": true,
+          "reason": null,
+          "ticks": 304
+        },
+        {
+          "name": "extreme values",
+          "passed": true,
+          "reason": null,
+          "ticks": 130
+        },
+        {
+          "name": "singletons",
+          "passed": true,
+          "reason": null,
+          "ticks": 52
+        },
+        {
+          "name": "climbing lengths",
+          "passed": true,
+          "reason": null,
+          "ticks": 548
+        },
+        {
+          "name": "full size",
+          "passed": true,
+          "reason": null,
+          "ticks": 1382
+        }
+      ],
+      "casesPassed": 8,
+      "casesTotal": 8,
+      "comparisonWithParent": {
+        "averageTicksPercent": -7.712665406427221,
+        "footprintPercent": 12.88888888888889,
+        "maxDimensionPercent": 6.666666666666667,
+        "scorePercent": 6.170300357067843
+      },
+      "footprint": 196,
+      "height": 14,
+      "maxDimension": 14,
+      "men": 2,
+      "path": "submissions/reverse-a-list/reverse_06.man",
+      "pipeLengths": [
+        2,
+        2,
+        6,
+        15
+      ],
+      "pipes": 4,
+      "rooms": 4,
+      "score": 69800.5,
+      "sha256": "adfdb1a1aa73ffe81c6b59ee86b0739d1a0835766454428ed9f7acb7df30fcc9",
+      "width": 14
+    }
+  ],
+  "parent": {
+    "averageTicks": 330.625,
+    "bytes": 222,
+    "cases": [
+      {
+        "name": "warm up",
+        "passed": true,
+        "reason": null,
+        "ticks": 100
+      },
+      {
+        "name": "a single list",
+        "passed": true,
+        "reason": null,
+        "ticks": 147
+      },
+      {
+        "name": "mixed sizes",
+        "passed": true,
+        "reason": null,
+        "ticks": 157
+      },
+      {
+        "name": "repeats and palindromes",
+        "passed": true,
+        "reason": null,
+        "ticks": 277
+      },
+      {
+        "name": "extreme values",
+        "passed": true,
+        "reason": null,
+        "ticks": 122
+      },
+      {
+        "name": "singletons",
+        "passed": true,
+        "reason": null,
+        "ticks": 61
+      },
+      {
+        "name": "climbing lengths",
+        "passed": true,
+        "reason": null,
+        "ticks": 504
+      },
+      {
+        "name": "full size",
+        "passed": true,
+        "reason": null,
+        "ticks": 1277
+      }
+    ],
+    "casesPassed": 8,
+    "casesTotal": 8,
+    "footprint": 225,
+    "height": 15,
+    "maxDimension": 15,
+    "men": 2,
+    "path": "submissions/reverse-a-list/reverse_05.man",
+    "pipeLengths": [
+      2,
+      5,
+      6,
+      15
+    ],
+    "pipes": 4,
+    "rooms": 4,
+    "score": 74390.625,
+    "sha256": "4d496a67f283e69e6c145eaab2166a0913bb5cb8b86b34518722fda9192a3c42",
+    "width": 15
+  },
+  "problem": {
+    "id": "537ec979-d883-40f3-9663-b59579a0682c",
+    "path": "/home/tarstars/prj/icfpc2026-codex-reverse/data/small/problems/reverse-a-list.json",
+    "scoring": "footprint-tick",
+    "sha256": "f296a0c2180f358f819ae6f352267725f8c57db936bad3dad0b7e044bbe81187",
+    "slug": "reverse-a-list"
+  },
+  "schemaVersion": 1
+}
