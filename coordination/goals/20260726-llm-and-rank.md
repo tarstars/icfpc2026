@@ -12,6 +12,11 @@ Team **wheezards**, **22.86 of 32 points** across 16 graded problems.
 returns `{"rows": []}` silently, which is why every rank claim I made
 before 06:20Z was "unmeasured". It is measurable. Use the UUID.
 
+(The `our score / best` column below compares against the best score of
+ANY eligible team; because rank sorts by cases-passed first, some of
+those belong to teams passing fewer cases. Treat it as an upper bound on
+the gap, not a target — see the per-problem note on subset-sum.)
+
 | problem | cases | rank | points | **available** | our score / best |
 |---|---|---|---|---|---|
 | little-little-man | 2/28 | 21/22 | 0.12 | **1.88** | 1x |
@@ -82,11 +87,13 @@ fundamentally denser encoding. So:
   these, spend a little time asking *what could possibly be 1,000x
   better* — measure where our ticks actually go on one case. A wrong
   algorithm cannot be pressed into a right one.
-- **subset-sum:** the best team scores **500**. Ours is 91.8 trillion.
-  That is not an optimization gap, it is a different program. Worth one
-  focused hour of "what are they doing that we are not", but note one
-  local judge run takes **15m25s**, so treat wall-clock as the binding
-  constraint. Do not start a blind rewrite.
+- **subset-sum: CORRECTION.** The "best score 500" figure was wrong —
+  rank is by cases-passed FIRST, so that 500 belongs to a team passing
+  almost nothing. The best team that passes 20/20 scores **323,160,641**,
+  and we are 284,000x off it. Ranks 39-43 sit at 10.4T / 14.7T / 49.6T /
+  **us 91.8T** / 142T, so a 2x gain buys ~1 place and 1000x buys ~13.
+  With one local judge run at 15m25s, this is poor value. Skip unless the
+  fast executor lands.
 - Do not spend on **triangle** (already 1/239) or **memory**/**lllm**
   (0.07 and 0.10 left).
 
@@ -126,3 +133,35 @@ fundamentally denser encoding. So:
 2. At least three already-solved problems improved in rank, submitted.
 3. Every claim in the final handoff carries a measured number, and
    anything unverified is labelled as such.
+
+
+## Addendum 07:40Z — measured "what does an Nx improvement buy"
+
+Computed from the live standings, in rank places and points:
+
+| problem | rank | avail | 2x | 10x | 100x |
+|---|---|---|---|---|---|
+| **history-lesson** | 36/130 | **0.27** | **+0.27** | +0.27 | +0.27 |
+| reverse-a-list | 82/150 | 0.54 | +0.15 | **+0.44** | +0.54 |
+| tcp | 33/81 | 0.40 | +0.09 | +0.29 | +0.40 |
+| sort-numbers | 41/117 | 0.34 | +0.13 | +0.33 | +0.34 |
+| snake | 19/41 | 0.45 | +0.12 | +0.30 | +0.45 |
+| plotter | 44/65 | 0.67 | +0.02 | +0.22 | +0.44 |
+| gradebook | 45/60 | 0.75 | +0.02 | +0.20 | +0.51 |
+| brackets | 48/91 | 0.52 | -0.01 | +0.21 | +0.50 |
+| matmul | 43/59 | 0.72 | -0.02 | +0.09 | +0.34 |
+| sudoku | 58/64 | 0.90 | -0.02 | +0.03 | +0.17 |
+
+**`history-lesson` is the cheapest point on the board and is now the
+first target.** It is **footprint-scored only** — ticks are free — we are
+89x89 = 7,921, first place is 77x77 = 5,929, and the field is densely
+tied (rank 35 = 7,744, a large group ties with us at 7,921). So a **1.34x
+shrink takes rank 1 and all 0.27 available points**, and *any* drop below
+7,744 gains places at once. It is a data-encoding problem, not a press:
+93.3% occupancy, 2,810 fixed output chars at 2.63 cells/char today,
+needing < 2.11.
+
+Note how badly the big-score problems pay: sudoku has 0.90 available but
+a 100x improvement buys only +0.17, because the teams immediately above
+us are close while the leaders are astronomically far. **Points available
+is not the same as points reachable** — sort by the middle columns.
