@@ -46,7 +46,18 @@
         "score": 3191955.4285714286,
         "improvementPercent": 3.6238981390793414
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "397eaeb4-1236-4e0f-8b2d-b2ac089050f4",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 29,
+        "area2": 841,
+        "averageTicks": 18372.291666666668,
+        "score": 15451097.291666668,
+        "fullResponse": "submissions/memory/memory_12-submit.json"
+      }
     }
   ]
 }

@@ -1,7 +1,7 @@
 # Memory: station return shortcuts
 
 Date: 2026-07-27
-Status: locally release-ready; live result pending
+Status: submitted and accepted
 
 ## Result
 
@@ -19,6 +19,12 @@ counted `memory_11`. It keeps the complete machine, room geometry, pipes, and
 | Public score | 3,311,978.14 | 3,191,955.43 |
 
 The measured public score reduction is 3.62390%.
+
+The exact artifact was submitted once as
+`397eaeb4-1236-4e0f-8b2d-b2ac089050f4`. The server reported 24/24,
+29×29, average ticks 18,372.291666666668, and score
+15,451,097.291666668. This is 3.63214% below the counted `memory_11`
+score of 16,033,454.75.
 
 ## Changes and invariants
 

@@ -134,6 +134,15 @@ def test_public_cases_and_exact_ticks():
     assert report.score == 3_191_955.4285714286
 
 
+def test_live_response_matches_exact_artifact():
+    response = json.loads(ARTIFACT.with_name("memory_12-submit.json").read_text())
+    assert response["id"] == "397eaeb4-1236-4e0f-8b2d-b2ac089050f4"
+    assert response["casesPassed"] == response["casesTotal"] == 24
+    assert (response["width"], response["height"], response["area2"]) == (29, 29, 841)
+    assert response["avgTicks"] == 18372.291666666668
+    assert response["score"] == 15451097.291666668
+
+
 def test_one_hundred_maximal_random_streams_match_oracle():
     program = ARTIFACT.read_text()
     for seed in range(100):
