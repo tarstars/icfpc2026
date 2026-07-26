@@ -445,3 +445,48 @@ the >1e6 offset off the per-value path — one 19-digit literal per word
 instead of three 7-digit ones.
 
 Rule: packing pays only against a ring whose lap is >= 10 ticks.
+
+## The step ladder (2026-07-26) — how both wins today were actually found
+
+Do not design the final layout and prove it impossible. **Move one thing,
+judge, record, move the next thing relative to that.** I wrote a structural
+proof that reverse could not reach 13x13 and it was wrong; six small moves
+got there. Labs: `experiments/alexey-reverse06/`, `experiments/alexey-brackets04/`.
+
+Canonical order for a machine with two rooms plus I/O:
+1. Output flush — bend its pipe into a SIDE wall instead of dropping into the
+   roof, and the room climbs two rows.
+2. Small room down/flush against the big one. Two free rows above a room let
+   its pipe leave through the ROOF, which is what makes a gap column between
+   two rooms unnecessary. This step usually makes the score *worse* and pays
+   three steps later.
+3. Input up.
+4. Re-lay pipes **keeping total length** (`alexey_piperoute` with `target=`).
+
+Then, for a width-bound program, the **shift ladder**: move the widest room
+one column at a time toward the wall and fold the pipe that was climbing past
+it into the freed column. Measure at every rung — brackets paid at shifts
+1, 2, 3 and regressed at 4. Keep every pipe's attachment offset *inside* the
+moved room (nearest-pipe resolution reads those cells); a room with a single
+outgoing pipe is the free variable that makes the jog possible.
+
+**Re-run `alexey_squeeze` after every move.** It found nothing on brackets_04
+and 3 rows + 2 columns on the same program once the rooms had moved. It is
+exhausted for a *layout*, never for a *program*.
+
+Two more things measured today:
+
+- **A longer pipe can be faster.** reverse_07's ring-out went 11 -> 13 cells
+  and got 0.6% quicker: pipe cells are parking space, not just delay.
+- **Check capacity, do not guess it.** Instrument the sim and take the peak
+  occupancy across the ring pipes at the worst case (reverse_07: peak 16,
+  capacity 19). The old ">= 15 cells" rule of thumb was wrong in both
+  directions.
+
+Traps re-paid, all three now cheap to avoid:
+- erase a pipe BEFORE moving a room onto its cells, or you delete a wall;
+- two pipes jogging in the same direction between the same two walls collide
+  — send one along row N and the other along row N-1;
+- `route_safe` refuses every arrowhead beside a room; the actual rule is only
+  that it must not point AWAY from that room, so short jogs can be
+  hand-placed and audited.
