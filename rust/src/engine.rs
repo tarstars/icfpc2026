@@ -1,5 +1,5 @@
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::{BinaryHeap, HashMap, VecDeque};
 
 use pyo3::prelude::*;
 
@@ -24,6 +24,8 @@ struct Man {
     wait_pipes: Vec<usize>,
     runnable: bool,
     stamp: i64,
+    alive: bool,
+    born: i64,
 }
 
 #[derive(Debug)]
@@ -66,6 +68,7 @@ pub struct RunOutput {
     pub mbp: Vec<i64>,
     pub mhalt: Vec<u8>,
     pub mwait: Vec<u8>,
+    pub malive: Vec<u8>,
     pub p_runs: Vec<Vec<i32>>,
     pub p_vals: Vec<Vec<i64>>,
     pub disp_cur: Vec<Vec<i8>>,
@@ -116,6 +119,8 @@ impl Engine {
                 wait_pipes: Vec::new(),
                 runnable,
                 stamp: -1,
+                alive: true,
+                born: 0,
             });
         }
         let pipes: Vec<Pipe> = spec
@@ -184,7 +189,7 @@ impl Engine {
     }
 
     fn runnable_add(&mut self, man: usize) {
-        if self.men[man].runnable {
+        if !self.men[man].alive || self.men[man].halted || self.men[man].runnable {
             return;
         }
         self.men[man].runnable = true;
@@ -198,6 +203,93 @@ impl Engine {
         }
         self.men[man].runnable = false;
         self.runnable_count -= 1;
+    }
+
+    fn kill(&mut self, man: usize) {
+        if !self.men[man].alive {
+            return;
+        }
+        self.runnable_discard(man);
+        self.clear_wait(man);
+        let pos = self.spec.cellpos[self.men[man].cell];
+        if self.occupied[pos] == man as isize {
+            self.occupied[pos] = -1;
+        }
+        self.men[man].alive = false;
+    }
+
+    fn kill_pair(&mut self, first: usize, second: usize) {
+        self.kill(first);
+        self.kill(second);
+    }
+
+    fn split_man(&mut self, man: usize) -> Result<(), &'static str> {
+        let dir = self.men[man].dir;
+        let right_dir = (dir + 1) & 3;
+        let left_dir = (dir + 3) & 3;
+        let cell = self.men[man].cell;
+        let right_cell = self.spec.step[right_dir as usize][cell];
+        let left_cell = self.spec.step[left_dir as usize][cell];
+        if right_cell < 0 || left_cell < 0 {
+            return Err("wall-birth");
+        }
+        let right_cell = right_cell as usize;
+        let left_cell = left_cell as usize;
+        let room = self.men[man].room;
+        let (a, b, bp) = (self.men[man].a, self.men[man].b, self.men[man].bp);
+        let old_pos = self.spec.cellpos[cell];
+        if self.occupied[old_pos] == man as isize {
+            self.occupied[old_pos] = -1;
+        }
+        self.men[man] = Man {
+            cell: right_cell,
+            dir: right_dir,
+            room,
+            halted: false,
+            a,
+            b,
+            bp,
+            wait: WAIT_NONE,
+            wait_pipes: Vec::new(),
+            runnable: false,
+            stamp: self.tick,
+            alive: true,
+            born: self.tick,
+        };
+        let left = self.men.len();
+        self.men.push(Man {
+            cell: left_cell,
+            dir: left_dir,
+            room,
+            halted: false,
+            a,
+            b,
+            bp,
+            wait: WAIT_NONE,
+            wait_pipes: Vec::new(),
+            runnable: false,
+            stamp: self.tick,
+            alive: true,
+            born: self.tick,
+        });
+        self.runnable_add(man);
+        self.runnable_add(left);
+        if self.men.iter().filter(|m| m.alive).count() > self.spec.men_cap {
+            return Err("men-cap");
+        }
+        for baby in [man, left] {
+            if !self.men[baby].alive {
+                continue;
+            }
+            let pos = self.spec.cellpos[self.men[baby].cell];
+            let occupant = self.occupied[pos];
+            if occupant >= 0 && occupant as usize != baby {
+                self.kill_pair(baby, occupant as usize);
+            } else {
+                self.occupied[pos] = baby as isize;
+            }
+        }
+        Ok(())
     }
 
     fn active_add(&mut self, pipe: usize) {
@@ -616,9 +708,110 @@ impl Engine {
                     (dir as u8 + 3) & 3
                 };
             }
+            35 => {
+                if self.spec.semantics_version != 2 {
+                    return Err("bad-op");
+                }
+                self.split_man(man)?;
+                return Ok(false);
+            }
             _ => return Err("bad-op"),
         }
         Ok(true)
+    }
+
+    fn move_legacy(&mut self, movers: Vec<usize>) -> Option<&'static str> {
+        for man in movers {
+            if !self.men[man].alive || self.men[man].halted {
+                continue;
+            }
+            let cell = self.men[man].cell;
+            let next = self.spec.step[self.men[man].dir as usize][cell];
+            if next < 0 {
+                return Some("wall");
+            }
+            let next = next as usize;
+            let next_pos = self.spec.cellpos[next];
+            let occupant = self.occupied[next_pos];
+            if occupant >= 0 {
+                let occupant = occupant as usize;
+                self.men[man].halted = true;
+                self.men[occupant].halted = true;
+                self.runnable_discard(man);
+                self.runnable_discard(occupant);
+                self.clear_wait(occupant);
+                continue;
+            }
+            self.occupied[self.spec.cellpos[cell]] = -1;
+            self.men[man].cell = next;
+            self.occupied[next_pos] = man as isize;
+        }
+        None
+    }
+
+    fn move_official(&mut self, movers: Vec<usize>) -> Option<&'static str> {
+        let movers: Vec<usize> = movers
+            .into_iter()
+            .filter(|&i| self.men[i].alive && !self.men[i].halted && self.men[i].born != self.tick)
+            .collect();
+        let mut targets = HashMap::with_capacity(movers.len());
+        let mut mover_mask = vec![false; self.men.len()];
+        for &man in &movers {
+            mover_mask[man] = true;
+            let cell = self.men[man].cell;
+            let next = self.spec.step[self.men[man].dir as usize][cell];
+            if next < 0 {
+                return Some("wall");
+            }
+            targets.insert(man, next as usize);
+        }
+        let mut doomed = vec![false; self.men.len()];
+        for &man in &movers {
+            let next_pos = self.spec.cellpos[targets[&man]];
+            let occupant = self.occupied[next_pos];
+            if occupant < 0 {
+                continue;
+            }
+            let other = occupant as usize;
+            if mover_mask[other] {
+                let other_target = targets[&other];
+                if self.spec.cellpos[other_target] == self.spec.cellpos[self.men[man].cell] {
+                    doomed[man] = true;
+                    doomed[other] = true;
+                }
+            } else if self.men[other].alive {
+                doomed[man] = true;
+                doomed[other] = true;
+            }
+        }
+        let mut arrivals: HashMap<usize, Vec<usize>> = HashMap::new();
+        for &man in &movers {
+            arrivals.entry(targets[&man]).or_default().push(man);
+        }
+        for group in arrivals.values().filter(|group| group.len() > 1) {
+            for &man in group {
+                doomed[man] = true;
+            }
+        }
+        for &man in &movers {
+            let origin = self.spec.cellpos[self.men[man].cell];
+            if self.occupied[origin] == man as isize {
+                self.occupied[origin] = -1;
+            }
+        }
+        for man in 0..doomed.len() {
+            if doomed[man] {
+                self.kill(man);
+            }
+        }
+        for man in movers {
+            if self.men[man].alive {
+                let next = targets[&man];
+                self.men[man].cell = next;
+                self.occupied[self.spec.cellpos[next]] = man as isize;
+            }
+        }
+        None
     }
 
     pub fn run(
@@ -699,7 +892,7 @@ impl Engine {
                 }
                 self.men[man].stamp = self.tick;
                 self.current_man = man as isize;
-                if self.men[man].halted {
+                if !self.men[man].alive || self.men[man].halted {
                     continue;
                 }
                 match self.execute_man(man) {
@@ -789,32 +982,11 @@ impl Engine {
                 break;
             }
 
-            for man in movers {
-                if self.men[man].halted {
-                    continue;
-                }
-                let cell = self.men[man].cell;
-                let next = self.spec.step[self.men[man].dir as usize][cell];
-                if next < 0 {
-                    error = Some("wall");
-                    break;
-                }
-                let next = next as usize;
-                let next_pos = self.spec.cellpos[next];
-                let occupant = self.occupied[next_pos];
-                if occupant >= 0 {
-                    let occupant = occupant as usize;
-                    self.men[man].halted = true;
-                    self.men[occupant].halted = true;
-                    self.runnable_discard(man);
-                    self.runnable_discard(occupant);
-                    self.clear_wait(occupant);
-                    continue;
-                }
-                self.occupied[self.spec.cellpos[cell]] = -1;
-                self.men[man].cell = next;
-                self.occupied[next_pos] = man as isize;
-            }
+            error = if self.spec.semantics_version == 2 {
+                self.move_official(movers)
+            } else {
+                self.move_legacy(movers)
+            };
             if error.is_some() || verdict.is_some() {
                 break;
             }
@@ -872,6 +1044,7 @@ impl Engine {
             mbp: self.men.iter().map(|m| m.bp).collect(),
             mhalt: self.men.iter().map(|m| u8::from(m.halted)).collect(),
             mwait: self.men.iter().map(|m| m.wait).collect(),
+            malive: self.men.iter().map(|m| u8::from(m.alive)).collect(),
             p_runs: self.pipes.iter().map(|p| p.runs.clone()).collect(),
             p_vals: self
                 .pipes

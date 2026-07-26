@@ -5,6 +5,8 @@ use pyo3::types::PyDict;
 #[derive(Clone, Debug)]
 pub struct Spec {
     pub version: i32,
+    pub semantics_version: i32,
+    pub men_cap: usize,
     pub w: usize,
     pub h: usize,
     pub n_cells: usize,
@@ -77,6 +79,21 @@ impl Spec {
                 "unsupported IR version {version}"
             )));
         }
+        let semantics_version = dict
+            .get_item("semantics_version")?
+            .map(|v| v.extract())
+            .transpose()?
+            .unwrap_or(1);
+        if !(1..=2).contains(&semantics_version) {
+            return Err(PyValueError::new_err(format!(
+                "unsupported semantics version {semantics_version}"
+            )));
+        }
+        let men_cap = dict
+            .get_item("men_cap")?
+            .map(|v| v.extract())
+            .transpose()?
+            .unwrap_or(65_536);
         let w: usize = item(dict, "W")?;
         let h: usize = item(dict, "H")?;
         let n_cells: usize = item(dict, "n_cells")?;
@@ -128,6 +145,8 @@ impl Spec {
 
         Ok(Self {
             version,
+            semantics_version,
+            men_cap,
             w,
             h,
             n_cells,

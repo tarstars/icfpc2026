@@ -8,6 +8,7 @@ import pathlib
 import pytest
 
 from littleman import fastsim, judge, rustexec, sim
+from littleman.split_probe import YMachine
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 PROBLEMS = REPO / "data" / "small" / "problems"
@@ -135,3 +136,125 @@ def test_completed_representative_cases(relative, slug, case_index, cap):
         cap=cap,
         label=f"completed {relative}::{case['name']}",
     )
+
+
+def bordered_room(rows):
+    width = len(rows[0])
+    assert all(len(row) == width for row in rows)
+    return "\n".join(["+" + "-" * width + "+", *("|" + row + "|" for row in rows), "+" + "-" * width + "+"])
+
+
+def official_pair(rows, ticks, *, directions=None, registers=None, halted=None, cap=65_536):
+    machine = sim.Machine.parse(bordered_room(rows))
+    reference = YMachine(rows, cap=cap)
+    directions = directions or [sim.RIGHT] * len(machine.men)
+    registers = registers or [(0, 0, 0)] * len(machine.men)
+    halted = halted or [False] * len(machine.men)
+    assert len(machine.men) == len(reference.men) == len(directions)
+    for index, (direction, values, is_halted) in enumerate(
+        zip(directions, registers, halted)
+    ):
+        machine.men[index].direction = direction
+        machine.men[index].A, machine.men[index].B, machine.men[index].BP = values
+        machine.men[index].halted = is_halted
+        reference.men[index].d = direction
+        reference.men[index].A, reference.men[index].B, reference.men[index].BP = values
+        reference.men[index].halted = is_halted
+    actual = rustexec.run_official(machine, max_ticks=ticks, men_cap=cap)
+    reference.run(ticks)
+    direction_index = {sim.UP: 0, sim.RIGHT: 1, sim.DOWN: 2, sim.LEFT: 3}
+    actual_live = []
+    for cell, direction, a, b, bp, alive in zip(
+        actual["mcell"],
+        actual["mdir"],
+        actual["mA"],
+        actual["mB"],
+        actual["mBP"],
+        actual["malive"],
+    ):
+        if alive:
+            row, column = divmod(actual["cellpos"][cell], len(rows[0]) + 2)
+            actual_live.append((row - 1, column - 1, direction, a, b, bp))
+    reference_live = [
+        (man.r, man.c, direction_index[man.d], man.A, man.B, man.BP)
+        for man in reference.live()
+    ]
+    return actual, reference, actual_live, reference_live
+
+
+def test_split_birth_geometry_registers_and_creation_order():
+    rows = ["       "] * 3 + ["  @Y   "] + ["       "] * 3
+    actual, reference, actual_live, reference_live = official_pair(
+        rows,
+        2,
+        registers=[(-(1 << 63), (1 << 63) - 1, -7)],
+    )
+    assert actual["error"] == reference.error is None
+    assert actual_live == reference_live
+    assert actual_live == [
+        (4, 3, 2, -(1 << 63), (1 << 63) - 1, -7),
+        (2, 3, 0, -(1 << 63), (1 << 63) - 1, -7),
+    ]
+
+
+@pytest.mark.parametrize(
+    "rows,directions,halted",
+    [
+        (["     ", " @ @ ", "     "], [sim.RIGHT, sim.LEFT], [False, False]),
+        (["     ", " @@  ", "     "], [sim.RIGHT, sim.LEFT], [False, False]),
+        (["     ", " @@  ", "     "], [sim.RIGHT, sim.RIGHT], [False, True]),
+    ],
+    ids=["same-cell-arrival", "swap-through", "walking-onto-standing"],
+)
+def test_official_collision_modes_annihilate(rows, directions, halted):
+    actual, reference, actual_live, reference_live = official_pair(
+        rows, 1, directions=directions, halted=halted
+    )
+    assert actual["error"] == reference.error is None
+    assert actual_live == reference_live == []
+
+
+def test_split_wall_birth_is_an_error():
+    rows = [" @Y  ", "     ", "     "]
+    actual, reference, _, _ = official_pair(rows, 2)
+    assert actual["status"] == "error"
+    assert actual["error"] == reference.error == "wall-birth"
+
+
+def test_split_birth_onto_halted_man_kills_both():
+    rows = ["       ", "  @    ", " @Y    ", "       ", "       "]
+    actual, reference, actual_live, reference_live = official_pair(
+        rows,
+        2,
+        directions=[sim.RIGHT, sim.RIGHT],
+        halted=[True, False],
+    )
+    assert actual["error"] == reference.error is None
+    assert actual_live == reference_live
+    assert len(actual_live) == 1
+    assert actual_live[0][:3] == (3, 2, 2)
+
+
+def test_two_splits_spawning_on_same_cell_annihilate_babies():
+    rows = [" @   ", " Y   ", " @Y  ", "     ", "     "]
+    actual, reference, actual_live, reference_live = official_pair(
+        rows,
+        2,
+        directions=[sim.DOWN, sim.RIGHT],
+    )
+    assert actual["error"] == reference.error is None
+    assert actual_live == reference_live
+    assert [(row, column) for row, column, *_ in actual_live] == [(1, 0), (3, 2)]
+
+
+def test_live_man_cap_is_fail_closed():
+    rows = ["       ", "    @  ", " @Y    ", "       ", "       "]
+    actual, reference, _, _ = official_pair(
+        rows,
+        2,
+        directions=[sim.RIGHT, sim.RIGHT],
+        halted=[True, False],
+        cap=2,
+    )
+    assert actual["status"] == "error"
+    assert actual["error"] == reference.error == "men-cap"
