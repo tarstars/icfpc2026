@@ -1,7 +1,7 @@
 # Memory: shared two-word STATION relay
 
 Date: 2026-07-27
-Status: validated local candidate; not submitted
+Status: live, 24/24
 
 ## Result
 
@@ -71,4 +71,11 @@ Validation completed:
 - preflight verdict `READY TO SUBMIT`;
 - Ruff and `git diff --check`.
 
-No contest mutation was performed.
+## Live result
+
+Submission `35dca1c9-840c-4ce4-afe0-58a3e5995bfe` completed at
+`2026-07-26T23:35:29.625Z`: 24/24, 29×30, average ticks
+15,987.083333333334, and score 14,388,375. This is a 6.878% live score
+reduction from `memory_12`; the full response is preserved in
+`submissions/memory/memory_13-submit.json`. The standings snapshot at
+`2026-07-26T23:36:10.399Z` placed wheezards at rank 16, up from rank 17.

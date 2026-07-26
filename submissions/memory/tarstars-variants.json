@@ -58,6 +58,41 @@
         "score": 15451097.291666668,
         "fullResponse": "submissions/memory/memory_12-submit.json"
       }
+    },
+    {
+      "version": "memory_13",
+      "label": "shared two-word READ/WRITE station relay",
+      "parent": "memory_12",
+      "changeType": "protocol-and-geometry",
+      "source": {
+        "path": "submissions/memory/memory_13.man",
+        "generator": "src/littleman/memory_unrolled.py:build_memory_unrolled",
+        "sha256": "032b067b8a506332ccf8a1a775228f64abf49aafe32ea10d2966f8aa25d0ae9e",
+        "bytes": 817,
+        "width": 29,
+        "height": 30,
+        "footprint": 900
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [286, 557, 1302, 989, 1284, 813, 18448],
+        "averageTicks": 3382.714285714286,
+        "score": 3044442.8571428573,
+        "improvementPercent": 4.621389803668525
+      },
+      "liveSubmission": {
+        "id": "35dca1c9-840c-4ce4-afe0-58a3e5995bfe",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 30,
+        "area2": 900,
+        "averageTicks": 15987.083333333334,
+        "score": 14388375,
+        "fullResponse": "submissions/memory/memory_13-submit.json"
+      }
     }
   ]
 }
