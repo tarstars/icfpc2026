@@ -97,6 +97,19 @@ blocks of straight-line operations:
         it is an error, so in a correct machine it is dead code.
 \end{itemize}
 
+A note on the bare heading ops (\op{<}\,\op{\^{}}\,\op{v}\,\op{>})
+that still appear inside blocks: every \emph{conditional} turn is lifted
+into an explicit branch form with absolute targets, and literal values are
+resolved, so heading carries no control-flow meaning in this notation. The
+remaining arrows are semantic no-ops kept deliberately, because one op is
+one tick: a block's length IS its cost, and every walked cell stays
+accounted for. Read as a language they are noise; read as a transcript with
+the geometry erased they are the cost model. A planned normalisation
+replaces each such run with \texttt{(nop $n$)} --- an explicit ``$n$ ticks
+pass here'' --- which keeps the cost model while cleaning the text, and
+doubles as a compile-side directive for timing-sensitive machines, where
+exact delays are today built by hand-counting corridor cells.
+
 Both notations below are generated mechanically from the artifacts by our
 decompiler, and the decompiled form re-validates against the simulator ---
 so what you read is what actually runs.
@@ -108,8 +121,13 @@ so what you read is what actually runs.
 integer $n$, output $1+2+\dots+n$; for $n=0$ output $0$.} Six public test
 cases, one number each. Scoring is footprint\,$\times$\,ticks.
 
-\textbf{Our machine} is \texttt{submissions/triangle/triangle\_02.man} ---
-$9\times 9$, 11 ticks, score $81\times 11=891$, currently rank 1 of 239.
+\textbf{Two of our machines} appear below. \texttt{triangle\_02.man}
+($9\times 9$, 11 ticks, score 891) is the teaching machine: two rooms, two
+men, three pipes, visible blocking. The actual record holder --- rank 1 of
+about 240 --- is its smaller sibling \texttt{triangle\_03.man}
+($8\times 8$, 13 ticks, score $64\times13=\textbf{832}$), explained in
+section~\ref{sec:tri3}: it wins with MORE ticks by exploiting the squared
+footprint, and it ends by deliberately sacrificing its man.
 
 \subsection{The program, in both notations}
 
@@ -241,6 +259,73 @@ Score: bounding box $9\times9\Rightarrow 81$; ticks 11; $81\times11=891$.
 The lesson that generalises: \emph{overlap work across men, park constants
 in \op{B} before blocking, and remember the run is only as long as the judge
 needs it to be.}
+
+\subsection{The record holder: one room, no halt, a sacrificed man}
+\label{sec:tri3}
+
+\texttt{triangle\_03.man} beats the machine above $891\to 832$ while
+taking \emph{more} ticks (13 vs 11) --- because the score squares the
+bounding box: $64\times13=832 < 81\times11=891$. Losing one column and one
+row was worth two extra ticks. Its other trick is more radical: it contains
+\textbf{no \op{H} at all}.
+
+\begin{verbatim}
+col  01234567
+  0  +------+
+  1  |@rM*+v|
+  2  |     M|
+  3  | s}W1<|
+  4  +------+
+  5  ^<+-+-+v
+  6    |I|O|<
+  7    +-+-+
+\end{verbatim}
+
+\begin{verbatim}
+(mark L1_1_E) @ r M * + v M < 1 W } s (goto __wall)
+(mark __wall) (wall)
+\end{verbatim}
+
+The block-graph ends in \texttt{(goto \_\_wall) (wall)}: after \op{s},
+the man walks over a blank cell and \emph{into the west wall}. In the raw
+simulator that run's status is literally \texttt{error} --- and the case
+still passes, because the answer reaches \texttt{O} on the very tick of the
+fatal step, and the server accepts a run whose final tick both delivers the
+last output and steps into a wall (a behaviour we probed and encoded in
+\texttt{server\_compat} as final-wall-step semantics). The \op{H} cell,
+and the room width to reach it, are simply deleted.
+
+Trace for $n=3$ (single man; same column conventions as above):
+
+\begin{center}
+\small
+\begin{tabular}{r|llrrl}
+tick & at & on & A & B & \\ \hline
+1 & (1,2) & \texttt{r} & 0 & 0 & \\
+2 & (1,3) & \texttt{M} & 3 & 0 & \\
+3 & (1,4) & \texttt{*} & 3 & 3 & \\
+4 & (1,5) & \texttt{+} & 9 & 3 & \\
+5 & (1,6) & \texttt{v} & 12 & 3 & \\
+6 & (2,6) & \texttt{M} & 12 & 3 & \\
+7 & (3,6) & \texttt{<} & 12 & 12 & \\
+8 & (3,5) & \texttt{1} & 12 & 12 & \\
+9 & (3,4) & \texttt{W} & 1 & 12 & \\
+10 & (3,3) & \texttt{\}} & 12 & 1 & \\
+11 & (3,2) & \texttt{s} & 6 & 1 & \\
+12 & (3,1) & \texttt{ } & 6 & 1 & \\
+13 & (3,1) & \texttt{ } & 6 & 1 & \\
+\end{tabular}
+\end{center}
+
+Ticks 1--5 are the same $n^2+n$ prologue as before, ending with \op{v}
+into row 2, whose lone \op{M} parks $n^2+n$ in \op{B} in passing; row 3
+walked westward reads \op{<\,1\,W\,\}\,s}: load 1, swap, halve, send.
+Ticks 12--13: the man crosses the blank cell and dies on the wall exactly
+as 6 arrives at \texttt{O}. Three lessons: \emph{the footprint is squared,
+so trade ticks for cells; a man you no longer need costs nothing to kill;
+and the scoring clock, not the man's fate, decides the run} --- but note
+the sibling \texttt{triangle\_04} fails 0/6 from getting exactly this
+timing wrong, so the sacrifice must be \emph{proven}, not eyeballed.
 
 \clearpage
 \section{Memory}
