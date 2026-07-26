@@ -33,7 +33,7 @@ verified or submitted artifact depends on it.
 | Deterministic multicore | **proved** | full 14-case batch equal at one/eight workers; 18.56 s versus 4.93 s |
 | Standalone CLI and caching | **proved** | pure-Rust Rayon CLI, compressed versioned IR, one/N worker and full-frame LLM tests |
 | At least three live score improvements | **proved, five** | refreshed terminal API results listed below |
-| All valuable agent work pushed | **proved** | Rust, Claude, and integration branches are clean and pushed |
+| All valuable goal work pushed | **proved** | LLM, Rust, LLLM integration, Claude, and final integration commits are reachable on `origin`; local-only files are classified below |
 | Independent final review | **proved** | Claude approved integration and Rust, then Codex closed the sole fallback finding in `a899e03` |
 | Promotion to `main` | **pending final fast-forward** | reviewed integration branch is ready; local dirty `main` remains untouched |
 
@@ -126,6 +126,27 @@ terminal 20/20 at 31×31, with no error or load error.
 - Seven Claude LLM artifacts were converted to the repository's existing Git
   LFS rule; `git lfs status` was inspected before staging and the objects were
   pushed.
+
+## Worktree preservation audit
+
+All Codex goal branches are clean and pushed. The formerly ahead
+`agent/codex-lllm-integration` tracking branch was pushed through `1f381e1`;
+those commits were already ancestors of this integration candidate. `git lfs
+fsck` reports `Git LFS fsck OK`.
+
+The old user-owned `main` worktree remains 186 commits behind with four
+pre-existing untracked files; it was not modified or used as release state.
+Claude's worktree has:
+
+- an inbox-watermark edit;
+- a regenerated `llm3_00.man` corresponding to the pushed but explicitly
+  incomplete `103cb8d` STEP3 checkpoint;
+- an untracked `sort_kring.py` skeleton with an empty pump body, superseded by
+  the recorded negative k-ring analysis.
+
+None is a completed, accepted, or otherwise irreproducible goal result.
+Claude's source checkpoint is pushed on `origin/agent/claude`; the stable
+release candidate intentionally excludes it.
 
 ## Remaining actions
 
