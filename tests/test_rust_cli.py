@@ -11,7 +11,7 @@ from littleman import judge, rustexec
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
 
-def run_cli(request, ir_path=None):
+def cli_command(ir_path=None):
     command = [
         "cargo",
         "run",
@@ -27,8 +27,12 @@ def run_cli(request, ir_path=None):
     ]
     if ir_path is not None:
         command.extend(["--", "--ir", str(ir_path)])
+    return command
+
+
+def run_cli(request, ir_path=None):
     process = subprocess.run(
-        command,
+        cli_command(ir_path),
         cwd=REPO,
         input=json.dumps(request),
         text=True,
@@ -87,3 +91,69 @@ def test_cli_llm_frame_case_matches_python_binding(tmp_path):
     assert actual["output"] == list(expected.output)
     assert actual["output_ticks"] == list(expected.output_ticks)
     assert actual["frame_ticks"] == list(expected.frame_ticks)
+
+
+def test_cli_round_controller_edge_shapes_match_python_binding(tmp_path):
+    text = (REPO / "submissions/max-element/max_00.man").read_text()
+    problem = json.loads((REPO / "data/small/problems/max-element.json").read_text())
+    first = judge.normalize_case(problem["publicTestData"][0])
+    second = judge.normalize_case(problem["publicTestData"][1])
+    wrong = [{**first[0], "out": [int(first[0]["out"][0]) + 1]}]
+    edge_cases = [
+        [],
+        wrong,
+        [{"in": [], "out": [0]}],
+        [{"in": first[0]["in"], "frames": [["0" * 16] * 16]}],
+        first + second,
+    ]
+    compiled = rustexec.CompiledMachine(text)
+    expected = [
+        compiled.run_rounds(index, rounds, 100_000)
+        for index, rounds in enumerate(edge_cases)
+    ]
+    ir_path = tmp_path / "max-element.lmir.zst"
+    ir_path.write_bytes(compiled.encoded_ir())
+    request = compiled.cli_request(
+        edge_cases,
+        max_ticks=100_000,
+        workers=4,
+        include_spec=False,
+    )
+    actual = run_cli(request, ir_path)
+    assert [result["status"] for result in actual] == [
+        result.status for result in expected
+    ]
+    assert [result["ticks"] for result in actual] == [
+        result.ticks for result in expected
+    ]
+    assert [result["judged_ticks"] for result in actual] == [
+        result.judged_ticks for result in expected
+    ]
+    assert [result["output"] for result in actual] == [
+        list(result.output) for result in expected
+    ]
+    assert [result["status"] for result in actual] == [
+        "passed",
+        "failed",
+        "tick-cap",
+        "failed",
+        "halted",
+    ]
+
+
+def test_cli_rejects_corrupt_compressed_ir(tmp_path):
+    text = (REPO / "submissions/max-element/max_00.man").read_text()
+    compiled = rustexec.CompiledMachine(text)
+    ir_path = tmp_path / "corrupt.lmir.zst"
+    ir_path.write_bytes(b"LMIR\x01Znot-zstd")
+    request = compiled.cli_request([], include_spec=False)
+    process = subprocess.run(
+        cli_command(ir_path),
+        cwd=REPO,
+        input=json.dumps(request),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert process.returncode == 2
+    assert "invalid cached IR" in process.stderr

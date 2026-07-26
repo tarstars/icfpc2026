@@ -262,13 +262,14 @@ def pytest_configure(config):
     # executor because the native loop never calls the Python method. Import
     # both modules before redirecting ``sim.Machine`` and preserve their
     # reference-class bindings.
-    from . import alexey_walljudge, server_compat, sim
+    from . import alexey_walljudge, judge, server_compat, sim
 
     protected = {alexey_walljudge.__name__, server_compat.__name__}
 
     if _rust is None:
         raise RuntimeError("littleman Rust pytest plugin requires the native extension")
     sim.Machine = Machine
+    judge.Machine = Machine
     for name, module in list(sys.modules.items()):
         if (
             name not in protected

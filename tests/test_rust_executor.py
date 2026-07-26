@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+from copy import deepcopy
 
 import pytest
 
@@ -87,6 +88,8 @@ def assert_same(text, *, rounds=None, inputs=None, cap=30_000, label="case"):
 def test_native_backend_is_loaded():
     assert rustexec.HAVE_RUST
     assert rustexec.backend() == "rust"
+    if sim.Machine is rustexec.Machine:
+        assert judge.Machine is rustexec.Machine
 
 
 def test_ir_version_is_fail_closed():
@@ -97,6 +100,35 @@ def test_ir_version_is_fail_closed():
     spec["ir_version"] = 2
     with pytest.raises(ValueError, match="unsupported IR version 2"):
         rustexec._rust.run(spec, None, None, [], 1)
+
+
+def test_malformed_ir_indices_and_shapes_fail_closed():
+    machine = sim.Machine.parse(
+        (REPO / "submissions/max-element/max_00.man").read_text()
+    )
+    base = fastsim.build_spec(fastsim.compile_machine(machine))
+    malformed = []
+    spec = deepcopy(base)
+    spec["mcell"][0] = spec["n_cells"]
+    malformed.append(spec)
+    spec = deepcopy(base)
+    spec["step"][0][0] = spec["n_cells"]
+    malformed.append(spec)
+    spec = deepcopy(base)
+    spec["room_out_off"][-1] += 1
+    malformed.append(spec)
+    spec = deepcopy(base)
+    spec["p_runs"][0] = [0]
+    malformed.append(spec)
+    spec = deepcopy(base)
+    spec["input_pipe"] = len(spec["p_len"])
+    malformed.append(spec)
+    spec = deepcopy(base)
+    spec["cellpos"][0] = spec["W"] * spec["H"]
+    malformed.append(spec)
+    for invalid in malformed:
+        with pytest.raises(ValueError):
+            rustexec._rust.run(invalid, None, None, [], 1)
 
 
 def test_cached_parallel_batch_is_deterministic():

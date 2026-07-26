@@ -1,3 +1,4 @@
+use bincode::Options;
 #[cfg(feature = "python")]
 use pyo3::exceptions::{PyKeyError, PyValueError};
 #[cfg(feature = "python")]
@@ -5,8 +6,10 @@ use pyo3::prelude::*;
 #[cfg(feature = "python")]
 use pyo3::types::PyDict;
 use serde::{Deserialize, Serialize};
+use std::io::Read;
 
 const IR_MAGIC: &[u8; 6] = b"LMIR\x01Z";
+const MAX_DECODED_IR_BYTES: usize = 256 * 1024 * 1024;
 
 fn default_version() -> i32 {
     1
@@ -78,6 +81,19 @@ impl Spec {
                 self.semantics_version
             ));
         }
+        if self.men_cap == 0 || self.men_cap > 65_536 {
+            return Err(format!("men_cap {} is outside 1..=65536", self.men_cap));
+        }
+        let area = self
+            .w
+            .checked_mul(self.h)
+            .ok_or_else(|| "machine dimensions overflow usize".to_owned())?;
+        if self.w == 0 || self.h == 0 {
+            return Err("machine dimensions must be nonzero".into());
+        }
+        if self.n_cells > i32::MAX as usize {
+            return Err(format!("n_cells {} exceeds i32::MAX", self.n_cells));
+        }
         for (name, len) in [
             ("cellpos", self.cellpos.len()),
             ("code[0]", self.code[0].len()),
@@ -100,6 +116,23 @@ impl Spec {
                 ));
             }
         }
+        for (cell, &position) in self.cellpos.iter().enumerate() {
+            if position >= area {
+                return Err(format!(
+                    "cellpos[{cell}]={position} is outside machine area {area}"
+                ));
+            }
+        }
+        for direction in 0..4 {
+            for (cell, &next) in self.step[direction].iter().enumerate() {
+                if next < -1 || next >= self.n_cells as i32 {
+                    return Err(format!(
+                        "step[{direction}][{cell}]={next} is outside -1..{}",
+                        self.n_cells
+                    ));
+                }
+            }
+        }
         let n_men = self.mcell.len();
         for (name, len) in [
             ("mdir", self.mdir.len()),
@@ -113,7 +146,35 @@ impl Spec {
                 return Err(format!("{name} has length {len}, expected {n_men}"));
             }
         }
+        let offset_len = self.room_out_off.len();
+        if offset_len < 2
+            || self.room_in_off.len() != offset_len
+            || self.room_ins_off.len() != offset_len
+        {
+            return Err("room offset arrays must have one common length >= 2".into());
+        }
+        let n_rooms = offset_len - 1;
+        for man in 0..n_men {
+            if self.mcell[man] >= self.n_cells {
+                return Err(format!("mcell[{man}] is outside the cell table"));
+            }
+            if self.mdir[man] >= 4 {
+                return Err(format!("mdir[{man}]={} is outside 0..4", self.mdir[man]));
+            }
+            if self.mroom[man] >= n_rooms {
+                return Err(format!(
+                    "mroom[{man}]={} is outside 0..{n_rooms}",
+                    self.mroom[man]
+                ));
+            }
+            if self.mhalt[man] > 1 {
+                return Err(format!("mhalt[{man}]={} is not boolean", self.mhalt[man]));
+            }
+        }
         let n_pipes = self.p_len.len();
+        if n_pipes > i32::MAX as usize {
+            return Err(format!("pipe count {n_pipes} exceeds i32::MAX"));
+        }
         for (name, len) in [
             ("p_runs", self.p_runs.len()),
             ("p_vals", self.p_vals.len()),
@@ -125,12 +186,121 @@ impl Spec {
                 return Err(format!("{name} has length {len}, expected {n_pipes}"));
             }
         }
+        for pipe in 0..n_pipes {
+            let length = self.p_len[pipe];
+            if length == 0 || length > i32::MAX as usize {
+                return Err(format!("p_len[{pipe}]={length} is outside 1..=i32::MAX"));
+            }
+            if self.p_turn[pipe] >= 4 {
+                return Err(format!(
+                    "p_turn[{pipe}]={} is outside 0..4",
+                    self.p_turn[pipe]
+                ));
+            }
+            if self.p_src_pos[pipe] >= area || self.p_dst_pos[pipe] >= area {
+                return Err(format!(
+                    "pipe {pipe} endpoint is outside machine area {area}"
+                ));
+            }
+            let runs = &self.p_runs[pipe];
+            if runs.len() % 2 != 0 {
+                return Err(format!("p_runs[{pipe}] has odd length {}", runs.len()));
+            }
+            let mut values = 0usize;
+            let mut previous_end = -1;
+            for pair in runs.chunks_exact(2) {
+                let (start, end) = (pair[0], pair[1]);
+                if start < 0 || start > end || end >= length as i32 {
+                    return Err(format!(
+                        "p_runs[{pipe}] contains invalid interval {start}..{end}"
+                    ));
+                }
+                if start <= previous_end {
+                    return Err(format!("p_runs[{pipe}] intervals overlap or regress"));
+                }
+                values = values
+                    .checked_add((end - start + 1) as usize)
+                    .ok_or_else(|| format!("p_runs[{pipe}] value count overflows"))?;
+                previous_end = end;
+            }
+            if values != self.p_vals[pipe].len() {
+                return Err(format!(
+                    "p_vals[{pipe}] has length {}, expected {values} from runs",
+                    self.p_vals[pipe].len()
+                ));
+            }
+        }
+        for (name, offsets, indices) in [
+            ("room_out", &self.room_out_off, &self.room_out_idx),
+            ("room_in", &self.room_in_off, &self.room_in_idx),
+            ("room_ins", &self.room_ins_off, &self.room_ins_idx),
+        ] {
+            if offsets[0] != 0 || offsets[offsets.len() - 1] != indices.len() {
+                return Err(format!("{name} offsets do not span the index array"));
+            }
+            if offsets.windows(2).any(|pair| pair[0] > pair[1])
+                || offsets.iter().any(|&offset| offset > indices.len())
+            {
+                return Err(format!("{name} offsets are not monotone and in bounds"));
+            }
+            if indices.iter().any(|&pipe| pipe >= n_pipes) {
+                return Err(format!("{name} contains an out-of-range pipe index"));
+            }
+        }
+        for (name, pipe) in [
+            ("input_pipe", self.input_pipe),
+            ("output_pipe", self.output_pipe),
+        ] {
+            if pipe < -1 || pipe >= n_pipes as i32 {
+                return Err(format!("{name}={pipe} is outside -1..{n_pipes}"));
+            }
+        }
+        if self.disp_pipes.iter().any(|&pipe| pipe >= n_pipes) {
+            return Err("disp_pipes contains an out-of-range pipe index".into());
+        }
+        if self.disp_cur.len() != self.disp.len() || self.disp_next.len() != self.disp.len() {
+            return Err("display state arrays do not match display count".into());
+        }
+        for (display, fields) in self.disp.iter().enumerate() {
+            if fields.len() != 6 {
+                return Err(format!(
+                    "disp[{display}] has {} fields, expected 6",
+                    fields.len()
+                ));
+            }
+            for (side, &pipe) in fields[..3].iter().enumerate() {
+                if pipe < -1 || pipe >= n_pipes as i32 {
+                    return Err(format!("disp[{display}][{side}] has invalid pipe {pipe}"));
+                }
+            }
+            let width = usize::try_from(fields[3])
+                .map_err(|_| format!("disp[{display}] has negative width"))?;
+            let height = usize::try_from(fields[4])
+                .map_err(|_| format!("disp[{display}] has negative height"))?;
+            let pixels = width
+                .checked_mul(height)
+                .ok_or_else(|| format!("disp[{display}] dimensions overflow"))?;
+            let cursor = usize::try_from(fields[5])
+                .map_err(|_| format!("disp[{display}] has negative cursor"))?;
+            if width == 0 || height == 0 || cursor >= pixels {
+                return Err(format!("disp[{display}] has invalid dimensions/cursor"));
+            }
+            if self.disp_cur[display].len() != pixels || self.disp_next[display].len() != pixels {
+                return Err(format!("disp[{display}] buffers do not match dimensions"));
+            }
+        }
         Ok(())
     }
 
     pub fn encode_compressed(&self) -> Result<Vec<u8>, String> {
         self.validate()?;
         let raw = bincode::serialize(self).map_err(|error| error.to_string())?;
+        if raw.len() > MAX_DECODED_IR_BYTES {
+            return Err(format!(
+                "encoded IR size {} exceeds limit {MAX_DECODED_IR_BYTES}",
+                raw.len()
+            ));
+        }
         let compressed = zstd::bulk::compress(&raw, 3).map_err(|error| error.to_string())?;
         let mut output = Vec::with_capacity(IR_MAGIC.len() + 8 + compressed.len());
         output.extend_from_slice(IR_MAGIC);
@@ -147,7 +317,20 @@ impl Spec {
         let raw_len =
             u64::from_le_bytes(data[length_offset..length_offset + 8].try_into().unwrap());
         let raw_len = usize::try_from(raw_len).map_err(|_| "IR size does not fit this platform")?;
-        let raw = zstd::bulk::decompress(&data[length_offset + 8..], raw_len)
+        if raw_len > MAX_DECODED_IR_BYTES {
+            return Err(format!(
+                "decoded IR size {raw_len} exceeds limit {MAX_DECODED_IR_BYTES}"
+            ));
+        }
+        let mut decoder = zstd::stream::read::Decoder::new(&data[length_offset + 8..])
+            .map_err(|error| error.to_string())?;
+        decoder
+            .window_log_max(28)
+            .map_err(|error| error.to_string())?;
+        let mut raw = Vec::with_capacity(raw_len.min(1024 * 1024));
+        decoder
+            .take(raw_len as u64 + 1)
+            .read_to_end(&mut raw)
             .map_err(|error| error.to_string())?;
         if raw.len() != raw_len {
             return Err(format!(
@@ -155,9 +338,38 @@ impl Spec {
                 raw.len()
             ));
         }
-        let spec: Self = bincode::deserialize(&raw).map_err(|error| error.to_string())?;
+        let spec: Self = bincode::DefaultOptions::new()
+            .with_fixint_encoding()
+            .allow_trailing_bytes()
+            .with_limit(raw_len as u64)
+            .deserialize(&raw)
+            .map_err(|error| error.to_string())?;
         spec.validate()?;
         Ok(spec)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Spec, IR_MAGIC, MAX_DECODED_IR_BYTES};
+
+    fn header(length: u64) -> Vec<u8> {
+        let mut data = IR_MAGIC.to_vec();
+        data.extend_from_slice(&length.to_le_bytes());
+        data
+    }
+
+    #[test]
+    fn oversized_cache_header_fails_before_decompression() {
+        let error = Spec::decode_compressed(&header(MAX_DECODED_IR_BYTES as u64 + 1)).unwrap_err();
+        assert!(error.contains("exceeds limit"));
+    }
+
+    #[test]
+    fn truncated_cache_payload_is_an_error() {
+        let mut data = header(10);
+        data.extend_from_slice(b"not-zstd");
+        assert!(Spec::decode_compressed(&data).is_err());
     }
 }
 
@@ -267,7 +479,7 @@ impl Spec {
             check_len(name, len, n_pipes)?;
         }
 
-        Ok(Self {
+        let spec = Self {
             version,
             semantics_version,
             men_cap,
@@ -303,6 +515,8 @@ impl Spec {
             disp: item(dict, "disp")?,
             disp_cur: item(dict, "disp_cur")?,
             disp_next: item(dict, "disp_next")?,
-        })
+        };
+        spec.validate().map_err(PyValueError::new_err)?;
+        Ok(spec)
     }
 }
