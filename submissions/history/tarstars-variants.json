@@ -69,7 +69,18 @@
         ],
         "preflight": "READY TO SUBMIT"
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "5e888ecc-91dc-4334-9706-a82eac255a71",
+        "status": "done",
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "width": 82,
+        "height": 82,
+        "area2": 6724,
+        "averageTicks": null,
+        "score": 6724,
+        "fullResponse": "submissions/history/history_05-submit.json"
+      }
     }
   ]
 }

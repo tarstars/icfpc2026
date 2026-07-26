@@ -4,7 +4,7 @@ Date: 2026-07-27
 
 ## Result
 
-`history_05` is a reproducible, unsubmitted 82×82 successor to the accepted
+`history_05` is a reproducible, live 82×82 successor to the accepted
 83×83 `history_04`. It emits the exact canonical 2,810-byte output, passes
 the strict parser and server-layout gates, and has footprint score 6,724.
 This is 165 cells (2.40%) below the live score of 6,889.
@@ -18,7 +18,12 @@ This is 165 cells (2.40%) below the live score of 6,889.
 - rooms/pipes/men: 6/5/5
 - pipe lengths: `[2, 2, 2, 2, 34]`
 
-No contest submission or merge was performed in this lane.
+## Live result
+
+Submission `5e888ecc-91dc-4334-9706-a82eac255a71` completed at
+`2026-07-26T23:42:11.673Z`: 1/1, 82×82, and score 6,724. This is a
+2.395% live footprint reduction from `history_04`. The exact API response
+is preserved in `submissions/history/history_05-submit.json`.
 
 ## Joint codec and slot search
 
