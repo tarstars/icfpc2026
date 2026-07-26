@@ -1964,3 +1964,46 @@ wall.
 
 `submissions/brackets/brackets_05.man`. Expected live: 836,345 x 0.944 ~
 **789,000** (the tick average is unchanged — this is pure footprint).
+
+### brackets_06: the shift ladder — 35x30 -> 31x29 (fp 1225 -> 961)
+
+Continuing after brackets_05 (live 789,237, exactly the predicted 789k).
+The blocker was named in the step-2/3 failure above: the return pipe needs a
+climb column and R2's right wall is where it would be. So move R2.
+
+**The step, generalised.** Shift R2 (and the O room with it) `k` columns
+left, then fold the return pipe into the freed column. R2 has two incoming
+and two outgoing pipes, so all four attachment cells must keep their offset
+*inside R2* or the nearest-pipe resolution changes. R1 has a single outgoing
+pipe, so that one's source may move freely — which is the degree of freedom
+that makes the whole thing work.
+
+| shift | box | fp | local |
+|---|---|---|---|
+| 0 (brackets_05) | 34x29 | 1156 | 455,336 |
+| 1 | 33x29 | 1089 | 429,550 |
+| 2 | 32x29 | 1024 | 404,935 |
+| 3 | **31x29** | **961** | **380,983** |
+| 4 | 35x29 | 1225 | 487,142 (worse: R3's pipe terminal needs col 0, so the box grows west) |
+
+Three traps paid on the way, all recorded so the next re-lay is cheaper:
+
+1. **Erase pipes before moving a room.** The R3->R2 pipe terminates on a
+   cell the moved room lands on; erasing afterwards deletes a wall glyph and
+   the program stops parsing.
+2. **Two roof pipes jogging in the same direction collide.** R1->R2 and
+   R2->R1 both attach to R2's roof and both must reach R1's floor; sending
+   one west along row 9 and the other east along row 8 keeps them apart at
+   every shift.
+3. `route_safe` refuses **every** arrowhead beside a room, which is stricter
+   than the rule. An arrowhead there is only a phantom pipe start if it
+   points AWAY from that room, so the two short jogs are hand-placed and
+   audited by hand.
+
+Verified: 9/9 public, 250 fuzz strings (balanced generator + uniform random,
+lengths 0-64), and the edges — depth-32 nests of each type, 64 openers, lone
+closer, empty string, `([)]`, full-length balanced, balanced-then-unclosed.
+
+`submissions/brackets/brackets_06.man`. Expected live ~ 789,237 x (961/1156)
+x (380,983/455,336 / (961/1156)) — the tick average is unchanged again, so
+simply **~656,000**.

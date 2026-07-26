@@ -109,3 +109,77 @@ Big pipe folded off column 35 with its 69 cells intact (bounds max col 34). 34x2
      |^ <           |
      +--------------+
 ```
+
+## step4
+
+Middle room shifted 1 column(s) left; its four pipes re-laid keeping their attachment offsets inside the room.
+
+```
+
+     v----------------------------<
+ +--------------------+           |
+ |@ssv      <         |           |
+ |>  >rXrsrs^         |           |
+ |     >MrW+++sv      |      +-+  |
+ |^  ^    s+1Mr<    <<|      |O|  |
+ +--------------------+      +-+  |
+        >^v                  >^   |
+        ^ v                  ^    |
+    +---------------------------+ |
+    |         >rM1+ sH          | |
+   >|>@rXrsrsv   >+MrXrM1+sH    | |
+   ||   >    M4W-XrX  sH        | |
+   ||^ s+1MrsWXW/W3M-<          | |
+   ||^       <     >rM1+sH      | |
+   ||                           | |
+   |+---------------------------+ |
+   |                              |
+   | +--------------+ >-----------^
+   | |H  s4    s <  | |
+   | |v  s  0  s<   | ^-<
+   | |>qd0       ^  | >-^
+   ^<|  >rbM5W} x   |>^
+     |          ]   |
+     |^  s  0  sxM0v|  +-+
+     |^  s    Ws   <|<<|I|
+     |@rv           |  +-+
+     |^ <           |
+     +--------------+
+```
+
+## step5
+
+Shift ladder: middle room 3 columns left (with O), roof pipes jogged on separate rows, return pipe folded to col 31 keeping all 69 cells. 31x29, fp 961, local 380,983.
+
+```
+
+     v-------------------------<
+ +--------------------+        |
+ |@ssv      <         |        |
+ |>  >rXrsrs^         |        |
+ |     >MrW+++sv      |   +-+  |
+ |^  ^    s+1Mr<    <<|   |O|  |
+ +--------------------+   +-+  |
+      >--^ v               ^   |
+      ^ v--<               ^   |
+  +---------------------------+|
+  |         >rM1+ sH          ||
+ >|>@rXrsrsv   >+MrXrM1+sH    ||
+ ||   >    M4W-XrX  sH        ||
+ ||^ s+1MrsWXW/W3M-<          ||
+ ||^       <     >rM1+sH      ||
+ ||                           ||
+ |+---------------------------+|
+ |                             |
+ ^-< +--------------+ >--------^
+   | |H  s4    s <  | |
+   | |v  s  0  s<   | ^-<
+   | |>qd0       ^  | >v^-<
+   ^<|  >rbM5W} x   |>^>--^
+     |          ]   |
+     |^  s  0  sxM0v|  +-+
+     |^  s    Ws   <|<<|I|
+     |@rv           |  +-+
+     |^ <           |
+     +--------------+
+```
