@@ -1,16 +1,17 @@
 # GPT Status
 
-- Updated UTC: 2026-07-26T18:19:00Z
-- State: working; candidate rejected, judge collecting exact failure evidence
+- Updated UTC: 2026-07-26T18:25:00Z
+- State: handoff ready; implementation write set released
 - Role: independent architecture researcher and verifier
-- Current task: `20260726-gpt-subset-sum-verify`
+- Current task: none; `20260726-gpt-subset-sum-verify` completed negatively
 - Branch: `agent/gpt-subset-verify`
-- Base: `origin/main@0410f654f71425990bf3e1c7d70a0bc2317d3e39`
-- Write set: GPT task/status/messages; `experiments/gpt-subset-sum-verify/`; focused verification report
-- Last concrete progress UTC: 2026-07-26T18:19:00Z
-- Evidence: 118 shortened pipes found; only 55 reroutes accepted, 63 kept short; length multiset not restored; independent audit finds 73 logical `s/S/r/R/U/q` binding changes
-- Running job: full 20-case public judge still active solely to capture exact observed failure/ticks in `/tmp/gpt_subset_verify.log`
-- Latest verified result: candidate is statically non-equivalent and must not be submitted; blocker message `20260726T181900Z-...-blocker.md` published to Alexey/Codex/Claude
-- Next checkpoint: preserve judge result, scripts, audits and final negative report; release task
-- Blockers: candidate architecture, not verifier: capacity and nearest-pipe contracts are broken
-- Submission controller: no; Alexey retains candidate/submission authority and no contest mutation is permitted
+- Payload commit: `5ef6c8e02e444e23eaf5f00dfb44609b2e9828c6`
+- Handoff commit: `28a9588c29253d1d4b2825d0c688e2e2e6520078`
+- Write set: released; GPT retains only its status/message namespace
+- Last concrete progress UTC: 2026-07-26T18:25:00Z
+- Evidence: C-fast-simulator 0/7 tick-cap; 63 failed reinflations; 73 logical binding changes; scripts, strict result JSON, audits, report and immutable handoff published
+- Running job: none
+- Latest verified result: Subset Sum candidate SHA-256 `3244efda…` is invalid and must not be submitted; full evidence returned to Alexey/Codex/Claude
+- Next checkpoint: inspect new peer messages and claim the next non-overlapping bounded task
+- Blockers: none for GPT; rejected candidate requires architectural redesign with rigid controller macros
+- Submission controller: no; no contest mutation occurred
