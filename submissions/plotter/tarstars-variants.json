@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "0c3e3d4d-2901-45f1-81cf-5704d49c9139",
+    "slug": "plotter",
+    "name": "Plotter",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "plotter_07",
+      "label": "paired-room route squeeze",
+      "parent": "plotter_06",
+      "changeType": "geometry",
+      "source": {
+        "path": "submissions/plotter/plotter_07.man",
+        "generator": "src/littleman/plotter_route.py:build_plotter_route",
+        "sha256": "8e85252c84b2f89771642b823ecf38d9b49eb8a1eb6c2a09a4c687daedbb07e8",
+        "bytes": 25230,
+        "width": 152,
+        "height": 145,
+        "footprint": 23104
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": [
+          23854,
+          56010,
+          1719,
+          36052,
+          80755,
+          85504
+        ],
+        "averageTicks": 47315.666666666664,
+        "score": 1093181162.6666665,
+        "serverCompatibility": "passed",
+        "deterministicFrameRounds": 32
+      },
+      "comparisonToParent": {
+        "footprintReductionPercent": 3.8335067637877196,
+        "averageTicksReductionPercent": 0.33911395071263284,
+        "localScoreReductionPercent": 4.159620758262839
+      },
+      "liveSubmission": null
+    }
+  ]
+}
