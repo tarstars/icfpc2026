@@ -15,7 +15,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("submissions/llm/llm_codex_00.man"),
+        default=Path("submissions/llm/llm_codex_01.man"),
     )
     args = parser.parse_args()
     text = build_llm_machine()
