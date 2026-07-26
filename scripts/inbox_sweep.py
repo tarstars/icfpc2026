@@ -56,7 +56,11 @@ def sweep() -> list[dict]:
                          "coordination/messages/claude/").splitlines():
             ours += _git("show", f"{ref}:{path}")
     for msg in seen.values():
-        msg["acked"] = (not msg["ack_required"]) or (msg["name"] in ours)
+        # Match by the UTC timestamp stem, not the full filename: it is unique
+        # per message, and acks legitimately abbreviate long names (an ack that
+        # wrote "20260725T141300Z-...-review.md" must still count).
+        stem = msg["name"].split("-", 1)[0]
+        msg["acked"] = (not msg["ack_required"]) or (stem in ours)
     return sorted(seen.values(), key=lambda m: m["name"])
 
 
