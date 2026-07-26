@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "3ef9ec95-03ff-4825-b42d-dbad3ee54af0",
+    "slug": "history-lesson",
+    "name": "History Lesson",
+    "scoring": "footprint"
+  },
+  "liveBaseline": {
+    "version": "history_04",
+    "submissionId": "1cd10b25-d908-45b4-a210-dd316adf5e09",
+    "status": "done",
+    "casesPassed": 1,
+    "casesTotal": 1,
+    "width": 83,
+    "height": 83,
+    "score": 6889,
+    "standingsUpdatedAt": "2026-07-26T23:28:10.280Z",
+    "tiedRank": 20,
+    "rowCount": 151
+  },
+  "variants": [
+    {
+      "version": "history_05",
+      "label": "82-square joint codec and lookup-slot archive",
+      "parent": "history_04",
+      "architecture": "radix-128 main tape, exact-DP 56-token dictionary, six exactly filled width-paired lookup rows, selector, and shared radix-128 splitter",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 128,
+        "dictionaryTokens": 56,
+        "maximumTokenLength": 5,
+        "symbols": 1763,
+        "packedWords": 196,
+        "lookupValues": 128,
+        "lookupRowPairPayloads": [
+          76,
+          76,
+          76,
+          76,
+          76,
+          76
+        ],
+        "mainRows": 66,
+        "wordsPerRow": 3,
+        "decimalFieldWidth": 19
+      },
+      "source": {
+        "path": "submissions/history/history_05.man",
+        "generator": "src/littleman/history_82.py:build_history_82",
+        "sha256": "2c949d5b456dda5c72bd07970b4b0ca017cd2c01f8f72a32ee59189876a32d39",
+        "bytes": 6736,
+        "width": 82,
+        "height": 82,
+        "footprint": 6724
+      },
+      "localValidation": {
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "ticks": 1701676,
+        "score": 6724,
+        "serverCompatible": true,
+        "pipeLengths": [
+          2,
+          2,
+          2,
+          2,
+          34
+        ],
+        "preflight": "READY TO SUBMIT"
+      },
+      "liveSubmission": null
+    }
+  ]
+}
