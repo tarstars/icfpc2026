@@ -31,6 +31,11 @@ State budget for the machine (constraints: <=3 rooms/men, <=2 pipes,
 
 from __future__ import annotations
 
+from .lllm_scan import MEN, WALL_BIT, scan_reference_v2
+
+FIELD = 13       # world packing: 4 cell tokens per word (CLASSIFY layout)
+CELL_FIELD = 21  # descriptor packing: 3 cell addrs per word (memory_packed)
+DESC_WORDS = 8   # fixed descriptor width: 1 header word + 7 cell words
 M64 = (1 << 64) - 1
 DISPLAY = 16
 DR = (-1, 0, 1, 0)  # heading index 0=N 1=E 2=S 3=W (clockwise order)
@@ -172,57 +177,88 @@ class LockstepLLM:
     """Parsed LLM program plus machine-shaped integer running state."""
 
     def __init__(self, rows):
+        """Discovery attrs from the grid, but the RUNTIME state is loaded
+        from ``machine_stream`` output — so every rows-built interpreter
+        proves stream completeness on every case it passes."""
         self.rows = list(rows)
         w = max((len(r) for r in self.rows), default=0)
         grid = [list(r.ljust(w)) for r in self.rows]
         self.rooms = find_rooms(grid)
         traced = find_pipes(grid, self.rooms)
-        self.pipe_cells = [t[0] for t in traced]
         self.pipe_src = [t[1] for t in traced]
         self.pipe_dst = [t[2] for t in traced]
-        self.pipe_mask = [0] * len(traced)  # bit i set = cell i holds a value
-        self.pipe_vals = [[0] * len(t[0]) for t in traced]
-        self.man_r, self.man_c, self.man_room = [], [], []
-        for y, row in enumerate(self.rows):  # reading order = man index
-            for x, ch in enumerate(row):
-                if ch != "@":
-                    continue
-                self.man_r.append(y)
-                self.man_c.append(x)
-                self.man_room.append(
-                    next(
-                        i
-                        for i, rm in enumerate(self.rooms)
-                        if rm[0] < y < rm[2] and rm[1] < x < rm[3]
-                    )
-                )
+        self._load_stream(machine_stream(self.rows))
+
+    @classmethod
+    def parse(cls, rows):
+        return cls(rows)
+
+    @classmethod
+    def from_stream(cls, stream):
+        """Build a runnable interpreter from machine_stream output alone."""
+        obj = cls.__new__(cls)
+        obj.rows = None  # discovery attrs absent: stream is all it gets
+        obj._load_stream(list(stream))
+        return obj
+
+    def _load_stream(self, stream):
+        cells = [
+            word >> (FIELD * k) & ((1 << FIELD) - 1)
+            for word in stream[:64]
+            for k in range(4)
+        ]
+        self.chars = [
+            "".join(chr(cells[y * 16 + x] & 0xFF) for x in range(16))
+            for y in range(16)
+        ]
+        self.wallmask = sum(
+            1 << addr for addr in range(256) if cells[addr] & WALL_BIT
+        )
+        self.man_r, self.man_c = [], []
+        for addr in reversed(stream[64 : 64 + MEN]):
+            if addr:
+                self.man_r.append(addr // 16)
+                self.man_c.append(addr % 16)
         n = len(self.man_r)
         self.man_h = [1] * n  # every man starts facing east
         self.man_a = [0] * n
         self.man_b = [0] * n
         self.man_halt = [0] * n
         self.man_wall = [0] * n
+        count = stream[64 + MEN]
+        self.pipe_cells, self.pipe_out, self.pipe_in = [], [], []
+        for p in range(count):
+            base = 65 + MEN + p * DESC_WORDS
+            head = stream[base]
+            self.pipe_out.append(head >> 21 & 7)
+            self.pipe_in.append(head >> 24 & 7)
+            addrs = [
+                stream[base + 1 + w] >> (CELL_FIELD * k)
+                & ((1 << CELL_FIELD) - 1)
+                for w in range(7)
+                for k in range(3)
+            ]
+            self.pipe_cells.append(
+                [divmod(a, 16) for a in addrs[: head & 31]]
+            )
+        self.pipe_mask = [0] * count
+        self.pipe_vals = [[0] * len(c) for c in self.pipe_cells]
         self.over = 0
 
-    @classmethod
-    def parse(cls, rows):
-        return cls(rows)
-
     def _at(self, r, c):
-        if 0 <= r < len(self.rows) and 0 <= c < len(self.rows[r]):
-            return self.rows[r][c]
-        return " "
+        return self.chars[r][c]  # canvas chars: `@` already reads as space
 
     def _nearest(self, mi, outgoing):
-        """Nearest pipe arrowhead index for this man's room, or -1.
+        """Nearest usable pipe arrowhead index for man ``mi``, or -1.
 
-        Key = (Manhattan distance to head for s / tail for r, head row,
-        head col): ties break in reading order of the arrowhead cell.
+        Candidates come from the descriptor masks (bit mi of out/in), key =
+        (Manhattan distance to head for s / tail for r, head row, head
+        col): ties break in reading order of the arrowhead cell.
         """
         best, key = -1, None
         for pi in range(len(self.pipe_cells)):
-            room = self.pipe_src[pi] if outgoing else self.pipe_dst[pi]
-            if room != self.man_room[mi]:
+            mask = self.pipe_out[pi] if outgoing else self.pipe_in[pi]
+            if not mask >> mi & 1:
                 continue
             r, c = self.pipe_cells[pi][0 if outgoing else -1]
             k = (abs(r - self.man_r[mi]) + abs(c - self.man_c[mi]), r, c)
@@ -309,20 +345,20 @@ class LockstepLLM:
         for mi in range(len(move)):  # wall freeze only after the full tick
             if self.man_halt[mi] or self.man_wall[mi]:
                 continue
-            r, c = self.man_r[mi], self.man_c[mi]
-            if any(_on_border(rm, r, c) for rm in self.rooms):
+            addr = self.man_r[mi] * 16 + self.man_c[mi]
+            if self.wallmask >> addr & 1:
                 self.man_wall[mi] = 1
                 self.over = 1
 
     def render(self):
         """The 16x16 display frame as 16 rows of hex digits."""
         frame = [[0] * DISPLAY for _ in range(DISPLAY)]
-        for y, row in enumerate(self.rows[:DISPLAY]):
-            for x, ch in enumerate(row[:DISPLAY]):
-                if any(_on_border(rm, y, x) for rm in self.rooms):
+        for y in range(DISPLAY):
+            for x in range(DISPLAY):
+                if self.wallmask >> (y * 16 + x) & 1:
                     frame[y][x] = 4
                 else:
-                    frame[y][x] = _op_color(" " if ch == "@" else ch)
+                    frame[y][x] = _op_color(self.chars[y][x])
         for pi, cells in enumerate(self.pipe_cells):  # pipes override grid
             for i, (r, c) in enumerate(cells):
                 if r < DISPLAY and c < DISPLAY:
@@ -331,6 +367,87 @@ class LockstepLLM:
             if 0 <= self.man_r[mi] < DISPLAY and 0 <= self.man_c[mi] < DISPLAY:
                 frame[self.man_r[mi]][self.man_c[mi]] = 9
         return ["".join(f"{v:x}" for v in row) for row in frame]
+
+
+def machine_stream(rows: list[str]) -> list[int]:
+    """Everything the STEP room consumes, in the order it consumes it.
+
+    stream[0:64]    world: 4 scan-v2 cell tokens per word, token k at bits
+                    13k..13k+12. Cell token: bits 0-7 ASCII char (the `@`
+                    cell carries 32), bit 8 WALL, bit 9 PADDING. The WALL
+                    bit is PATCHED to the true room-border bit: scan v2's
+                    left-run heuristic is wrong on 4/14 public LLM cases
+                    (side-by-side rooms, the forced addr-0 parking bit,
+                    pipe `-` cells right of a border row), so SCAN v3 must
+                    implement real border detection. Addr = y*16 + x.
+    stream[64:67]   3 man addrs, scan-v2 order (most-recently-found first,
+                    i.e. reverse reading order), 0 = absent (a real man
+                    can never sit at addr 0: interiors start at y,x >= 1).
+    stream[67]      pipe count P (0..2).
+    stream[68+8p:76+8p]  pipe p, fixed 8 words:
+      word 0:  bits 0-4   length L (1..20)
+               bits 5-12  head addr = cells[0], the arrowhead leaving the
+                          source room (where `s` writes)
+               bits 13-20 tail addr = cells[-1], the arrowhead entering
+                          the dest room (where `r` reads)
+               bits 21-23 out_mask: bit i set = reading-order man i may
+                          `s` into this pipe (his room is the source)
+               bits 24-26 in_mask: bit i set = man i may `r` from it
+      words 1..7: cell addrs source->dest, 3 per word in 21-bit fields
+               (field j of word t = cells[3t+j]), 0-filled past L.
+
+    Total length 68 + 8P. Deterministic in rows. Contract: SCAN must EMIT
+    exactly this stream; STEP must CONSUME it and nothing else.
+    """
+    width = max(len(r) for r in rows)
+    grid = [list(r.ljust(width)) for r in rows]
+    tokens = [width, len(rows)] + [ord(ch) for row in grid for ch in row]
+    v2 = scan_reference_v2(tokens)
+    cells, men = v2[:256], v2[256 : 256 + MEN]
+    rooms = find_rooms(grid)
+    for addr in range(256):
+        y, x = divmod(addr, 16)
+        cells[addr] &= ~WALL_BIT
+        if any(_on_border(rm, y, x) for rm in rooms):
+            cells[addr] |= WALL_BIT
+    world = [
+        sum(cells[base + k] << (FIELD * k) for k in range(4))
+        for base in range(0, 256, 4)
+    ]
+    man_rooms = [  # reading order, matching LockstepLLM man indices
+        next(
+            i
+            for i, rm in enumerate(rooms)
+            if rm[0] < a // 16 < rm[2] and rm[1] < a % 16 < rm[3]
+        )
+        for a in reversed(men)
+        if a
+    ]
+    return world + men + _pipe_block(grid, rooms, man_rooms)
+
+
+def _pipe_block(grid, rooms, man_rooms):
+    """[count] then one fixed-width descriptor per discovered pipe."""
+    pipes = find_pipes(grid, rooms)
+    out = [len(pipes)]
+    for cells, src, dst in pipes:
+        addrs = [r * 16 + c for r, c in cells]
+        out_mask = sum(1 << i for i, rm in enumerate(man_rooms) if rm == src)
+        in_mask = sum(1 << i for i, rm in enumerate(man_rooms) if rm == dst)
+        out.append(
+            len(addrs)
+            | addrs[0] << 5
+            | addrs[-1] << 13
+            | out_mask << 21
+            | in_mask << 24
+        )
+        for base in range(0, 21, 3):
+            word = 0
+            for k in range(3):
+                if base + k < len(addrs):
+                    word |= addrs[base + k] << (CELL_FIELD * k)
+            out.append(word)
+    return out
 
 
 def _op_color(ch):

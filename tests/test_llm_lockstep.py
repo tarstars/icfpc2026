@@ -9,7 +9,7 @@ import pytest
 
 from littleman import llm_fuzz
 from littleman.llm import LLM, program_grid
-from littleman.llm_lockstep import LockstepLLM
+from littleman.llm_lockstep import LockstepLLM, machine_stream
 
 DATA = Path(__file__).resolve().parents[1] / "data/small/problems"
 LLM_CASES = json.loads(
@@ -28,14 +28,18 @@ def replay_lockstep(case):
     rounds = case["rounds"]
     rows = program_grid([int(v) for v in rounds[0]["in"]])
     ours, ref = LockstepLLM.parse(rows), LLM.parse(rows)
+    stm = LockstepLLM.from_stream(machine_stream(rows))
     assert ours.render() == ref.render() == rounds[0]["frames"][0], "round 0"
+    assert stm.render() == ref.render(), "round 0 stream"
     for index, rnd in enumerate(rounds[1:], 1):
         for tick in range(int(rnd["in"][0])):
             ours.run(1)
             ref.run(1)
+            stm.run(1)
             assert ours.render() == ref.render(), f"round {index} tick {tick}"
+            assert stm.render() == ref.render(), f"round {index} tick {tick}"
         assert ours.render() == rnd["frames"][0], f"round {index}"
-    assert ours.halted() == ref.halted()
+    assert ours.halted() == ref.halted() == stm.halted()
 
 
 @pytest.mark.parametrize("case", LLM_CASES, ids=lambda c: c["name"])
@@ -111,3 +115,61 @@ def test_multiman_collision_parity(seed):
         if ours.halted():
             assert ref.halted()
             break
+
+
+# Two pipes in OPPOSITE directions between the same two rooms, both men on
+# closed rings exchanging values forever: A is side-by-side with a 12-cell
+# U-snake return pipe (17 cells total), B is stacked with vertical pipes.
+ADV_A = [
+    "+---+     +---+",
+    "|>@v|>--->|>@v|",
+    "|  5|     |  1|",
+    "|  s|   v<|  r|",
+    "|   |   | |   |",
+    "|^r<|   | |^s<|",
+    "+---+   | +---+",
+    "  ^-----<      ",
+]
+ADV_B = [
+    "+----+",
+    "|>@7v|",
+    "|^rs<|",
+    "+----+",
+    "  v^  ",
+    "  v^  ",
+    "+----+",
+    "|>@rv|",
+    "|^ s<|",
+    "+----+",
+]
+
+
+@pytest.mark.parametrize("rows", [ADV_A, ADV_B], ids=["snake", "stacked"])
+def test_adversarial_bidirectional_pipes(rows):
+    stream = machine_stream(rows)
+    assert stream == machine_stream(rows)  # deterministic
+    assert len(stream) == 68 + 8 * stream[67] and stream[67] == 2
+    ours, ref = LockstepLLM.parse(rows), LLM.parse(rows)
+    stm = LockstepLLM.from_stream(stream)
+    assert (ours.pipe_src, ours.pipe_dst) == ([0, 1], [1, 0])
+    assert sum(len(c) for c in ours.pipe_cells) <= 20
+    traffic = False
+    for tick in range(100):
+        ours.run(1)
+        ref.run(1)
+        stm.run(1)
+        assert ours.render() == ref.render() == stm.render(), f"tick {tick}"
+        traffic = traffic or any(ours.pipe_mask)
+    assert traffic and not ours.halted()
+
+
+@pytest.mark.parametrize(
+    "case", LLM_CASES + LLLM_CASES, ids=lambda c: c["name"]
+)
+def test_stream_determinism_and_shape(case):
+    rows = program_grid([int(v) for v in case["rounds"][0]["in"]])
+    stream = machine_stream(rows)
+    assert stream == machine_stream(rows)
+    assert len(stream) == 68 + 8 * stream[67]
+    assert 0 <= stream[67] <= 2
+    assert all(0 <= a < 256 for a in stream[64:67])
