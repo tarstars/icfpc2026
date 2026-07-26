@@ -62,10 +62,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   pipe into an 18×18 square. It passes all public and 308 deterministic stress
   workloads at local score 778,062.86, 16.20% below `sort_03`; it has not been
   submitted.
-- History Lesson's live `history_03` asymmetric archive is 84×84, passed 1/1,
-  and scores 7,056. It improved the preceding 85×85 result by 2.34% and
-  passes locally in 1,783,519 ticks; see
-  `reports/2026-07-26-history-asymmetric-archive.md`.
+- History Lesson's live `history_04` repaired short-token archive is 83×83,
+  passed 1/1, and scores 6,889. Its 1,809-symbol stream fills exactly 201
+  parser-safe words and passes locally in 1,758,189 ticks; see
+  `reports/2026-07-26-history-83-square.md`.
 - Packet Reassembly `tcp_00` passed 20/20 at 38×41 and score 20,028,106.4.
   Five platform downloads recovered the missing tag-through-ring lineage:
   `tcp_01/tcp_05 -> tcp_04 -> tcp_03 -> tcp_02`. The 38×38 `tcp_02` is
