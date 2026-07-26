@@ -473,6 +473,42 @@ def _p1_emit(a: _Asm, relay: str) -> None:
     a.bp("mid", "m", zero=relay, pos="em_dt")
 
 
+def _p1_rooms_walls(a: _Asm, done: str = "em0") -> None:
+    """TODO(phase 2): find_rooms walk + fused frame pokes.
+
+    Plan (verified in the Python model p1_rooms/p1_stream): outer addr
+    scan in S0 (4 full-lap ops per addr); on '+' (test 43 OR 299 —
+    poked cells add 256, matching the model's %256): c2 scan in S1
+    (reject on j%16==0; '-' is 45 or 301), r2 scan in S2 (stride 16,
+    reject k>=256), corner = k + (j - a) in S3, bottom run '-' and
+    right column '|' (124 or 380); on accept write t,l,b,rt =
+    a/16, a%16, k/16, corner%16 to RC_S + 4*NR (cursor S4), poke the
+    four frame runs (cur S4, last S5, literal stride per copy, field
+    := field%256 + 256), NR_S += 1.  Exit to ``done``.
+    """
+    raise NotImplementedError
+
+
+def _p1_manrooms(a: _Asm) -> None:
+    """TODO(phase 3a): MR_S[i] per reading-order man (see model)."""
+    raise NotImplementedError
+
+
+def _p1_cands(a: _Asm) -> None:
+    """TODO(phase 3b): arrow scan -> C_S words key<<10|gaddr<<2|dir,
+    CN_S count, then a fixed 7-pass bubble sort (seed 8388608
+    sentinels first).  Key = si<<10 | baddr<<2 | probe(NSWE)."""
+    raise NotImplementedError
+
+
+def _p1_traces(a: _Asm) -> None:
+    """TODO(phase 3c): per sorted candidate: used-check over D cells
+    (respect stored length L), trace with r,c,d in scratch, append
+    cells 3-per-word 21-bit into D_S, header L|head<<5|tail<<13|
+    om<<21|im<<24 from MR_S, PC_S += 1."""
+    raise NotImplementedError
+
+
 def _build_p1_asm(phases: int = 9) -> _Asm:
     """The controller program; ``phases`` gates how much is built."""
     a = _Asm()

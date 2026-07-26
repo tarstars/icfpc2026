@@ -593,3 +593,82 @@ def check_case3(rows: list[str], ks: list[int]) -> Step3Model:
     model = run_case3(rows, ks)
     assert frames_from_deltas(model.deltas) == oracle_frames3(rows, ks)
     return model
+
+
+# =====================================================================
+# The ROOM: geometry transcription of Step3Model (phase A onward)
+# =====================================================================
+# The classify chain: A = raw 13-bit record in, A = claude_09 record out.
+# Entered WESTWARD; a BP staircase (BP = char-48, A preserved) walks one
+# rung row per threshold; the fall-through arm on each rung row tests A
+# for the exact match, loads the record literal and drops down the WEST
+# merge column; both junk turns of an arm land on shared spare rows that
+# run EAST to the junk merge.  Exit: chain floor, heading EAST, A = crec.
+#
+# rung thresholds past the digit rung: char values of < > H M X ^ r s v.
+CHAIN_RUNGS = [                       # (char threshold, record literal);
+    (60, 803), (62, 291), (72, 131),  # 104 is a dummy rung splitting the
+    (77, 76), (88, 115), (94, 35),    # 94->114 gap so no m-run exceeds 10
+    (104, 0), (114, 173), (115, 157), (118, 547),
+]
+CH_ENTRY = 46                         # chain entry col, walked WEST
+CH_ROUTE = 41                         # a-turn routing: east to here, down
+CH_FLOOR_E = 45                       # floor runs east from the merges
+
+
+class Chain:
+    """Emit the classify chain; entry (top,46) WESTWARD, A = raw record.
+
+    Exit: (self.floor, CH_FLOOR_E) heading EAST with A = crec.  Every
+    match/junk arm gets a private descent column from ``self.cols`` (top
+    half of the block) falling to the shared floor row; `>` landings are
+    same-direction-safe for men passing east.
+    """
+
+    def __init__(self, room, top: int):
+        self.room, self.top = room, top
+        self.floor = top + 2 * len(CHAIN_RUNGS) + 8
+        self.cols = iter(range(4, 40, 2))   # private descent columns
+
+    def _drop(self, row: int, col: int) -> None:
+        """v at (row,col), blank fall to the floor, `>` landing."""
+        self.room.put(row, col, "v")
+        self.room.put(self.floor, col, ">")
+
+    def _arm(self, row: int, col: int, tokens: list[str]) -> None:
+        """A westward arm ending in a private descent to the floor."""
+        west = _put_w(self.room, row, col, tokens)
+        self._drop(row, west - 1)
+
+    def build(self) -> None:
+        raise NotImplementedError(
+            "TODO(room phase A): _main_row (wall test M#256&X north-arm,"
+            " char extract WM#255&, M#48W- b, v-X low split, digit m*10 a),"
+            " _rungs (per CHAIN_RUNGS: row pairs rung+routing, m-run + a"
+            " south->east-to-CH_ROUTE-down-west entry, fall-through arm"
+            " #(T-48) M W - X: 0->record literal + _drop, <0 south junk"
+            " `0` + _drop on the routing row west of the a), _low_block"
+            " (chars<48 at the staircase bottom: tests 43 `+`=90 then 45"
+            " `-`=106, junk 0), then the floor east-run to CH_FLOOR_E."
+            " See docs/architecture/claude_25_step3_handoff.md."
+        )
+
+
+def _put_w(room, row: int, col: int, tokens: list[str]) -> int:
+    """Place tokens WESTWARD ending at ``col``; returns westmost col used.
+
+    Tokens are single ops or ``#N`` literals (digits reversed for the
+    walk direction).  The WALKED order is the list order; cells are laid
+    right-to-left so the westward man meets them in sequence.
+    """
+    c = col
+    for token in tokens:
+        if token.startswith("#"):
+            digits = token[1:]
+            text = "`" + digits[::-1] + "`"
+            room.put(row, c - len(text) + 1, text)
+            c -= len(text)
+        else:
+            room.put(row, c, token)
+            c -= 1
+    return c + 1
