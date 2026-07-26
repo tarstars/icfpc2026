@@ -13,7 +13,11 @@ dependencies = [
 icfpc-api = "icfpc_api.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "maturin>=1.7,<2",
+    "pytest>=8",
+    "pytest-xdist>=3.8,<4",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -24,3 +28,8 @@ packages = ["src/icfpc_api", "src/littleman"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.maturin]
+manifest-path = "rust/Cargo.toml"
+python-source = "src"
+module-name = "littleman._fastsim_rust"
