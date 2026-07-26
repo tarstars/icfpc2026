@@ -2212,7 +2212,7 @@ pipe move?* The answer turned into a win:
 
 All 17 bindings in both rooms re-verified empirically. Local 277,830 ->
 **276,615** (-1.7 avg ticks: three cells of latency removed from each
-direction of the room0<->room2 exchange). Submitted as brackets_11.
+direction of the room0<->room2 exchange). Submitted as brackets_11; live **484,532.65** (26/26).
 
 The general form of the question, for the playbook: **a pipe's two ports
 have separate freedom; when their legal ranges overlap in a column, the
