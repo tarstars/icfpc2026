@@ -11,6 +11,11 @@ from .llm_actionprotocol import (
 )
 from .llm_components import CLASS_RECV, CLASS_SEND
 from .llm_manstep import STEP_DELTA
+from .llm_packedcandidate import (
+    pack_pipe_context,
+    pack_room_context,
+    packedcandidate_reference,
+)
 from .llm_pipeaction import parse_fetched_state, serialize_fetched_state
 from .llm_pipeapply import (
     OP_RECV,
@@ -18,7 +23,6 @@ from .llm_pipeapply import (
     STATUS_BLOCKED,
     pipeapply_reference,
 )
-from .llm_pipecandidate import pipecandidate_reference
 from .llm_selecteligible import selecteligible_reference
 from .llm_stateindex import stateindex_reference, stateunindex_reference
 
@@ -72,17 +76,22 @@ def indexed_candidates_reference(
 
     targets = [0, 0]
     eligible = [0, 0]
+    room_context = pack_room_context(
+        op,
+        room.event,
+        *room.fields[1:5],
+        room.addr,
+    )
     for pipe_no, pipe in enumerate(pipes):
-        target = pipe.cells[0] if op == OP_SEND else pipe.cells[-1]
-        request = [
-            op,
-            room.event,
+        pipe_context = pack_pipe_context(
             rooms[pipe.source].event,
-            *room.fields[1:5],
+            pipe.cells[0],
+            pipe.cells[-1],
             pipe.dest_addr,
-            target,
-        ]
-        targets[pipe_no], eligible[pipe_no] = pipecandidate_reference(request)
+        )
+        targets[pipe_no], eligible[pipe_no] = packedcandidate_reference(
+            [room_context, pipe_context]
+        )
     selected = selecteligible_reference(
         [room.addr, eligible[0], eligible[1], targets[0], targets[1]]
     )[0]
