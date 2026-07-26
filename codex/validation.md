@@ -1,6 +1,6 @@
 # Codex Validation
 
-Updated: 2026-07-25
+Updated: 2026-07-26
 
 ## Environment observations
 
@@ -353,3 +353,27 @@ Updated: 2026-07-25
 
 No YT connectivity, pool availability, or credentials have been validated for
 this project.
+
+## 2026-07-26 endgame release
+
+- `llm_codex_01.man` hashes to
+  `568d0b87937e9a41370d0b3434583d7109eb51ea9944b788e825e45c53e40ff6`;
+  its refreshed authenticated response is terminal 28/28 with no errors.
+- Frozen Rust-plugin LLM benchmark: 1,623 passed in 17.53 seconds; expanded
+  benchmark: 2,012 passed in 53.08 seconds.
+- Complete 14-case LLM Rust batch: 173,569,526 judged ticks, 18.56 seconds at
+  one worker and 4.93 seconds at eight, with identical ordered results.
+- `LITTLEMAN_RUSTEXEC=0 uv run pytest -q -n 8
+  tests/test_rust_executor.py` — 108 passed, 11 native-only skips, no
+  failures.
+- Native executor and CLI suite — 122 passed, one intentional skip, no
+  failures. Rust cache unit tests: 2 passed; release CLI build succeeded.
+- Final integrated gate:
+  `uv run pytest -q -p littleman.rustexec -n 8 --durations=25` — 3,822
+  passed, 2 skipped, 4 expected xfails, no failures in 527.02 seconds.
+- Authenticated API refreshes reconfirmed LLM plus five score improvements as
+  terminal with full coverage and no error/load error. TCP's newest result is
+  20/20 at 31×31 and score 1,640,475.05.
+- `git lfs fsck` — passed. Final source and documentation are clean and
+  reachable at `origin/main`; the guarded promotion was a non-force
+  fast-forward.
