@@ -39,8 +39,16 @@ try:
     backend = "c-ext"
 except Exception:
     try:
-        subprocess.run([sys.executable, str(ROOT / "scripts/build_fastsim_ext.py")],
-                       check=True, cwd=ROOT)
+        import sysconfig
+        cmd = ["cc", "-O3", "-fPIC", "-shared", "-fno-strict-aliasing"]
+        if sys.platform == "darwin":
+            # mac linker requires Python symbols left dangling until load time
+            cmd += ["-undefined", "dynamic_lookup"]
+        cmd += ["-I" + sysconfig.get_paths()["include"],
+                str(ROOT / "src/littleman/_ext/fastsim_ext.c"),
+                "-o", str(ROOT / "src/littleman/_fastsim_ext.so")]
+        log(" ".join(cmd))
+        subprocess.run(cmd, check=True, cwd=ROOT)
         import littleman._fastsim_ext  # noqa: F401
         backend = "c-ext (built)"
     except Exception as exc:  # noqa: BLE001
