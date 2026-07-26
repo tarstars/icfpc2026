@@ -38,6 +38,7 @@ or load error, and full live case coverage.
 
 The current live coverage totals are respectively 20/20, 26/26, 20/20,
 25/25, and 17/17. Thus five independent improvements satisfy the requested
-minimum of three. Integration still needs to preserve the peer artifacts and
-responses on the final shared branch; this report does not substitute for
-that Git reconciliation.
+minimum of three. The exact peer artifacts and responses are preserved in
+`agent/codex-main-integration@1dcd0f3`; the post-merge repository suite passed
+3,804 tests with no failure. Promotion of that reviewed candidate to `main`
+is the remaining Git step.
