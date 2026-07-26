@@ -1561,3 +1561,46 @@ straight jump lands on TAIL's entry cell, and pulling TAIL left removed the
 cell it lands on. **A branch's straight arm is a jump with a landing pad;
 move the pad and the jump falls through.** Both entry points (X2's descent
 and d3's jump) now have their own `<`.
+
+## 2026-07-26 — reverse-a-list: quick assessment of packing three-to-a-cell
+
+**The cost is quadratic in the list length**, measured on reverse_01 with
+synthetic single-round lists:
+
+```
+ n     1    2    3    4    6    8   10   12   14   16
+ticks 54  105  167  239  413  627  881 1175 1509 1883
+```
+
+The per-element cost grows linearly (51, 62, 72, ..., 187), so
+`ticks ≈ 5n² + 32n`. That is the ring re-circulating to reverse.
+
+So the idea is right: packing three values into one makes the ring carry
+`⌈n/3⌉` items and **cuts the quadratic term nine-fold** — 1280 ticks of the
+1883 at n=16 become ~142. Packing is arithmetically free here: the simulator
+uses unbounded integers (no clamp anywhere in `sim.py`), and even in 64 bits
+three values would fit — shift by +1,000,000 into 0..2,000,000 and use base
+2,000,001, whose cube is 8.0e18 against the signed limit of 9.2e18.
+
+The catch is the linear term. Each value costs a multiply-add going in and a
+divmod coming out, so roughly +30n. Net against `5n² + 32n`:
+
+| n | now | packed (est.) |
+|---|---|---|
+| 4 | 239 | ~288 *worse* |
+| 8 | 627 | ~636 *level* |
+| 16 | 1883 | ~1220 **-35%** |
+
+It only pays for long lists. The live avgTicks is 1845 against a local
+average of 1162, so the server's cases are longer than the public ones and
+it should pay there — expect 20-30%, i.e. ~472k -> ~350k. It is a new
+machine, not an edit.
+
+**Cheaper thing first:** `reverse_02.man` already exists at **15x15, fp 225**
+(against the live 256) and passes 8/8 locally — it was abandoned only
+because it has three one-cell pipes, which the server rejects at load. That
+is 12% for free if the pipes can be lengthened. They cannot be bent in
+place: each gap is exactly one column or row wide, and `I` and `O` are 3x3
+so each has only a single usable side-wall cell. It needs the rooms moved —
+a repack of a 15x15 machine, and `R1` has two outgoing pipes so moving a
+port means re-auditing its `s` cells. Worth doing before the packing rewrite.
