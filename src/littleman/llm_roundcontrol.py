@@ -8,6 +8,7 @@ from .llm_framebaseline import framebaseline_reference
 from .llm_fulltick import build_fulltick_rig, fulltick_reference
 from .llm_roomfind import SETUP_END
 from .llm_roomstage import _strip_io
+from .llm_roundstatus import roundstatus_reference
 from .llm_statecopy import (
     COPY_END,
     COPY_SPLIT,
@@ -40,6 +41,8 @@ def round_states_reference(tokens: list[int]) -> list[list[int]]:
     runtime = framebaseline_reference(state)[64:]
     for command in commands:
         for _ in range(command):
+            if not roundstatus_reference(runtime):
+                break
             runtime = fulltick_reference([*world, *runtime])
         out.append(list(runtime))
         runtime = framebaseline_reference([*world, *runtime])[64:]
@@ -107,40 +110,8 @@ def _build_copydemux_fsm() -> _Fsm:
 
 def _build_roundgate_fsm() -> _Fsm:
     fsm = _Fsm()
-    fsm.go("boot", "left", "@", "source_r")
-    fsm.go("source_r", "left", "r", "source_cmp")
-    fsm.sign(
-        "source_cmp",
-        "lit_l",
-        f"M`{abs(SETUP_END)}`+",
-        neg="source_restore",
-        zero="source_end",
-        pos="source_restore",
-    )
-    fsm.go("source_restore", "right", "Ws", "source_r")
-    fsm.go("source_end", "right", "Ws", "ticks_r")
-    fsm.go("ticks_r", "right", "rb", "cycle_count")
-    fsm.bp(
-        "cycle_count",
-        "mid",
-        "m",
-        zero="final_r",
-        pos="recycle_r",
-    )
-
-    fsm.go("recycle_r", "right", "r", "recycle_cmp")
-    fsm.sign(
-        "recycle_cmp",
-        "lit_l",
-        f"M`{abs(SETUP_END)}`+",
-        neg="recycle_restore",
-        zero="recycle_end",
-        pos="recycle_restore",
-    )
-    fsm.go("recycle_restore", "right", "Ws", "recycle_r")
-    fsm.go("recycle_end", "right", "Ws", "cycle_count")
-
-    fsm.go("final_r", "right", "r", "final_cmp")
+    fsm.go("boot", "left", "@", "command_r")
+    fsm.go("final_r", "left", "r", "final_cmp")
     fsm.sign(
         "final_cmp",
         "lit_l",
@@ -150,7 +121,42 @@ def _build_roundgate_fsm() -> _Fsm:
         pos="final_restore",
     )
     fsm.go("final_restore", "right", "Ws", "final_r")
-    fsm.go("final_end", "right", "Ws", "source_r")
+    fsm.go("final_end", "right", "Ws", "command_r")
+
+    fsm.go("command_r", "right", "rb", "status_r")
+    fsm.go("tick_dec", "mid", "m", "tick_r")
+    fsm.go("tick_r", "left", "r", "tick_cmp")
+    fsm.sign(
+        "tick_cmp",
+        "lit_l",
+        f"M`{abs(SETUP_END)}`+",
+        neg="tick_restore",
+        zero="tick_end",
+        pos="tick_restore",
+    )
+    fsm.go("tick_restore", "right", "Ws", "tick_r")
+    fsm.go("tick_end", "right", "Ws", "status_r")
+
+    # Keep status physically below the shared state input and on the left
+    # wall.  This makes the state/status/tick endpoints planar even though
+    # status executes before every tick.
+    fsm.go("status_r", "left", "r", "status_branch")
+    fsm.sign(
+        "status_branch",
+        "mid",
+        "",
+        neg="bad_status",
+        zero="final_r",
+        pos="cycle_count",
+    )
+    fsm.bp(
+        "cycle_count",
+        "mid",
+        "",
+        zero="final_r",
+        pos="tick_dec",
+    )
+    fsm.go("bad_status", "left", "H", "bad_status")
     return fsm
 
 
@@ -329,11 +335,19 @@ def _roundgate_rows() -> tuple[int, int, int, int, int]:
     fsm = _build_roundgate_fsm()
     state_in = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "left" and name == "source_r" and "r" in code,
+        lambda name, zone, code: (
+            zone == "left" and name in {"tick_r", "final_r"} and "r" in code
+        ),
     )
     command_in = _rows_for(
         fsm,
-        lambda name, zone, code: zone == "right" and name == "ticks_r" and "r" in code,
+        lambda name, zone, code: (
+            zone == "right" and name == "command_r" and "r" in code
+        ),
+    )
+    status_in = _rows_for(
+        fsm,
+        lambda name, zone, code: zone == "left" and name == "status_r" and "r" in code,
     )
     feedback_out = _rows_for(
         fsm,
@@ -341,28 +355,13 @@ def _roundgate_rows() -> tuple[int, int, int, int, int]:
             zone == "right" and name.startswith("final_") and "s" in code
         ),
     )
-    pipeline_out = (
-        _rows_for(
-            fsm,
-            lambda name, zone, code: (
-                zone == "right"
-                and name
-                in {"source_restore", "source_end", "recycle_restore", "recycle_end"}
-                and "s" in code
-            ),
-        )
-        + 3
+    tick_out = _rows_for(
+        fsm,
+        lambda name, zone, code: (
+            zone == "right" and name.startswith("tick_") and "s" in code
+        ),
     )
-    pipeline_in = (
-        _rows_for(
-            fsm,
-            lambda name, zone, code: (
-                zone == "right" and name in {"recycle_r", "final_r"} and "r" in code
-            ),
-        )
-        - 1
-    )
-    return state_in, command_in, feedback_out, pipeline_out, pipeline_in
+    return state_in, command_in, status_in, feedback_out, tick_out
 
 
 def _strip_input(text: str) -> tuple[list[str], tuple[int, int]]:
@@ -389,6 +388,7 @@ def _strip_input(text: str) -> tuple[list[str], tuple[int, int]]:
 def build_runtime_loop_rig() -> str:
     from .llm_framebaseline import build_framebaseline_rig
     from .llm_framerender import build_framerender_rig
+    from .llm_roundstatus import strip_roundstatus_rig
 
     cv = Canvas()
     control_left = 500
@@ -397,14 +397,17 @@ def build_runtime_loop_rig() -> str:
     demux_top = 350
     frame_top = 430
     baseline_top = 850
-    gate_top = 950
-    tick_top = 1030
+    check_top = 950
+    check_demux_top = 1230
+    gate_top = 1350
+    status_top = 1420
+    tick_top = 1620
     tick_left = 250
 
     setup = build_setupdemux_room()
     setup_in, setup_state, setup_command = _setupdemux_rows()
     cv.put(setup_top, control_left, setup)
-    initial_in, feedback_in, copy_out, _copy_bottom = add_statecopy_network(
+    initial_in, _feedback_in, copy_out, _copy_bottom = add_statecopy_network(
         cv,
         top=copy_top,
         left=control_left,
@@ -417,8 +420,25 @@ def build_runtime_loop_rig() -> str:
     baseline_rows, baseline_in, baseline_out = _strip_io(build_framebaseline_rig())
     cv.put(baseline_top, control_left, baseline_rows)
 
+    check_initial, check_feedback, check_copy_out, check_bottom = add_statecopy_network(
+        cv,
+        top=check_top,
+        left=control_left,
+    )
+    assert check_bottom < check_demux_top
+    check_demux = build_copydemux_room()
+    _check_in, check_status_out, check_state_out = _copydemux_rows()
+    cv.put(check_demux_top, control_left, check_demux)
+
+    # The initial baseline still carries the 64 packed world words.  Later
+    # full-tick responses contain runtime state only, so this stateful scanner
+    # skips the prefix exactly once.
+    status_rows, status_in, status_out = strip_roundstatus_rig(prefix_world=True)
+    status_left = 270
+    cv.put(status_top, status_left, status_rows)
+
     gate = build_roundgate_room()
-    state_in, command_in, feedback_out, tick_out, tick_in = _roundgate_rows()
+    state_in, command_in, status_flag_in, feedback_out, tick_out = _roundgate_rows()
     cv.put(gate_top, control_left, gate)
     tick_rows, tick_ingress, tick_egress = _strip_io(build_fulltick_rig())
     cv.put(tick_top, tick_left, tick_rows)
@@ -443,21 +463,38 @@ def build_runtime_loop_rig() -> str:
         baseline_top + baseline_out[0],
         control_left + baseline_out[1],
     )
+    check_demux_input = (
+        check_demux_top - 1,
+        control_left + len(check_demux[0]) // 2,
+    )
+    check_status_output = (
+        check_demux_top + check_status_out,
+        control_left - 1,
+    )
+    check_state_output = (
+        check_demux_top + check_state_out,
+        control_left + len(check_demux[0]),
+    )
+    status_input = (
+        status_top + status_in[0],
+        status_left + status_in[1],
+    )
+    status_output = (
+        status_top + status_out[0],
+        status_left + status_out[1],
+    )
     gate_state = (gate_top + state_in, control_left - 1)
     gate_command = (
         gate_top + command_in,
         control_left + len(gate[0]),
     )
+    gate_status = (gate_top + status_flag_in, control_left - 1)
     gate_feedback = (
         gate_top + feedback_out,
         control_left + len(gate[0]),
     )
     gate_tick_out = (
         gate_top + tick_out,
-        control_left + len(gate[0]),
-    )
-    gate_tick_in = (
-        gate_top + tick_in,
         control_left + len(gate[0]),
     )
     tick_input = (tick_top + tick_ingress[0], tick_left + tick_ingress[1])
@@ -506,9 +543,9 @@ def build_runtime_loop_rig() -> str:
         ]
     )
 
-    # The second state copy refreshes OLD := ADDR before entering ROUNDGATE.
-    # The first copy has already rendered the just-finished round, so OLD is
-    # precisely the cell that must be restored by the next delta frame.
+    # The second display copy refreshes OLD := ADDR.  It then enters a second
+    # STATECOPY: one copy is destructively checked for stop conditions and
+    # the other remains intact for ROUNDGATE.
     state_right_track = control_left + 120
     state_left_track = control_left - 50
     baseline_turn_row = baseline_top - 20
@@ -522,18 +559,100 @@ def build_runtime_loop_rig() -> str:
             baseline_input,
         ]
     )
+
+    initial_track = control_left - 50
     cv.pipe(
         [
             baseline_output,
-            (baseline_output[0], state_left_track),
-            (gate_state[0], state_left_track),
+            (baseline_output[0], initial_track),
+            (check_top - 10, initial_track),
+            (check_top - 10, check_initial[1] - 9),
+            (check_initial[0], check_initial[1] - 9),
+            check_initial,
+        ]
+    )
+
+    # Tick results are the feedback input of the pre-tick state copier.
+    tick_feedback_track = tick_left - 50
+    cv.pipe(
+        [
+            tick_output,
+            (tick_output[0], tick_feedback_track),
+            (check_feedback[0], tick_feedback_track),
+            check_feedback,
+        ]
+    )
+
+    # The checker copy feeds its demultiplexer along the open corridor on
+    # their left.
+    check_copy_track = control_left - 100
+    cv.pipe(
+        [
+            check_copy_out,
+            (check_copy_out[0], check_copy_track),
+            (check_demux_top - 10, check_copy_track),
+            (check_demux_top - 10, check_demux_input[1]),
+            check_demux_input,
+        ]
+    )
+
+    # The first checker copy runs through ROUNDSTATUS; the second approaches
+    # ROUNDGATE from the left without intersecting that service path.
+    status_input_track = tick_left + 10
+    cv.pipe(
+        [
+            check_status_output,
+            (check_status_output[0], status_input_track),
+            (status_input[0], status_input_track),
+            status_input,
+        ]
+    )
+    state_turn_row = gate_top - 10
+    state_approach_track = control_left - 30
+    check_state_track = control_left + 100
+    cv.pipe(
+        [
+            check_state_output,
+            (check_state_output[0], check_state_track),
+            (state_turn_row, check_state_track),
+            (state_turn_row, state_approach_track),
+            (gate_state[0], state_approach_track),
             gate_state,
         ]
     )
 
-    # Commands stay on the right.  ROUNDGATE's command receive is separated
-    # from its state receive so these two long-lived streams cannot rebind.
-    command_track = control_left + 130
+    # ROUNDSTATUS exits beside the service, turns through the gap above it,
+    # and reaches the gate's dedicated lower left-wall port.  This avoids
+    # both the checker input on the service's left and the tick tracks on the
+    # controller's right.
+    status_right_track = status_left + len(status_rows[0]) + 3
+    status_left_track = control_left - 10
+    status_turn_row = status_top - 10
+    cv.pipe(
+        [
+            status_output,
+            (status_output[0], status_right_track),
+            (status_turn_row, status_right_track),
+            (status_turn_row, status_left_track),
+            (gate_status[0], status_left_track),
+            gate_status,
+        ]
+    )
+
+    tick_track = control_left + 150
+    tick_turn_row = tick_top - 10
+    cv.pipe(
+        [
+            gate_tick_out,
+            (gate_tick_out[0], tick_track),
+            (tick_turn_row, tick_track),
+            (tick_turn_row, tick_input[1] - 3),
+            (tick_input[0], tick_input[1] - 3),
+            tick_input,
+        ]
+    )
+
+    command_track = control_left + 140
     cv.pipe(
         [
             setup_command_out,
@@ -543,50 +662,18 @@ def build_runtime_loop_rig() -> str:
         ]
     )
 
-    # Final state returns below ROUNDGATE, then climbs in column 1 to a second
-    # STATECOPY input.  Uppercase R selects whichever of the initial/feedback
-    # pipes is ready; they are never live together.
-    feedback_right_track = control_left + 140
-    feedback_row = gate_top + len(gate) + 10
-    feedback_left_track = 1
+    # The final state climbs between the status and command tracks and enters
+    # INPUTMERGE through its top wall.  Its uppercase R accepts this feedback
+    # pipe as well as the initial-state pipe on the left.
+    feedback_track = control_left + 130
+    feedback_top = (copy_top - 1, control_left - 20)
     cv.pipe(
         [
             gate_feedback,
-            (gate_feedback[0], feedback_right_track),
-            (feedback_row, feedback_right_track),
-            (feedback_row, feedback_left_track),
-            (feedback_in[0], feedback_left_track),
-            feedback_in,
-        ]
-    )
-
-    # The exact tick pipeline is a second local cycle on the right.  Its
-    # request and response tracks are ordered so neither crosses the feedback
-    # return just above the pipeline.
-    request_track = control_left + 160
-    response_track = control_left + 150
-    request_turn_row = tick_top - 10
-    request_left_track = tick_left - 10
-    cv.pipe(
-        [
-            gate_tick_out,
-            (gate_tick_out[0], request_track),
-            (request_turn_row, request_track),
-            (request_turn_row, request_left_track),
-            (tick_input[0], request_left_track),
-            tick_input,
-        ]
-    )
-    response_turn_row = tick_top - 15
-    response_left_track = tick_left - 20
-    cv.pipe(
-        [
-            tick_output,
-            (tick_output[0], response_left_track),
-            (response_turn_row, response_left_track),
-            (response_turn_row, response_track),
-            (gate_tick_in[0], response_track),
-            gate_tick_in,
+            (gate_feedback[0], feedback_track),
+            (copy_top - 10, feedback_track),
+            (copy_top - 10, feedback_top[1]),
+            feedback_top,
         ]
     )
     return cv.render()
