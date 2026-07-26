@@ -1619,3 +1619,45 @@ roughly 472k -> 350k. It is a new machine, not an edit.
 
 `reverse_02.man` is **not** a candidate -- the server rejected it. reverse_01
 is the base.
+
+### Before building it: the footprint has to be counted too
+
+Score is `fp x avgTicks`, and a packer plus an unpacker are two new rooms.
+Free space inside reverse_01's 16x16 box, with the one-cell clearance a room
+needs: **22 cells**, and they are a 4x3 pocket at cols 0-3 rows 7-9 plus a
+sliver of column 0. Two arithmetic rooms need roughly 100 cells with walls.
+**They do not fit.** So the box grows, and the break-even is steep:
+
+| box | fp | ticks must beat |
+|---|---|---|
+| 17x17 | 289 | x0.89 |
+| 18x18 | 324 | x0.79 |
+| 20x20 | 400 | x0.64 |
+
+Two-packing quarters the ring term (`5n^2 -> 1.25n^2`), which is 960 of the
+1883 ticks at n=16, but the packer and unpacker add back 15-25 per value.
+Realistic average over the case mix: **x0.72**. Against a box grown to 19x19
+that is x1.02 — a loss. Against 18x18, x0.91.
+
+So on the naive plan the packing barely pays, and only if the two new rooms
+squeeze into 68 extra cells. They will not.
+
+### But the delay line shrinks too, and that changes it
+
+The ring is not inside a room at all — it is **pipe P3, seventeen cells
+long**, running rows 10-13 and cols 0-7. That is where the sixteen values
+sit. With pairs, only eight packed values ever need storing, so **P3 drops
+from 17 cells to ~9**, freeing most of rows 10-13 and columns 0-7 — which is
+exactly the region the packer and unpacker need.
+
+That is what makes the idea work: packing does not merely trade ticks for
+area, it *frees* the area it needs. The build is
+`I -> packer -> R1 -> unpacker -> O` with P3 shortened, and the target is to
+stay inside 16x16 so the x0.72 on ticks lands whole: 472k -> ~340k.
+
+Encoding, bounded on paper: `P = (a+1e6) + (b+1e6)*B + f*B^2` with
+`B = 2,000,001` and `f` a 0/1 flag for "this cell holds a pair". Maximum
+8.0e12 against the 9.2e18 limit — six orders of margin. When `n` is odd the
+**first** input value goes in alone (`f=0`); being first in, it comes out
+last, which is where it belongs. The unpacker emits `b` then `a` for a pair,
+`a` alone for a singleton.
