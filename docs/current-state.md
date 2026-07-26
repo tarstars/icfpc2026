@@ -1,6 +1,6 @@
 # Current State
 
-Updated: 2026-07-25
+Updated: 2026-07-26
 
 ## Objective
 
@@ -39,8 +39,14 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - Semester 4 added four graded 16×16-display problems: `snake`, `pathfinder`,
   `little-little-little-man` (LLLM), and `little-little-man` (LLM). Their
   exact API specifications and 36 total public cases are attached under
-  `data/small/problems/`; no Semester 4 solution is recorded yet. See
-  `reports/2026-07-25-semester-4-release.md`.
+  `data/small/problems/`. Snake is accepted 17/17. Pathfinder submission
+  `0c04a141-a73b-443c-a274-741bfe67d857` is accepted 18/18. Claude's pressed
+  LLLM submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d` is accepted 21/21
+  at 307×312 and score 22,187,469,586.285713. LLM submission
+  `be96c6eb-e2bd-40a7-b5d2-a3aadbaf2b9b` is accepted 28/28 at server score
+  8,775,033,253,482,888; its exact artifact and response are preserved. See
+  `reports/2026-07-25-semester-4-release.md` and the latest immutable
+  messages under `coordination/messages/`.
 - Before committing any solution version, agents must pull and integrate the
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
@@ -117,6 +123,13 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - `littleman.server_compat` is the pre-submission judge for the two confirmed
   parser differences: it rejects locally accepted shared-wall rooms and
   permits a final wall step after a send while the output pipe drains.
+- The exact Rust executor on `agent/codex-rust` retains the Python parser,
+  lowers to a versioned dense IR, and executes through PyO3 or a standalone
+  Rayon CLI. It reduced the expanded 2,012-test LLM suite from 858.86 to
+  53.08 seconds, and ran all 14 public LLM cases (173.6 million judged ticks)
+  deterministically in 4.93 seconds with eight workers. Acceptance evidence
+  is in `reports/2026-07-26-rust-executor.md`; peer review and integration
+  remain pending.
 
 ## Storage
 

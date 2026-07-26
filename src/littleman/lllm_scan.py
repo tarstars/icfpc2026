@@ -164,7 +164,11 @@ def _tracks(fsm: _Fsm, route_rows, block_rows):
     return column, len(tracks)
 
 
-def _columns(tracks: int) -> tuple[dict[str, int], int, int]:
+def _columns(
+    tracks: int,
+    *,
+    extra_gap: int = 0,
+) -> tuple[dict[str, int], int, int]:
     """Place the column bands once the track count is known.
 
     The ring pipes hang off the right wall and the I/O pipes off the left,
@@ -173,18 +177,18 @@ def _columns(tracks: int) -> tuple[dict[str, int], int, int]:
     gap before the ring zones therefore grows with the track count, which
     keeps every ring op strictly right of the midline.
     """
-    gap = 52 + tracks
+    gap = 52 + tracks + extra_gap
     zones = dict(LEFT_ZONES, lit_r=gap - 20, right=gap)
     branch = gap + 14
     return zones, branch, branch + 2
 
 
-def _compile(fsm: _Fsm) -> list[str]:
+def _compile(fsm: _Fsm, *, extra_gap: int = 0) -> list[str]:
     """Render the whole FSM as one room, walls included."""
     fsm.check()
     route_rows, block_rows, height = _layout(fsm)
     edge_track, tracks = _tracks(fsm, route_rows, block_rows)
-    zones, branch_col, edge_base = _columns(tracks)
+    zones, branch_col, edge_base = _columns(tracks, extra_gap=extra_gap)
     zone_of = {block[0]: block[1] for block in fsm.blocks}
     width = edge_base + tracks + 2
     grid = [[" "] * (width + 2) for _ in range(height + 2)]
