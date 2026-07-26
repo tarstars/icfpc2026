@@ -855,6 +855,100 @@ def _round_in(room):
     room.put(26, 17, ">")
     room.put(26, 52, "rs" * 15)       # the full lap up to K (col >= 52:
     room.put(26, 82, "rWs")           # LOAD must not steal the reads)
+    room.put(26, 85, "v")             # home: fall to the loop-top funnel
+
+
+# ------------------------------------------------------------ loop top
+# Straight-line scan of the 12 man slots as three parallel relay tracks:
+# A = nothing found, B = live found (c < 4), C = walled found (c >= 16).
+# Found states are idempotent, so A->B->C only ever merges forward and no
+# man counter is needed.  One group is `r M s r s r s r s` -- CTRL rides
+# in B across its own relay -- then `16 &` peels walled (cw = south) and
+# `12 &` peels live (straight = east).  Track C is ONE drain row with
+# three entry columns, one per man group still to relay.  Tapes live at
+# col >= 48 (scratch binding); every branch routes west of 48 or east of
+# 70.  Entry (LT_A0, 23) EAST, fed by round-in's fall and the idle lap.
+LT_A0, LT_A1, LT_A2, LT_B1, LT_B2 = 80, 84, 88, 92, 95
+LT_C, LT_IDLE, LT_TICK = 100, 104, 108
+LT_CLIMB, LT_LOOP = 17, 22             # emit climb / idle climb columns
+
+
+def _lt_group(room, row: int, live_test: bool) -> None:
+    """One man group: relay 4 with CTRL held in B, then the CTRL splits."""
+    room.put(row, 48, "rMsrsrsrs")     # r(c) M s, relay A/I/B
+    room.put(row, 57, "`16`&X")        # walled: A = c & 16, cw -> south
+    if live_test:
+        room.put(row, 63, "WM`12`&X")  # live: A = c & 12, straight -> east
+
+
+def _lt_tail(room, row: int, home: str) -> None:
+    """MARK/SP/SHIFTM relay, K test: 0 -> emit east, else k-1 and home."""
+    room.put(row, 48, "rsrsrs")        # relay 3
+    room.put(row, 54, "rX")            # r(K); 0 -> straight, >0 -> cw
+    room.put(row, 56, "s")             # K == 0: push 0 (A already 0)
+    room.put(row, 58, "v")             # ... and away to EMIT
+    room.put(row + 1, 55, "<")
+    _put_w(room, row + 1, 54, ["M", "1", "W", "-", "s"])   # push k-1
+    room.put(row + 1, home[1], home[0])                    # ... and home
+
+
+def _loop_top(room) -> None:
+    for row in (LT_A0, LT_A1, LT_A2):
+        _lt_group(room, row, True)
+    for row in (LT_B1, LT_B2):
+        _lt_group(room, row, False)
+    room.put(27, 85, "<")              # round-in's fall, then west ...
+    room.put(27, 23, "v")              # ... and down the entry column
+    room.put(LT_A0, 22, ">")           # the idle lap climbs col 22 here
+    room.put(LT_A0, 23, ">")
+    # -- track A -> A (not live) and A/B -> C (walled): west, then down
+    for row, col, land in ((LT_A0, 47, LT_C), (LT_A1, 46, 96),
+                           (LT_A2, 45, 97), (LT_B1, 46, 96)):
+        room.put(row + 1, 62, "<")
+        room.put(row + 1, col, "v")    # descend to the drain (or its bus)
+        if land < LT_C:
+            room.put(land, col, ">")   # bus row: east to the entry column
+    for row, col, land in ((LT_A0, 44, LT_A1), (LT_A1, 40, LT_A2),
+                           (LT_A2, 38, LT_IDLE)):
+        room.put(row + 2, 70, "<")
+        room.put(row + 2, col, "v")
+        room.put(land, col, ">")
+    # -- track A -> B (live): east, down, west, down to the next block
+    for row, col, land in ((LT_A0, 43, LT_B1), (LT_A1, 39, LT_B2),
+                           (LT_A2, 37, LT_TICK)):
+        room.put(row, 72, "v")
+        room.put(row + 3, 72, "<")
+        room.put(row + 3, col, "v")
+        room.put(land, col, ">")
+    room.put(LT_B1, 64, "v")           # B1 clean: down, west, join B2's
+    room.put(LT_B1 + 2, 64, "<")
+    room.put(LT_B1 + 2, 39, "v")
+    room.put(LT_B2, 64, "v")           # B2 clean: down, west, to the tick
+    room.put(LT_B2 + 3, 64, "<")
+    room.put(LT_B2 + 3, 36, "v")
+    room.put(LT_TICK, 36, ">")
+    room.put(LT_B2 + 2, 62, ">")       # B2 walled: east onto the C bus
+    room.put(96, 56, "v")              # bus B -> drain entry after man 1
+    room.put(97, 65, "v")              # bus C -> drain entry after man 2
+    # -- track C: the drain row, three entries, then the K slot
+    room.put(LT_C, 47, ">")
+    room.put(LT_C, 48, "rs" * 4)       # entry after man 0: relay man 1 ...
+    room.put(LT_C, 56, ">")
+    room.put(LT_C, 57, "rs" * 4)       # entry after man 1: relay man 2 ...
+    room.put(LT_C, 65, ">")
+    room.put(LT_C, 66, "rsrsrs")       # entry after man 2: MARK/SP/SHIFTM
+    room.put(LT_C, 72, "rM-s")         # r(K), push 0: the global freeze
+    room.put(LT_C, 77, "v")
+    room.put(LT_C + 3, 77, "<")
+    room.put(LT_C + 3, LT_CLIMB, "^")  # ... and away to EMIT
+    _lt_tail(room, LT_IDLE, ("^", LT_LOOP))
+    _lt_tail(room, LT_TICK, ("v", 26))
+    room.put(LT_IDLE + 2, 58, "<")     # both K == 0 arms: west, climb
+    room.put(LT_IDLE + 2, LT_CLIMB, "^")
+    room.put(LT_TICK + 2, 58, "<")
+    room.put(LT_TICK + 2, LT_CLIMB, "^")
+    room.put(78, LT_CLIMB, "<")        # EMIT: join the col-5 climb
+    room.put(LT_TICK + 4, 26, ">")     # TICK: the passes are NOT BUILT
 
 
 def build_step3_core(room) -> None:
@@ -869,6 +963,7 @@ def build_step3_core(room) -> None:
     _emit_pixels(room)
     _emit_men(room)
     _round_in(room)
+    _loop_top(room)
 
 
 def build_step3_rig() -> str:
