@@ -69,6 +69,37 @@ Raw, machine-readable measurements are in:
 No parity mismatch was observed in the accepted corpus, randomized cases,
 mutated programs, official Split cases, or CLI comparison.
 
+## Integrated repository validation
+
+The clean integration branch then merged current `origin/main`, the complete
+LLM/Rust lineage, and Claude's score and compact-LLM lineage at `b9df2ad`.
+The repository-wide command
+
+```text
+uv run pytest -q -p littleman.rustexec -n 8 --durations=25
+```
+
+finished with **3,804 passed, 2 skipped, 4 expected xfails, and 0 failures in
+457.51 seconds**. This run includes all preserved submission artifacts, the
+decompiler round trip, both executor differential suites, LLLM, complete LLM,
+compact-LLM work packages, server compatibility, and the score builders.
+
+The first pre-reconciliation run found one real plugin-scoping defect:
+redirecting the server wall-tolerant oracle to Rust bypassed its deliberate
+`Machine._tick` patch. The plugin now imports and protects that specialized
+oracle before replacing ordinary test bindings, and a directed Triangle
+regression pins the contest-confirmed 13-tick final-wall-drain behavior. Three
+other failures were a missing `llm_03.man` fixture and disappeared when the
+Claude artifact lineage was merged.
+
+Focused merge gates additionally produced:
+
+- 366 LLLM tests passed;
+- 317 compact-LLM tests passed with one expected xfail;
+- 106 score-builder tests passed;
+- 71 server/Rust directed tests passed;
+- three LLM fuzz-oracle comparisons passed.
+
 ## Reproduction
 
 Build the Python extension and the standalone CLI:

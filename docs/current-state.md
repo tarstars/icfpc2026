@@ -128,8 +128,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   Rayon CLI. It reduced the expanded 2,012-test LLM suite from 858.86 to
   53.08 seconds, and ran all 14 public LLM cases (173.6 million judged ticks)
   deterministically in 4.93 seconds with eight workers. Acceptance evidence
-  is in `reports/2026-07-26-rust-executor.md`; peer review and integration
-  remain pending.
+  is in `reports/2026-07-26-rust-executor.md`. The clean
+  `agent/codex-main-integration` candidate merges current `origin/main`, both
+  agent lineages, and passes the full repository suite: 3,804 passed, two
+  skipped, four expected xfails, zero failures. Peer review and promotion to
+  `main` remain pending.
 
 ## Storage
 
