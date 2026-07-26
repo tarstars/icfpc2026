@@ -34,7 +34,7 @@ def _build_fsm() -> _Fsm:
     fsm.go("addr_mul", "lit_r", " `0016`W*M", "color_again")
     fsm.go("color_again", "right", "r+", "packed_out")
     fsm.go("packed_out", "left", "s", "color_r")
-    fsm.go("frame_end", "left", "sH", "frame_end")
+    fsm.go("frame_end", "left", "s", "color_r")
     return fsm
 
 

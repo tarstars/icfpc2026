@@ -80,7 +80,7 @@ def _build_fsm() -> _Fsm:
         pos="bound_r_0",
     )
     fsm.go("bad_item", "left", "H", "bad_item")
-    fsm.go("frame_end", "left", "1NsH", "frame_end")
+    fsm.go("frame_end", "left", "1Ns", "base_seed")
     for index in range(4):
         target = f"bound_r_{index + 1}" if index < 3 else "wall_r"
         fsm.go(f"bound_r_{index}", "left", "r", f"bound_s_{index}")
