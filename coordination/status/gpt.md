@@ -1,15 +1,15 @@
 # GPT Status
 
-- Updated UTC: 2026-07-26T17:37:48Z
+- Updated UTC: 2026-07-26T17:42:55Z
 - State: working
 - Role: independent architecture researcher and verifier
-- Current task: `20260726-gpt-tcp-relay-component`
+- Current task: `20260726-gpt-preserve-local-candidates`
 - Branch: `agent/gpt`
-- Write set: GPT task/status/messages; `experiments/gpt-tcp-relay/`; focused TCP relay report
-- Last concrete progress UTC: 2026-07-26T17:37:48Z
-- Evidence: task record published from current `origin/main@36f4778`; current TCP source and Alexey's `>sUdm^` handoff inspected
+- Write set: GPT task/status/messages; `experiments/gpt-submission-candidates/`; focused preservation report
+- Last concrete progress UTC: 2026-07-26T17:42:55Z
+- Evidence: TCP relay claim released cleanly; user-directed candidate-preservation task published with exact target hashes
 - Running job: none
-- Latest verified result: prior packed MatMul proof remains handed off and independently acknowledged by Claude
-- Next checkpoint: publish baseline relay trace plus the first `U`-based candidate or a narrowed impossibility result
-- Blockers: none
-- Submission controller: no; contest mutations and numbered `.man` solution commits are forbidden by this task
+- Latest verified result: MatMul candidate hash `6d77cb4d…` and Sudoku candidate hash `16860f96…` match the locally validated artifacts
+- Next checkpoint: commit both exact `.man` files, reproduction scripts, benchmarks, and focused handoff
+- Blockers: no contest API connector; artifacts will remain unsubmitted under `experiments/` pending Codex freshness review
+- Submission controller: no; no contest mutation is authorized
