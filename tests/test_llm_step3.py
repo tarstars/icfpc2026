@@ -136,6 +136,68 @@ def test_phase_b_fuzz_multiman():
     assert bad == [] and ran >= 60
 
 
+# ------------------------------------------------- room phase A: the chain
+def test_chain_room_classifies_all_records():
+    from littleman.llm_step3 import build_chain_rig, classify_record
+    from littleman.sim import Machine
+
+    recs = [c + w for c in range(32, 127) if c != 58 for w in (0, 256)]
+    recs += [0, 32 + 512, 32 + 768]          # padding cells
+    res = Machine.parse(build_chain_rig()).run(max_ticks=300_000, inputs=recs)
+    assert res.output == [classify_record(r) for r in recs]
+
+
+def intake_words(stream):
+    """The 64 packed claude_09 words the model hands FETCH."""
+    from littleman.lllm_step import ScriptedFetch
+    from littleman.llm_step3 import Step3Model
+
+    model = Step3Model(ScriptedFetch())
+    model.intake(stream)
+    return [
+        sum(model.fetch.records[4 * j + i] << (13 * i) for i in range(4))
+        for j in range(64)
+    ], list(model.ring)
+
+
+def test_intake_room_feeds_fetch_words():
+    import random
+
+    from littleman.llm_step3 import build_intake_rig
+    from littleman.sim import Machine
+
+    rig = build_intake_rig()
+    cases = [case_rows_ks(LLLM_CASES[i])[0] for i in (0, 5)]
+    for i in (2, 7, 11):
+        rng = random.Random(20260726 * 1000 + i)
+        cases.append(multiman_program(rng))
+    for rows in cases:
+        stream = machine_stream(rows)
+        words, _ = intake_words(stream)
+        res = Machine.parse(rig).run(max_ticks=600_000, inputs=stream[:68])
+        assert res.output == words, rows
+
+
+def test_emit_rig_first_frame():
+    import random
+
+    from littleman.lllm_step import ScriptedFetch
+    from littleman.llm_step3 import Step3Model, build_step3_rig
+    from littleman.sim import Machine
+
+    rig = build_step3_rig()
+    cases = [case_rows_ks(LLLM_CASES[i])[0] for i in (0, 5)]
+    for i in (2, 7):
+        cases.append(multiman_program(random.Random(20260726000 + i)))
+    for rows in cases:
+        stream = machine_stream(rows)
+        model = Step3Model(ScriptedFetch())
+        model.intake(stream)
+        model.emit_frame()
+        res = Machine.parse(rig).run(max_ticks=600_000, inputs=stream[:68])
+        assert res.output == model.deltas, rows
+
+
 def test_phase_b_fuzz_nopipe():
     bad = []
     corpus = llm_fuzz.llm_corpus(20260726, 40) + llm_fuzz.corpus(
