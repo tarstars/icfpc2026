@@ -26,8 +26,7 @@ def test_token_table_round_trips_too():
     survive the same divmod loop as the data."""
     enc = hp.build()
     index = {ch: i for i, ch in enumerate(enc["table_alpha"])}
-    ids = hp.unpack(enc["table_words"], enc["table_radix"],
-                    len(enc["table_text"]))
+    ids = hp.unpack(enc["table_words"], enc["table_radix"], len(enc["table_text"]))
     assert ids == [index[ch] for ch in enc["table_text"]]
 
 
@@ -43,10 +42,29 @@ def test_beats_the_live_encoding_and_hits_its_budget():
     enc = hp.build()
     total = enc["data_cells"] + enc["table_cells"]
     assert total < 5460, "must beat the live 3-token encoding"
-    # the sweep's claim, pinned so a regression is visible
-    assert total <= 4800
+    assert len(enc["ids"]) == 1755
+    assert len(enc["words"]) == 195
+    # Exact suffix-DP parsing crosses the 196 -> 195 word geometry threshold.
+    assert total == 4620
     bits = len(enc["ids"]) * math.log2(enc["radix"]) / len(enc["text"])
     assert bits < 5.0, "should beat order-0 entropy (5.05) via the dictionary"
+
+
+def test_exact_tokeniser_beats_greedy_longest_match():
+    enc = hp.build()
+    text = enc["text"]
+    ranked = sorted(enc["tokens"], key=len, reverse=True)
+    greedy_count = 0
+    position = 0
+    while position < len(text):
+        token = next(
+            (item for item in ranked if text.startswith(item, position)),
+            None,
+        )
+        position += len(token) if token is not None else 1
+        greedy_count += 1
+    assert greedy_count == 1812
+    assert len(enc["ids"]) == 1755
 
 
 @pytest.mark.parametrize("count", [16, 24, 48, 56])
