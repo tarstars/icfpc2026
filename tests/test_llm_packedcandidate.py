@@ -8,9 +8,12 @@ import pytest
 
 from littleman import alexey_pipecheck, server_compat
 from littleman.llm_packedcandidate import (
+    build_packedcandidate_echo_rig,
     build_packedcandidate_rig,
+    missing_pipe_context,
     pack_pipe_context,
     pack_room_context,
+    packedcandidate_echo_reference,
     packedcandidate_reference,
     unpack_pipe_context,
     unpack_room_context,
@@ -67,9 +70,9 @@ def corpus(seed=20260726, count=2_000):
 
 
 class Script:
-    def __init__(self, tokens):
+    def __init__(self, tokens, reference=packedcandidate_reference):
         self.input = list(tokens)
-        self.expected = packedcandidate_reference(tokens)
+        self.expected = reference(tokens)
         self.output = []
 
     def pop_input(self):
@@ -83,6 +86,11 @@ class Script:
 @pytest.fixture(scope="module")
 def text():
     return build_packedcandidate_rig()
+
+
+@pytest.fixture(scope="module")
+def echo_text():
+    return build_packedcandidate_echo_rig()
 
 
 def test_pack_roundtrips():
@@ -101,6 +109,7 @@ def test_directed_send_and_receive_edges():
         *request(OP_RECV, 17, bounds, 88, 1, 4, 10, 9 * 16 + 7),
     ]
     assert packedcandidate_reference(tokens) == [4, 1, 5, 0, 9, 1, 10, 0]
+    assert packedcandidate_reference([tokens[0], missing_pipe_context()]) == [0, 0]
 
 
 def test_generator_is_deterministic_and_server_safe(text):
@@ -109,10 +118,25 @@ def test_generator_is_deterministic_and_server_safe(text):
     alexey_pipecheck.check(text)
 
 
+def test_echo_generator_is_deterministic_and_server_safe(echo_text):
+    assert build_packedcandidate_echo_rig() == echo_text
+    server_compat.validate_layout(echo_text)
+    alexey_pipecheck.check(echo_text)
+
+
 def test_physical_seeded_corpus(text):
-    tokens = corpus()
+    tokens = [*corpus(), pack_room_context(OP_SEND, -1, 0, 1, 0, 16, 0), 0]
     script = Script(tokens)
     result = Machine.parse(text).run(max_ticks=100_000_000, controller=script)
+    assert result.error is None
+    assert result.status == "passed"
+    assert script.output == script.expected
+
+
+def test_physical_echo_corpus(echo_text):
+    tokens = [*corpus(count=500), pack_room_context(OP_RECV, -1, 0, 1, 0, 16, 0), 0]
+    script = Script(tokens, packedcandidate_echo_reference)
+    result = Machine.parse(echo_text).run(max_ticks=50_000_000, controller=script)
     assert result.error is None
     assert result.status == "passed"
     assert script.output == script.expected

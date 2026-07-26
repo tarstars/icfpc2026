@@ -7,6 +7,7 @@ from .llm_bordercheck import bordercheck_reference
 from .llm_pipeapply import OP_RECV, OP_SEND
 
 BYTE_MASK = 255
+PIPE_EXISTS = 1
 
 
 def pack_room_context(
@@ -55,11 +56,21 @@ def pack_pipe_context(source_event: int, head: int, tail: int, dest: int) -> int
     fields = (source_addr, head, tail, dest)
     if any(not 0 <= item <= BYTE_MASK for item in fields):
         raise ValueError(f"pipe context field outside byte range: {fields}")
-    return source_addr | (head << 8) | (tail << 16) | (dest << 24)
+    return (
+        PIPE_EXISTS
+        | (source_addr << 1)
+        | (head << 9)
+        | (tail << 17)
+        | (dest << 25)
+    )
+
+
+def missing_pipe_context() -> int:
+    return 0
 
 
 def unpack_pipe_context(token: int) -> tuple[int, int, int, int]:
-    return tuple((token >> shift) & BYTE_MASK for shift in (0, 8, 16, 24))
+    return tuple((token >> shift) & BYTE_MASK for shift in (1, 9, 17, 25))
 
 
 def packedcandidate_reference(tokens: list[int]) -> list[int]:
@@ -68,6 +79,9 @@ def packedcandidate_reference(tokens: list[int]) -> list[int]:
     out = []
     for index in range(0, len(tokens), 2):
         op, event, left, right, top, bottom, _addr = unpack_room_context(tokens[index])
+        if not tokens[index + 1] & PIPE_EXISTS:
+            out.extend((0, 0))
+            continue
         source_addr, head, tail, dest = unpack_pipe_context(tokens[index + 1])
         if op == OP_SEND:
             target = head
@@ -79,16 +93,34 @@ def packedcandidate_reference(tokens: list[int]) -> list[int]:
     return out
 
 
+def packedcandidate_echo_reference(tokens: list[int]) -> list[int]:
+    """Echo room context before each physical candidate response."""
+    pairs = packedcandidate_reference(tokens)
+    return [
+        item
+        for index in range(0, len(tokens), 2)
+        for item in (tokens[index], pairs[index], pairs[index + 1])
+    ]
+
+
 def _decode_ring_byte(
     fsm: _Fsm,
     name: str,
     shift: int,
     target: str,
+    *,
+    closing_pad: int = 0,
 ) -> None:
     first = f"{name}_div" if shift else f"{name}_mask"
     fsm.go(name, "right", "rM", first)
     if shift:
-        fsm.go(f"{name}_div", "lit_r", f" `{1 << shift:04d}`W/", f"{name}_mask")
+        padding = " " * closing_pad
+        fsm.go(
+            f"{name}_div",
+            "lit_r",
+            f" `{1 << shift:04d}{padding}`W/",
+            f"{name}_mask",
+        )
     fsm.go(f"{name}_mask", "lit_r", "M`0255`W&", target)
 
 
@@ -97,7 +129,7 @@ def _drain_failure(fsm: _Fsm, name: str, count: int) -> None:
     fsm.go(f"{name}_out", "left", "0s", "context_r")
 
 
-def _build_fsm() -> _Fsm:
+def _build_fsm(*, echo_context: bool = False) -> _Fsm:
     fsm = _Fsm()
     fsm.go("boot", "left", "@", "context_r")
     fsm.go("context_r", "left", "r", "context_s")
@@ -108,16 +140,38 @@ def _build_fsm() -> _Fsm:
     # Keep the two-word ring in (pipe, context) order after decoding op.
     fsm.go("op_context_r", "right", "r", "op_context_s")
     fsm.go("op_context_s", "right", "s", "op_mask")
-    fsm.go("op_mask", "lit_r", "M`0001`W&", "op_branch")
+    fsm.go("op_mask", "lit_r", "M`0001`W&", "op_store")
+    fsm.go("op_store", "mid", "b", "exists_meta_r")
+    fsm.go("exists_meta_r", "right", "rM", "exists_meta_s")
+    fsm.go("exists_meta_s", "right", "s", "exists_mask")
+    fsm.go("exists_mask", "lit_r", "M`0001`W&", "exists_branch")
     fsm.sign(
-        "op_branch",
+        "exists_branch",
         "mid",
         "",
         neg="bad_op",
+        zero="missing_context_r" if echo_context else "missing_drop",
+        pos="exists_restore",
+    )
+    fsm.go("bad_op", "right", "H", "bad_op")
+    if echo_context:
+        fsm.go("missing_context_r", "right", "r", "missing_context_out")
+        fsm.go("missing_context_out", "left", "s", "missing_meta_drop")
+        fsm.go("missing_meta_drop", "right", "r", "missing_out")
+        fsm.go("missing_out", "left", "0s0s", "context_r")
+    else:
+        fsm.go("missing_drop", "right", "rr", "missing_out")
+        fsm.go("missing_out", "left", "0s0s", "context_r")
+    fsm.go("exists_restore", "right", "rs", "context_echo" if echo_context else "op_branch")
+    if echo_context:
+        fsm.go("context_echo", "left", "s", "op_branch")
+    fsm.bp(
+        "op_branch",
+        "mid",
+        "",
         zero="send_pipe_rotate",
         pos="recv_pipe_rotate",
     )
-    fsm.go("bad_op", "right", "H", "bad_op")
 
     # SEND: decode event, source and head, then compare event/source.
     fsm.go("send_pipe_rotate", "right", "rs", "send_event")
@@ -126,9 +180,9 @@ def _build_fsm() -> _Fsm:
     fsm.go("send_pipe_dup_r", "right", "r", "send_pipe_dup_s")
     fsm.go("send_pipe_dup_s", "right", "ss", "send_event_rotate")
     fsm.go("send_event_rotate", "right", "rs", "send_source")
-    _decode_ring_byte(fsm, "send_source", 0, "send_source_s")
+    _decode_ring_byte(fsm, "send_source", 1, "send_source_s")
     fsm.go("send_source_s", "right", "s", "send_head")
-    _decode_ring_byte(fsm, "send_head", 8, "send_head_s")
+    _decode_ring_byte(fsm, "send_head", 9, "send_head_s")
     fsm.go("send_head_s", "right", "s", "send_event_cmp_r")
     fsm.go("send_event_cmp_r", "right", "rM", "send_source_cmp_r")
     fsm.go("send_source_cmp_r", "right", "r-", "send_compare")
@@ -170,9 +224,11 @@ def _build_fsm() -> _Fsm:
     for index in range(4):
         target = f"recv_bound_rotate_{index + 1}" if index < 3 else "recv_dest"
         fsm.go(f"recv_bound_rotate_{index}", "right", "rs", target)
-    _decode_ring_byte(fsm, "recv_dest", 24, "recv_dest_s")
+    _decode_ring_byte(fsm, "recv_dest", 25, "recv_dest_s")
     fsm.go("recv_dest_s", "right", "s", "recv_target")
-    _decode_ring_byte(fsm, "recv_target", 16, "recv_target_s")
+    # Pad the closing tick so the two 2^17 literals do not accidentally
+    # become a vertical pair under the formal in-order pairing rule.
+    _decode_ring_byte(fsm, "recv_target", 17, "recv_target_s", closing_pad=1)
     fsm.go("recv_target_s", "right", "s", "recv_target_rotate_0")
     for index in range(5):
         target = f"recv_target_rotate_{index + 1}" if index < 4 else "recv_target_r"
@@ -261,16 +317,19 @@ def build_packedcandidate_room() -> list[str]:
     return _compile(_build_fsm())
 
 
+def build_packedcandidate_echo_room() -> list[str]:
+    return _compile(_build_fsm(echo_context=True))
+
+
 CTRL_LEFT = 5
 INPUT_ROW, OUTPUT_ROW = 2, 6
 RING_OUT_ROW, RING_IN_ROW = 2, 9
 
 
-def build_packedcandidate_rig() -> str:
+def _build_rig(room: list[str]) -> str:
     from .canvas import Canvas
     from .lllm_fetch import build_relay
 
-    room = build_packedcandidate_room()
     right = CTRL_LEFT + len(room[0]) - 1
     relay_left = right + 5
     far = relay_left + 17
@@ -298,3 +357,11 @@ def build_packedcandidate_rig() -> str:
         ]
     )
     return cv.render()
+
+
+def build_packedcandidate_rig() -> str:
+    return _build_rig(build_packedcandidate_room())
+
+
+def build_packedcandidate_echo_rig() -> str:
+    return _build_rig(build_packedcandidate_echo_room())
