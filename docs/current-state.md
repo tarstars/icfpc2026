@@ -1,6 +1,6 @@
 # Current State
 
-Updated: 2026-07-26
+Updated: 2026-07-27
 
 ## Objective
 
@@ -57,16 +57,14 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   `docs/two-agent-protocol.md`: isolated agent worktrees, one integrator for
   `main`, one serialized submission controller, explicit task write sets, and
   owner-specific status and immutable messages under `coordination/`.
-- The current live Sort best is the 19×19 shrinking-ring `sort_03`; it passed
-  all 25 server cases at score 1,455,739.72. The validated local `sort_05`
-  carries its remaining count as an in-band FIFO token and folds the return
-  pipe into an 18×18 square. It passes all public and 308 deterministic stress
-  workloads at local score 778,062.86, 16.20% below `sort_03`; it has not been
-  submitted.
-- History Lesson's live `history_04` repaired short-token archive is 83×83,
-  passed 1/1, and scores 6,889. Its 1,809-symbol stream fills exactly 201
-  parser-safe words and passes locally in 1,758,189 ticks; see
-  `reports/2026-07-26-history-83-square.md`.
+- Sort `tarstars_sort_08` removes one inert return column while preserving the
+  17-cell shrinking ring. It is live 25/25 at 18×18, score 802,301.76, and
+  rank 45 in the `2026-07-26T23:56:10.445Z` snapshot. See
+  `reports/2026-07-27-sort-18-square.md`.
+- History Lesson `history_05` uses a joint exact-DP dictionary and lookup-slot
+  search to fit the fixed archive into 82×82. It is live 1/1 at score 6,724
+  and rank 17 in the `2026-07-26T23:44:10.311Z` snapshot. See
+  `reports/2026-07-27-history-82-square.md`.
 - Packet Reassembly `tcp_00` passed 20/20 at 38×41 and score 20,028,106.4.
   Five platform downloads recovered the missing tag-through-ring lineage:
   `tcp_01/tcp_05 -> tcp_04 -> tcp_03 -> tcp_02`. The 38×38 `tcp_02` is
@@ -93,31 +91,26 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   75×131 machine. It passed all 20 live cases at server score 9,290,407,667.5,
   improving the preceding counted score by 17.84%. Its algorithm replacement
   also passed 17 directed order and duplicate workloads locally.
-- Memory `memory_01` preserves the submitted pipeline logic but relocates one
-  room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
-  improved the server score from 181,952,075.875 to 91,372,247.625. Details
-  are in `reports/2026-07-24-memory-compaction.md`.
-- The Memory packing feasibility model proves that three signed cell values
-  fit in one signed-64 word using base `2**21`, reducing the record ring from
-  100 values to 34 words. Twenty-six focused tests pass. A corrected
-  conservative projection estimates a 17.19% score reduction; a real
-  `memory_02` machine remains to be built and measured.
-- Plotter is solved by a generated symmetric-Bresenham pipeline. The first
-  correctness baseline passed all 20 live cases at 394×535 and score
-  75,794,498,065. A geometry-only 388×441 successor, `plotter_01`, passes all
-  public and deterministic oracle cases locally and improves the measured
-  local score by 32.98%; it has not been submitted.
+- Memory `memory_13` stores three cells per signed-64 word and shares one
+  two-word relay between READ and WRITE. It is live 24/24 at 29×30, score
+  14,388,375, and rank 16 in the `2026-07-26T23:36:10.399Z` snapshot. See
+  `reports/2026-07-27-memory-two-word-unroll.md`.
+- Plotter `plotter_08` fuses error testing, error updating, address generation,
+  and the display driver into a compact racetrack. It is live 20/20 at
+  130×130, score 1,097,878,080, and rank 58 in the
+  `2026-07-27T00:04:10.359Z` snapshot. See
+  `reports/2026-07-27-plotter-fused-racetrack.md`.
 - Subset Sum is solved by a generated meet-in-the-middle machine with two
   1,024-stage systolic sorters. Its compact 3,646×3,029 artifact passed all
   20 live cases at score 91,769,596,778,389.8. The exact Git-LFS source,
   variant properties, and validation are documented under
   `submissions/subset-sum/` and in
   `reports/2026-07-24-subset-sum.md`.
-- Reverse has a validated local geometry successor: `reverse_02` preserves the
-  corridor-free room programs, reroutes the 17-cell FIFO above the relay, and
-  shrinks 16×16 to 15×15. It passes all public and 260 deterministic stress
-  workloads at local score 261,393.75, 12.15% below live `reverse_01`; it has
-  not been submitted.
+- Reverse `reverse_07` is live 20/20 at 13×13 and score 84,922.5. A separate
+  `Y`-spawned spatial schedule reverses every one-round length 1–16 under the
+  organizer WASM, but still needs a proven multi-round lifecycle before it
+  can replace the counted machine; see
+  `reports/2026-07-26-gpt-reverse-y.md`.
 - TCP-derived transfer audits are complete for Grade Book, Matrix, Brackets,
   Plotter, Sudoku, and Subset Sum. The Sudoku packing bound has since become
   the validated 286-square `sudoku_01`; the Subset Sum relocation probe still
