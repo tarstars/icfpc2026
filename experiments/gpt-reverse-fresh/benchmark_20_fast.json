@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "problem": "reverse-a-list",
   "problemId": "537ec979-d883-40f3-9663-b59579a0682c",
   "artifact": "experiments/gpt-reverse-fresh/reverse_fresh_20_fast.man",
@@ -32,12 +32,24 @@
     "minimumPipeLength": 2,
     "serverLayout": "passed"
   },
-  "comparison": {
-    "currentLiveScore": 84423.95,
-    "scoreReductionPercent": 16.43366603908014,
-    "scoreFactor": 1.1966541459957476,
-    "supersedes": ["reverse_fresh_21.man", "reverse_fresh_20.man"],
-    "verdict": "submission candidate; requires Claude freshness and release gates"
+  "likeForLikeComparison": {
+    "acceptedPublicBaseline": {
+      "artifact": "reverse_08",
+      "width": 13,
+      "height": 13,
+      "averageTicks": 313.75,
+      "score": 53023.75
+    },
+    "candidateToBaselineScoreRatio": 1.3305358447865343,
+    "candidateWorsePercent": 33.053584478653434,
+    "breakEvenMaxDimensionAtCandidateTicks": 17.338706939314342,
+    "scoreAtM17": 50972.375,
+    "improvementAtM17Percent": 3.868785214172894,
+    "verdict": "correct but not submission-worthy; continue only under M<=17"
+  },
+  "nonComparableHiddenLiveReference": {
+    "score": 84423.95,
+    "warning": "Do not compare this hidden-case live score directly with the public-case candidate score."
   },
   "liveSubmission": null
 }
