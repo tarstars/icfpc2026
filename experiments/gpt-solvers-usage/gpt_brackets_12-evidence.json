@@ -1,0 +1,69 @@
+{
+  "authority": {
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "codex or current submission controller",
+    "warning": "Repository preflight and authoritative checkout replay are required before submission."
+  },
+  "baseline": {
+    "footprint": 729,
+    "height": 27,
+    "liveScoreFromRepository": 484532.65,
+    "publicAverageTicks": 379.44444444444446,
+    "publicLocalScore": 276615.0,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "sha256FromCheckedInText": "b89ea0736d6cda08f55a4a565aef19096d0b3f95e356dc78f55fc16ef2838ed2",
+    "version": "brackets_11",
+    "width": 27
+  },
+  "candidate": {
+    "bytes": 671,
+    "footprint": 676,
+    "generator": "littleman.gpt_brackets_26:build_gpt_brackets_26",
+    "height": 26,
+    "men": 3,
+    "parent": "brackets_11",
+    "path": "submissions/brackets/gpt_brackets_12.man",
+    "pipeLengthsParserOrder": [2, 2, 2, 13, 47, 2],
+    "pipes": 6,
+    "problem": "brackets",
+    "rooms": 5,
+    "sha256": "8cc306772304f39e21f6b140586844419b55103cec575834228dc9350bc2c4a5",
+    "version": "gpt_brackets_12",
+    "width": 26
+  },
+  "changes": [
+    "CLOSE final output arm folds from row 2 columns 22-23 into column 22 rows 2-4; outer width 25 -> 24.",
+    "OPEN startup changes @rv + bottom-row U-turn to @r^ feeding a harmless left arrow in the existing return row; outer height 11 -> 10.",
+    "OPEN-to-CLASSIFY transport route moves from column 26 to column 25; length 49 -> 47."
+  ],
+  "localReplay": {
+    "directed": {
+      "cases": 425,
+      "failures": 0,
+      "families": ["empty", "max-depth", "max-length", "every offense position", "unclosed", "wrong-type"]
+    },
+    "exhaustive": {
+      "alphabet": "()[]{}",
+      "cases": 9331,
+      "failures": 0,
+      "lengths": "0..5 inclusive"
+    },
+    "localReductionPercent": 8.003382157712191,
+    "publicAverageTicks": 376.44444444444446,
+    "publicCasesPassed": 9,
+    "publicCasesTotal": 9,
+    "publicLocalScore": 254476.44444444444,
+    "publicTicks": [248, 60, 108, 72, 150, 384, 140, 140, 2086],
+    "random": {
+      "cases": 10000,
+      "failures": 0,
+      "lengthRange": "0..64",
+      "nestingOpenCountCap": 32,
+      "seed": 2026072702,
+      "tickDeltaVsBrackets11": {"max": -1, "mean": -1.9823, "min": -4}
+    },
+    "roleCountSignatureUnchanged": true,
+    "scoreRatioToBaselineLocal": 0.9199661784228781
+  },
+  "schemaVersion": 1
+}
