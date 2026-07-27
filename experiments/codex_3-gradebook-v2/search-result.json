@@ -1,0 +1,351 @@
+{
+  "baseline": {
+    "average_ticks": 73931.42857142857,
+    "score": 10619584331.42857,
+    "sha256": "bd83b5ae20e482697444bbe07c7df09f165707c1acb005f96addb63a955e3fc1",
+    "ticks": [
+      18762,
+      62256,
+      64464,
+      49556,
+      70909,
+      34373,
+      217200
+    ],
+    "vector": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    }
+  },
+  "baseline_path": "submissions/gradebook/codex3_gradebook_06.man",
+  "baseline_structure": {
+    "dimensions": [
+      379,
+      315
+    ],
+    "footprint": 143641,
+    "men": 14,
+    "pipe_lengths": [
+      13,
+      173,
+      173,
+      173,
+      170,
+      23,
+      13,
+      414,
+      25,
+      23,
+      13,
+      118,
+      25,
+      23,
+      13,
+      118,
+      25,
+      22,
+      12,
+      121,
+      28,
+      36,
+      35,
+      35,
+      35,
+      92,
+      87,
+      87,
+      87,
+      3,
+      662
+    ],
+    "pipes": 31,
+    "rooms": 16
+  },
+  "frontier": [
+    {
+      "attempted": 5,
+      "beam": [
+        {
+          "average_ticks": 71456.85714285714,
+          "score": 10264134416.857143,
+          "sha256": "63440272b303dae86ed073cba8402b4914d42a59c49edf7842ad17c937a132d2",
+          "ticks": [
+            18762,
+            62248,
+            64460,
+            49552,
+            70903,
+            34367,
+            199906
+          ],
+          "vector": {
+            "1": 1,
+            "2": 0,
+            "3": 0,
+            "4": 0,
+            "5": 0
+          }
+        }
+      ],
+      "depth": 1,
+      "exhausted": 1,
+      "judge_rejects": 3,
+      "passing": 1,
+      "structural_rejects": 0
+    },
+    {
+      "attempted": 5,
+      "beam": [],
+      "depth": 2,
+      "exhausted": 1,
+      "judge_rejects": 4,
+      "passing": 0,
+      "structural_rejects": 0
+    }
+  ],
+  "parameters": {
+    "beam_width": 12,
+    "max_depth": 8,
+    "random_count": 24,
+    "random_start": 100,
+    "search_rooms": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "stress_finalists": 8
+  },
+  "passing_improvements": 1,
+  "stress": [
+    {
+      "candidate": {
+        "average_ticks": 71456.85714285714,
+        "score": 10264134416.857143,
+        "sha256": "63440272b303dae86ed073cba8402b4914d42a59c49edf7842ad17c937a132d2",
+        "ticks": [
+          18762,
+          62248,
+          64460,
+          49552,
+          70903,
+          34367,
+          199906
+        ],
+        "vector": {
+          "1": 1,
+          "2": 0,
+          "3": 0,
+          "4": 0,
+          "5": 0
+        }
+      },
+      "stress": {
+        "failure": null,
+        "ordered_edges": 256,
+        "passed": true,
+        "random": [
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 100,
+            "ticks": 218848
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 101,
+            "ticks": 282696
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 102,
+            "ticks": 266823
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 103,
+            "ticks": 320981
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 104,
+            "ticks": 203572
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 105,
+            "ticks": 441165
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 106,
+            "ticks": 475493
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 107,
+            "ticks": 263874
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 108,
+            "ticks": 153451
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 109,
+            "ticks": 203364
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 110,
+            "ticks": 268805
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 111,
+            "ticks": 187971
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 112,
+            "ticks": 365410
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 113,
+            "ticks": 157507
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 114,
+            "ticks": 276953
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 115,
+            "ticks": 248695
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 116,
+            "ticks": 465568
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 117,
+            "ticks": 345196
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 118,
+            "ticks": 301923
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 119,
+            "ticks": 184521
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 120,
+            "ticks": 295998
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 121,
+            "ticks": 194085
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 122,
+            "ticks": 310684
+          },
+          {
+            "passed": true,
+            "reason": null,
+            "seed": 123,
+            "ticks": 220337
+          }
+        ],
+        "transitions": [
+          {
+            "actions": 80,
+            "chunk": 0,
+            "passed": true,
+            "reason": null,
+            "ticks": 804150
+          },
+          {
+            "actions": 80,
+            "chunk": 1,
+            "passed": true,
+            "reason": null,
+            "ticks": 1119150
+          },
+          {
+            "actions": 80,
+            "chunk": 2,
+            "passed": true,
+            "reason": null,
+            "ticks": 1319561
+          },
+          {
+            "actions": 20,
+            "chunk": 3,
+            "passed": true,
+            "reason": null,
+            "ticks": 497429
+          }
+        ]
+      }
+    }
+  ],
+  "winner": {
+    "average_ticks": 71456.85714285714,
+    "score": 10264134416.857143,
+    "sha256": "63440272b303dae86ed073cba8402b4914d42a59c49edf7842ad17c937a132d2",
+    "ticks": [
+      18762,
+      62248,
+      64460,
+      49552,
+      70903,
+      34367,
+      199906
+    ],
+    "vector": {
+      "1": 1,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    }
+  }
+}
