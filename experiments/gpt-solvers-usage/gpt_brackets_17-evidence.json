@@ -4,7 +4,7 @@
     "liveApiFreshnessCheckedByGpt": false,
     "platformSubmitted": false,
     "submissionDecisionOwner": "claude",
-    "warning": "Run repository preflight and refresh exact live Brackets state before promotion or submission."
+    "warning": "Run current-main tests, preflight, exact Brackets API freshness, and artifact hash verification before submission."
   },
   "baseline": {
     "version": "brackets_11",
@@ -13,70 +13,52 @@
     "publicLocalScore": 276615.0,
     "liveScoreFromRepository": 484532.65
   },
-  "parent": {
-    "version": "gpt_brackets_15",
-    "width": 25,
-    "height": 25,
-    "footprint": 625,
-    "publicTicks": [246, 58, 106, 70, 146, 380, 136, 136, 2082],
-    "publicLocalScore": 233333.3333333333
-  },
   "candidate": {
     "version": "gpt_brackets_17",
+    "parent": "gpt_brackets_16",
     "path": "submissions/brackets/gpt_brackets_17.man",
-    "experimentPath": "experiments/gpt-solvers-usage/gpt_brackets_17.man",
     "generator": "littleman.gpt_brackets_24:build_gpt_brackets_17",
     "sha256": "51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325",
-    "bytes": 589,
+    "bytes": 594,
     "width": 24,
     "height": 24,
-    "maxDimension": 24,
     "footprint": 576,
     "rooms": 5,
     "pipes": 6,
     "men": 3,
     "pipeLengthsParserOrder": [2, 2, 2, 5, 39, 3]
   },
-  "componentChanges": [
-    "CLOSE shares the mismatched-close and unmatched-open result tail, reducing its outer width by one column.",
-    "OPEN routes end-of-stream through unused columns and the ordinary pair sender, reducing its outer height by one row.",
-    "The 24-square placement chooses shorter state, long-transport and input routes without changing problem behavior."
+  "changesFrom16": [
+    "OPEN shifts two columns left and the input room moves to the lower right.",
+    "CLASSIFY-return top ports move to columns 9 and 7; the OPEN->CLASSIFY endpoint moves from top column 4 to column 5 while preserving every intended nearest-pipe role.",
+    "OPEN->CLOSE shortens 10 -> 5 cells after moving its CLOSE endpoint to the lowest binding-preserving left-wall position.",
+    "OPEN->CLASSIFY shortens 42 -> 39 cells and INPUT->OPEN 4 -> 3; only transport pipes are shortened."
   ],
-  "publicReplay": {
+  "public": {
     "casesPassed": 9,
     "casesTotal": 9,
     "caseTicks": [242, 64, 100, 64, 144, 376, 132, 132, 2078],
     "averageTicks": 370.22222222222223,
-    "localScore": 213248.0,
-    "scoring": "max(width,height)^2 * average ticks"
-  },
-  "additionalReplay": {
-    "exhaustive": {
-      "alphabet": "()[]{}",
-      "lengths": "0..5 inclusive",
-      "cases": 9331,
-      "failures": 0
-    },
-    "random": {
-      "seed": 2026072707,
-      "lengthRange": "0..64",
-      "cases": 10000,
-      "failures": 0,
-      "maximumTicks": 926,
-      "meanTicks": 108.314,
-      "serverCompatibleWallSemantics": true
-    }
+    "localScore": 213248.0
   },
   "improvement": {
-    "localReductionPercentVsBrackets11": 22.90801294217595,
-    "localReductionPercentVsGptBrackets15": 8.608000000000007,
-    "scoreRatioToBrackets11": 0.7709198705782405
+    "reductionVsBrackets11LocalPercent": 22.908012942175947,
+    "factorVsBrackets11Local": 1.2971516731692676,
+    "reductionVsGptBrackets16Percent": 1.3617525162818223,
+    "projectedLiveAtParentServerLocalRatio": 373535.84782893193
   },
-  "staticReplay": {
-    "serverLayout": "passed",
-    "minimumPipeCells": 2,
+  "validation": {
+    "generatorByteEquality": "passed",
+    "serverCompatibility": "passed",
+    "minimumPipeLength": 2,
     "sharedWallCells": 0,
-    "inputRoomPipeCount": 1,
-    "generatorByteEquality": "passed"
+    "inputAdjacentPipeCount": 1,
+    "publicCases": "9/9 passed under littleman.server_compat",
+    "exhaustive": "9,331 strings over ()[]{} through length 5, zero failures",
+    "directed": "266 boundary/type cases, zero failures",
+    "random": "10,000 seeded strings through length 64, zero failures",
+    "releaseRandom": "1,000 exact server-wall-semantics cases are checked in tests/test_gpt_brackets_24.py",
+    "pipeIoOps": 36,
+    "minimumMultiCandidateBindingMargin": 1
   }
 }

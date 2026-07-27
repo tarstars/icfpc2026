@@ -3,84 +3,64 @@
   "authority": {
     "liveApiFreshnessCheckedByGpt": false,
     "platformSubmitted": false,
-    "submissionDecisionOwner": "claude or current submission controller",
-    "warning": "Run repository preflight, retained Brackets tests, and exact live-state refresh before promotion or submission."
+    "submissionDecisionOwner": "claude",
+    "warning": "Run current-main release tests, preflight, exact Brackets API freshness, and artifact hash verification before submission."
   },
   "baseline": {
-    "version": "gpt_brackets_15",
-    "path": "experiments/gpt-solvers-usage/gpt_brackets_15.man",
-    "width": 25,
-    "height": 25,
-    "footprint": 625,
-    "publicTicks": [246, 58, 106, 70, 146, 380, 136, 136, 2082],
-    "publicAverageTicks": 373.3333333333333,
-    "publicLocalScore": 233333.3333333333
+    "version": "brackets_11",
+    "width": 27,
+    "height": 27,
+    "footprint": 729,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "publicLocalScore": 276615.0,
+    "liveScoreFromRepository": 484532.65
   },
   "candidate": {
     "version": "gpt_brackets_16",
     "parent": "gpt_brackets_15",
-    "path": "experiments/gpt-solvers-usage/gpt_brackets_16.man",
-    "generator": "experiments/gpt-solvers-usage/build_gpt_brackets_16.py",
-    "sha256": "081cd30e57d63e7776280755ea75498870fcfff2575fe3b5ee2b3995ae80c79f",
-    "bytes": 605,
+    "path": "submissions/brackets/gpt_brackets_16.man",
+    "generator": "littleman.gpt_brackets_24:build_gpt_brackets_16",
+    "sha256": "706ec513016503a48cd793a48d43fee17e0caf71c4d476b875eeaef66fe62845",
+    "bytes": 602,
     "width": 24,
-    "height": 25,
-    "footprint": 625,
+    "height": 24,
+    "footprint": 576,
     "rooms": 5,
-    "men": 3,
     "pipes": 6,
-    "pipeLengthsParserOrder": [2, 2, 2, 9, 41, 2],
-    "usesVerifiedFinalWallSemantics": true
+    "men": 3,
+    "pipeLengthsParserOrder": [2, 2, 2, 10, 42, 4]
   },
-  "changesFrom15": [
-    "CLOSE outer width shrinks 23 -> 22. Its empty-stack output path executes the final send at the eastmost interior cell and then takes the server-tolerated wall step.",
-    "OPEN and INPUT move one column left after the CLOSE width release.",
-    "OPEN-to-CLOSE transport route shortens 10 -> 9 cells and reaches its inclusive Manhattan lower bound.",
-    "OPEN-to-CLASSIFY transport route moves corridor column 24 -> 23 and shortens 42 -> 41 cells.",
-    "Room logic, logical topology, and the other four pipe lengths remain unchanged."
+  "changes": [
+    "CLOSE outer width 23 -> 22: the mismatched-close path descends through 1,+ into the unmatched-open final send; both paths use the same final s and server-confirmed final-wall-after-send behavior.",
+    "OPEN outer height 9 -> 8: the dedicated terminal row is removed; terminal state follows a two-column detour, emits (0,4) through the ordinary pair sender, and halts through a BP=0 d branch.",
+    "Input room moves to the lower left; input transport grows 2 -> 4 cells.",
+    "OPEN->CLASSIFY remains exactly 42 cells through a four-cell staple; OPEN->CLOSE remains at its ten-cell Manhattan minimum."
   ],
-  "localReplay": {
-    "publicCasesPassed": 9,
-    "publicCasesTotal": 9,
-    "publicTicks": [245, 57, 105, 69, 145, 379, 135, 135, 2081],
-    "publicAverageTicks": 372.3333333333333,
-    "publicLocalScore": 232708.3333333333,
-    "scoreRatioToGptBrackets15Local": 0.9973214285714286,
-    "improvementVsGptBrackets15Percent": 0.2678571428571419,
-    "scoreRatioToBrackets11Local": 0.8412715627617204,
-    "reductionVsBrackets11Percent": 15.872843723827955,
-    "exhaustive": {
-      "alphabet": "()[]{}",
-      "lengths": "0..5 inclusive",
-      "cases": 9331,
-      "failures": 0
-    },
-    "random": {
-      "seed": 2026072706,
-      "cases": 2000,
-      "lengthRange": "0..64",
-      "nestingDepthCap": 32,
-      "failures": 0,
-      "tickDeltaVsGptBrackets15": {
-        "min": -1,
-        "max": -1,
-        "mean": -1.0,
-        "counts": {"-1": 2000}
-      }
-    },
-    "oracleAnchor": "The same exact local engine reproduced gpt_brackets_15's checked-in public tick vector before evaluating this candidate."
+  "public": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "caseTicks": [248, 70, 106, 70, 150, 380, 136, 136, 2082],
+    "averageTicks": 375.3333333333333,
+    "localScore": 216192.0
   },
-  "staticReplay": {
-    "minimumPipeCells": 2,
+  "improvement": {
+    "reductionVsBrackets11LocalPercent": 21.843717802722196,
+    "factorVsBrackets11Local": 1.2794876776198933,
+    "reductionVsGptBrackets15Percent": 7.346285714285705,
+    "projectedLiveAtParentServerLocalRatio": 378692.7052719484
+  },
+  "validation": {
+    "generatorByteEquality": "passed",
+    "serverCompatibility": "passed",
+    "minimumPipeLength": 2,
     "sharedWallCells": 0,
-    "inputRoomAdjacentPipeIndices": [5],
-    "logicalRoomPairSignatureUnchanged": true,
-    "strictSimulatorNote": "The strict judge reports wall after the final output send; littleman.server_compat/alexey_walljudge implements the already server-proven drain-after-final-wall behavior."
-  },
-  "projection": {
-    "brackets11LiveScoreFromRepository": 484532.65,
-    "localRatioToBrackets11": 0.8412715627617204,
-    "projectedLiveScore": 407623.5396745778,
-    "warning": "Projection only; hidden workload and current live baseline must be refreshed by the submission controller."
+    "inputAdjacentPipeCount": 1,
+    "publicCases": "9/9 passed under littleman.server_compat",
+    "exhaustive": "9,331 strings over ()[]{} through length 5, zero failures",
+    "exactRandom": "1,000 seeded strings through length 64 in checked-in release test, plus a separate 500-case cross-check, zero failures",
+    "directed": "266 boundary/type cases, zero failures",
+    "additionalFastWallRandom": "10,000 seeded strings through length 64, zero failures",
+    "pipeIoOps": 36,
+    "minimumMultiCandidateBindingMargin": 1
   }
 }

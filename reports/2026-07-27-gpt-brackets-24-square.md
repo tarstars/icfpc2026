@@ -1,121 +1,104 @@
-# GPT Brackets 24-square search
+# Solver-guided 24-square Brackets lineage
 
 Date: 2026-07-27
 
-Status: true 24x24 candidate preserved and independently replayed; ready for
-Claude's freshness and release gate.
+## Best result
 
-## Best result: `gpt_brackets_17`
-
-```text
-artifact       submissions/brackets/gpt_brackets_17.man
-experiment     experiments/gpt-solvers-usage/gpt_brackets_17.man
-generator      littleman.gpt_brackets_24:build_gpt_brackets_17
-sha256         51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325
-bytes          589
-box            24x24
-footprint      576
-rooms/pipes/men 5/6/3
-pipe lengths   [2, 2, 2, 5, 39, 3]
-```
-
-The earlier immutable `gpt_brackets_16` remains the separately preserved 24x25
-candidate. `gpt_brackets_17` does not overwrite or redefine it.
-
-## Component synthesis
-
-The 24-square result required changing implementations, not only moving the
-old rectangles.
-
-### CLOSE
-
-The mismatched-close and unmatched-open result paths share one terminal output
-send. The terminal path deliberately relies on the server-confirmed rule that a
-man may step into a wall after its final send while the output pipe drains.
-This removes one outer column.
-
-### OPEN
-
-The dedicated end-of-stream row is removed. End-of-stream travels through two
-otherwise-unused columns, emits the existing `(0, 4)` pair via the ordinary
-pair sender, and halts through the backpack branch. This removes one outer row.
-
-### Placement and ports
-
-A bounded same-wall port search places the five rooms inside a 24-square and
-chooses:
-
-- a five-cell OPEN-to-CLOSE state route;
-- a 39-cell OPEN-to-CLASSIFY transport route;
-- a three-cell input route;
-- three two-cell local routes.
-
-The complete rendered machine passes the server layout and single-input-pipe
-gates.
-
-## Measured evidence
-
-Public test result under `littleman.server_compat`:
+`gpt_brackets_17` is the best current candidate.
 
 ```text
-case ticks   [242, 64, 100, 64, 144, 376, 132, 132, 2078]
-average      370.22222222222223
-score        max(24,24)^2 * average
-             = 213248.0
+artifact: submissions/brackets/gpt_brackets_17.man
+SHA-256: 51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325
+bytes: 594
+rooms / pipes / men: 5 / 6 / 3
+pipe lengths: [2, 2, 2, 5, 39, 3]
+public: 9 / 9
+public ticks: [242, 64, 100, 64, 144, 376, 132, 132, 2078]
+average ticks: 370.22222222222223
+footprint: 24^2 = 576
+local score: 213248.0
 ```
 
-Comparison:
+The project score is:
 
 ```text
-                         brackets_11       gpt_brackets_15   gpt_brackets_17
-max dimension            27                25                24
-footprint                 729               625               576
-public local score        276615.0          233333.333333     213248.0
-reduction vs brackets_11                                      22.908013%
-reduction vs gpt_15                                           8.608000%
+max(width, height)^2 * average ticks
 ```
 
-Additional validation:
+Against `brackets_11` at local score `276615.0`, candidate 17 is
+`22.908013%` lower (`1.29715x`). The repository live score for `brackets_11`
+is `484532.65`; applying the parent server/local ratio gives a non-authoritative
+projection near `373536`.
 
-- exact generator/artifact equality and pinned SHA-256;
-- all 9,331 strings over `()[]{}` of lengths zero through five;
-- 10,000 deterministic random strings of lengths zero through 64, seed
-  `2026072707`, zero failures;
-- random maximum runtime 926 ticks, mean 108.314;
-- parser structure, server layout, no shared walls, exactly one input-adjacent
-  pipe, and minimum two-cell pipes.
+## Component folds
 
-The random and exhaustive runs use `server_compat` because this candidate
-intentionally ends one output path at a wall after the final send. The strict
-local judge reports `wall` after correct output on that path; the contest server
-has already accepted this exact semantic pattern on other live programs.
+### CLOSE: one shared terminal send
 
-## Solver interpretation
+The preceding room used a separate rightmost column for the mismatched-close
+result. The new room moves `1,+` into the final existing column and shares the
+unmatched-open `s`. Both paths step into the wall after the send. This behavior
+is server-confirmed and judged locally through `littleman.server_compat`.
+CLOSE outer width falls from 23 to 22.
 
-The important result is the component frontier:
+### OPEN: terminal pair through the ordinary sender
 
-- the old CLOSE width was not a lower bound;
-- the old OPEN height was not a lower bound;
-- jointly changing those variants unlocked the square reduction;
-- once variants were fixed, the remaining placement and port routing were a
-  small finite search.
+The preceding room dedicated an entire row to end-of-stream. The new room routes
+terminal state through two spare columns, constructs `(A=0,B=4)`, joins the
+ordinary pair sender, and halts through a `d` branch whose backpack is zero.
+Character paths retain positive backpack state and turn back into the scan loop.
+OPEN outer height falls from 9 to 8.
 
-The next frontier is 23x23. It cannot be reached by moving the current rooms
-unchanged: CLOSE is 22 columns wide outside its walls and consumes 23 columns
-with the room box, while OPEN and the mandatory routing occupy the remaining
-axis. A successor must synthesize at least one further component reduction or a
-new joint OPEN/CLOSE implementation before placement search.
+## Port/placement optimization
 
-## Requested action
+Candidate 16 established the 24x24 box at score `216192.0`. Candidate 17 keeps
+the same components and footprint, then applies a finite endpoint search:
 
-Claude should independently replay:
+- OPEN moves left and INPUT moves to the lower right;
+- the CLASSIFY-return ports move to columns 9 and 7;
+- the OPEN -> CLASSIFY endpoint moves one column right while preserving the
+  intended nearest-pipe split;
+- OPEN -> CLOSE shortens `10 -> 5` cells;
+- OPEN -> CLASSIFY shortens `42 -> 39`;
+- INPUT -> OPEN shortens `4 -> 3`.
 
-```bash
+Only transport pipes are shortened. Candidate 17 improves candidate 16 by
+`1.361753%` without changing the 24-square footprint.
+
+## Validation
+
+```text
 PYTHONPATH=src uv run pytest -q -n 0 tests/test_gpt_brackets_24.py
-PYTHONPATH=src uv run python scripts/preflight.py \
-  submissions/brackets/gpt_brackets_17.man brackets
 ```
 
-Then refresh the exact live Brackets score and submit only the pinned SHA if it
-still improves the counted result. GPT has made no contest API call and retains
-no platform authority.
+The available local environment used:
+
+```text
+PYTHONPATH=src python -m pytest -q -o addopts='' tests/test_gpt_brackets_24.py
+# 3 passed
+```
+
+Evidence:
+
+- deterministic generator byte equality for candidates 16 and 17;
+- pinned hashes;
+- strict parse: 5 rooms, 6 pipes, 3 men;
+- `server_compat.validate_layout`: passed;
+- no shared walls and exactly one input-adjacent pipe;
+- every pipe has at least two cells;
+- public 9/9 under server final-wall semantics;
+- 9,331 exhaustive strings over `()[]{}` through length five;
+- 266 directed boundary/type cases;
+- 10,000 seeded random strings through length 64;
+- zero behavioral failures.
+
+The component rewrite deliberately removes four sends relative to `brackets_11`,
+so raw I/O-op counts differ. Every surviving I/O instruction resolves to its
+intended logical room pair. The smallest multi-candidate binding margin is one
+cell and is covered by the exact layout tests.
+
+## Authority
+
+GPT has no contest credentials and made no platform mutation. The branch is
+based on current integrated `main`. Claude is coordinator, integrator, and sole
+submission controller and must repeat freshness, preflight, and hash checks
+before deciding whether to submit.
