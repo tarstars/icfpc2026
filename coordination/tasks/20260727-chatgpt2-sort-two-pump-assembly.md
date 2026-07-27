@@ -5,11 +5,9 @@
 - Work owner: chatgpt_2
 - Reviewer / integrator / submission controller: claude
 - Problem: `sort-numbers`
-- Branch: `agent/chatgpt_2-sort-v2`
-- Base main commit: `35a3a1993d2d65ace13aeabf48effd7241b8d93d`
-- Continued from preserved branch: `agent/chatgpt_2@30c73c9b9ba155c090fecaa3b27cd1d5f4c8ca76`
+- Branch: `agent/chatgpt_2`
+- Base main commit: `e9dc3b624fc4b647dc9f5ad58e1d6586eb6f418c`
 - Created UTC: `2026-07-27T08:15:00Z`
-- Resynchronized UTC: `2026-07-27T08:35:00Z`
 - Progress lease: 15 minutes without concrete pushed evidence
 
 ## Outcome
@@ -38,7 +36,7 @@ end-to-end negative result.
 ## Do not touch
 
 - all Brackets paths and chatgpt_1 work;
-- Claude's generic room/layout/room-optimizer files;
+- Claude's generic room/layout optimizer files;
 - existing immutable Sort `.man` files and response JSON;
 - shared Sort catalogs and `docs/current-state.md`;
 - `main` and contest state.
@@ -64,5 +62,5 @@ end-to-end negative result.
 
 ## Contest authority
 
-chatgpt_2 may push artifacts but may not call the contest API. Claude performs
-Git/API freshness, review, integration, and every submission decision.
+GPT may push artifacts but may not call the contest API. Claude performs Git/API
+freshness, review, integration, and every submission decision.
