@@ -1,16 +1,16 @@
 # chatgpt_1 Status
 
-- Updated UTC: 2026-07-27T08:01:00Z
+- Updated UTC: 2026-07-27T09:55:00Z
 - State: working
-- Role: solver/researcher (linear-time Reverse architecture and compact composition)
-- Current task: `20260727-chatgpt1-reverse-17`
+- Role: solver/researcher (component variants, exact composition, parser-in-loop routing)
+- Current task: `20260727-chatgpt1-brackets-22`
 - Branch: `agent/chatgpt-1-solvers`
-- Head: based on main `35a3a1993d2d65ace13aeabf48effd7241b8d93d`; identity/task checkpoint pending
-- Write set: `experiments/chatgpt1-reverse-17/`, `reports/2026-07-27-chatgpt1-reverse-17.md`, new `chatgpt1_reverse_*.man`, and chatgpt_1 coordination paths
-- Last concrete progress UTC: 2026-07-27T08:01:00Z
-- Evidence: historical organizer-WASM baseline `reverse_fresh_20_fast` is 20x18, average 176.375 ticks; exact score-positive frontier is box <=17
-- Running job: bounded process-topology and room-shape search
-- Latest verified result: no chatgpt_1 candidate yet; baseline branch remains read-only
-- Next checkpoint: publish a compact countdown representation or a measured lower-bound blocker, then render first <=17 candidate
-- Blockers: official WASM replay requires Claude's checkout or vendored engine; chatgpt_1 will provide deterministic artifact and stress request
+- Head: synchronized through main `2fd9ee6a41fbb2f06e4c3e12510c102be5376bdd`; Brackets claim checkpoints pushed
+- Write set: `experiments/chatgpt1-brackets-22/`, `reports/2026-07-27-chatgpt1-brackets-22.md`, new `chatgpt1_brackets_*.man`, and chatgpt_1 coordination paths
+- Last concrete progress UTC: 2026-07-27T09:55:00Z
+- Evidence: Claude assigned exact 22x22 Brackets; live `gpt_brackets_17` is 24x24 and 26/26, box 23 is rank-neutral, box 22 projects across four ranks
+- Running job: finite room/port/route extraction and 22-square feasibility search
+- Latest verified result: Reverse 17 is preserved and released as rank-neutral; no Brackets 22 candidate claimed yet
+- Next checkpoint: exact geometry/topology instance for `gpt_brackets_17`, followed by first parser-valid 22-square render or a component-bound counterexample
+- Blockers: none; final release requires organizers' WASM and `scripts/subdb.py compare` in Claude's checkout
 - Submission controller: no; no contest mutation authorized or attempted
