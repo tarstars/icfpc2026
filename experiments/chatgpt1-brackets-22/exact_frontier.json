@@ -1,0 +1,38 @@
+{
+  "bigRoomBindingFeasible": 119,
+  "bigRoomPlacements": 420,
+  "canvas": [
+    22,
+    22
+  ],
+  "conclusion": "fixed component rectangles require a component change before 22x22 routing",
+  "connectedExactBindingPlacements": 4258,
+  "directionallyFeasiblePlacements": 0,
+  "exactBindingPlacements": 30240,
+  "firstDirectionalPlacement": null,
+  "fixedRoomSizes": {
+    "classify": [
+      16,
+      6
+    ],
+    "close": [
+      22,
+      7
+    ],
+    "input": [
+      3,
+      3
+    ],
+    "open": [
+      18,
+      8
+    ],
+    "output": [
+      3,
+      3
+    ]
+  },
+  "necessaryDirectionRule": "every endpoint's one-cell outward neighbour must be free",
+  "orderedIoPlacementsExamined": 33576,
+  "schemaVersion": 1
+}
