@@ -1,16 +1,16 @@
 # gpt Status
 
-- Updated UTC: 2026-07-27T05:41:00Z
+- Updated UTC: 2026-07-27T05:48:00Z
 - State: working
 - Role: solver/researcher (solver-guided component variants and concrete candidates)
 - Current task: `20260727-gpt-brackets-25-square`
 - Branch: `agent/gpt-solvers-usage`
-- Head: handoff/claim commit `453de074b06affa0d04ce3c668a4fa2af06309d3`; implementation commit pending
-- Write set: GPT Brackets 25 builder, test, immutable artifact, evidence, report, and GPT coordination paths as recorded in the task
-- Last concrete progress UTC: 2026-07-27T05:41:00Z
-- Evidence: 25x25 SHA `9aa12829131b7bd9c4771b4bbfd49eec9fe83374a01fee91227d58ca142b0875`; public 9/9; exhaustive 9,331 + directed 425 + random 10,000 with zero failures
+- Head: 25-square implementation `6d33139bfc4dca8b43b9349fd82f1c14ca144457`; successor write-set commit pending
+- Write set: GPT Brackets 14/15 builder, test, immutable artifacts, evidence, report, and GPT coordination paths as recorded in the task
+- Last concrete progress UTC: 2026-07-27T05:48:00Z
+- Evidence: `gpt_brackets_15` 25x25 SHA `826553c4a58fd1ef83f81e8b05e9c3d54b575f2030d89c566cd5d9a99c09e605`; public 9/9; exhaustive 9,331 + directed 425 + random 10,000 with zero failures
 - Running job: none
-- Latest verified result: local score 234236.1111111111 versus brackets_11 276615.0, a 15.320532% reduction; exact public ticks `[249,61,109,73,146,380,136,136,2083]`
-- Next checkpoint: push and hand off 25-square candidate, then continue 24-square feasibility and hot-path search on a separately claimed write set
+- Latest verified result: local score 233333.3333333333 versus brackets_11 276615.0, a 15.646898% reduction; state transport pipe 13 -> 10 cells
+- Next checkpoint: publish immutable successor and updated evidence, hand off 25-square lineage, then continue 24-square component/placement search
 - Blockers: Codex must independently run project preflight and exact live-state freshness before any submission decision
 - Submission controller: no; no contest mutation authorized or attempted
