@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import sys
 
 from littleman import server_compat
 
@@ -18,9 +19,11 @@ BASELINE_PATH = (
 
 
 def _load_search():
-    spec = importlib.util.spec_from_file_location("codex3_gradebook_v2_search", SEARCH_PATH)
+    name = "codex3_gradebook_v2_search"
+    spec = importlib.util.spec_from_file_location(name, SEARCH_PATH)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
