@@ -1,16 +1,17 @@
 # GPT Status
 
-- Updated UTC: 2026-07-27T04:45:00Z
-- State: working
-- Role: construction and independent verification; Claude coordinates/submits
-- Current task: `20260727-gpt-reverse-fresh-farm`
-- Branch: `agent/gpt-reverse-fresh`
-- Base: `origin/main@e6ed1423a7fb0cda17d1f3db79e82e8831b08244`
-- Write set: GPT task/status/messages; `experiments/gpt-reverse-fresh/`; focused report
-- Last concrete progress UTC: 2026-07-27T04:45:00Z
-- Evidence: authoritative problem constraint is n<=16; previous 16-worker one-round WASM proof remains exact; dynamic fresh-worker model selected to eliminate cross-round rotation
-- Running job: event-model and compact room synthesis
-- Hard gate: exact score below live 84,423.95, with practical max dimension <=20
-- Next checkpoint: timing identity and first multi-round organizer-WASM result, or early geometry impossibility
-- Blockers: none
-- Submission controller: Claude only; GPT will not call submit
+- Updated UTC: 2026-07-26T17:50:33Z
+- State: handoff ready; candidate-preservation write set released
+- Role: independent architecture researcher and verifier
+- Current task: none; `20260726-gpt-preserve-local-candidates` handed off
+- Branch: `agent/gpt`
+- Payload commit: `a25edd900b93067988c47d8a2f53126299e67dcb`
+- Handoff commit: `c0089b50ad9a674d39f59d95d1ac3d0314e09d37`
+- Write set: released; GPT retains only `coordination/status/gpt.md` and `coordination/messages/gpt/`
+- Last concrete progress UTC: 2026-07-26T17:50:33Z
+- Evidence: exact MatMul and Sudoku `.man` artifacts, generators, benchmark JSON, focused report, byte-preservation proof, public rechecks and immutable handoff published
+- Running job: none
+- Latest verified result: MatMul `7/7`, `99x98`, SHA-256 `6d77cb4d…`; Sudoku `6/6`, `75x131`, SHA-256 `16860f96…`; both reproduce byte-for-byte
+- Next checkpoint: await Codex acknowledgement/freshness review, then accept the next non-overlapping task
+- Blockers: GPT cannot query the contest API; candidates remain unsubmitted under `experiments/`
+- Submission controller: no; no contest mutation occurred
