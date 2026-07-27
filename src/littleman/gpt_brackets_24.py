@@ -1,7 +1,6 @@
-"""Solver-guided 24x24 Brackets candidate.
+"""Solver-guided 24x24 Brackets candidates.
 
-The machine descends from the 25-square GPT lineage but changes two components,
-not merely their placement:
+The lineage changes two components, not merely their placement:
 
 * CLOSE folds the mismatched-close result tail into the existing unmatched-open
   result send. Both paths finish on the same ``s`` and use the server-confirmed
@@ -11,9 +10,9 @@ not merely their placement:
   ordinary pair sender, and halts via the backpack branch, shrinking the room by
   one row.
 
-The input room moves to the lower left. The long OPEN -> CLASSIFY transport
-retains exactly 42 pipe cells through a four-cell staple detour, and the
-OPEN -> CLOSE state pipe remains at its ten-cell Manhattan minimum.
+``gpt_brackets_17`` then moves OPEN left and reassigns the safe ports. The
+OPEN -> CLOSE state transport falls to five cells and OPEN -> CLASSIFY to 39;
+the input transport is three cells. All changes are regenerated exactly here.
 """
 
 from __future__ import annotations
@@ -44,7 +43,7 @@ OPEN_24 = [
     "H ds    Ws   < <",
 ]
 
-ROOMS = [
+ROOMS_16 = [
     (1, 0, "classify"),
     (4, 19, "output"),
     (9, 1, "close"),
@@ -52,7 +51,7 @@ ROOMS = [
     (21, 0, "input"),
 ]
 
-PIPES = [
+PIPES_16 = [
     ([(7, 6), (8, 6)], "v"),
     ([(8, 8), (7, 8)], "^"),
     ([(8, 20), (7, 20)], "^"),
@@ -64,6 +63,23 @@ PIPES = [
     ([(20, 1), (19, 1), (19, 3)], ">"),
 ]
 
+ROOMS_17 = [
+    (1, 0, "classify"),
+    (4, 19, "output"),
+    (9, 1, "close"),
+    (16, 2, "open"),
+    (20, 20, "input"),
+]
+
+PIPES_17 = [
+    ([(7, 9), (8, 9)], "v"),
+    ([(8, 7), (7, 7)], "^"),
+    ([(8, 20), (7, 20)], "^"),
+    ([(17, 1), (17, 0), (14, 0)], ">"),
+    ([(17, 20), (17, 23), (0, 23), (0, 5)], "v"),
+    ([(19, 21), (18, 21), (18, 20)], "<"),
+]
+
 
 def _box(interior: list[str]) -> list[str]:
     width = len(interior[0])
@@ -73,9 +89,7 @@ def _box(interior: list[str]) -> list[str]:
     return [edge] + ["|" + row + "|" for row in interior] + [edge]
 
 
-def build_gpt_brackets_16() -> str:
-    """Render the exact 24x24 candidate."""
-
+def _build(rooms, pipes) -> str:
     art = {
         "classify": _box(CLASSIFY),
         "close": _box(CLOSE_24),
@@ -84,13 +98,25 @@ def build_gpt_brackets_16() -> str:
         "output": ["+-+", "|O|", "+-+"],
     }
     canvas = Canvas()
-    for row, column, name in ROOMS:
+    for row, column, name in rooms:
         canvas.put(row, column, art[name])
-    for waypoints, terminal in PIPES:
+    for waypoints, terminal in pipes:
         canvas.pipe(waypoints)
         canvas.cells[waypoints[-1]] = terminal
     return canvas.render()
 
 
+def build_gpt_brackets_16() -> str:
+    """Render the first exact 24x24 candidate."""
+
+    return _build(ROOMS_16, PIPES_16)
+
+
+def build_gpt_brackets_17() -> str:
+    """Render the port-shortened 24x24 successor."""
+
+    return _build(ROOMS_17, PIPES_17)
+
+
 if __name__ == "__main__":
-    print(build_gpt_brackets_16(), end="")
+    print(build_gpt_brackets_17(), end="")
