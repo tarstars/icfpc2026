@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "problem": "reverse-a-list",
+  "problemId": "537ec979-d883-40f3-9663-b59579a0682c",
+  "artifact": "experiments/gpt-reverse-fresh/reverse_fresh_20.man",
+  "generator": "experiments/gpt-reverse-fresh/build_single_y_candidate.py",
+  "sha256": "a94a74bc0d422648579f718a6221aff10e0d22dc0eb397751f721457f59ae28d",
+  "bytes": 348,
+  "width": 20,
+  "height": 18,
+  "maxDimension": 20,
+  "scoring": "max(width,height)^2 * average ticks",
+  "public": {
+    "casesPassed": 8,
+    "casesTotal": 8,
+    "caseTicks": [148, 85, 134, 211, 120, 127, 253, 393],
+    "averageTicks": 183.875,
+    "score": 73550.0,
+    "oracle": "organizers vendored WASM; stopped at final expected output emission"
+  },
+  "stress": {
+    "casesPassed": 1277,
+    "casesTotal": 1277,
+    "maximumTicks": 4705,
+    "coverage": "all lengths 1..16; 32 repeated full-size rounds; 64 singleton rounds; ascending, descending and alternating lifecycle streams; all 256 ordered length pairs; 1000 deterministic random one-to-five-round streams; signed extreme values"
+  },
+  "structure": {
+    "rooms": 3,
+    "pipes": 2,
+    "menInitially": 1,
+    "pipeLengths": [2, 3],
+    "minimumPipeLength": 2,
+    "serverLayout": "passed"
+  },
+  "comparison": {
+    "currentLiveScore": 84423.95,
+    "scoreReductionPercent": 12.880172036489643,
+    "scoreFactor": 1.147844323589395,
+    "supersedes": "reverse_fresh_21.man",
+    "verdict": "submission candidate; requires Claude freshness and release gates"
+  },
+  "liveSubmission": null
+}

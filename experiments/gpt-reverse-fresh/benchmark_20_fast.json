@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 2,
+  "problem": "reverse-a-list",
+  "problemId": "537ec979-d883-40f3-9663-b59579a0682c",
+  "artifact": "experiments/gpt-reverse-fresh/reverse_fresh_20_fast.man",
+  "generator": "experiments/gpt-reverse-fresh/build_single_y_fast_candidate.py",
+  "sha256": "f36477129f496a499cd0d594b3a30a1f560f82aae2eaefee639426c042fb01e8",
+  "bytes": 348,
+  "width": 20,
+  "height": 18,
+  "maxDimension": 20,
+  "scoring": "max(width,height)^2 * average ticks",
+  "public": {
+    "casesPassed": 8,
+    "casesTotal": 8,
+    "caseTicks": [139, 82, 128, 202, 114, 118, 244, 384],
+    "averageTicks": 176.375,
+    "score": 70550.0,
+    "oracle": "organizers vendored WASM; stopped at final expected output emission"
+  },
+  "stress": {
+    "casesPassed": 1277,
+    "casesTotal": 1277,
+    "maximumTicks": 4609,
+    "coverage": "all lengths 1..16; 32 repeated full-size rounds; 64 singleton rounds; ascending, descending and alternating lifecycle streams; all 256 ordered length pairs; 1000 deterministic random one-to-five-round streams; signed extreme values"
+  },
+  "structure": {
+    "rooms": 3,
+    "pipes": 2,
+    "menInitially": 1,
+    "pipeLengths": [2, 3],
+    "minimumPipeLength": 2,
+    "serverLayout": "passed"
+  },
+  "likeForLikeComparison": {
+    "acceptedPublicBaseline": {
+      "artifact": "reverse_08",
+      "width": 13,
+      "height": 13,
+      "averageTicks": 313.75,
+      "score": 53023.75
+    },
+    "candidateToBaselineScoreRatio": 1.3305358447865343,
+    "candidateWorsePercent": 33.053584478653434,
+    "breakEvenMaxDimensionAtCandidateTicks": 17.338706939314342,
+    "scoreAtM17": 50972.375,
+    "improvementAtM17Percent": 3.868785214172894,
+    "verdict": "correct but not submission-worthy; continue only under M<=17"
+  },
+  "nonComparableHiddenLiveReference": {
+    "score": 84423.95,
+    "warning": "Do not compare this hidden-case live score directly with the public-case candidate score."
+  },
+  "liveSubmission": null
+}

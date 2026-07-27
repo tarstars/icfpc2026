@@ -1,15 +1,16 @@
-# gpt Status
+# GPT Status
 
-- Updated UTC: 2026-07-27T08:02:00Z
+- Updated UTC: 2026-07-27T04:45:00Z
 - State: working
-- Role: solver/researcher (component synthesis and solver-guided composition)
-- Current task: `20260727-gpt-brackets-close-component`
-- Branch: `agent/gpt-solvers-usage`
-- Write set: isolated CLOSE component experiments/library/tests/report and GPT coordination paths
-- Last concrete progress UTC: 2026-07-27T08:02:00Z
-- Evidence: 23-square `gpt_brackets_18` handed to Claude; CLOSE outer width 22 is now the binding dimension for a 22-square successor
-- Running job: bounded instruction-cell relocation and behavioral trace analysis for CLOSE
-- Latest verified result: current component library composes to 23x23 with exact parser topology and binding map
-- Next checkpoint: publish at least one width-21 CLOSE variant with trace evidence, or a finite template-level contraction blocker
-- Blockers: none; Claude owns shared layout infrastructure and all contest submissions
-- Submission controller: no; no contest mutation authorized or attempted
+- Role: construction and independent verification; Claude coordinates/submits
+- Current task: `20260727-gpt-reverse-fresh-farm`
+- Branch: `agent/gpt-reverse-fresh`
+- Base: `origin/main@e6ed1423a7fb0cda17d1f3db79e82e8831b08244`
+- Write set: GPT task/status/messages; `experiments/gpt-reverse-fresh/`; focused report
+- Last concrete progress UTC: 2026-07-27T04:45:00Z
+- Evidence: authoritative problem constraint is n<=16; previous 16-worker one-round WASM proof remains exact; dynamic fresh-worker model selected to eliminate cross-round rotation
+- Running job: event-model and compact room synthesis
+- Hard gate: exact score below live 84,423.95, with practical max dimension <=20
+- Next checkpoint: timing identity and first multi-round organizer-WASM result, or early geometry impossibility
+- Blockers: none
+- Submission controller: Claude only; GPT will not call submit
