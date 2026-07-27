@@ -55,3 +55,11 @@ uv run --with ruff ruff check src/littleman/lllm_squeeze.py \
 At the pre-commit freshness check, `lllm_03` remained live 21/21 at score
 22,187,469,586.285713 and rank 15 in the unfrozen
 `2026-07-27T00:46:10.398Z` standings snapshot.
+
+## Live result
+
+Submission `ec7af0d5-0d43-41c3-a1e0-07c448c7efbe` passed all 21 private
+cases at 303×311, average 218,921.52380952382 ticks, and score
+21,174,308,704.380955. This is a 4.56637% improvement over `lllm_03` and
+274,410,801.90 below the pre-submit rank-14 threshold. The exact response is
+preserved in `submissions/lllm/lllm_04-submit.json`.
