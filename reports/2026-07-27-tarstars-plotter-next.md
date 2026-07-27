@@ -84,4 +84,10 @@ Results:
 - pipe lengths:
   `[2, 3, 3, 3, 3, 4, 25, 29, 36, 50, 51, 57, 111, 117]`.
 
-No contest submission or merge was performed in this lane.
+## Live result
+
+Submission `9d8d2ac2-449c-42f8-9648-43328056538e` passed all 20 live cases
+at 80×125, average 64,459.7 ticks, and score 1,007,182,812.5. This is a
+90,695,267.5-point (8.26096%) reduction from `plotter_08` and
+11,072,607.5 below the pre-submit next-rank threshold. The exact response is
+preserved in `submissions/plotter/tarstars_plotter_09-submit.json`.
