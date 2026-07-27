@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "claude",
+    "warning": "Repeat repository-native validation and exact live Brackets freshness before promotion or submission."
+  },
+  "candidate": {
+    "version": "gpt_brackets_18",
+    "path": "submissions/brackets/gpt_brackets_18.man",
+    "experimentPath": "experiments/gpt-solvers-usage/gpt_brackets_18.man",
+    "generator": "littleman.gpt_brackets_23:build_gpt_brackets_18",
+    "sha256": "50e85872d47e81c90f1205f0ae4c0341b62626630b1a1efb66552d357425320c",
+    "bytes": 535,
+    "width": 23,
+    "height": 23,
+    "maxDimension": 23,
+    "footprint": 529,
+    "rooms": 5,
+    "pipes": 6,
+    "men": 3,
+    "pipeLengthsParserOrder": [4, 14, 2, 8, 4, 2]
+  },
+  "solver": {
+    "model": "binary multi-commodity flow with component placement, same-wall port selection, vertex-disjoint routes, source-direction constraints, and exact nearest-pipe role gates",
+    "largeRoomOrder": ["close", "classify", "open"],
+    "roomOrigins": {
+      "close": [0, 0],
+      "classify": [9, 6],
+      "open": [15, 0],
+      "output": [17, 20],
+      "input": [20, 18]
+    },
+    "parserInTheLoop": true,
+    "rejectedBeforeWinner": {
+      "reason": "a nominal flow placed the I-to-OPEN terminal against the output room, creating a seventh one-cell phantom O-to-OPEN pipe",
+      "action": "the parser pipe-count/topology gate was promoted to a hard acceptance condition"
+    }
+  },
+  "publicReplay": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "caseTicks": [256, 78, 114, 78, 158, 382, 140, 140, 2088],
+    "averageTicks": 381.55555555555554,
+    "localScore": 201842.88888888888,
+    "scoring": "max(width,height)^2 * average ticks"
+  },
+  "additionalReplay": {
+    "exhaustive": {
+      "alphabet": "()[]{}",
+      "lengths": "0..5 inclusive",
+      "cases": 9331,
+      "failures": 0,
+      "maximumTicks": 230
+    },
+    "directedAndRandom": {
+      "randomSeed": 2026072708,
+      "randomCases": 10000,
+      "directedCases": 71,
+      "totalCases": 10071,
+      "lengthRange": "0..64",
+      "failures": 0,
+      "maximumTicks": 2120,
+      "meanTicks": 125.86237712243074,
+      "serverCompatibleWallSemantics": true
+    }
+  },
+  "comparison": {
+    "brackets11PublicLocalScore": 276615.0,
+    "gptBrackets17PublicLocalScore": 213248.0,
+    "reductionPercentVsBrackets11": 27.031112235819144,
+    "reductionPercentVsGptBrackets17": 5.348285147392296,
+    "scoreRatioToBrackets11": 0.7296888776418086
+  },
+  "staticReplay": {
+    "generatorByteEquality": "passed",
+    "serverLayout": "passed",
+    "sharedWallCells": 0,
+    "inputRoomPipeCount": 1,
+    "minimumPipeCells": 2,
+    "logicalPipeTopology": "exact six intended room pairs",
+    "logicalSrqBindingMap": "identical to the accepted lineage"
+  },
+  "liveSubmission": null
+}
