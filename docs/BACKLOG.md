@@ -112,7 +112,34 @@ loses width; contract unchanged.
 its delays are private path lengths totalling `W^2 = 256` cells at W=16,
 which is exactly why a proven 1.52x algorithm could not fit its box.
 
-### B0a. PATHFINDER FOLD — geometry VERIFIED, one crossing short  (11:56Z)
+### B0a. PATHFINDER FOLD — DESIGN COMPLETE, both primitives TESTED
+**Full construction and evidence:**
+`docs/architecture/claude_43_fold_with_merger_and_splitter.md`.
+**Tests:** `tests/test_fold_primitives.py` (4, passing).
+
+Only **5 of 8** pipes need splitting (0,1,2 out; 4,6 in). Pipes 3,5,7 are
+single-band. Pipes 2<->4 and 1<->6 are request/response pairs.
+
+**OUTGOING -> merger room `@ R s`.** Order is preserved not because "one
+band is active" (false -- the other band's pipe holds in-flight values) but
+because `R` picks `min(ready, key=lambda p: p.cells[-1])`. Put band A's
+entry cell above band B's and A drains first, matching program order.
+**Tested:** two pipes entering at (4,7) and (5,6), both loaded, `R` took
+(4,7).
+
+**INCOMING -> `U` splitter.** `U` turns away from the WALL SIDE, so the two
+request pipes must land on DIFFERENT walls; the turn is the branch.
+**Tested:** north wall -> man heads SOUTH, west wall -> man heads EAST.
+
+**Rotate 180, never mirror** -- a reflection reverses CLOCKWISE/COUNTERCW
+and would silently invert 33 `X` and 33 `d`. Pinned as a test.
+
+**Remaining (mechanical):** route the one crossing at interior row 468;
+check rooms 1 and 3 each have two free walls; assemble; shift rooms 1-6 up
+~458 rows. **Watch tick cost** -- score is footprint x ticks and each
+merger adds 2-3 ticks per value on pipes carrying 69-113 sends per pass.
+
+### B0a-old. Geometry note (superseded by the above)
 **Measured just now on the live `pathfinder_03` room 0 (183x938 at rows
 4..941), using `pathfinder_fold.fold_interior` with a single cut:**
 
