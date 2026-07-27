@@ -118,20 +118,132 @@
         "score": 7225,
         "preflight": "READY TO SUBMIT"
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "b8426386-da64-4210-978d-f30b23b231a1",
+        "status": "done",
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "width": 85,
+        "height": 85,
+        "area2": 7225,
+        "score": 7225,
+        "loadError": null,
+        "error": null,
+        "createdAt": "2026-07-26T15:08:30.515Z",
+        "updatedAt": "2026-07-26T15:08:44.343Z"
+      }
+    },
+    {
+      "version": "history_03",
+      "label": "asymmetric short-token lookup archive",
+      "parent": "history_02",
+      "architecture": "radix-128 main tape, cyclic 128-value lookup, selector, and shared radix-128 character/token splitter",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 128,
+        "dictionaryTokens": 56,
+        "maximumTokenLength": 5,
+        "symbols": 1812,
+        "packedWords": 204,
+        "lookupValues": 128,
+        "mainRows": 68,
+        "wordsPerRow": 3,
+        "decimalFieldWidth": 19
+      },
+      "source": {
+        "path": "submissions/history/history_03.man",
+        "generator": "src/littleman/history_compact.py:build_history_compact",
+        "sha256": "170a48ebc149dae11a37437d9b0695590fbc8bc42527b41fb131a833b52c7de7",
+        "bytes": 7029,
+        "width": 84,
+        "height": 84,
+        "footprint": 7056
+      },
+      "localValidation": {
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "ticks": 1783519,
+        "score": 7056,
+        "serverCompatible": true,
+        "pipeLengths": [2, 2, 2, 2, 36]
+      },
+      "liveSubmission": {
+        "id": "c11d1a93-6e1b-4dd1-92b7-55d9a2e7375a",
+        "status": "done",
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "width": 84,
+        "height": 84,
+        "area2": 7056,
+        "score": 7056,
+        "loadError": null,
+        "error": null,
+        "createdAt": "2026-07-26T18:14:25.389Z",
+        "updatedAt": "2026-07-26T18:14:31.110Z"
+      }
+    },
+    {
+      "version": "history_04",
+      "label": "83-square repaired short-token archive",
+      "parent": "history_03",
+      "architecture": "radix-128 main tape, width-paired cyclic lookup, deterministic parser-safe position repair, selector, and shared radix-128 splitter",
+      "encoding": {
+        "outputBytes": 2810,
+        "radix": 128,
+        "dictionaryTokens": 56,
+        "maximumTokenLength": 5,
+        "symbols": 1809,
+        "packedWords": 201,
+        "lookupValues": 128,
+        "lookupRowPairPayloads": [73, 74, 77, 77, 77, 77],
+        "mainRows": 67,
+        "wordsPerRow": 3,
+        "decimalFieldWidth": 19
+      },
+      "source": {
+        "path": "submissions/history/history_04.man",
+        "generator": "src/littleman/history_compact.py:build_history_compact",
+        "sha256": "d0b7083ffb78ceaa2b22bddc208a01b6ab1bceba0ebcbde8a8899b9ba35378ea",
+        "bytes": 6881,
+        "width": 83,
+        "height": 83,
+        "footprint": 6889
+      },
+      "localValidation": {
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "ticks": 1758189,
+        "score": 6889,
+        "serverCompatible": true,
+        "pipeLengths": [2, 2, 2, 2, 35]
+      },
+      "liveSubmission": {
+        "id": "1cd10b25-d908-45b4-a210-dd316adf5e09",
+        "status": "done",
+        "casesPassed": 1,
+        "casesTotal": 1,
+        "width": 83,
+        "height": 83,
+        "area2": 6889,
+        "score": 6889,
+        "loadError": null,
+        "error": null,
+        "createdAt": "2026-07-26T21:09:25.065Z",
+        "updatedAt": "2026-07-26T21:09:37.502Z"
+      }
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-24T17:02:12.107Z",
+    "updatedAt": "2026-07-26T21:10:05.734Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 7,
+    "rank": 19,
     "casesPassed": 1,
     "casesTotal": 1,
-    "score": 7921,
+    "score": 6889,
     "passPoints": 1.0,
-    "rankPoints": 0.8536585365853658,
-    "points": 1.8536585365853657,
-    "rows": 42
+    "rankPoints": 0.8783783783783784,
+    "points": 1.8783783783783785,
+    "rows": 150
   }
 }
