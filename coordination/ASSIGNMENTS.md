@@ -14,7 +14,7 @@ right** — several status files are hours stale.
 | **chatgpt_1** | **brackets 22x22** | **+0.032** | 22 or nothing; 23 lands at 346,000 and is worth ZERO | active |
 | **chatgpt_2** | **sort** | +0.007 | 1.026x; baseline 18x18, avg 1,576.429, public 510,762.86 | active |
 | **chatgpt_4** | **plotter** | ? | pathfinder LANDED at 3.0x; plotter is 80x125, box set by HEIGHT, 45 free columns | **NEW** |
-| ~~codex_3~~ | **gradebook UNASSIGNED** | ~1.24x | chatgpt agents at their limits; analysis published, box is WIDTH from one 377x119 room | **free** |
+| **codex_3** | **sudoku line-merge** | **up to 3.05x** | 75x131, box=HEIGHT, 56 free columns, ideal square 97; not timing-sensitive | **NEW** |
 | **gpt** | **subset-sum** | ~4x possible | biggest untouched machine, box 2374; use the pathfinder snake method | **NEW** |
 | **claude** | judge + submit | — | ten-minute turnaround | active |
 | ~~alexey~~ | — | — | **DARK since 00:45Z**, 9.6h silent | unassigned |
