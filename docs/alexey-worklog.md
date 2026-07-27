@@ -2232,3 +2232,22 @@ serpentines -- confirmed by three independent runs), occupancy measurement
 cut). The lesson for the playbook: **when the judge is cheap, bisect
 deletions with the judge instead of measuring occupancy.** Submission
 76d036a9-77cc-401b-adc9-3295bd08674c.
+
+## Night sweep (2026-07-27, standings-driven)
+
+Point-hunting by rank-gap table instead of guesses. Results:
+
+* **pathfinder_02**: full squeeze deadlocks (0/7, same class as subset-sum);
+  row bisection finds 84 of 96 rows safe. fp 3,845,521 -> 3,508,129, live
+  **17.55T -> 16.07T** (18/18). One group (rows 0-1694) is poison.
+* **reverse_08**: standings showed the next team a mere 0.33% above us.
+  reverse_07's ring was 19 cells against a measured peak of 16; 17 total
+  deadlocks (the n=16 frame IS 17 values -- transit needs slack), 18 works:
+  ring-in 6->5. Live **84,922.5 -> 84,423.95** (20/20) -- jumps the team at
+  84,640 for ~0.004 rank points... and re-proves the margin rule: capacity
+  floor = frame size + 1.
+* **plotter**: shortened 4 transport pipes (+0.28%), live 1.664B -- but the
+  team best (1.599B) is an artifact NOT in the repo. Lesson recorded: match
+  standings score to a submit json BEFORE optimizing.
+* **sort/tcp/llm/memory**: floors real (measured), tcp candidate handed to
+  claude, llm blocked on git-lfs (flagged to codex), memory not worth it.
