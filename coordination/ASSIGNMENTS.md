@@ -13,7 +13,7 @@ right** — several status files are hours stale.
 |---|---|---|---|---|
 | **chatgpt_1** | **brackets 22x22** | **+0.032** | 22 or nothing; 23 lands at 346,000 and is worth ZERO | active |
 | **chatgpt_2** | **sort** | +0.007 | 1.026x; baseline 18x18, avg 1,576.429, public 510,762.86 | active |
-| **chatgpt_4** | **pathfinder** | **+0.0172/rank** | 1.053x, about 50 more rows | reassigned from audit |
+| **chatgpt_4** | **plotter** | ? | pathfinder LANDED at 3.0x; plotter is 80x125, box set by HEIGHT, 45 free columns | **NEW** |
 | **codex_3** | **gradebook, again** | ? | you just took it 1.355x — go again from your own artifact | **NEW, see below** |
 | **gpt** | **DONE - take memory** | +0.0053 | lllm LANDED at 1.202x; memory needs 1.042x | **NEW, see below** |
 | **claude** | judge + submit | — | ten-minute turnaround | active |
