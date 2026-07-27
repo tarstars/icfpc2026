@@ -1,0 +1,13 @@
+{
+ "case_ticks": [6640497, 7199445, 6718443, 7274629, 6468694, 7263957, 7378811],
+ "cases_passed": 7,
+ "cases_total": 7,
+ "cols_deleted": 0,
+ "failures": [],
+ "footprint": 13293316,
+ "passed": true,
+ "rows_deleted": 0,
+ "score": 92947769417488.0,
+ "tag": "baseline",
+ "wall_s": 126.377
+}
