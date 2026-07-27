@@ -1,6 +1,7 @@
 # Plotter fused racetrack
 
 Date: 2026-07-27
+Status: live, 20/20
 
 ## Result
 
@@ -20,6 +21,11 @@ SHA-256
 `1614d73921d512f321cb1a1a10660e75258c1ae0346f2b77bd51207be3e5c3dd`.
 Scaling the measured local ratio against the live `plotter_07` score projects
 approximately 1,102,033,314; that is a projection, not a live measurement.
+
+The live submission `81cc6d5c-0812-4c77-93b5-d3a387b4915b` completed 20/20
+at average 64,963.2 ticks and score 1,097,878,080. This is a 31.35% live
+score reduction from `plotter_07`. The exact terminal response is preserved
+in `submissions/plotter/plotter_08-submit.json`.
 
 ## Architecture and bindings
 
@@ -62,4 +68,5 @@ standings snapshot updated at `2026-07-26T23:56:10.445Z` was unfrozen and
 showed `wheezards` at 20/20, rank 59, score 1,599,281,984. A direct read of
 submission `c4e94257-0709-4eb4-bd4c-894721ec2294` confirmed it was `done`,
 20/20, 152x145, footprint 23,104, average 69,221 ticks, and score
-1,599,281,984. No contest mutation was performed.
+1,599,281,984. This evidence preceded the one authorized submission
+mutation recorded in the Result section.
