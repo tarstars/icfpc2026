@@ -1,38 +1,39 @@
 {
-  "bigRoomBindingFeasible": 119,
-  "bigRoomPlacements": 420,
-  "canvas": [
-    22,
-    22
-  ],
-  "conclusion": "fixed component rectangles require a component change before 22x22 routing",
-  "connectedExactBindingPlacements": 4258,
-  "directionallyFeasiblePlacements": 0,
-  "exactBindingPlacements": 30240,
-  "firstDirectionalPlacement": null,
+  "schemaVersion": 2,
+  "canvas": [22, 22],
   "fixedRoomSizes": {
-    "classify": [
-      16,
-      6
-    ],
-    "close": [
-      22,
-      7
-    ],
-    "input": [
-      3,
-      3
-    ],
-    "open": [
-      18,
-      8
-    ],
-    "output": [
-      3,
-      3
+    "classify": [16, 6],
+    "close": [22, 7],
+    "input": [3, 3],
+    "open": [18, 8],
+    "output": [3, 3]
+  },
+  "macroEnumeration": {
+    "bigRoomPlacements": 420,
+    "bigRoomBindingFeasible": 119,
+    "orderedIoPlacementsExamined": 33576,
+    "roomOptionFeasiblePlacements": 3176,
+    "independentlyConnectedPlacements": 1884
+  },
+  "jointRouting": {
+    "placementsSolved": 1884,
+    "vertexDisjointSixPipeWitnesses": 0,
+    "backend": "scipy.optimize.milp / HiGHS",
+    "variables": "one binding-preserving port option per room plus six binary grid flows",
+    "hardConstraints": [
+      "exact accepted s/r/q nearest-pipe roles",
+      "globally unique endpoint cells",
+      "source arrows leave their source wall",
+      "destination arrows point into their destination wall",
+      "one directed path per logical pipe",
+      "vertex capacity one across all six pipes"
     ]
   },
-  "necessaryDirectionRule": "every endpoint's one-cell outward neighbour must be free",
-  "orderedIoPlacementsExamined": 33576,
-  "schemaVersion": 1
+  "correction": {
+    "supersedesSchemaVersion": 1,
+    "oldMistake": "schema 1 incorrectly required a destination endpoint's outward neighbour to be free; only a source endpoint has that requirement",
+    "effect": "the corrected model has 1884 independently connected placements rather than zero directionally feasible placements",
+    "finalConclusionUnchangedForStrongerReason": "the joint port-and-flow MILP finds no six-pipe vertex-disjoint routing witness with the five fixed component rectangles"
+  },
+  "conclusion": "A 22x22 successor requires a component/interface change; fixed-room placement and port movement are exhausted in this enumerated family."
 }
