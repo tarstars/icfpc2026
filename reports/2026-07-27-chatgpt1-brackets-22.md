@@ -2,89 +2,117 @@
 
 Date: 2026-07-27
 
-Status: macro-placement frontier saved; no 22x22 `.man` claimed.
+Status: fixed-component placement, exact port assignment, and detailed routing
+frontier exhausted; no 22x22 `.man` claimed.
 
-## Synchronization
+## Synchronization and authority
 
-The chatgpt_1 branch was synchronized with `main` through
-`03a8f74ad1c0d8db9db34d08da3718ec3db08629`. Upstream coordination, the final
-two-hour plan, `subdb.py`, and the live Reverse submission record were retained
-without modifying peer-owned namespaces.
+`agent/chatgpt-1-solvers` was merged with the current `main` line before this
+checkpoint. `coordination/ASSIGNMENTS.md` remains authoritative: chatgpt_1 owns
+Brackets 22x22, and Claude owns all judging and platform submissions.
 
-The previous chatgpt_1 Reverse artifact is now live:
+The previous chatgpt_1 Reverse artifact is already live through Claude:
 
 ```text
-artifact   chatgpt1_reverse_09.man
-geometry   17x17
-result     20/20
-score      62,568.5
-improvement 84,423.95 -> 62,568.5, factor 1.349x
+chatgpt1_reverse_09.man   17x17   20/20   score 62,568.5
 ```
 
-Claude submitted it; chatgpt_1 made no contest API call.
+chatgpt_1 made no contest API call.
 
-## Saved Brackets artifacts
+## Saved artifacts
 
 ```text
 experiments/chatgpt1-brackets-22/README.md
 experiments/chatgpt1-brackets-22/macro_frontier.py
 experiments/chatgpt1-brackets-22/macro_frontier.json
+experiments/chatgpt1-brackets-22/exact_frontier.py
+experiments/chatgpt1-brackets-22/exact_frontier.json
 ```
 
-The standard-library enumerator fixes the existing room bodies and explores
-the sharp 22-square macro family:
-
-- CLOSE, width 22, lies on the top or bottom boundary;
-- OPEN and CLASSIFY occupy the remaining 15 rows with one routing row;
-- the two 3x3 I/O rooms occupy side pockets;
-- endpoint cells must satisfy a conservative no-phantom-attachment test.
-
-Measured checkpoint:
+The immutable baseline component sizes are:
 
 ```text
-room area                         412 / 484
-free cells after rooms             72
-parent pipe cells                   53
-raw residual slack                  19
-stack-family packings           25,764
-safe-port necessary survivors     1,700
-best independent route lower bound   21 cells
+CLOSE       22x7
+CLASSIFY    16x6
+OPEN        18x8
+INPUT        3x3
+OUTPUT       3x3
+room area  412 / 484
+parent pipe cells 53
 ```
 
-Best lower-bound seed:
+## Correction to the first endpoint model
+
+The first exact-frontier draft incorrectly applied the source-arrow rule to
+destination endpoints. A source endpoint's arrow points away from its room and
+therefore needs its outward neighbor free. A destination endpoint's arrow
+points into its wall and may be approached sideways. That draft was retired;
+`exact_frontier.py` now prints the corrected schema-2 certificate instead of
+silently reproducing the bad rule.
+
+The correction materially changes the intermediate count:
 
 ```text
-CLOSE      (15, 0)
-OPEN       ( 0, 3)
-CLASSIFY   ( 9, 0)
-INPUT      ( 0, 0)
-OUTPUT     (10,17)
-
-lower bounds [3, 3, 2, 7, 3, 3]
+big-room placements                         420
+big-room exact-binding survivors            119
+ordered I/O placements examined          33,576
+full room-option survivors                3,176
+all six pipes independently connected     1,884
 ```
 
-## Interpretation
+## Joint port-and-routing result
 
-This proves that the 22-square component rectangles are not blocked by area or
-by a trivial lack of legal wall-adjacent endpoint cells. It does **not** prove
-simultaneous endpoint assignment or routing.
+Every one of the 1,884 independently connected placements was passed to a
+joint binary MILP. Variables select one exact nearest-pipe-preserving port map
+per room and one directed grid flow for each of the six logical pipes. Hard
+constraints enforce:
 
-The remaining discriminating step is a parser-in-the-loop multi-commodity
-router with exact named binding constraints. Each rendered survivor must have:
+- the accepted named `s`/`r`/`q` pipe roles;
+- unique endpoint cells;
+- correct source and destination arrow direction;
+- one unit of flow for each logical pipe;
+- vertex capacity one across all six paths.
+
+Result:
 
 ```text
-5 rooms / 6 pipes / 3 men
-the six intended named room pairs
-the accepted `s`/`r`/`q` binding signature
-no shared wall, phantom pipe, one-cell pipe, or extra input adjacency
+fixed-component 22x22 six-pipe witnesses: 0 / 1,884
 ```
 
-Only after that gate does behavioral judging begin. The final release commands
-remain:
+Thus area and individual connectivity are not the blocker. With the five room
+rectangles unchanged, the six directed paths cannot be made mutually
+vertex-disjoint while retaining the accepted positional bindings.
+
+## Component work and useful negative results
+
+Several width-21 CLOSE sketches were evaluated with the calibrated local
+Brackets simulator, which reproduces `gpt_brackets_17`'s exact public tick
+vector.
+
+1. Shifting the central arithmetic chains left broke the shared relay junction:
+   the relay entered literal `4` instead of `M`. It was rejected immediately.
+2. A path-aware variant compressed the empty-stack result using the invariant
+   `B=1` at its branch and used `U` to combine the unclosed-position read with a
+   turn. Its logical paths were promising, but exact port assignment forced the
+   CLOSE output source onto the canvas boundary, where its first arrow could
+   not leave. No full macro placement survived.
+3. The output sockets are therefore a first-class interface constraint. A
+   useful successor must keep all CLOSE result sends clustered so a bottom
+   source port remains possible; simply moving one result arm to the left makes
+   the room unplaceable even when its internal behavior is correct.
+
+The next useful component families are a 21x7 CLOSE with clustered output
+sockets, or a 21x8 shape variant that spends one extra row to fold the two
+`p+1` result paths. Re-running rigid-room placement without such a variant is
+now known duplicate work.
+
+## Release gate
+
+Any concrete successor must still run:
 
 ```bash
 uv run python scripts/wasm_judge.py <candidate.man> brackets
 uv run python scripts/subdb.py compare <candidate.man> brackets
 ```
 
-No Brackets candidate and no contest submission is claimed in this checkpoint.
+No Brackets submission or candidate validity claim is made in this checkpoint.
