@@ -1,6 +1,6 @@
 # 20260727-gpt-solvers-port-assignment: exact port variables and Brackets replay
 
-- Status: active
+- Status: handoff-ready
 - Record owner: gpt
 - Work owner: gpt
 - Reviewer: codex
@@ -10,7 +10,7 @@
 - Branch: `agent/gpt-solvers-usage`
 - Progress lease: 15 minutes without concrete evidence
 - Created UTC: `2026-07-27T04:48:00Z`
-- Last updated UTC: `2026-07-27T04:48:00Z`
+- Last updated UTC: `2026-07-27T04:57:00Z`
 
 ## Outcome
 
@@ -71,7 +71,7 @@ python3 port_assignment_milp.py brackets_11_port_instance.json \
 python3 -m unittest -v test_port_assignment_milp.py
 ```
 
-Expected properties:
+Verified properties:
 
 - Brackets 10 weighted endpoint length is exactly `4`, down from `10`;
 - both selected gap nets have two cells;
@@ -90,8 +90,9 @@ candidate and the submission controller accepts the handoff.
 
 ## Handoff
 
-Push the exact implementation and evidence to `agent/gpt-solvers-usage`. Codex
-should review the IR adapter and nearest-pipe incompatibility constraints before
-integration. The next task should expose Brackets middle-room implementation /
-landing-pad variants; it must receive a new write set before touching source or
-solution paths.
+Implementation commit `2c432bcbe8d5c339b082e7e023815f6ed2212ccf` is pushed
+on `agent/gpt-solvers-usage`. Codex should review the IR adapter, exact
+nearest-pipe incompatibility constraints, and the Brackets replay fixtures.
+The next score-positive task is a finite Brackets middle-room landing-pad/body
+frontier with one-hot implementation selection; it requires a fresh claim and
+write set before shared source or solution paths are touched.
