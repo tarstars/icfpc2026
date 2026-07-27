@@ -1,25 +1,37 @@
 {
  "schemaVersion": 1,
+ "problem": {
+  "id": "d1415447-bf8d-49ef-924e-e024b06a504d",
+  "slug": "gradebook",
+  "name": "Grade Book",
+  "scoring": "footprint-tick"
+ },
  "variants": [
   {
-   "version": "gradebook_02",
-   "label": "mechanical squeeze of empty rows/columns",
+   "version": "gradebook_04",
+   "label": "staircase fold of all five big rooms + row squeeze",
    "changeType": "geometry",
-   "architecture": "Whole-program squeeze via src/littleman/alexey_squeeze.py (full): every row made only of ' ' and '|', and every column made only of ' ' and '-', is deleted. No room re-laid, no pipe re-routed. Shortens each room interior and each vertical pipe it crosses by one cell; the walk is identical apart from being shorter, which is why ticks fall too.",
+   "architecture": "Same fold as plotter_06 and sudoku_04 (src/littleman/alexey_stairfold.py). All five big rooms pass ports_are_single_walled. R2-R5 fold completely (21-23 merges each, 7/7 every time). R1 does NOT: of the 35 merges available there, the 35th is unsafe and drops it to 5/7. A binary search over the merge prefix found 34 safe. 110 rows removed globally by a rows-only squeeze, ticks down 21%.",
    "source": {
-    "path": "submissions/gradebook/gradebook_02.man",
-    "footprintBefore": 206116,
-    "footprintAfter": 178929
+    "path": "submissions/gradebook/gradebook_04.man",
+    "width": 386,
+    "height": 313,
+    "footprintBefore": 178929,
+    "footprintAfter": 148996
+   },
+   "localValidation": {
+    "casesPassed": 7,
+    "casesTotal": 7
    },
    "liveSubmission": {
     "status": "done",
-    "scoreBefore": 104303579600,
-    "score": 81914188255,
-    "gain": 1.27,
-    "fullResponse": "submissions/gradebook/alexey-gradebook_02-submit.json"
+    "scoreBefore": 81914188255,
+    "score": 54422867494,
+    "casesPassed": 20,
+    "casesTotal": 20,
+    "gain": 1.51
    },
-   "verdict": "TEAM BEST for gradebook: 104,303,579,600 -> 81,914,188,255 (1.27x). Most of the gain on the large programs is ticks, not area -- the surviving pipes got shorter."
+   "verdict": "BEST (vs tarstars' gradebook_03 at ~74B). Width 386 now binds -- it is four 94-wide rooms side by side, and their columns are frozen by zone resolution, so further row folding is banked, not cashed."
   }
- ],
- "note": "Alexey research line for gradebook."
+ ]
 }

@@ -1,0 +1,181 @@
+{
+  "candidates": [
+    {
+      "averageTicks": 533614.3333333334,
+      "bytes": 9854,
+      "cases": [
+        {
+          "name": "a valid grid",
+          "passed": true,
+          "reason": null,
+          "ticks": 904546
+        },
+        {
+          "name": "early row violation",
+          "passed": true,
+          "reason": null,
+          "ticks": 40888
+        },
+        {
+          "name": "late box violation",
+          "passed": true,
+          "reason": null,
+          "ticks": 849168
+        },
+        {
+          "name": "checksum-tie trap",
+          "passed": true,
+          "reason": null,
+          "ticks": 51958
+        },
+        {
+          "name": "col violation",
+          "passed": true,
+          "reason": null,
+          "ticks": 450588
+        },
+        {
+          "name": "violation on final cell",
+          "passed": true,
+          "reason": null,
+          "ticks": 904538
+        }
+      ],
+      "casesPassed": 6,
+      "casesTotal": 6,
+      "comparisonWithParent": {
+        "averageTicksPercent": -76.50597461306286,
+        "footprintPercent": 53.44780815972222,
+        "maxDimensionPercent": 31.770833333333332,
+        "scorePercent": 17.832600088574992
+      },
+      "footprint": 17161,
+      "height": 131,
+      "maxDimension": 131,
+      "men": 9,
+      "path": "/mnt/data/sudoku_single_fold_True_True.man",
+      "pipeLengths": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        12,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        18,
+        24
+      ],
+      "pipes": 18,
+      "rooms": 11,
+      "score": 9157355574.333334,
+      "sha256": "16860f965aa0e57c1b2e031a6a650c3bde2ae195961e8a164a2fe8e1cc58b49d",
+      "width": 75
+    }
+  ],
+  "parent": {
+    "averageTicks": 302320.8333333333,
+    "bytes": 31241,
+    "cases": [
+      {
+        "name": "a valid grid",
+        "passed": true,
+        "reason": null,
+        "ticks": 513212
+      },
+      {
+        "name": "early row violation",
+        "passed": true,
+        "reason": null,
+        "ticks": 22184
+      },
+      {
+        "name": "late box violation",
+        "passed": true,
+        "reason": null,
+        "ticks": 481731
+      },
+      {
+        "name": "checksum-tie trap",
+        "passed": true,
+        "reason": null,
+        "ticks": 28467
+      },
+      {
+        "name": "col violation",
+        "passed": true,
+        "reason": null,
+        "ticks": 255115
+      },
+      {
+        "name": "violation on final cell",
+        "passed": true,
+        "reason": null,
+        "ticks": 513216
+      }
+    ],
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "footprint": 36864,
+    "height": 192,
+    "maxDimension": 192,
+    "men": 18,
+    "path": "submissions/sudoku-validity/sudoku_04.man",
+    "pipeLengths": [
+      2,
+      2,
+      7,
+      7,
+      7,
+      7,
+      7,
+      7,
+      8,
+      9,
+      9,
+      9,
+      9,
+      9,
+      9,
+      22,
+      23,
+      23,
+      25,
+      25,
+      25,
+      28,
+      28,
+      28,
+      29,
+      29,
+      31,
+      79,
+      85,
+      95,
+      116,
+      158,
+      193
+    ],
+    "pipes": 33,
+    "rooms": 20,
+    "score": 11144755200.0,
+    "sha256": "fd5bed20ccc104f15347404efe5e1d0e7ef104222b6de23a4d4d3859472f6974",
+    "width": 184
+  },
+  "problem": {
+    "id": "f66c928f-3369-4870-9153-8b20cafc2ecd",
+    "path": "/mnt/data/icfpc2026_git/data/small/problems/sudoku-validity.json",
+    "scoring": "footprint-tick",
+    "sha256": "0d2a7827e0c26bc0caea6e39eed35f891a29dc63a756f414ddf02ab9ff64fb1d",
+    "slug": "sudoku-validity"
+  },
+  "schemaVersion": 1
+}

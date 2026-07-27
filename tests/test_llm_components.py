@@ -16,8 +16,14 @@ from pathlib import Path
 import pytest
 
 from littleman.llm import LLM, program_grid
-from littleman.llm_components import LLMPipeline, Q
-from littleman.llm_fuzz import corpus
+from littleman.llm_components import (
+    DELTA_END,
+    LLMPipeline,
+    Q,
+    pack_delta,
+    unpack_delta,
+)
+from littleman.llm_fuzz import corpus, program_tokens
 
 ROOT = Path(__file__).resolve().parents[1]
 LLM_PROBLEM = json.loads((ROOT / "data/small/problems/little-little-man.json").read_text())
@@ -81,6 +87,25 @@ def test_queue_rejects_non_int_records():
             q.put(bad)
 
 
+@pytest.mark.parametrize(("addr", "color"), [(0, 0), (17, 9), (255, 15)])
+def test_delta_grammar_is_byte_exact_with_lllm_draw(addr, color):
+    token = pack_delta(addr, color)
+    assert token == addr * 16 + color
+    assert unpack_delta(token) == (addr, color)
+
+
+@pytest.mark.parametrize("case", LLLM_CASES, ids=lambda c: c["name"])
+def test_runtime_world_records_are_byte_exact_with_lllm_fetch(case):
+    from littleman.lllm_loader import reference_stream
+
+    rows = program_grid([int(v) for v in case["rounds"][0]["in"]])
+    expected = list(reference_stream(program_tokens(rows)))[:64]
+
+    pipeline = LLMPipeline(trace=True)
+    pipeline.run_case(case["rounds"])
+    assert pipeline.traces()["cell_final_exec"] == expected
+
+
 def test_every_queue_in_a_real_run_carried_only_int():
     case = next(c for c in LLM_CASES if c["name"] == "first steps")
     pipeline = LLMPipeline(trace=True)
@@ -111,3 +136,40 @@ def test_trace_retrieval_and_determinism():
     assert trace1 == trace2  # deterministic across two independent runs
 
     assert trace1["delta"], "EXEC -> DELTA_DRAW stream should be nonempty (the man moves)"
+
+
+def split_delta_frames(stream: list[int]) -> list[list[int]]:
+    frames = []
+    current = []
+    for token in stream:
+        if token == DELTA_END:
+            frames.append(current)
+            current = []
+        else:
+            assert token >= 0
+            current.append(token)
+    assert current == []
+    return frames
+
+
+def test_delta_stream_is_self_delimiting_per_later_round():
+    case = next(c for c in LLM_CASES if c["name"] == "first steps")
+    pipeline = LLMPipeline(trace=True)
+    pipeline.run_case(case["rounds"])
+    frames = split_delta_frames(pipeline.traces()["delta"])
+    assert len(frames) == len(case["rounds"]) - 1
+    assert all(len(frame) == 256 for frame in frames)
+
+
+def test_halted_followup_round_still_emits_a_delta_delimiter():
+    rows = ["+----+", "|@H  |", "|    |", "+----+"]
+    rounds = [
+        {"in": [str(v) for v in program_tokens(rows)]},
+        {"in": ["1"]},
+        {"in": ["7"]},
+    ]
+    pipeline = LLMPipeline(trace=True)
+    pipeline.run_case(rounds)
+    frames = split_delta_frames(pipeline.traces()["delta"])
+    assert [len(frame) for frame in frames] == [256, 256]
+    assert frames[1] == frames[0]

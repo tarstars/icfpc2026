@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "0c3e3d4d-2901-45f1-81cf-5704d49c9139",
+    "slug": "plotter",
+    "name": "Plotter",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "plotter_07",
+      "label": "paired-room route squeeze",
+      "parent": "plotter_06",
+      "changeType": "geometry",
+      "source": {
+        "path": "submissions/plotter/plotter_07.man",
+        "generator": "src/littleman/plotter_route.py:build_plotter_route",
+        "sha256": "8e85252c84b2f89771642b823ecf38d9b49eb8a1eb6c2a09a4c687daedbb07e8",
+        "bytes": 25230,
+        "width": 152,
+        "height": 145,
+        "footprint": 23104
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": [
+          23854,
+          56010,
+          1719,
+          36052,
+          80755,
+          85504
+        ],
+        "averageTicks": 47315.666666666664,
+        "score": 1093181162.6666665,
+        "serverCompatibility": "passed",
+        "deterministicFrameRounds": 32
+      },
+      "comparisonToParent": {
+        "footprintReductionPercent": 3.8335067637877196,
+        "averageTicksReductionPercent": 0.33911395071263284,
+        "localScoreReductionPercent": 4.159620758262839
+      },
+      "liveSubmission": {
+        "id": "c4e94257-0709-4eb4-bd4c-894721ec2294",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 152,
+        "height": 145,
+        "area2": 23104,
+        "averageTicks": 69221,
+        "score": 1599281984,
+        "createdAt": "2026-07-26T23:08:23.158Z",
+        "updatedAt": "2026-07-26T23:08:33.623Z",
+        "fullResponse": "submissions/plotter/plotter_07-submit.json"
+      }
+    },
+    {
+      "version": "plotter_08",
+      "label": "fused Bresenham address racetrack",
+      "parent": "plotter_07",
+      "changeType": "algorithm-and-geometry",
+      "source": {
+        "path": "submissions/plotter/plotter_08.man",
+        "generator": "src/littleman/plotter_racetrack.py:build_plotter_fused_candidate",
+        "sha256": "1614d73921d512f321cb1a1a10660e75258c1ae0346f2b77bd51207be3e5c3dd",
+        "bytes": 16003,
+        "width": 130,
+        "height": 130,
+        "footprint": 16900
+      },
+      "localValidation": {
+        "casesPassed": 6,
+        "casesTotal": 6,
+        "caseTicks": [23091, 53753, 1173, 32568, 77959, 78896],
+        "averageTicks": 44573.333333333336,
+        "score": 753289333.3333334,
+        "serverCompatibility": "passed",
+        "deterministicFrameRounds": 40
+      },
+      "comparisonToParent": {
+        "footprintReductionPercent": 26.852493074792243,
+        "averageTicksReductionPercent": 5.795822601444689,
+        "localScoreReductionPercent": 31.092021048653453
+      },
+      "liveSubmission": {
+        "id": "81cc6d5c-0812-4c77-93b5-d3a387b4915b",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 130,
+        "height": 130,
+        "area2": 16900,
+        "averageTicks": 64963.2,
+        "score": 1097878080,
+        "createdAt": "2026-07-27T00:02:21.529Z",
+        "updatedAt": "2026-07-27T00:02:32.668Z",
+        "fullResponse": "submissions/plotter/plotter_08-submit.json"
+      }
+    }
+  ]
+}

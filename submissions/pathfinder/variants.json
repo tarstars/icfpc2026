@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "c778ba35-4918-415b-83d0-37dc8f6f68c9",
+    "slug": "pathfinder",
+    "name": "Pathfinder",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "pathfinder_00",
+      "label": "row-bitboard backwards BFS",
+      "parent": null,
+      "changeType": "algorithm",
+      "architecture": "16 packed row words; modulo-3 distance planes; one-pass four-neighbour dilation; single-scan direction selection; display command router",
+      "source": {
+        "path": "submissions/pathfinder/pathfinder_00.man",
+        "generator": "src/littleman/pathfinder.py:build_pathfinder",
+        "sha256": "ba5438110af231d09d12453b9d37f31c443ed9c6c29b3697be2f4d401e591bdd",
+        "bytes": 967231,
+        "width": 452,
+        "height": 2034,
+        "maxDimension": 2034,
+        "footprint": 4137156
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "a straight shot": 3672910,
+          "around the pillars": 5561418,
+          "the long way": 12769742,
+          "rooms and doors": 8333494,
+          "a cluttered field": 6683330,
+          "running errands": 8414468,
+          "there and back again": 11117230
+        },
+        "averageTicks": 8078941.714285715,
+        "score": 33423842186907.43,
+        "adversarial": {
+          "oracle": "claude/pathfinder-reference.py",
+          "seedBase": 49374,
+          "cases": 8,
+          "pathLengthRange": [2, 12],
+          "result": "all frame streams exact"
+        }
+      },
+      "liveSubmission": {
+        "id": "f55011a1-3c3d-43ca-be41-85fca46133da",
+        "status": "done",
+        "casesPassed": 15,
+        "casesTotal": 18,
+        "width": 452,
+        "height": 2034,
+        "failure": "3 private step-cap cases",
+        "createdAt": "2026-07-25T19:53:53.253Z",
+        "updatedAt": "2026-07-25T19:54:17.344Z",
+        "fullResponse": "submissions/pathfinder/pathfinder_00-submit.json"
+      }
+    },
+    {
+      "version": "pathfinder_01",
+      "label": "short service pipes and compact execution zones",
+      "parent": "pathfinder_00",
+      "changeType": "geometry",
+      "architecture": "unchanged row-bitboard BFS and single-scan playback; legal minimum-capacity service pipes; controller and service operation zones compacted around their ports",
+      "source": {
+        "path": "submissions/pathfinder/pathfinder_01.man",
+        "generator": "src/littleman/pathfinder.py:build_pathfinder",
+        "sha256": "a6351f2a16f8985b5177dcf560bdc824549a748c4452d498a867b3a056163dac",
+        "bytes": 500984,
+        "width": 187,
+        "height": 1957,
+        "maxDimension": 1957,
+        "footprint": 3829849
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "a straight shot": 1538588,
+          "around the pillars": 2317577,
+          "the long way": 5284281,
+          "rooms and doors": 3462629,
+          "a cluttered field": 2779664,
+          "running errands": 3501455,
+          "there and back again": 4605255
+        },
+        "averageTicks": 3355635.5714285714,
+        "score": 12851577537600.143,
+        "adversarial": {
+          "oracle": "claude/pathfinder-reference.py",
+          "seedBase": 49374,
+          "cases": 8,
+          "pathLengthRange": [2, 12],
+          "result": "all frame streams exact"
+        }
+      },
+      "comparisonToParent": {
+        "footprintReductionPercent": 7.426763167639323,
+        "averageTicksReductionPercent": 58.46441720947681,
+        "scoreReductionPercent": 61.54971749371509
+      },
+      "liveSubmission": {
+        "id": "0c04a141-a73b-443c-a274-741bfe67d857",
+        "status": "done",
+        "casesPassed": 18,
+        "casesTotal": 18,
+        "width": 187,
+        "height": 1957,
+        "area2": 3829849,
+        "averageTicks": 4581436.722222222,
+        "score": 17546210849166.055,
+        "createdAt": "2026-07-25T20:06:45.579Z",
+        "updatedAt": "2026-07-25T20:07:44.094Z",
+        "fullResponse": "submissions/pathfinder/pathfinder_01-submit.json"
+      }
+    }
+  ],
+  "standingsSnapshot": {
+    "updatedAt": "2026-07-25T20:07:44.094Z",
+    "frozen": false,
+    "teamName": "wheezards",
+    "rows": 1
+  }
+}

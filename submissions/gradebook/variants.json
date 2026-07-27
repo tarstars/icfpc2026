@@ -112,19 +112,70 @@
         "updatedAt": "2026-07-25T01:12:38.194Z",
         "fullResponse": "submissions/gradebook/gradebook_01-submit.json"
       }
+    },
+    {
+      "version": "gradebook_05",
+      "label": "blocking-ring subject workers",
+      "parent": "gradebook_04",
+      "changeType": "component",
+      "architecture": "remove three fixed 80-cell worker delays and rely on blocking ring receives; retain judge-gated staircase prefixes 24/25/25/26 for the four workers and 34 for the frontend; rows-only squeeze",
+      "source": {
+        "path": "submissions/gradebook/gradebook_05.man",
+        "generator": "src/littleman/gradebook_components.py:build_gradebook_component_optimized",
+        "sha256": "315a41d54ffc7ed64b097dd2ffb83ca04f9ba579a15d3d1cb26c70542a8c825e",
+        "bytes": 115485,
+        "width": 382,
+        "height": 307,
+        "maxDimension": 382,
+        "footprint": 145924
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "tiny roster walkthrough": 25260,
+          "TOP demotion": 78696,
+          "tie-break": 82755,
+          "floor rounding": 66059,
+          "mixed batch": 91777,
+          "K=1 minimal": 42257,
+          "N=16 K=4 max": 281648
+        },
+        "averageTicks": 95493.14285714286,
+        "score": 13934741378.285715
+      },
+      "improvementFromParent": {
+        "footprintPercent": 2.061800316787028,
+        "averageTicksPercent": 11.613743496168773,
+        "localScorePercent": 13.43609161276095
+      },
+      "liveSubmission": {
+        "id": "010701d6-3d29-41e1-a09f-dae700e2f9ec",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 382,
+        "height": 307,
+        "area2": 145924,
+        "averageTicks": 322878.9,
+        "score": 47115780603.600006,
+        "createdAt": "2026-07-26T14:30:58.851Z",
+        "updatedAt": "2026-07-26T14:34:13.815Z",
+        "fullResponse": "submissions/gradebook/gradebook_05-submit.json"
+      }
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-25T01:14:57.234Z",
+    "updatedAt": "2026-07-26T14:34:56.659Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 21,
+    "rank": 50,
     "casesPassed": 20,
     "casesTotal": 20,
-    "score": 104303579599.59999,
+    "score": 47115780603.600006,
     "passPoints": 1.0,
-    "rankPoints": 0.3333333333333333,
-    "points": 1.3333333333333333,
-    "rows": 31
+    "rankPoints": 0.26865671641791045,
+    "points": 1.2686567164179103,
+    "rows": 73
   }
 }

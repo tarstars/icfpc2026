@@ -20,28 +20,18 @@ Sweeping the token count with the table cost included (the token strings
 must themselves be stored, packed over the base alphabet):
 
     tokens   radix   symbols   data   table   total
-         3      74      2578   5418      42    5460   <- live
+         3      74      2578   5418      21    5439   <- live token set
         24      95      2050   4560     231    4791
-        48     119      1809   4221     420    4641
-        56     127      1761   4116     462    4578   <- optimum
-        96     167      1608   4020     672    4692
+        48     119      1807   4221     462    4683
+        56     127      1755   4095     525    4620   <- optimum
+        96     167      1601   4221     576    4797
 
-56 tokens is the optimum of THIS sweep, and the reason is a CLIFF, not a
-smooth curve: **128 is the largest radix that still packs 9 symbols into
-a signed-64 literal**, because nine radix-128 symbols span 0..128^9-1 and
-128^9-1 is exactly 2^63-1. Radix 129 drops to 8, costing a ninth of every
-word's capacity at once, which is why 64 tokens is worse than 56 even
-though its bits/char is better.
-
-The alphabet is **71 distinct characters**, so the slot budget is
-`128 - 71 = 57`. The next gain is therefore NOT more tokens but a SMALLER
-ALPHABET: 11 characters cover only 31 of 2,810 positions, and escaping
-them would free 10 more token slots at unchanged word capacity.
-
-The live 81-square runs on radix 128 and was built by codex while
-`symbols_per_word` still reported 8 for it -- see the note on that
-function. Full state, including the order-1 measurement that dwarfs all
-of this, is in `docs/architecture/claude_35_history_tokenizer.md`.
+The 56-token point is a packing cliff, not a smooth minimum. The source
+alphabet has 71 characters, so 56 tokens give radix 127: the largest radix
+whose ninth power fits in a signed-64 literal. A 57th token raises the radix
+to 128, where a general word holds only eight symbols, and the table also
+keeps growing. The full frontier and the next smaller-alphabet direction are
+recorded in `docs/architecture/claude_33_history_encoding_frontier.md`.
 
 Decoding stays trivial *in cells* because ticks are free: to emit token
 k, walk the table from the start counting separators until the k-th is
@@ -53,10 +43,9 @@ from __future__ import annotations
 
 import collections
 import json
-import math
 import pathlib
 
-LIMIT = 9223372036854775807          # the largest signed-64 literal
+LIMIT = 9223372036854775807  # the largest signed-64 literal
 REPO = pathlib.Path(__file__).resolve().parent.parent.parent
 PROBLEM = REPO / "data" / "small" / "problems" / "history-lesson.json"
 TOKEN_COUNT = 56
@@ -72,13 +61,13 @@ def expected_text() -> str:
 def symbols_per_word(radix: int) -> int:
     """How many radix-`radix` symbols fit in one signed-64 literal.
 
-    The test is on the largest representable VALUE, not on the radix
-    power: nine radix-128 symbols span 0..128^9-1, and 128^9-1 is exactly
-    2^63-1 = LIMIT. An earlier version asked ``radix**(count+1) <= LIMIT``
-    and so reported 8 symbols at radix 128, which made the true ceiling
-    look like 127. Codex found the extra slot empirically and built the
-    live 81-square on radix 128 while this function still called it
-    impossible.
+    The test is on the largest representable VALUE, not on the radix power.
+    Nine radix-128 symbols span 0..128^9-1, and 128^9-1 is exactly 2^63-1 =
+    LIMIT, so radix 128 packs nine. An earlier version asked
+    ``radix ** (count + 1) <= LIMIT`` and reported 8 here, which made 127
+    look like the ceiling and hid a whole token slot -- while the live
+    81-square was already running on radix 128, which codex had found
+    empirically.
     """
     count = 0
     while radix ** (count + 1) - 1 <= LIMIT:
@@ -91,7 +80,7 @@ def word_cells(radix: int) -> int:
     return len(str(radix ** symbols_per_word(radix) - 1)) + 2
 
 
-SEP = "\x00"                          # marks a token slot while tokenising
+SEP = "\x00"  # marks a token slot while tokenising
 
 
 def choose_tokens(text: str, count: int = TOKEN_COUNT) -> list[str]:
@@ -107,7 +96,8 @@ def choose_tokens(text: str, count: int = TOKEN_COUNT) -> list[str]:
         best = None
         for length in range(2, 14):
             counts = collections.Counter(
-                working[i:i + length] for i in range(len(working) - length + 1))
+                working[i : i + length] for i in range(len(working) - length + 1)
+            )
             for candidate, hits in counts.items():
                 if hits < 2 or SEP in candidate:
                     continue
@@ -124,26 +114,38 @@ def choose_tokens(text: str, count: int = TOKEN_COUNT) -> list[str]:
 
 
 def tokenise(text: str, tokens: list[str]) -> list[int]:
-    """Text -> symbol ids. Ids 0..A-1 are literal characters, then tokens.
+    """Text -> the fewest symbol ids for this fixed dictionary.
 
-    Longest-token-first at each position, so the result is deterministic
-    and independent of the order `choose_tokens` returned.
+    Ids 0..A-1 are literal characters and the remaining ids are tokens.
+    Greedy longest-match lost 57 symbols on the selected dictionary because
+    a long local match can hide a better pair of later matches.  The offline
+    encoder is allowed to be expensive, so use an exact suffix DP and retain
+    deterministic longest-token/order tie-breaking.
     """
     alphabet = sorted(set(text))
     index = {ch: i for i, ch in enumerate(alphabet)}
-    ranked = sorted(tokens, key=len, reverse=True)
+    ranked = sorted(enumerate(tokens), key=lambda item: (-len(item[1]), item[0]))
     token_id = {t: len(alphabet) + tokens.index(t) for t in tokens}
+    cost = [0] * (len(text) + 1)
+    choice: list[tuple[int, int] | None] = [None] * len(text)
+    for position in range(len(text) - 1, -1, -1):
+        cost[position] = 1 + cost[position + 1]
+        choice[position] = (1, index[text[position]])
+        for _, token in ranked:
+            end = position + len(token)
+            if text.startswith(token, position) and 1 + cost[end] < cost[position]:
+                cost[position] = 1 + cost[end]
+                choice[position] = (len(token), token_id[token])
+
     out: list[int] = []
-    i = 0
-    while i < len(text):
-        for token in ranked:
-            if text.startswith(token, i):
-                out.append(token_id[token])
-                i += len(token)
-                break
-        else:
-            out.append(index[text[i]])
-            i += 1
+    position = 0
+    while position < len(text):
+        selected = choice[position]
+        if selected is None:  # pragma: no cover - every suffix has a literal
+            raise AssertionError("tokenisation DP left a suffix unresolved")
+        width, symbol = selected
+        out.append(symbol)
+        position += width
     return out
 
 
@@ -151,8 +153,9 @@ def untokenise(ids: list[int], alphabet: list[str], tokens: list[str]) -> str:
     """The in-machine operation, in Python: id -> character or token text."""
     pieces = []
     for value in ids:
-        pieces.append(alphabet[value] if value < len(alphabet)
-                      else tokens[value - len(alphabet)])
+        pieces.append(
+            alphabet[value] if value < len(alphabet) else tokens[value - len(alphabet)]
+        )
     return "".join(pieces)
 
 
@@ -161,7 +164,7 @@ def pack(ids: list[int], radix: int) -> list[int]:
     per = symbols_per_word(radix)
     words = []
     for start in range(0, len(ids), per):
-        chunk = ids[start:start + per]
+        chunk = ids[start : start + per]
         value = 0
         for symbol in chunk:
             value = value * radix + symbol
@@ -199,10 +202,16 @@ def build(text: str | None = None, count: int = TOKEN_COUNT) -> dict:
     table_index = {ch: i for i, ch in enumerate(table_alpha)}
     table_words = pack([table_index[ch] for ch in table_text], table_radix)
     return {
-        "text": text, "tokens": tokens, "alphabet": alphabet, "radix": radix,
-        "ids": ids, "words": words,
-        "table_text": table_text, "table_alpha": table_alpha,
-        "table_radix": table_radix, "table_words": table_words,
+        "text": text,
+        "tokens": tokens,
+        "alphabet": alphabet,
+        "radix": radix,
+        "ids": ids,
+        "words": words,
+        "table_text": table_text,
+        "table_alpha": table_alpha,
+        "table_radix": table_radix,
+        "table_words": table_words,
         "data_cells": len(words) * word_cells(radix),
         "table_cells": len(table_words) * word_cells(table_radix),
     }

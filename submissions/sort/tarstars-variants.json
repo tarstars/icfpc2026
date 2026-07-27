@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "problem": {
+    "id": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
+    "slug": "sort-numbers",
+    "name": "Sort",
+    "scoring": "footprint-tick"
+  },
+  "variants": [
+    {
+      "version": "tarstars_sort_08",
+      "label": "18-square capacity-preserving pump and relay fold",
+      "parent": "sort_07",
+      "changeType": "geometry-only",
+      "source": {
+        "path": "submissions/sort/tarstars_sort_08.man",
+        "generator": "src/littleman/tarstars_sort_short.py:build_tarstars_sort_short",
+        "sha256": "5a48e23f67359625fa9bb7e0e04ff546015df1cce86222f658551681bbf4a171",
+        "bytes": 342,
+        "width": 18,
+        "height": 18,
+        "footprint": 324
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [755, 617, 772, 544, 928, 2137, 5282],
+        "averageTicks": 1576.4285714285713,
+        "score": 510762.8571428571,
+        "preflight": "READY TO SUBMIT"
+      },
+      "liveSubmission": {
+        "id": "96637319-7405-4012-8f00-675d12b230a7",
+        "status": "done",
+        "casesPassed": 25,
+        "casesTotal": 25,
+        "width": 18,
+        "height": 18,
+        "area2": 324,
+        "averageTicks": 2476.24,
+        "score": 802301.7599999999,
+        "fullResponse": "submissions/sort/tarstars_sort_08-submit.json"
+      }
+    }
+  ]
+}

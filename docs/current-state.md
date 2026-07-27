@@ -1,6 +1,6 @@
 # Current State
 
-Updated: 2026-07-25
+Updated: 2026-07-27
 
 ## Objective
 
@@ -39,8 +39,22 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - Semester 4 added four graded 16×16-display problems: `snake`, `pathfinder`,
   `little-little-little-man` (LLLM), and `little-little-man` (LLM). Their
   exact API specifications and 36 total public cases are attached under
-  `data/small/problems/`; no Semester 4 solution is recorded yet. See
-  `reports/2026-07-25-semester-4-release.md`.
+  `data/small/problems/`. Snake `snake_04` is accepted 17/17 at 150×129 and
+  score 848,516,029.4117646; its four-cell state-ring reduction is documented
+  in `reports/2026-07-26-snake-ring-margin.md`. Pathfinder `pathfinder_02`
+  deletes 84 judge-safe rows and is accepted 18/18 at 187×1,873, score
+  16,071,390,291,617.668, and rank 42 in the
+  `2026-07-27T00:32:10.377Z` snapshot; its submission is
+  `4b714c9e-d0e0-455a-857e-b06a30fa0e39`. LLLM `lllm_04` deletes one
+  globally blank row and four corridor columns while preserving all 628 pipe
+  resolutions. It is accepted 21/21 at 303×311, score
+  21,174,308,704.380955, and rank 14 in the
+  `2026-07-27T00:54:10.094Z` snapshot; see
+  `reports/2026-07-27-lllm-squeeze.md`. LLM submission
+  `be96c6eb-e2bd-40a7-b5d2-a3aadbaf2b9b` is accepted 28/28 at server score
+  8,775,033,253,482,888; its exact artifact and response are preserved. See
+  `reports/2026-07-25-semester-4-release.md` and the latest immutable
+  messages under `coordination/messages/`.
 - Before committing any solution version, agents must pull and integrate the
   current GitHub branch and query the exact problem's current score/submission
   state through the contest API; the mandatory freshness policy is in
@@ -49,66 +63,62 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   `docs/two-agent-protocol.md`: isolated agent worktrees, one integrator for
   `main`, one serialized submission controller, explicit task write sets, and
   owner-specific status and immutable messages under `coordination/`.
-- The current live Sort best is the 19×19 shrinking-ring `sort_03`; it passed
-  all 25 server cases at score 1,455,739.72. The validated local `sort_05`
-  carries its remaining count as an in-band FIFO token and folds the return
-  pipe into an 18×18 square. It passes all public and 308 deterministic stress
-  workloads at local score 778,062.86, 16.20% below `sort_03`; it has not been
-  submitted.
-- The server-safe 89×89 History Lesson program passed 1/1 with footprint score
-  7,921.
+- Sort `tarstars_sort_08` removes one inert return column while preserving the
+  17-cell shrinking ring. It is live 25/25 at 18×18, score 802,301.76, and
+  rank 45 in the `2026-07-26T23:56:10.445Z` snapshot. See
+  `reports/2026-07-27-sort-18-square.md`.
+- History Lesson `history_06` uses a joint exact-DP dictionary and lookup-slot
+  search to fit the fixed archive into 81×81. It is live 1/1 at score 6,561
+  and tied rank 13 in the `2026-07-27T01:10:10.416Z` snapshot, a
+  four-position gain. See `reports/2026-07-27-history-81-square.md`.
 - Packet Reassembly `tcp_00` passed 20/20 at 38×41 and score 20,028,106.4.
   Five platform downloads recovered the missing tag-through-ring lineage:
   `tcp_01/tcp_05 -> tcp_04 -> tcp_03 -> tcp_02`. The 38×38 `tcp_02` is
   uniquely identified as the counted 5,981,625.6 winner and now reproduces
   byte-for-byte from a structural generator. All recovered sources have
   stable hashes, pass public cases and a 45-case boundary suite, and are
-  catalogued under `submissions/tcp/`. Only its submission UUID remains
-  unavailable.
-- Grade Book `gradebook_01` compacts the accepted four-worker baseline from
-  494×462 to 454×450 without changing its protocols. It passed all 20 live
-  cases and improved the server score 15.97%, from 124,123,713,433.2 to
-  104,303,579,599.6. The exact variants are under
-  `submissions/gradebook/`; the optimization is documented in
-  `reports/2026-07-24-grade-book-optimization.md`.
-- Three Matrix Multiply candidates are preserved under `submissions/matmul/`.
-  The best compact nested-ring geometry occupies 183×180, passes all seven
-  public cases, including 16×16×16 in 4,198,400 ticks, and improves the local
-  score 60.25× over the parallel baseline. Details are in
-  `reports/2026-07-24-matrix-multiply.md`. `matmul_02` passed all 20 live
-  cases at server score 33,286,994,352.
-- The first Sudoku Auditor candidate passed all 20 live cases at 446×200,
-  average 529,549.7 ticks, and score 105,335,908,125.2. The unsubmitted
-  geometry-only `sudoku_01` folds its unchanged workers into two rows,
-  occupies 286×285, passes the focused compatibility and adversarial gates,
-  and improves measured local score 59.15%. Details and exact sources are in
-  `reports/2026-07-25-sudoku-two-row.md` and
-  `submissions/sudoku-validity/`.
-- Memory `memory_01` preserves the submitted pipeline logic but relocates one
-  room to shrink the machine from 67×38 to 46×47. It passed 24/24 live and
-  improved the server score from 181,952,075.875 to 91,372,247.625. Details
-  are in `reports/2026-07-24-memory-compaction.md`.
-- The Memory packing feasibility model proves that three signed cell values
-  fit in one signed-64 word using base `2**21`, reducing the record ring from
-  100 values to 34 words. Twenty-six focused tests pass. A corrected
-  conservative projection estimates a 17.19% score reduction; a real
-  `memory_02` machine remains to be built and measured.
-- Plotter is solved by a generated symmetric-Bresenham pipeline. The first
-  correctness baseline passed all 20 live cases at 394×535 and score
-  75,794,498,065. A geometry-only 388×441 successor, `plotter_01`, passes all
-  public and deterministic oracle cases locally and improves the measured
-  local score by 32.98%; it has not been submitted.
+  catalogued under `submissions/tcp/`. The 30×30 `tarstars_tcp_10` repacks
+  the `tcp_09` rooms without changing any of its 35 logical pipe bindings.
+  It is the current live best: 20/20 at score 1,490,670, a 5.362%
+  improvement, and rank 29 in the `2026-07-27T00:50:10.346Z` snapshot. Only
+  the older `tcp_02` submission UUID remains unavailable. See
+  `reports/2026-07-27-tarstars-tcp-repack.md`.
+- Grade Book `gradebook_05` replaces fixed worker delays with blocking ring
+  receives. It is live 20/20 at 382×307, score 47,115,780,603.6, and rank 55
+  in the `2026-07-27T00:12:10.405Z` snapshot. Its room contracts and
+  substitution tests are in
+  `reports/2026-07-26-gradebook-components.md`.
+- Matrix Multiply `matmul_08` preserves the folded-controller logic and
+  compacts its rings to 99×98. It passed all 20 live cases at server score
+  5,931,034,965.9, improving the preceding counted score by 29.70%.
+- Sudoku Auditor `sudoku_05` uses one canonical 27-mask state ring in a
+  75×131 machine. It passed all 20 live cases at server score 9,290,407,667.5,
+  improving the preceding counted score by 17.84%. Its algorithm replacement
+  also passed 17 directed order and duplicate workloads locally.
+- Memory `tarstars_memory_14` keeps the three-cells-per-word shared relay and
+  shortcuts two bounded WRITE paths. It is live 24/24 at 29×30 with score
+  14,009,062.5, a 2.64% improvement over `memory_13`, and rank 16 in the
+  `2026-07-27T00:22:10.356Z` snapshot. The exact response is
+  `submissions/memory/tarstars_memory_14-submit.json`.
+- Plotter `tarstars_plotter_09` reorders and folds the fused worker, then
+  packs the retained rooms beside its side ports. It is live 20/20 at
+  80×125, score 1,007,182,812.5, and rank 58 in the
+  `2026-07-27T01:12:10.350Z` snapshot, one position above the immediate
+  pre-submit rank. See `reports/2026-07-27-tarstars-plotter-next.md`.
 - Subset Sum is solved by a generated meet-in-the-middle machine with two
   1,024-stage systolic sorters. Its compact 3,646×3,029 artifact passed all
   20 live cases at score 91,769,596,778,389.8. The exact Git-LFS source,
   variant properties, and validation are documented under
   `submissions/subset-sum/` and in
   `reports/2026-07-24-subset-sum.md`.
-- Reverse has a validated local geometry successor: `reverse_02` preserves the
-  corridor-free room programs, reroutes the 17-cell FIFO above the relay, and
-  shrinks 16×16 to 15×15. It passes all public and 260 deterministic stress
-  workloads at local score 261,393.75, 12.15% below live `reverse_01`; it has
-  not been submitted.
+- Reverse `reverse_08` shortens the input-side ring while keeping the 13×13
+  footprint. It is live 20/20 at score 84,423.95 and rank 39 in the
+  `2026-07-27T00:34:10.477Z` snapshot; the exact response is
+  `submissions/reverse-a-list/alexey-reverse_08-submit.json`. A separate
+  `Y`-spawned spatial schedule reverses every one-round length 1–16 under the
+  organizer WASM, but still needs a proven multi-round lifecycle before it
+  can replace the counted machine; see
+  `reports/2026-07-26-gpt-reverse-y.md`.
 - TCP-derived transfer audits are complete for Grade Book, Matrix, Brackets,
   Plotter, Sudoku, and Subset Sum. The Sudoku packing bound has since become
   the validated 286-square `sudoku_01`; the Subset Sum relocation probe still
@@ -117,6 +127,19 @@ communicating through pipes, with I/O rooms and an LM-75 display.
 - `littleman.server_compat` is the pre-submission judge for the two confirmed
   parser differences: it rejects locally accepted shared-wall rooms and
   permits a final wall step after a send while the output pipe drains.
+- The exact Rust executor on `agent/codex-rust` retains the Python parser,
+  lowers to a versioned dense IR, and executes through PyO3 or a standalone
+  Rayon CLI. It reduced the expanded 2,012-test LLM suite from 858.86 to
+  53.08 seconds, and ran all 14 public LLM cases (173.6 million judged ticks)
+  deterministically in 4.93 seconds with eight workers. Acceptance evidence
+  is in `reports/2026-07-26-rust-executor.md`. A missing-extension fallback
+  found by Claude's independent review is fixed in `a899e03`; forced fallback
+  now passes 108 tests with 11 native-only skips. The clean
+  `agent/codex-main-integration` candidate merges current `origin/main`, both
+  agent lineages, and passes the full repository suite: 3,822 passed, two
+  skipped, four expected xfails, zero failures. Peer review is approved;
+  the guarded non-force promotion placed release commit `6efbc49` on
+  `origin/main`.
 
 ## Storage
 

@@ -1,0 +1,33 @@
+{
+ "backend": "c-ext (built)",
+ "gates": {
+  "rooms": 2121,
+  "pipes": 2164,
+  "men": 2119,
+  "min_pipe": 2,
+  "shared_walls": false,
+  "length_multiset_restored": false,
+  "shorter_pipes": 116,
+  "box": [
+   1006,
+   2374
+  ],
+  "fp": 5635876
+ },
+ "cases_passed": 0,
+ "cases_total": 7,
+ "case_ticks": [],
+ "failures": [
+  "tick-cap",
+  "tick-cap",
+  "tick-cap",
+  "tick-cap",
+  "tick-cap",
+  "tick-cap",
+  "tick-cap"
+ ],
+ "fp": 5635876,
+ "score": Infinity,
+ "judge_wall_s": 23.5,
+ "total_wall_s": 474.7
+}

@@ -184,8 +184,12 @@ def test_walk_graph_nodes_are_well_formed(rel: str) -> None:
 
 
 def one_man_candidates() -> list[str]:
-    """Cheap pre-filter: exactly one `@` glyph in the source."""
-    return [f for f in all_man_files() if (SUBS / f).read_text().count("@") == 1]
+    """Supported scored artifacts with exactly one ``@`` glyph."""
+    return [
+        f for f in all_man_files()
+        if f.split("/")[0] in PROBLEM_OF
+        and (SUBS / f).read_text().count("@") == 1
+    ]
 
 
 def phase_b(rel: str, cap: int = 5_000_000) -> list[tuple]:

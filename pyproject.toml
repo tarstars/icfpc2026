@@ -14,9 +14,10 @@ icfpc-api = "icfpc_api.cli:main"
 
 [dependency-groups]
 dev = [
+    "maturin>=1.7,<2",
     "ortools>=9.15.6755",
     "pytest>=8",
-    "pytest-xdist>=3.8.0",
+    "pytest-xdist>=3.8,<4",
 ]
 
 [build-system]
@@ -29,6 +30,10 @@ packages = ["src/icfpc_api", "src/littleman"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # Parallel by default: the suite is CPU-bound tick simulation with no shared
-# state, and this took it from 476s to 107s on 20 cores. Use `-p no:xdist`
-# or `-n 0` when a failure's ordering or output needs to be read serially.
+# state. Use `-p no:xdist` or `-n 0` when a failure needs serial diagnosis.
 addopts = "-n auto"
+
+[tool.maturin]
+manifest-path = "rust/Cargo.toml"
+python-source = "src"
+module-name = "littleman._fastsim_rust"

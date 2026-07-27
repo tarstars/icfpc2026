@@ -178,3 +178,23 @@ corridor adjacent to a room wall. Accept the fold only after exact artifact
 reproduction, ring-capacity assertions, public and directed duplicate tests,
 and the server-compatibility gate. Preserve the result as unsubmitted
 `sudoku_01`.
+
+## 2026-07-26 — Keep parsing in Python and execute versioned IR in Rust
+
+Retain the established Python parser as the source-language authority. Lower
+parsed machines to a versioned dense IR, run hot tick semantics through PyO3,
+and provide a standalone pure-Rust batch CLI over the same IR. Parallelize
+only independent programs, cases, seeds, and shards; keep dependent ticks
+sequential until equivalence is proved.
+
+Treat compressed IR as untrusted input: cap decoded size before allocation,
+validate every index and shape, and fail closed on version mismatches. Keep
+legacy corpus semantics separate from official Split/annihilation semantics.
+
+## 2026-07-26 — Native acceleration is optional for repository usability
+
+When the PyO3 extension has not been built, ordinary `rustexec.Machine` and
+cached case batches fall back to `fastsim` instead of making a fresh checkout
+red. Report the active backend explicitly. Keep compressed-IR encoding and
+official Split execution native-only with actionable errors and explicit
+test skips; do not silently emulate semantics the fallback cannot represent.

@@ -4,23 +4,29 @@
 \usepackage{amsmath}
 \usepackage{parskip}
 \usepackage{array}
+\usepackage{longtable}
 \setlength{\tabcolsep}{5pt}
 \renewcommand{\arraystretch}{1.15}
 \newcommand{\op}[1]{\texttt{#1}}
-\title{Little Man programming, super-detailed:\\the \textbf{Triangle} and \textbf{Memory} machines}
+\title{Little Man programming, super-detailed:\\the \textbf{Triangle},
+\textbf{Memory}, and \textbf{Grade Book} machines}
 \author{team wheezards --- ICFPC 2026 working notes}
-\date{2026-07-26}
+\date{2026-07-27}
 \begin{document}
 \maketitle
 
-\noindent This document explains two of our contest programs at full depth:
+\noindent This document explains three of our contest programs:
 the tiny \textbf{Triangle} machine (rank 1 of 239) and the packed
-\textbf{Memory} machine. Each program is shown twice --- as the literal
-\texttt{.man} grid and in our geometry-free \emph{block-graph} notation ---
-and each comes with an informal explanation, a step-by-step walkthrough, and
-a glossary of exactly the commands it uses. Every number in this document
-(traces, tick counts, packing arithmetic) was produced by running the real
-simulator and the real artifacts, not from memory.
+\textbf{Memory} machine at instruction level, then the much larger
+\textbf{Grade Book} machine as a system of sixteen named components.
+Triangle and Memory are shown both as literal \texttt{.man} grids and in our
+geometry-free \emph{block-graph} notation. Grade Book instead gets a
+component catalogue, explicit stream protocols, unit-test boundaries, and a
+room-by-room optimization map. Every quoted measurement comes from the
+checked-in artifacts, their tests, or preserved live responses.
+
+\tableofcontents
+\clearpage
 
 \section{The machine in ninety seconds}
 
@@ -680,6 +686,305 @@ packing formulas, the five-stage pipeline, the \op{B}-parking tricks)
 describes the champion too; it is simply wearing smaller rooms.
 
 \clearpage
+\section{Grade Book: sixteen components with contracts}
+\label{sec:gradebook}
+
+\textbf{The problem.} A roster contains $N=4..16$ students and $K=1..4$
+subjects. Later rounds contain batches of GET, SET, AVG, and TOP operations.
+TOP returns the smallest student id among those tied for the highest grade;
+AVG rounds down. Unlike Memory, this is not naturally one serial ring:
+each operation names a subject, so our machine gives each subject its own
+engine and record ring.
+
+\textbf{The machine discussed here} is the current live
+\texttt{submissions/gradebook/gradebook\_05.man}: $382\times307$, footprint
+$382^2=145\,924$, 16 rooms, 30 pipes, and 14 men. Its preserved live result is
+20/20 at score $47\,115\,780\,604$. The state machines originate in
+\texttt{src/littleman/gradebook.py}; later variants first tightened their
+layout, then squeezed and staircase-folded the same architecture.
+\texttt{gradebook\_05} additionally replaces three fixed worker delays with
+blocking ring receives and keeps only whole-machine-validated folds. The last
+fold removed 110 rows and reduced ticks by 21\%. It did not change the
+component protocol described below.
+
+\subsection{One picture, and the names we will keep}
+
+\begin{verbatim}
+ input_port --> command_frontend ==broadcast==> subject_engine[1]
+                                      |         subject_engine[2]
+                                      |         subject_engine[3]
+                                      `--------> subject_engine[4]
+
+ subject_engine[j] <--> record_circulator[j]   persistent -N,id,grade ring
+ subject_engine[j] <--> scratch_circulator[j]  temporary operation state
+
+ subject_engine[1] -> [2] -> [3] -> [4] -> command_frontend   acknowledgements
+           all four result pipes -> result_arbiter -> output_port
+\end{verbatim}
+
+These names are semantic rather than geometric, so they survive another
+repack:
+
+\begin{itemize}
+  \item \texttt{input\_port} and \texttt{output\_port};
+  \item \texttt{command\_frontend} and \texttt{result\_arbiter};
+  \item \texttt{subject\_engine[1]} through
+        \texttt{subject\_engine[4]};
+  \item \texttt{scratch\_circulator[1..4]} are the rooms historically named
+        \texttt{relayB1..4}, in the upper relay tier;
+  \item \texttt{record\_circulator[1..4]} are the rooms historically named
+        \texttt{relayA1..4}, in the lower tier.
+\end{itemize}
+
+All eight circulators are instances of the same physical
+\texttt{RELAY} component. The old A/B labels only described placement; the
+new names say which stream the room closes.
+
+\subsection{Why the rooms look empty}
+
+The five large rooms were emitted by a correctness-first FSM compiler. A
+logical block receives its own horizontal band; branches use long vertical
+tracks; pipe-selection ``zones'' reserve columns even when most cells in
+those columns are blank. The rectangles therefore enclose much more air than
+instructions:
+
+\begin{center}
+\small
+\begin{tabular}{lrrrl}
+component & count & envelope & recorded interior ops & wall-inclusive density\\ \hline
+\texttt{command\_frontend} & 1 & $385\times115$ & 346 & 3.04\%\\
+\texttt{subject\_engine[1]} & 1 & $96\times154$ & about 686 & about 8.1\%\\
+\texttt{subject\_engine[2..4]} & 3 & $94\times157$ & about 688--692 & about 8.1\%\\
+all circulators & 8 & $5\times5$ & 8 non-space interior cells & 96\%\\
+\texttt{result\_arbiter} & 1 & $384\times5$ & 9 & ---\\
+\texttt{input/output\_port} & 2 & $3\times3$ & one special cell & 100\%\\
+\end{tabular}
+\end{center}
+
+Here ``density'' includes the enclosing walls. This is the useful visual
+measure: the front-end and engines really are sparse despite their walls,
+whereas the $5\times5$ circulators are already almost solid. Do not confuse
+blank cells with the visible \op{.} cells inside each engine: those dots are
+executed one-tick delays and are part of the protocol until a test proves
+otherwise.
+
+\subsection{The wire protocol}
+
+The \texttt{command\_frontend} turns variable-length input into fixed-width
+streams. During the roster round it broadcasts
+\[
+ [N,\;id_1,g_{1,1},g_{1,2},g_{1,3},g_{1,4},\;\ldots]
+\]
+and fills grades for subjects above $K$ with zero. Each subject engine keeps
+only its own grade, producing the persistent FIFO
+\[
+ [-N,\;id_1,grade_{1,j},\;id_2,grade_{2,j},\ldots,id_N,grade_{N,j}].
+\]
+The negative count is the end marker and also supplies $N$ for AVG.
+
+Every later operation is broadcast as exactly four values:
+\[
+ [op,\;id\hbox{ or }0,\;subject,\;value\hbox{ or }0].
+\]
+GET and SET carry the real id; AVG and TOP use an id pad. SET carries a real
+value; the other operations use a value pad. \op{S} makes the broadcast
+atomic: it blocks unless all four worker pipes can accept the same token.
+
+Only the engine whose subject number matches executes the operation. The
+other three drain all four tokens without touching their record rings.
+After the roster, and after each operation, acknowledgements run
+\[
+ engine[1]\longrightarrow engine[2]\longrightarrow engine[3]
+ \longrightarrow engine[4]\longrightarrow frontend .
+\]
+The front-end does not start the next operation before the chain returns.
+Consequently at most one engine can produce a result for an operation, so
+the result arbiter's any-ready receive \op{R} is safe and output order is the
+input operation order.
+
+\subsection{Room catalogue: input, control, and output}
+
+\paragraph{\texttt{input\_port}.}
+\textbf{Input/output protocol:} accepts the judge's raw round stream and
+delivers it unchanged over one pipe to \texttt{command\_frontend}.
+\textbf{State:} none; it is the special $3\times3$ \texttt{I} room and has no
+man. \textbf{Unit boundary:} exact FIFO preservation across multiple rounds.
+\textbf{Optimization:} the room itself is already minimal; only placement and
+the two-cell-or-longer connecting pipe can shrink.
+
+\paragraph{\texttt{command\_frontend}.}
+\textbf{Input/output protocol:} consumes raw input plus the final
+acknowledgement from engine 4; broadcasts the normalized roster and
+four-token operations over four outgoing pipes. \textbf{State:} \op{B}
+holds the current roster/operation count, while \op{BP} selects $K$ during
+roster loading and selects the operation arm later; no grades persist here.
+\textbf{Unit boundary:} for $K=1..4$ and boundary $N$, compare its four output
+streams to a Python normalizer and require it to remain blocked until one ack
+arrives. \textbf{Optimization:} highest priority. It is only 3.04\% dense and
+385 columns wide. Reorder/merge FSM blocks, or split normalization from a
+small broadcast fan-out, but preserve all four bindings and atomic \op{S}.
+
+\paragraph{\texttt{result\_arbiter}.}
+\textbf{Input/output protocol:} receives from any of four engine result pipes
+with \op{R} and sends the value to \texttt{output\_port}. The contract
+requires zero or one ready input, never two. \textbf{State:} only the
+in-flight value in \op{A}; no cross-operation state. \textbf{Unit boundary:}
+inject one value through each input in turn, then mixed sequential arrivals,
+and assert exact ordering and pipe binding. \textbf{Optimization:} the
+$379\times5$ room contains only nine interior operations. A compact arbiter
+or two-level merge tree is promising, although shrinking it alone does not
+beat the current 382-column bound.
+
+\paragraph{\texttt{output\_port}.}
+\textbf{Input/output protocol:} consumes the arbiter's stream and exposes it
+to the judge. \textbf{State:} none; it is the special $3\times3$
+\texttt{O} room and has no man. \textbf{Unit boundary:} GET, AVG, and TOP values
+must emerge verbatim and SET must emit nothing. \textbf{Optimization:} like
+the input port, optimize only placement and pipe length.
+
+\subsection{Room catalogue: the four subject engines}
+
+All four engines accept the normalized command stream, own one persistent
+record ring and one temporary scratch ring, optionally produce one result,
+and send one acknowledgement per operation. Their registers are transient:
+\op{BP} selects GET/SET/AVG/TOP; \op{B} holds such values as the target id,
+AVG accumulator, or TOP key. Persistent grades live only in the record ring.
+
+\paragraph{\texttt{subject\_engine[1]}.}
+Consumes subject 1 commands, reads/writes both circulators, and writes the
+first ack token directly to engine 2; unlike the others it has no predecessor
+ack input. Unit-test roster load, matching and nonmatching operations, all
+four opcodes, AVG floor division, and TOP's smallest-id tie. Its
+$96\times154$ envelope is the slightly wider special case. Optimize it as a
+separate component, preserving its initiator role.
+
+\paragraph{\texttt{subject\_engine[2]}.}
+The same compute protocol for subject 2, but it must receive engine 1's ack
+before forwarding an ack to engine 3. Unit-test both the fast nonmatching
+path and a slow matching operation while the chain waits. Its
+$94\times157$ envelope is representative of the three chained engines.
+
+\paragraph{\texttt{subject\_engine[3]}.}
+Computes subject 3, receives the ack from engine 2, and forwards it to engine
+4. Use the same semantic suite with subject 3 selected, plus a test that
+other subjects drain without mutating its record FIFO.
+
+\paragraph{\texttt{subject\_engine[4]}.}
+Computes subject 4 and closes the acknowledgement chain by sending to
+\texttt{command\_frontend}. Include $K<4$ roster padding, $K=4$ real grades,
+and delayed final-ack tests; an early ack here would let the parser overlap
+two operations and corrupt every downstream protocol.
+
+For all four, the optimization target is the room compiler rather than
+blind whitespace deletion. The existing staircase fold safely merged most
+carriage-return rows; engine columns remain frozen because they select among
+command, two ring, ack, and result pipes. A new layout may change those
+columns only with an operation-cell-to-pipe binding audit. The three explicit
+80-dot delays in the source are especially attractive, but removing one is
+an algorithm change: first replace its settling argument with blocking or a
+proved ring invariant.
+
+\subsection{Room catalogue: the eight circulators}
+
+Every circulator is the same dense $5\times5$ room:
+
+\begin{verbatim}
++---+
+| @v|
+|>sv|
+|^r<|
++---+
+\end{verbatim}
+
+Its six-operation lap receives one value and sends it unchanged. It does not
+interpret the stream; its only register state is the current value in
+\op{A}, and the durable FIFO state lives in the two external pipes. Blocking
+on \op{r} and \op{s} supplies backpressure.
+
+\small
+\begin{longtable}{
+  >{\raggedright\arraybackslash}p{0.24\linewidth}
+  >{\raggedright\arraybackslash}p{0.38\linewidth}
+  >{\raggedright\arraybackslash}p{0.29\linewidth}}
+room & exact stream role & unit test and optimization \\ \hline
+\endfirsthead
+room & exact stream role & unit test and optimization \\ \hline
+\endhead
+\texttt{scratch\_circulator[1]} &
+engine 1 scratch-out $\to$ unchanged scratch-in; parks ids, SET values, and
+TOP temporaries while that operation runs &
+Stream-identity and full/empty blocking tests. Keep the room; shorten its
+external loop only if engine 1's timing remains exact.\\
+\texttt{scratch\_circulator[2]} &
+the identical temporary FIFO for engine 2; historical \texttt{relayB2} &
+Run the same parameterized suite with subject 2 and its ack predecessor.
+The $5\times5$ shape is low priority.\\
+\texttt{scratch\_circulator[3]} &
+the identical temporary FIFO for engine 3; historical \texttt{relayB3} &
+Run the same suite with subject 3. Prefer pipe relocation over changing the
+already 96\%-dense room.\\
+\texttt{scratch\_circulator[4]} &
+the identical temporary FIFO for engine 4; historical \texttt{relayB4} &
+Test that all scratch traffic finishes before the final ack. Optimize only
+with the front-end timing gate enabled.\\
+\texttt{record\_circulator[1]} &
+closes subject 1's persistent $[-N,id,grade,\ldots]$ record FIFO; historical
+\texttt{relayA1} &
+Rotate boundary $N=4,16$ rings, then GET/SET/AVG/TOP. Preserve at least the
+33-value maximum parked capacity.\\
+\texttt{record\_circulator[2]} &
+the persistent subject 2 record FIFO; historical \texttt{relayA2} &
+Same identity/capacity suite, including zero and 100 grades. Shorter pipes
+are useful only while 33 values still park safely.\\
+\texttt{record\_circulator[3]} &
+the persistent subject 3 record FIFO; historical \texttt{relayA3} &
+Same suite, plus repeated full rotations to expose an off-by-one marker
+shift. Room compaction itself has almost no space to win.\\
+\texttt{record\_circulator[4]} &
+the persistent subject 4 record FIFO; historical \texttt{relayA4} &
+Same suite with $K=4$ and with padded $K<4$. Preserve the $-N$ marker and
+canonical order across every acknowledgement.\\
+\end{longtable}
+\normalsize
+
+This naming also fixes a common conceptual error: the circulator room is not
+``the memory.'' Most values spend their idle time parked at the destination
+end of its incoming pipe. Unit tests must therefore cover the complete
+engine--pipe--circulator loop, not execute the five-by-five room in isolation
+with no capacity model.
+
+\subsection{Optimization plan enabled by these boundaries}
+
+The existing tests prove whole-program behavior, artifact reproduction,
+public cases, ring capacity, room-byte preservation in the pressed variant,
+and unchanged pipe roles. They do not yet make each of the sixteen names an
+independently replaceable module. The next safe sequence is:
+
+\begin{enumerate}
+  \item Extract each room with the same wall-side port offsets and build a
+        harness that supplies and records its named streams. Freeze a
+        protocol oracle before changing geometry.
+  \item Parameterize the four engines from one semantic test matrix. Test
+        matching/nonmatching subjects, all operations, boundary roster
+        sizes, TOP ties, AVG floor rounding, ring capacity, and ack timing.
+  \item Optimize \texttt{command\_frontend} and one
+        \texttt{subject\_engine} at a time. Compare output streams,
+        canonical ring state, instruction-cell pipe resolution, and ticks
+        against the old component; then instantiate the three siblings.
+  \item Recompose all sixteen components. Re-run the public and deterministic
+        oracle workloads, server-compatible layout checks, exact pipe-role
+        maps, and a fresh score benchmark before creating a new version.
+\end{enumerate}
+
+The score consequence matters. The current machine is width-bound at 382:
+the front-end room is 381 cells wide, while the external pipe clearance
+reaches the final column. More row folding is ``banked'' but does not reduce the squared
+footprint. A real next generation must shrink engine \emph{columns}, change
+their arrangement after shrinking, or both. A previously measured $2\times2$
+arrangement was worse with the present $93$-column engine rooms; it should be
+re-evaluated only after a component compiler makes those widths materially
+smaller.
+
 \section{Where everything lives, and how this document was made}
 
 \begin{center}
@@ -687,7 +992,11 @@ describes the champion too; it is simply wearing smaller rooms.
 \begin{tabular}{ll}
 \texttt{submissions/triangle/triangle\_02.man} & the live Triangle artifact (rank 1/239)\\
 \texttt{submissions/memory/memory\_04.man} & the packed Memory artifact explained here\\
+\texttt{submissions/gradebook/gradebook\_05.man} & the live Grade Book artifact catalogued here\\
 \texttt{src/littleman/memory\_packed.py} & Memory generator; the packing formulas with tests\\
+\texttt{src/littleman/gradebook.py} & Grade Book FSMs and original component layout\\
+\texttt{src/littleman/gradebook\_components.py} & Grade Book room contracts and live optimized generator\\
+\texttt{src/littleman/gradebook\_press.py} & named 16-room topology and pipe-role-preserving press\\
 \texttt{src/littleman/sim.py} & the reference simulator (the semantics authority)\\
 \texttt{src/littleman/fastsim.py} & the fast executor, proven bit-identical to \texttt{sim.py}\\
 \texttt{src/littleman/decompile.py} & \texttt{.man} $\to$ block-graph; round-trips the whole corpus\\
@@ -697,18 +1006,21 @@ describes the champion too; it is simply wearing smaller rooms.
 \end{tabular}
 \end{center}
 
-Every grid, block-graph, trace row and number in this document was generated
-from those artifacts by the real toolchain at build time --- the traces by
-instrumenting \texttt{sim.py} tick by tick, the block-graphs by
-\texttt{decompile.py}, the packing arithmetic by executing the formulas ---
-so if it is written here, it ran.
+Triangle and Memory grids, block-graphs, traces, and packing numbers were
+generated from those artifacts by the real toolchain. The traces use
+\texttt{sim.py}, the block-graphs use \texttt{decompile.py}, and the packing
+arithmetic executes the formulas. Grade Book measurements were taken from
+the checked-in \texttt{gradebook\_05.man}. Live scores come only from
+preserved submission records.
 
 To re-verify the headline facts yourself:
 
 \begin{verbatim}
 uv run python -m littleman submissions/triangle/triangle_02.man triangle
 uv run python -m littleman submissions/memory/memory_04.man memory
-uv run pytest tests/test_memory_packed.py -q
+uv run python -m littleman submissions/gradebook/gradebook_05.man gradebook
+uv run pytest tests/test_memory_packed.py tests/test_gradebook.py \
+  tests/test_gradebook_components.py -q
 \end{verbatim}
 
 \end{document}

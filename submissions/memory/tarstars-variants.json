@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "variants": [
+    {
+      "version": "memory_11",
+      "label": "recovered counted 29-square source",
+      "parent": "memory_10",
+      "changeType": "geometry",
+      "source": {
+        "path": "submissions/memory/memory_11.man",
+        "sha256": "c9e2dea84fa3b6d809cfe85a02abfcf7e614349d5488432e776fdd256fbb41a4",
+        "bytes": 794,
+        "width": 29,
+        "height": 29,
+        "footprint": 841
+      },
+      "liveSubmission": {
+        "id": "89c637e7-7601-4637-a36f-07b94afeb12f",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "averageTicks": 19064.75,
+        "score": 16033454.75,
+        "fullResponse": "submissions/memory/memory_11-submit.json"
+      }
+    },
+    {
+      "version": "memory_12",
+      "label": "station READ, WRITE, and return shortcuts",
+      "parent": "memory_11",
+      "changeType": "geometry-only",
+      "source": {
+        "path": "submissions/memory/memory_12.man",
+        "generator": "src/littleman/memory_hotpath.py:build_memory_hotpath",
+        "sha256": "e63c3e20e824dec33861b04305a7785efb2912b3db761bc7c46b8d78203b592e",
+        "bytes": 794,
+        "width": 29,
+        "height": 29,
+        "footprint": 841
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [292, 608, 1510, 1082, 1512, 908, 20656],
+        "averageTicks": 3795.4285714285716,
+        "score": 3191955.4285714286,
+        "improvementPercent": 3.6238981390793414
+      },
+      "liveSubmission": {
+        "id": "397eaeb4-1236-4e0f-8b2d-b2ac089050f4",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 29,
+        "area2": 841,
+        "averageTicks": 18372.291666666668,
+        "score": 15451097.291666668,
+        "fullResponse": "submissions/memory/memory_12-submit.json"
+      }
+    },
+    {
+      "version": "memory_13",
+      "label": "shared two-word READ/WRITE station relay",
+      "parent": "memory_12",
+      "changeType": "protocol-and-geometry",
+      "source": {
+        "path": "submissions/memory/memory_13.man",
+        "generator": "src/littleman/memory_unrolled.py:build_memory_unrolled",
+        "sha256": "032b067b8a506332ccf8a1a775228f64abf49aafe32ea10d2966f8aa25d0ae9e",
+        "bytes": 817,
+        "width": 29,
+        "height": 30,
+        "footprint": 900
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [286, 557, 1302, 989, 1284, 813, 18448],
+        "averageTicks": 3382.714285714286,
+        "score": 3044442.8571428573,
+        "improvementPercent": 4.621389803668525
+      },
+      "liveSubmission": {
+        "id": "35dca1c9-840c-4ce4-afe0-58a3e5995bfe",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 30,
+        "area2": 900,
+        "averageTicks": 15987.083333333334,
+        "score": 14388375,
+        "fullResponse": "submissions/memory/memory_13-submit.json"
+      }
+    },
+    {
+      "version": "tarstars_memory_14",
+      "label": "bounded WRITE receive and ring-return shortcuts",
+      "parent": "memory_13",
+      "changeType": "geometry-only",
+      "source": {
+        "path": "submissions/memory/tarstars_memory_14.man",
+        "generator": "src/littleman/tarstars_memory_shortcuts.py:build_tarstars_memory_shortcuts",
+        "sha256": "90ab2f895d50443356fdcbb1e4ebeb7f484d0c6fd517566906cdfcf4644c8d31",
+        "bytes": 817,
+        "width": 29,
+        "height": 30,
+        "footprint": 900
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [286, 547, 1272, 969, 1264, 813, 17948],
+        "averageTicks": 3299.8571428571427,
+        "score": 2969871.428571428,
+        "improvementPercent": 2.449422092633763
+      },
+      "liveSubmission": {
+        "id": "9d2d8043-9ed4-455d-9c6b-10ad1c6716ff",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 30,
+        "area2": 900,
+        "averageTicks": 15565.625,
+        "score": 14009062.5,
+        "fullResponse": "submissions/memory/tarstars_memory_14-submit.json"
+      }
+    }
+  ]
+}

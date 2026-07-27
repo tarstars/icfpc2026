@@ -1,0 +1,18 @@
+{
+  "id": "95c909b1-1449-4b28-9c7d-9612462bad36",
+  "problemId": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
+  "status": "done",
+  "output": "Passed 20/20 test cases",
+  "error": null,
+  "loadError": null,
+  "casesPassed": 20,
+  "casesTotal": 20,
+  "width": 31,
+  "height": 31,
+  "area2": 961,
+  "avgTicks": 1639.05,
+  "score": 1575127.05,
+  "uberStrictPassed": null,
+  "createdAt": "2026-07-26T21:53:18.423Z",
+  "updatedAt": "2026-07-26T21:53:22.293Z"
+}

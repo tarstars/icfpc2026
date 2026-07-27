@@ -128,19 +128,112 @@
         "updatedAt": "2026-07-24T20:16:21.269Z",
         "fullResponse": "submissions/matmul/matmul_02-submit.json"
       }
+    },
+    {
+      "version": "matmul_07",
+      "label": "folded single-wall controller",
+      "parent": "matmul_06",
+      "changeType": "component",
+      "architecture": "fold the controller staircase with all 18 ports fixed on its bottom wall; rows-only squeeze; server-safe A-ring route trimmed to the exact 256-value capacity",
+      "source": {
+        "path": "submissions/matmul/matmul_07.man",
+        "generator": "src/littleman/matmul_components.py:build_matmul_controller_folded",
+        "sha256": "9deb5b44092e1099e09de12ca4fee7ab71811e6187392e76482ef070c01e51d3",
+        "bytes": 10668,
+        "width": 115,
+        "height": 98,
+        "maxDimension": 115,
+        "footprint": 13225
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "2x2 warm up": 16882,
+          "non-square 2x3x2": 22698,
+          "identity": 76614,
+          "16x16x16 full size": 2610270,
+          "skinny 16x2x16": 484958,
+          "negative heavy": 131968,
+          "max magnitude 7x5x9": 268790
+        },
+        "averageTicks": 516025.71428571426,
+        "score": 6824440071.428572
+      },
+      "improvementFromParent": {
+        "footprintPercent": 34.412814917675064,
+        "averageTicksPercent": 36.36272986761218,
+        "localScorePercent": 58.26210585693171
+      },
+      "liveSubmission": null
+    },
+    {
+      "version": "matmul_08",
+      "label": "squeezed folded controller",
+      "parent": "matmul_07",
+      "changeType": "geometry",
+      "architecture": "matmul_07 logic with 16 globally empty columns removed and the A ring rerouted at its exact 256-value capacity",
+      "source": {
+        "path": "submissions/matmul/matmul_08.man",
+        "generator": "experiments/gpt-submission-candidates/generate_matmul_08.py",
+        "sha256": "6d77cb4dac845d620a3f39804c345cb818c17de3d7577af848bc0ea8a9cc685e",
+        "bytes": 9245,
+        "width": 99,
+        "height": 98,
+        "maxDimension": 99,
+        "footprint": 9801
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": {
+          "2x2 warm up": 16019,
+          "non-square 2x3x2": 21531,
+          "identity": 72679,
+          "16x16x16 full size": 2476351,
+          "skinny 16x2x16": 460351,
+          "negative heavy": 125153,
+          "max magnitude 7x5x9": 255047
+        },
+        "averageTicks": 489590.14285714284,
+        "score": 4798472990.142857,
+        "directedCasesPassed": 6,
+        "serverCompatibility": "passed",
+        "minimumPipeLength": 3
+      },
+      "improvementFromParent": {
+        "footprintPercent": 25.890359168241964,
+        "averageTicksPercent": 5.122917462584919,
+        "localScorePercent": 29.686934899871062,
+        "liveScorePercent": 29.69918695138406
+      },
+      "liveSubmission": {
+        "id": "b281b2af-dae3-40da-bfc4-317e3ff3b4b2",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 99,
+        "height": 98,
+        "area2": 9801,
+        "averageTicks": 605145.9,
+        "score": 5931034965.900001,
+        "createdAt": "2026-07-26T20:40:25.465Z",
+        "updatedAt": "2026-07-26T20:40:29.714Z",
+        "fullResponse": "submissions/matmul/matmul_08-submit.json"
+      }
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-24T20:32:11.660Z",
+    "updatedAt": "2026-07-26T20:42:05.711Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 9,
+    "rank": 47,
     "casesPassed": 20,
     "casesTotal": 20,
-    "score": 33286994352.0,
+    "score": 5931034965.900001,
     "passPoints": 1.0,
-    "rankPoints": 0.5555555555555556,
-    "points": 1.5555555555555556,
-    "rows": 19
+    "rankPoints": 0.3611111111111111,
+    "points": 1.3611111111111112,
+    "rows": 78
   }
 }
