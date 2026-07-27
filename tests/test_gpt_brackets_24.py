@@ -1,4 +1,4 @@
-"""Release gates for the solver-guided 24-square Brackets candidate."""
+"""Release gates for the solver-guided 24-square Brackets lineage."""
 
 from __future__ import annotations
 
@@ -9,15 +9,17 @@ import random
 from pathlib import Path
 
 from littleman.alexey_pipecheck import check as check_pipe_lengths
-from littleman.gpt_brackets_24 import build_gpt_brackets_16
+from littleman.gpt_brackets_24 import build_gpt_brackets_16, build_gpt_brackets_17
 from littleman.server_compat import judge_case, judge_problem, validate_layout
 from littleman.sim import Machine
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "submissions" / "brackets" / "gpt_brackets_16.man"
+ARTIFACT_16 = ROOT / "submissions" / "brackets" / "gpt_brackets_16.man"
+ARTIFACT = ROOT / "submissions" / "brackets" / "gpt_brackets_17.man"
 PROBLEM = json.loads((ROOT / "data" / "small" / "problems" / "brackets.json").read_text())
-SHA256 = "706ec513016503a48cd793a48d43fee17e0caf71c4d476b875eeaef66fe62845"
-TICKS = [248, 70, 106, 70, 150, 380, 136, 136, 2082]
+SHA16 = "706ec513016503a48cd793a48d43fee17e0caf71c4d476b875eeaef66fe62845"
+SHA256 = "51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325"
+TICKS = [242, 64, 100, 64, 144, 376, 132, 132, 2078]
 BRACKETS = "()[]{}"
 MATCH = {"(": ")", "[": "]", "{": "}"}
 
@@ -51,21 +53,24 @@ def _round(text: str) -> list[dict]:
     return [{"in": [len(text), *(ord(char) for char in text)], "out": [_oracle(text)]}]
 
 
-def test_artifact_structure_hash_and_public_score():
+def test_artifacts_structure_hash_and_public_score():
+    candidate_16 = ARTIFACT_16.read_text()
     candidate = ARTIFACT.read_text()
-    assert build_gpt_brackets_16() == candidate
+    assert build_gpt_brackets_16() == candidate_16
+    assert hashlib.sha256(candidate_16.encode()).hexdigest() == SHA16
+    assert build_gpt_brackets_17() == candidate
     assert hashlib.sha256(candidate.encode()).hexdigest() == SHA256
-    assert _box(candidate) == (24, 24)
+    assert _box(candidate_16) == _box(candidate) == (24, 24)
     machine = Machine.parse(candidate)
     assert (len(machine.rooms), len(machine.pipes), len(machine.men)) == (5, 6, 3)
-    assert [len(pipe.cells) for pipe in machine.pipes] == [2, 2, 2, 10, 42, 4]
+    assert [len(pipe.cells) for pipe in machine.pipes] == [2, 2, 2, 5, 39, 3]
     check_pipe_lengths(candidate)
     validate_layout(candidate)
     report = judge_problem(candidate, PROBLEM)
     assert report.cases_passed == report.cases_total == 9
     assert report.footprint == 576
     assert report.case_ticks == TICKS
-    assert report.score == 216192.0
+    assert report.score == 213248.0
 
 
 def test_exhaustive_strings_through_length_five():
