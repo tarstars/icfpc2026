@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "claude",
+    "warning": "Run current-main release tests, preflight, exact Brackets API freshness, and artifact hash verification before submission."
+  },
+  "baseline": {
+    "version": "brackets_11",
+    "width": 27,
+    "height": 27,
+    "footprint": 729,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "publicLocalScore": 276615.0,
+    "liveScoreFromRepository": 484532.65
+  },
+  "candidate": {
+    "version": "gpt_brackets_16",
+    "parent": "gpt_brackets_15",
+    "path": "submissions/brackets/gpt_brackets_16.man",
+    "generator": "littleman.gpt_brackets_24:build_gpt_brackets_16",
+    "sha256": "706ec513016503a48cd793a48d43fee17e0caf71c4d476b875eeaef66fe62845",
+    "bytes": 602,
+    "width": 24,
+    "height": 24,
+    "footprint": 576,
+    "rooms": 5,
+    "pipes": 6,
+    "men": 3,
+    "pipeLengthsParserOrder": [2, 2, 2, 10, 42, 4]
+  },
+  "changes": [
+    "CLOSE outer width 23 -> 22: the mismatched-close path descends through 1,+ into the unmatched-open final send; both paths use the same final s and server-confirmed final-wall-after-send behavior.",
+    "OPEN outer height 9 -> 8: the dedicated terminal row is removed; terminal state follows a two-column detour, emits (0,4) through the ordinary pair sender, and halts through a BP=0 d branch.",
+    "Input room moves to the lower left; input transport grows 2 -> 4 cells.",
+    "OPEN->CLASSIFY remains exactly 42 cells through a four-cell staple; OPEN->CLOSE remains at its ten-cell Manhattan minimum."
+  ],
+  "public": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "caseTicks": [248, 70, 106, 70, 150, 380, 136, 136, 2082],
+    "averageTicks": 375.3333333333333,
+    "localScore": 216192.0
+  },
+  "improvement": {
+    "reductionVsBrackets11LocalPercent": 21.843717802722196,
+    "factorVsBrackets11Local": 1.2794876776198933,
+    "reductionVsGptBrackets15Percent": 7.346285714285705,
+    "projectedLiveAtParentServerLocalRatio": 378692.7052719484
+  },
+  "validation": {
+    "generatorByteEquality": "passed",
+    "serverCompatibility": "passed",
+    "minimumPipeLength": 2,
+    "sharedWallCells": 0,
+    "inputAdjacentPipeCount": 1,
+    "publicCases": "9/9 passed under littleman.server_compat",
+    "exhaustive": "9,331 strings over ()[]{} through length 5, zero failures",
+    "exactRandom": "1,000 seeded strings through length 64 in checked-in release test, plus a separate 500-case cross-check, zero failures",
+    "directed": "266 boundary/type cases, zero failures",
+    "additionalFastWallRandom": "10,000 seeded strings through length 64, zero failures",
+    "pipeIoOps": 36,
+    "minimumMultiCandidateBindingMargin": 1
+  }
+}
