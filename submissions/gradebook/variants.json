@@ -149,20 +149,33 @@
         "averageTicksPercent": 11.613743496168773,
         "localScorePercent": 13.43609161276095
       },
-      "liveSubmission": null
+      "liveSubmission": {
+        "id": "010701d6-3d29-41e1-a09f-dae700e2f9ec",
+        "status": "done",
+        "casesPassed": 20,
+        "casesTotal": 20,
+        "width": 382,
+        "height": 307,
+        "area2": 145924,
+        "averageTicks": 322878.9,
+        "score": 47115780603.600006,
+        "createdAt": "2026-07-26T14:30:58.851Z",
+        "updatedAt": "2026-07-26T14:34:13.815Z",
+        "fullResponse": "submissions/gradebook/gradebook_05-submit.json"
+      }
     }
   ],
   "standingsSnapshot": {
-    "updatedAt": "2026-07-25T01:14:57.234Z",
+    "updatedAt": "2026-07-26T14:34:56.659Z",
     "frozen": false,
     "teamName": "wheezards",
-    "rank": 21,
+    "rank": 50,
     "casesPassed": 20,
     "casesTotal": 20,
-    "score": 104303579599.59999,
+    "score": 47115780603.600006,
     "passPoints": 1.0,
-    "rankPoints": 0.3333333333333333,
-    "points": 1.3333333333333333,
-    "rows": 31
+    "rankPoints": 0.26865671641791045,
+    "points": 1.2686567164179103,
+    "rows": 73
   }
 }

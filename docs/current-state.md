@@ -78,12 +78,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   1,575,127.05 and rank 29/98 in the refreshed snapshot. Only the older
   `tcp_02` submission UUID remains unavailable. See
   `reports/2026-07-27-tcp-hotpath.md`.
-- Grade Book `gradebook_01` compacts the accepted four-worker baseline from
-  494×462 to 454×450 without changing its protocols. It passed all 20 live
-  cases and improved the server score 15.97%, from 124,123,713,433.2 to
-  104,303,579,599.6. The exact variants are under
-  `submissions/gradebook/`; the optimization is documented in
-  `reports/2026-07-24-grade-book-optimization.md`.
+- Grade Book `gradebook_05` replaces fixed worker delays with blocking ring
+  receives. It is live 20/20 at 382×307, score 47,115,780,603.6, and rank 55
+  in the `2026-07-27T00:12:10.405Z` snapshot. Its room contracts and
+  substitution tests are in
+  `reports/2026-07-26-gradebook-components.md`.
 - Matrix Multiply `matmul_08` preserves the folded-controller logic and
   compacts its rings to 99×98. It passed all 20 live cases at server score
   5,931,034,965.9, improving the preceding counted score by 29.70%.

@@ -105,6 +105,11 @@ from 2 to 696. The exact artifact SHA-256 is
 The mandatory live freshness read at 2026-07-26T14:26:56Z found the team at
 20/20, score `54,422,867,494.2`, rank 50 before `gradebook_05`.
 
+Submission `010701d6-3d29-41e1-a09f-dae700e2f9ec` completed at
+2026-07-26T14:34:13Z: 20/20, 382×307, average ticks `322,878.9`, score
+`47,115,780,603.6`. This is a 13.43% live improvement. The full terminal
+response is preserved in `submissions/gradebook/gradebook_05-submit.json`.
+
 ## Remaining experiments
 
 1. Try a cropped frontend plus 2×2 worker recomposition.

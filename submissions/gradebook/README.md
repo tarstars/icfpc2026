@@ -18,4 +18,6 @@ wall-adjacent rightmost FSM tracks to shrink the machine from 494×462 to
 Its subject engines rely on blocking ring receives instead of three fixed
 80-cell delays, then apply only the fold prefixes that pass the whole-program
 judge. It is 382×307, passes all seven public cases, and improves the measured
-local score by 13.44% over `gradebook_04`.
+local score by 13.44% over `gradebook_04`. Submission
+`010701d6-3d29-41e1-a09f-dae700e2f9ec` passed 20/20 at server score
+47,115,780,603.6 and is the current submitted best.
