@@ -80,3 +80,9 @@ Immediately before commit, the branch was current with
 `5e888ecc-91dc-4334-9706-a82eac255a71` remained done at 1/1, 82×82, score
 6,724. The unfrozen `2026-07-27T01:06:10.368Z` snapshot placed `wheezards`
 at rank 17; four teams tied rank 13 at score 6,561.
+
+## Live result
+
+Submission `39bcf791-4a6d-4ba1-9f02-40bc38e9caa8` passed the live case at
+81×81 and score 6,561. The exact response is preserved in
+`submissions/history/history_06-submit.json`.
