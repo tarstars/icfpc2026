@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "problem": "sort-numbers",
+  "artifact": "experiments/chatgpt_2-sort-kring/chatgpt2_sort_00.man",
+  "generator": "littleman.chatgpt2_sort_kring:build_chatgpt2_sort_00",
+  "sha256": "8bc7495136458e5caf9bf8f46ded00df22c2d6de84558e879ba8967cbd83fdbe",
+  "bytes": 19567,
+  "width": 154,
+  "height": 153,
+  "maxDimension": 154,
+  "footprint": 23716,
+  "structure": {
+    "rooms": 9,
+    "pipes": 12,
+    "men": 7,
+    "pipeLengths": [12, 12, 12, 13, 14, 14, 69, 70, 74, 76, 93, 107],
+    "minimumPipeLength": 12,
+    "serverLayout": "passed"
+  },
+  "public": {
+    "casesPassed": 7,
+    "casesTotal": 7,
+    "caseTicks": [2195, 2132, 1895, 1391, 1980, 2828, 5639],
+    "averageTicks": 2580.0,
+    "score": 61187280.0
+  },
+  "randomDifferential": {
+    "casesPassed": 300,
+    "casesTotal": 300,
+    "roundsPerCase": "1..4",
+    "lengthRange": "1..16",
+    "valueRange": "-1000..1000",
+    "seed": 2026072709,
+    "maximumTicks": 6176
+  },
+  "acceptedBaseline": {
+    "artifact": "tarstars_sort_08",
+    "width": 18,
+    "height": 18,
+    "caseTicks": [755, 617, 772, 544, 928, 2137, 5282],
+    "averageTicks": 1576.4285714285713,
+    "publicScore": 510762.8571428571,
+    "liveScore": 802301.76
+  },
+  "lowerBound": {
+    "scope": "current concrete component family after deleting the prefixer",
+    "fixedRoomRectangleArea": 1110,
+    "minimumSquareBeforePipes": 34,
+    "isolatedPumpCompletionTicks": {
+      "1": 84,
+      "2": 134,
+      "3": 196,
+      "4": 270,
+      "5": 356,
+      "6": 454,
+      "7": 564,
+      "8": 686
+    },
+    "pumpOnlyCaseTicks": [464, 414, 404, 280, 466, 854, 1960],
+    "pumpOnlyAverageTicks": 691.7142857142857,
+    "scoreBeforeSplitterMergerOrPipeOverhead": 799621.7142857142,
+    "acceptedPublicScore": 510762.8571428571,
+    "verdict": "cannot beat accepted result without replacing at least the compiled splitter/component family"
+  },
+  "contestMutation": null
+}
