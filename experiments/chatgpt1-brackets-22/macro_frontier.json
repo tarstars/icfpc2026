@@ -1,0 +1,85 @@
+{
+  "bestIndependentLowerBound": {
+    "maxLowerBound": 7,
+    "perNetLowerBounds": [
+      3,
+      3,
+      2,
+      7,
+      3,
+      3
+    ],
+    "placements": {
+      "classify": [
+        9,
+        0
+      ],
+      "close": [
+        15,
+        0
+      ],
+      "input": [
+        0,
+        0
+      ],
+      "open": [
+        0,
+        3
+      ],
+      "output": [
+        10,
+        17
+      ]
+    },
+    "safePortCounts": {
+      "classify": 3,
+      "close": 4,
+      "input": 1,
+      "open": 13,
+      "output": 3
+    },
+    "sumLowerBound": 21
+  },
+  "canvas": [
+    22,
+    22
+  ],
+  "edges": [
+    [
+      "classify",
+      "close"
+    ],
+    [
+      "close",
+      "classify"
+    ],
+    [
+      "close",
+      "output"
+    ],
+    [
+      "open",
+      "close"
+    ],
+    [
+      "open",
+      "classify"
+    ],
+    [
+      "input",
+      "open"
+    ]
+  ],
+  "freeCellsAfterRooms": 72,
+  "limitations": [
+    "independent endpoint minima may reuse the same endpoint cell",
+    "exact nearest-pipe instruction bindings are not enforced",
+    "directed vertex-disjoint pipe routes are not constructed",
+    "the Littleman parser is not run, so phantom pipes remain possible",
+    "no behavioural or organizer-WASM claim is made"
+  ],
+  "roomArea": 412,
+  "safePortPackings": 1700,
+  "schemaVersion": 1,
+  "stackPackingsExamined": 25764
+}

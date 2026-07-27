@@ -138,17 +138,37 @@ def slug_for(problem_dir: str) -> str:
     return SLUG.get(problem_dir, problem_dir)
 
 
+# A submission RECORD is not always named after the artifact file: the
+# collision policy renamed incoming artifacts, so `alexey-reverse_08-submit.json`
+# records a run of `reverse_08.man`. Try the bare name too, or the comparator
+# reports "cannot materialise the live artifact" on exactly the problems where
+# a peer's work is live.
+_RECORD_PREFIXES = ("alexey-", "tarstars_", "gpt_", "chatgpt1_", "chatgpt2_",
+                    "codex_")
+
+
+def _name_candidates(name: str) -> list[str]:
+    out = [name]
+    for prefix in _RECORD_PREFIXES:
+        if name.startswith(prefix):
+            out.append(name[len(prefix):])
+    return out
+
+
 def find_artifact(problem: str, name: str) -> str | None:
     """The artifact text, from the working tree or any ref."""
-    local = REPO / "submissions" / problem / f"{name}.man"
-    if local.exists():
-        text = local.read_text()
-        if not text.startswith("version https"):     # git-lfs pointer
-            return text
+    names = _name_candidates(name)
+    for candidate in names:
+        local = REPO / "submissions" / problem / f"{candidate}.man"
+        if local.exists():
+            text = local.read_text()
+            if not text.startswith("version https"):     # git-lfs pointer
+                return text
     for ref in refs():
-        text = git("show", f"{ref}:submissions/{problem}/{name}.man")
-        if text and not text.startswith("version https"):
-            return text
+        for candidate in names:
+            text = git("show", f"{ref}:submissions/{problem}/{candidate}.man")
+            if text and not text.startswith("version https"):
+                return text
     return None
 
 
