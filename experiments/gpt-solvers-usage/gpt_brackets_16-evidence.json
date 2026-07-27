@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "claude or current submission controller",
+    "warning": "Run repository preflight, retained Brackets tests, and exact live-state refresh before promotion or submission."
+  },
+  "baseline": {
+    "version": "gpt_brackets_15",
+    "path": "experiments/gpt-solvers-usage/gpt_brackets_15.man",
+    "width": 25,
+    "height": 25,
+    "footprint": 625,
+    "publicTicks": [246, 58, 106, 70, 146, 380, 136, 136, 2082],
+    "publicAverageTicks": 373.3333333333333,
+    "publicLocalScore": 233333.3333333333
+  },
+  "candidate": {
+    "version": "gpt_brackets_16",
+    "parent": "gpt_brackets_15",
+    "path": "experiments/gpt-solvers-usage/gpt_brackets_16.man",
+    "generator": "experiments/gpt-solvers-usage/build_gpt_brackets_16.py",
+    "sha256": "081cd30e57d63e7776280755ea75498870fcfff2575fe3b5ee2b3995ae80c79f",
+    "bytes": 605,
+    "width": 24,
+    "height": 25,
+    "footprint": 625,
+    "rooms": 5,
+    "men": 3,
+    "pipes": 6,
+    "pipeLengthsParserOrder": [2, 2, 2, 9, 41, 2],
+    "usesVerifiedFinalWallSemantics": true
+  },
+  "changesFrom15": [
+    "CLOSE outer width shrinks 23 -> 22. Its empty-stack output path executes the final send at the eastmost interior cell and then takes the server-tolerated wall step.",
+    "OPEN and INPUT move one column left after the CLOSE width release.",
+    "OPEN-to-CLOSE transport route shortens 10 -> 9 cells and reaches its inclusive Manhattan lower bound.",
+    "OPEN-to-CLASSIFY transport route moves corridor column 24 -> 23 and shortens 42 -> 41 cells.",
+    "Room logic, logical topology, and the other four pipe lengths remain unchanged."
+  ],
+  "localReplay": {
+    "publicCasesPassed": 9,
+    "publicCasesTotal": 9,
+    "publicTicks": [245, 57, 105, 69, 145, 379, 135, 135, 2081],
+    "publicAverageTicks": 372.3333333333333,
+    "publicLocalScore": 232708.3333333333,
+    "scoreRatioToGptBrackets15Local": 0.9973214285714286,
+    "improvementVsGptBrackets15Percent": 0.2678571428571419,
+    "scoreRatioToBrackets11Local": 0.8412715627617204,
+    "reductionVsBrackets11Percent": 15.872843723827955,
+    "exhaustive": {
+      "alphabet": "()[]{}",
+      "lengths": "0..5 inclusive",
+      "cases": 9331,
+      "failures": 0
+    },
+    "random": {
+      "seed": 2026072706,
+      "cases": 2000,
+      "lengthRange": "0..64",
+      "nestingDepthCap": 32,
+      "failures": 0,
+      "tickDeltaVsGptBrackets15": {
+        "min": -1,
+        "max": -1,
+        "mean": -1.0,
+        "counts": {"-1": 2000}
+      }
+    },
+    "oracleAnchor": "The same exact local engine reproduced gpt_brackets_15's checked-in public tick vector before evaluating this candidate."
+  },
+  "staticReplay": {
+    "minimumPipeCells": 2,
+    "sharedWallCells": 0,
+    "inputRoomAdjacentPipeIndices": [5],
+    "logicalRoomPairSignatureUnchanged": true,
+    "strictSimulatorNote": "The strict judge reports wall after the final output send; littleman.server_compat/alexey_walljudge implements the already server-proven drain-after-final-wall behavior."
+  },
+  "projection": {
+    "brackets11LiveScoreFromRepository": 484532.65,
+    "localRatioToBrackets11": 0.8412715627617204,
+    "projectedLiveScore": 407623.5396745778,
+    "warning": "Projection only; hidden workload and current live baseline must be refreshed by the submission controller."
+  }
+}
