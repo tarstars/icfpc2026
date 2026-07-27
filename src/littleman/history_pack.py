@@ -59,9 +59,18 @@ def expected_text() -> str:
 
 
 def symbols_per_word(radix: int) -> int:
-    """How many radix-`radix` symbols fit in one signed-64 literal."""
+    """How many radix-`radix` symbols fit in one signed-64 literal.
+
+    The test is on the largest representable VALUE, not on the radix power.
+    Nine radix-128 symbols span 0..128^9-1, and 128^9-1 is exactly 2^63-1 =
+    LIMIT, so radix 128 packs nine. An earlier version asked
+    ``radix ** (count + 1) <= LIMIT`` and reported 8 here, which made 127
+    look like the ceiling and hid a whole token slot -- while the live
+    81-square was already running on radix 128, which codex had found
+    empirically.
+    """
     count = 0
-    while radix ** (count + 1) <= LIMIT:
+    while radix ** (count + 1) - 1 <= LIMIT:
         count += 1
     return count
 

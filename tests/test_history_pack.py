@@ -87,3 +87,21 @@ def test_fifty_six_is_the_measured_optimum():
     assert totals[56] < totals[64]
     assert hp.symbols_per_word(127) == 9
     assert hp.symbols_per_word(135) == 8
+
+
+def test_radix_128_packs_nine_symbols():
+    """The ceiling is 128, not 127, and the boundary is exact.
+
+    Nine radix-128 symbols span 0..128^9-1, and 128^9-1 IS 2^63-1. An
+    earlier `symbols_per_word` tested the radix power rather than the
+    largest representable value and so reported 8 here, hiding a whole
+    token slot -- while codex's live 81-square was already running on
+    radix 128, having found the extra slot empirically.
+    """
+    assert hp.symbols_per_word(128) == 9
+    assert 128 ** 9 - 1 == hp.LIMIT
+    assert hp.symbols_per_word(129) == 8
+    # and the packing really does round-trip at the boundary
+    ids = [127] * 9
+    assert hp.unpack(hp.pack(ids, 128), 128, 9) == ids
+    assert hp.pack(ids, 128)[0] == hp.LIMIT

@@ -100,3 +100,201 @@ pin, choose the level" became our diagnosis procedure.
   each submission through the same gates.
 - If M1 loses to hand on the benchmark, that is a result worth
   publishing in the repo, not a failure to hide.
+
+## 6. Build plan after M1 (written 2026-07-26 15:55Z, 18h to freeze)
+
+M1 is done: the pipeline emits machines that judge correctly. Its
+measured blocker is that **ports are pinned to their original wall**, so
+better placements cannot be routed (plotter 125x125 placed, unroutable;
+matmul's ports are 28 South / 10 North / ZERO east-west, so every pipe
+fights for vertical channels).
+
+### Which ports are actually free — measured
+
+A room's `s`/`r` bindings are decided by Manhattan distance from the man
+to each of THAT ROOM's port cells, tie-broken by absolute coordinates.
+So a room with **at most one outgoing and at most one incoming pipe has
+no ambiguity at all**: its ports may be moved to any wall, any offset,
+and no binding can change. Only multi-port rooms need care.
+
+| artifact | rooms | FREE (<=1 out, <=1 in) | constrained |
+|---|---|---|---|
+| plotter_05 | 14 | **8** | 6 |
+| matmul_03 | 12 | **11** | 1 |
+| tcp_08 | 6 | **4** | 2 |
+
+matmul is 11/12 free — nearly the whole instance is unconstrained, which
+is why it is the right first target for M2.
+
+### M2 — port assignment as a solver variable  [contest value]
+Let the model choose (side, offset) per connection endpoint. For FREE
+rooms this is unconstrained. For CONSTRAINED rooms, either keep the port
+pinned (safe, trivial) or allow movement and re-verify every `s`/`r`
+against `ir_export.machine_ir`; a role diff rejects the placement.
+Success = a routable placement strictly better than the live box on
+matmul or plotter, gated and submitted.
+
+### M2b — `layout_gate.py`  [must land with M2]
+The checks are currently inlined in ad-hoc scripts. As a module:
+parse; `server_compat.validate_layout`; binding role diff vs the ORIGINAL
+artifact (0 diffs); judge equality on all public cases; and — proven
+necessary today — **a pipe-length multiset diff**, because a shorter
+storage pipe deadlocks a ring machine with no other symptom (snake's
+squeeze passed 5/5 while failing at snake-length 68).
+
+### M3 — L1 room compiler  [the general-solver shot]
+block-graph -> serpentine room. Straight-line code is near-trivial and
+already proven by hand (hello-world swept fold widths). The value is
+branches (arms as sub-serpentines with a merge) and `(nop n)` as
+PRESCRIBED-LENGTH padding — the PCB meander trick — which is what makes
+timing-sensitive machines compilable instead of hand-only. Seed:
+Codex's `lane.py`; its known gap is nested arms and label/goto.
+
+Sequencing: M2+M2b together (one agent, coupled), M3 independently
+(different files, no overlap). M4 peepholes stay queued.
+
+## 7. M2 RESULT (2026-07-26 ~21:30Z): landed, and it does not beat hand layouts
+
+M2 + M2b are complete and tested (12 passed, 2 skipped): ports are
+decision variables (wall booleans + channelled offsets, `AddAllDifferent`
+over port and lead-out cells, two-phase lexicographic objective
+box -> wirelength), the router does heading-aware Dijkstra with
+PathFinder negotiation, a settle pass and a `place_route_repair` feedback
+loop, and `layout_gate` runs all six checks with structural room/pipe
+correspondence by WL colour refinement (indices come from a top-left scan
+and do NOT survive re-placement — that was a real bug).
+
+### The ablation that settles the M2 hypothesis: port freedom does not shrink the box
+
+Pinned vs free ports reach IDENTICAL diameters: tcp 32/32, plotter
+125/125, matmul 132/132. **Port assignment buys routability, not area.**
+My M1 conclusion — "better placements exist but cannot be routed because
+ports are pinned" — was half right: the placements were already
+reachable; only the routing needed the freedom.
+
+### Measured outcome per target
+
+- **tcp_08**: the full pipeline succeeded end to end and PASSED THE GATE
+  (34x34, 6/6, 0 binding diffs, no shrunk pipes) — and is still 0.52x,
+  i.e. WORSE (live is 31x31; avg ticks 997 -> 1592). The placement floor
+  is 31, exactly the hand layout. **tcp is unimprovable by rigid
+  re-placement.**
+- **plotter_05**: places at 125-136 against a live 185, but never
+  routes. 8-15 cells stay contested, always in the band at rows ~80-100
+  where every long pipe must cross. Channels 1-12, frame margins
+  4/8/14/20 and 22 repair rounds all leave **the same 12 cells
+  contested — the shortage is one corridor, not global space.**
+- **matmul**: floor 132 > matmul_07's 115. Out of reach.
+
+### The structural reason, and the honest conclusion
+
+Right-angle crossings cannot be priced apart by a single-layer router:
+two pipes that must cross have no legal way to do so, and no amount of
+congestion pricing invents one. Littleman has no vias.
+
+So **L0 rigid re-placement is exhausted as a source of gains.** Every
+hand layout we hold is at or below the solver's floor. This matches the
+REVOLUTIONARY roadmap's diagnosis from the other direction: the
+remaining wins are L1 (interior folds — where alexey and Codex are
+winning) and architecture, not placement.
+
+### A repo doctrine was TOO BROAD, and it cost us routability
+
+"A pipe grazing a wall counts as connected" — which I wrote into
+briefs after reverse_03 was rejected — is not what the server enforces.
+Measured on LIVE, loading artifacts:
+
+    plotter_05: 172 interior pipe cells flush against a room
+    matmul_03:   63
+    tcp_08:      14
+
+All load and score fine. The real rules are narrower:
+1. an **arrow** beside a wall pointing away starts a phantom pipe in
+   `sim._find_pipes`, so a router must refuse to TURN where the cell
+   behind the new heading is a room;
+2. **input rooms alone** are fenced (one pipe against the wall).
+
+The blanket ban made real placements unroutable. Note the GATE was
+already correct — `validate_io_pipe_counts` was narrowed to input rooms
+after tcp_06 disproved the output-room version — so no submission was
+ever blocked by this; only the router was over-constrained.
+
+## 8. The next approach: MUTATION SEARCH over .man text (user's proposal)
+
+M2 proved L0 modelling is exhausted (section 7). The reason is specific
+and it points straight at the remedy: **the CP-SAT model's floor equals
+the hand layout because the MODEL is missing tricks the humans use** —
+rooms touching with no gap, a pipe leaving through a roof, a port jog
+that changes a Voronoi split, an interior fold. Every one of those is
+expressible in the .man TEXT but not in my rectangle-and-connection
+abstraction.
+
+Mutation search needs no model at all. It needs only an oracle, and ours
+is unusually good.
+
+### Why it is viable here (measured, this session)
+
+    full judge of tcp_08 (6 cases)      0.11 s
+    parse-only structural pre-filter     1.3 ms  -> ~790 mutants/sec
+    tcp_08     31x31, 61% blank cells
+    plotter_05 175x185, 89% blank
+    sudoku_03  198x194, 90% blank
+
+A two-stage funnel — parse + `server_compat` + pipe-count/length checks
+at ~790/sec, then the judge at ~9/sec on survivors — makes tens of
+thousands of candidates per hour realistic on one core, and the suite
+already runs `-n auto` across 20. The artifacts are 61-90% blank, so the
+neighbourhood is enormous and mostly unexplored.
+
+This is superoptimization by stochastic search (cf. STOKE for x86):
+propose, filter cheaply, verify exactly, keep improvements.
+
+### The invariant that makes it safe: block-graph equivalence
+
+Random edits mostly break machines, and "passes the public cases" is a
+weak filter — we proved that twice today (a squeezed snake passed 5/5
+while failing at snake-length 68; the public suite never grows the snake
+past 3 cells). So the fitness function must not be the public judge
+alone.
+
+We already own the right invariant: `decompile.py` turns a machine into
+a block graph, and **a mutation that leaves the block graph unchanged has
+provably not altered the program** — only its geometry. That is an exact
+equivalence check costing ~1 s, far stronger than any test suite, and it
+is exactly the property a geometry mutation should have.
+
+So the accept rule is:
+
+1. parse + structural gates (cheap, ~790/sec);
+2. **block graph identical to the original** (exact semantics preservation);
+3. pipe-length multiset not shrunk on storage pipes (the snake trap);
+4. judge equal outputs, and score strictly better;
+5. binding roles unchanged (`ir_export.machine_ir`).
+
+Caveats to respect: `decompile` cannot yet lower `U` (strict xfail), and
+timing-sensitive machines (`q`/`R`/`U`) need exact pipe lengths, so for
+those the invariant degrades to "lengths identical" plus the judge.
+
+### Operators, cheapest first
+
+- delete a fully blank row/column (this is `alexey_squeeze`, i.e. the
+  move already proven to pay — mutation search generalises it);
+- translate one room by one cell and re-route only its pipes;
+- slide a port one cell along its wall;
+- re-route one pipe between fixed endpoints, preserving total length;
+- swap two rooms' positions;
+- interior: move one instruction cell and repair the walk — the highest
+  value and the only one that reaches L1, and the one that most needs
+  the block-graph check.
+
+### Why this is complementary, not a replacement
+
+CP-SAT explores the space I can DESCRIBE; mutation explores the space the
+oracle can VALIDATE. Today's result is that the describable space is
+already occupied by our hand layouts. The undescribable space is where
+alexey's playbook lives — and every move in that playbook is a mutation
+operator waiting to be automated.
+
+Honest cost note: this is post-contest infrastructure. Nothing here
+lands in the hours remaining, but of the directions on the table it is
+the one that turns the human tricks into a search the machine can run.
