@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "sha256": "776348949535acf9ba500c2cf1b8cbc2d1df67cf5e6231674155ba494ba7143e",
+  "bytes": 7746,
+  "width": 77,
+  "height": 101,
+  "maxDimension": 101,
+  "footprint": 10201,
+  "rooms": 11,
+  "pipes": 18,
+  "men": 9,
+  "minimumPipeLength": 2,
+  "pipeLengthMultisetEqualsSudoku05": true,
+  "public": {
+    "casesPassed": 6,
+    "casesTotal": 6,
+    "caseTicks": [1011332, 44854, 949606, 57340, 503658, 1011324],
+    "averageTicks": 596352.3333333334,
+    "localScore": 6083390152.333334
+  },
+  "directedAndRandom": {
+    "casesPassed": 66,
+    "casesTotal": 66,
+    "maximumTicks": 1011332,
+    "coverage": "full valid grid; 60 deterministic shuffled valid prefixes with forced row/column/box duplicates; explicit index-0 and index-8 boundary workloads"
+  },
+  "parentSudoku05": {
+    "sha256": "16860f965aa0e57c1b2e031a6a650c3bde2ae195961e8e1cc58b49d",
+    "width": 75,
+    "height": 131,
+    "footprint": 17161,
+    "averageTicks": 533614.3333333334,
+    "localScore": 9157355574.333334,
+    "liveScore": 9290407667.5
+  },
+  "improvementFromParent": {
+    "footprintPercent": 40.557077093409475,
+    "averageTicksPercent": -11.757180435558015,
+    "localScorePercent": 33.56826539111198,
+    "projectedLiveScoreAtParentServerLocalRatio": 6171778965.757384
+  },
+  "validation": {
+    "generatorByteEquality": "passed",
+    "serverCompatibility": "passed",
+    "publicCases": "passed",
+    "directedAndRandomCases": "passed",
+    "minimumPipeLength": "passed",
+    "liveSubmission": null
+  }
+}
