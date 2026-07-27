@@ -1,16 +1,20 @@
-"""Solver-guided 26x26 successor to accepted ``brackets_11``.
+"""Solver-guided 26x26 successors to accepted ``brackets_11``.
 
-The architecture and pipe roles are unchanged.  Two finite component variants
-make the square reduction possible:
+The architecture and logical pipe roles are unchanged. Two finite component
+variants make the square reduction possible:
 
 * CLOSE folds its final output ``s; H`` arm down through two previously blank
   cells, reducing the outer room width from 25 to 24.
-* OPEN folds its one-time startup U-turn into row 7, reducing the outer room
-  height from 11 to 10.
+* OPEN folds its one-time startup U-turn into its existing return row, reducing
+  the outer room height from 11 to 10.
 
-The freed right corridor moves the long OPEN -> CLASSIFY transport route from
-column 26 to column 25, shortening it from 49 to 47 cells.  This module does
-not submit; it only reproduces the immutable candidate artifact.
+``gpt_brackets_12`` keeps the long OPEN -> CLASSIFY endpoint at its inherited
+row and moves the corridor from column 26 to 25. ``gpt_brackets_13`` moves that
+endpoint to the highest binding-preserving right-wall cell and shortens the
+transport route from 47 to 44 cells.
+
+This module never submits. It reproduces immutable branch candidates for the
+integrator's independent gates and platform decision.
 """
 
 from __future__ import annotations
@@ -51,12 +55,22 @@ ROOMS = [
     (22, 22, "input"),
 ]
 
-PIPES = [
+COMMON_PIPES = [
     ([(7, 6), (8, 6)], "v"),
     ([(8, 8), (7, 8)], "^"),
     ([(8, 20), (7, 20)], "^"),
     ([(20, 3), (20, 2), (16, 2), (16, 0), (11, 0)], ">"),
+]
+
+PIPES_12 = [
+    *COMMON_PIPES,
     ([(20, 20), (20, 21), (16, 21), (16, 25), (0, 25), (0, 4)], "v"),
+    ([(23, 21), (23, 20)], "<"),
+]
+
+PIPES_13 = [
+    *COMMON_PIPES,
+    ([(17, 20), (17, 25), (0, 25), (0, 4)], "v"),
     ([(23, 21), (23, 20)], "<"),
 ]
 
@@ -69,9 +83,7 @@ def _box(interior: list[str]) -> list[str]:
     return [edge] + ["|" + row + "|" for row in interior] + [edge]
 
 
-def build_gpt_brackets_26() -> str:
-    """Render the exact 26x26 candidate preserved as ``gpt_brackets_12.man``."""
-
+def _build(pipes) -> str:
     art = {
         "classify": _box(CLASSIFY),
         "close": _box(CLOSE_26),
@@ -82,11 +94,29 @@ def build_gpt_brackets_26() -> str:
     canvas = Canvas()
     for row, column, name in ROOMS:
         canvas.put(row, column, art[name])
-    for waypoints, terminal in PIPES:
+    for waypoints, terminal in pipes:
         canvas.pipe(waypoints)
         canvas.cells[waypoints[-1]] = terminal
     return canvas.render()
 
 
+def build_gpt_brackets_12() -> str:
+    """Render the first exact 26x26 candidate, retained as immutable lineage."""
+
+    return _build(PIPES_12)
+
+
+def build_gpt_brackets_13() -> str:
+    """Render the 26x26 candidate with the shortest proven right-wall route."""
+
+    return _build(PIPES_13)
+
+
+def build_gpt_brackets_26() -> str:
+    """Backward-compatible name for the original ``gpt_brackets_12`` builder."""
+
+    return build_gpt_brackets_12()
+
+
 if __name__ == "__main__":
-    print(build_gpt_brackets_26(), end="")
+    print(build_gpt_brackets_13(), end="")
