@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "contestSubmitted": false,
+    "officialWasmPending": true,
+    "submissionDecisionOwner": "claude",
+    "warning": "The model is calibrated against all eight organizer-WASM baseline ticks, but Claude must run verify_candidate.py and scripts/subdb.py compare before submission."
+  },
+  "candidate": {
+    "version": "chatgpt1_reverse_09",
+    "path": "submissions/reverse-a-list/chatgpt1_reverse_09.man",
+    "generator": "experiments/chatgpt1-reverse-17/build_candidate.py",
+    "sha256": "aa057e97bb3335be37bc49fc652e7f966e8281af9f7ae61dde59035789f87a41",
+    "bytes": 306,
+    "width": 17,
+    "height": 17,
+    "footprint": 289,
+    "rooms": 3,
+    "pipes": 2,
+    "menInitially": 1,
+    "pipeLengths": [2, 3]
+  },
+  "architecture": {
+    "workerFactoryInterval": 4,
+    "workerIndexBeforeSplit": "k = n - 1 - i",
+    "residueClasses": 2,
+    "countdownLoopCells": [14, 14],
+    "phaseCapacityPerLoop": 7,
+    "phaseCertificate": "14 / gcd(14, 8) = 7; j=0 bypasses, so at most seven workers of either parity enter a loop",
+    "loopedOddMinusEvenDelay": 6,
+    "adjacentOutputMargins": [2, 4],
+    "lifecycle": "the k=0 worker outputs first, then blocks at U and becomes the next-round controller"
+  },
+  "modelCalibration": {
+    "referenceArtifact": "experiments/gpt-reverse-fresh/reverse_fresh_20_fast.man",
+    "organizerWasmTicksRecordedInRepository": [139, 82, 128, 202, 114, 118, 244, 384],
+    "independentModelTicks": [139, 82, 128, 202, 114, 118, 244, 384],
+    "exactMatch": true
+  },
+  "modelResult": {
+    "publicCasesPassed": 8,
+    "publicCasesTotal": 8,
+    "publicTicks": [142, 82, 127, 202, 114, 124, 243, 382],
+    "averageTicks": 177.0,
+    "publicScore": 51153.0,
+    "acceptedPublicBaselineScore": 53023.75,
+    "scoreRatio": 0.9647186402319715,
+    "improvementPercent": 3.5281359768028477
+  },
+  "modelStress": {
+    "allLengthTuplesOneToThreeRounds": 4368,
+    "lengthRange": "1..16",
+    "extremeValueFamilies": 16,
+    "additionalSeededRandomStreams": 3000,
+    "maximumObservedTicks": 430,
+    "failures": 0,
+    "maximumActiveMen": 17,
+    "seed": 2026072709
+  },
+  "requiredReleaseCommands": [
+    "PYTHONPATH=src uv run python experiments/chatgpt1-reverse-17/verify_candidate.py",
+    "uv run python scripts/wasm_judge.py submissions/reverse-a-list/chatgpt1_reverse_09.man reverse-a-list",
+    "uv run python scripts/subdb.py compare submissions/reverse-a-list/chatgpt1_reverse_09.man reverse-a-list"
+  ]
+}
