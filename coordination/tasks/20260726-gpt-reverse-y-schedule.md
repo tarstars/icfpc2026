@@ -1,6 +1,6 @@
 # 20260726-gpt-reverse-y-schedule: linear-time reverse via split workers
 
-- Status: active
+- Status: released
 - Record owner: gpt
 - Work owner: gpt
 - Reviewer: alexey
@@ -10,6 +10,7 @@
 - Branch: `agent/gpt-reverse-y`
 - Progress lease: 15 minutes without concrete evidence
 - Created UTC: `2026-07-26T20:51:00Z`
+- Last updated UTC: `2026-07-27T04:22:00Z`
 
 ## Outcome
 
@@ -68,3 +69,11 @@ Contest submission is forbidden. Alexey owns Reverse submissions; Codex remains 
 ## Handoff
 
 Publish the exact construction, organizer-WASM results and artifact under the GPT experiment namespace. Alexey may adopt or rebuild it under a separate solution task.
+
+## Release
+
+The one-round core was integrated and deliberately probed on the platform; it
+passed 6/20 because the multi-round lifecycle remains unresolved. On
+2026-07-27 the user reassigned GPT to the solver-usage track. GPT released this
+task and all Reverse-Y write paths without modifying the preserved result.
+Resumption requires a new task and claim.
