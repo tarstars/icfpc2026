@@ -66,3 +66,62 @@ def test_distinct_rooms_have_distinct_digests():
     contracts = room_lab.record_all(AFTER.read_text(), _cases())
     digests = {i: c.digest() for i, c in contracts.items()}
     assert len(set(digests.values())) > 1, digests
+
+
+# ---------------------------------------------------------------------------
+# Interface metadata: which socket reaches which pipe.
+#
+# The language never names a connection -- r/R read from the NEAREST incoming
+# pipe and s/S write to the nearest outgoing one, by distance from the man's
+# own cell. So connection is positional and every reshape re-derives it by
+# accident. These tests pin the explicit record that makes a room
+# substitutable.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not AFTER.exists(), reason="artifact not present")
+def test_every_room_reports_sockets_and_ports():
+    """A port count of zero would make `interface_preserved` far weaker.
+
+    An earlier version tested whether a pipe's end cell was INSIDE the room
+    and found none, because a pipe ends one cell OUTSIDE the wall it serves.
+    """
+    ifaces = room_lab.describe(AFTER.read_text())
+    assert ifaces
+    for index, iface in ifaces.items():
+        assert iface.sockets, f"room {index} has no sockets"
+        assert iface.ports, f"room {index} has no ports"
+        for socket in iface.sockets:
+            assert socket.direction in ("in", "out")
+            assert 0 <= socket.row < iface.height
+            assert 0 <= socket.col < iface.width
+
+
+@pytest.mark.skipif(not (BEFORE.exists() and AFTER.exists()),
+                    reason="artifacts not present")
+def test_the_hand_edit_preserves_every_connection():
+    """memory_13 -> memory_14 moves twelve cells and must NOT rewire."""
+    assert room_lab.interface_preserved(BEFORE.read_text(),
+                                        AFTER.read_text()) == []
+
+
+@pytest.mark.skipif(not AFTER.exists(), reason="artifact not present")
+def test_signature_ignores_position_but_not_wiring():
+    """A variant may move its sockets anywhere; it may not change which pipe
+    they reach. That freedom is exactly what a packer needs."""
+    ifaces = room_lab.describe(AFTER.read_text())
+    index = max(ifaces, key=lambda i: len(ifaces[i].sockets))
+    iface = ifaces[index]
+    moved = room_lab.RoomInterface(
+        room_index=iface.room_index, width=iface.width + 3,
+        height=iface.height - 1, ports=list(iface.ports),
+        sockets=[room_lab.Socket(s.row + 1, s.col + 2, s.glyph, s.direction,
+                                 s.pipe) for s in iface.sockets])
+    assert moved.signature() == iface.signature()
+
+    rewired = room_lab.RoomInterface(
+        room_index=iface.room_index, width=iface.width, height=iface.height,
+        ports=list(iface.ports),
+        sockets=[room_lab.Socket(s.row, s.col, s.glyph, s.direction,
+                                 s.pipe + 1) for s in iface.sockets])
+    assert rewired.signature() != iface.signature()

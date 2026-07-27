@@ -131,3 +131,158 @@ def shape_of(text: str, room_index: int) -> tuple[int, int]:
     machine = sim.Machine.parse(text)
     room = machine.rooms[room_index]
     return room.right - room.left + 1, room.bottom - room.top + 1
+
+
+# ---------------------------------------------------------------------------
+# Room interface metadata
+#
+# A behavioural trace says what a room DOES. It does not say how a room
+# CONNECTS, and without that a room in a component library is unusable --
+# you cannot drop a variant in if you do not know which socket must reach
+# which pipe.
+#
+# This matters more here than in an ordinary component system, because the
+# language never names a connection. `r`/`R` read from the NEAREST incoming
+# pipe and `s`/`S` write to the nearest outgoing one, resolved by Manhattan
+# distance from the man's own cell. Connection is POSITIONAL, so every
+# reshape re-derives it by accident. Recording it explicitly is what turns
+# "hope the geometry still works" into a checkable contract -- and it is the
+# failure that deadlocked the pathfinder fold while every structural check
+# passed.
+# ---------------------------------------------------------------------------
+
+SOCKET_OPS = frozenset("rRsSU")
+
+
+@dataclass(frozen=True)
+class Socket:
+    """One I/O instruction and the pipe it must reach.
+
+    `row`/`col` are relative to the room's top-left corner so they stay
+    meaningful when the room is moved or reshaped.
+    """
+
+    row: int
+    col: int
+    glyph: str
+    direction: str          # 'in' for r/R/U, 'out' for s/S
+    pipe: int               # index into Machine.pipes
+
+
+@dataclass(frozen=True)
+class Port:
+    """Where a pipe meets this room's wall."""
+
+    side: str               # 'N' | 'S' | 'W' | 'E'
+    offset: int             # cells along that side from the room's corner
+    direction: str          # 'in' if the pipe ends here, 'out' if it starts
+    pipe: int
+
+
+@dataclass
+class RoomInterface:
+    """Everything a packer needs to substitute one room variant for another."""
+
+    room_index: int
+    width: int              # walls included
+    height: int
+    ports: list[Port]
+    sockets: list[Socket]
+
+    def signature(self) -> tuple:
+        """Connection identity, independent of geometry.
+
+        Two variants with the same signature are interchangeable as far as
+        wiring is concerned: the same sockets bind to the same pipes, and the
+        same pipes attach with the same directions. WHERE they attach is
+        deliberately excluded -- that is the freedom a packer needs.
+        """
+        return (
+            tuple(sorted((s.glyph, s.direction, s.pipe) for s in self.sockets)),
+            tuple(sorted((p.direction, p.pipe) for p in self.ports)),
+        )
+
+
+def describe(text: str) -> dict[int, RoomInterface]:
+    """Interface metadata for every non-I/O room.
+
+    Socket bindings are taken from `sim`'s own `_nearest_incoming` /
+    `_nearest_outgoing` via a stand-in man, so this can never drift from the
+    rule the simulator actually applies.
+    """
+    machine = sim.Machine.parse(text)
+    index_of = {id(pipe): i for i, pipe in enumerate(machine.pipes)}
+    out: dict[int, RoomInterface] = {}
+
+    for room_index, room in enumerate(machine.rooms):
+        if getattr(room, "kind", "room") != "room":
+            continue
+
+        sockets: list[Socket] = []
+        for row in range(room.top + 1, room.bottom):
+            for col in range(room.left + 1, room.right):
+                glyph = machine.grid[row][col]
+                if glyph not in SOCKET_OPS:
+                    continue
+                probe = sim.Man(r=row, c=col, room=room)
+                incoming = glyph in "rRU"
+                pipe = (machine._nearest_incoming(probe) if incoming
+                        else machine._nearest_outgoing(probe))
+                if pipe is None:
+                    continue
+                sockets.append(Socket(
+                    row=row - room.top, col=col - room.left, glyph=glyph,
+                    direction="in" if incoming else "out",
+                    pipe=index_of[id(pipe)]))
+
+        ports: list[Port] = []
+        for pipe in machine.pipes:
+            # A pipe's end cell sits OUTSIDE the wall it serves, one cell
+            # away -- not on the wall itself. Testing for containment finds
+            # nothing, which is how an earlier version reported zero ports
+            # for every room while the machine was plainly wired up.
+            for cell, direction in ((pipe.cells[0], "out"),
+                                    (pipe.cells[-1], "in")):
+                r, c = cell
+                if room.left <= c <= room.right:
+                    if r == room.top - 1:
+                        ports.append(Port("N", c - room.left, direction,
+                                          index_of[id(pipe)]))
+                        continue
+                    if r == room.bottom + 1:
+                        ports.append(Port("S", c - room.left, direction,
+                                          index_of[id(pipe)]))
+                        continue
+                if room.top <= r <= room.bottom:
+                    if c == room.left - 1:
+                        ports.append(Port("W", r - room.top, direction,
+                                          index_of[id(pipe)]))
+                    elif c == room.right + 1:
+                        ports.append(Port("E", r - room.top, direction,
+                                          index_of[id(pipe)]))
+
+        out[room_index] = RoomInterface(
+            room_index=room_index,
+            width=room.right - room.left + 1,
+            height=room.bottom - room.top + 1,
+            ports=ports, sockets=sockets)
+    return out
+
+
+def interface_preserved(before: str, after: str) -> list[str]:
+    """Rooms whose CONNECTIONS changed. Empty means safe to substitute.
+
+    Geometry is allowed to change freely; what may not change is which
+    socket reaches which pipe. This is the check that would have caught the
+    pathfinder fold in milliseconds instead of after a 434 KB artifact and a
+    multi-minute judge run.
+    """
+    old, new = describe(before), describe(after)
+    problems: list[str] = []
+    if set(old) != set(new):
+        problems.append(f"room set changed: {sorted(old)} -> {sorted(new)}")
+        return problems
+    for index in sorted(old):
+        if old[index].signature() != new[index].signature():
+            problems.append(f"room {index}: connection signature changed")
+    return problems
