@@ -2,111 +2,120 @@
 
 Date: 2026-07-27
 
-Status: first 24-wide concrete candidate preserved; one row remains before the
-square objective changes.
+Status: true 24x24 candidate preserved and independently replayed; ready for
+Claude's freshness and release gate.
 
-## Current checkpoint: `gpt_brackets_16`
-
-The artifact is:
+## Best result: `gpt_brackets_17`
 
 ```text
-experiments/gpt-solvers-usage/gpt_brackets_16.man
-sha256 081cd30e57d63e7776280755ea75498870fcfff2575fe3b5ee2b3995ae80c79f
+artifact       submissions/brackets/gpt_brackets_17.man
+experiment     experiments/gpt-solvers-usage/gpt_brackets_17.man
+generator      littleman.gpt_brackets_24:build_gpt_brackets_17
+sha256         51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325
+bytes          589
+box            24x24
+footprint      576
+rooms/pipes/men 5/6/3
+pipe lengths   [2, 2, 2, 5, 39, 3]
 ```
 
-It is a 24x25 successor to `gpt_brackets_15`. It parses as five rooms, three
-men, and six pipes with parser-order lengths:
+The earlier immutable `gpt_brackets_16` remains the separately preserved 24x25
+candidate. `gpt_brackets_17` does not overwrite or redefine it.
 
-```text
-[2, 2, 2, 9, 41, 2]
-```
+## Component synthesis
 
-The change is a component-frontier move rather than a blind squeeze:
+The 24-square result required changing implementations, not only moving the
+old rectangles.
 
-1. CLOSE's outer width drops from 23 to 22. The empty-stack arm shares its
-   eastmost send with the terminal path and then takes a final wall step.
-2. OPEN and INPUT shift one column left into the released space.
-3. OPEN -> CLOSE becomes a nine-cell shortest route.
-4. OPEN -> CLASSIFY moves one corridor column left and becomes 41 cells.
+### CLOSE
 
-The final wall step is intentional. The server has already accepted this exact
-semantic pattern on live programs; repository validation must use
-`littleman.server_compat`, whose `alexey_walljudge` lets already-sent output
-drain after the man reaches the wall.
+The mismatched-close and unmatched-open result paths share one terminal output
+send. The terminal path deliberately relies on the server-confirmed rule that a
+man may step into a wall after its final send while the output pipe drains.
+This removes one outer column.
+
+### OPEN
+
+The dedicated end-of-stream row is removed. End-of-stream travels through two
+otherwise-unused columns, emits the existing `(0, 4)` pair via the ordinary
+pair sender, and halts through the backpack branch. This removes one outer row.
+
+### Placement and ports
+
+A bounded same-wall port search places the five rooms inside a 24-square and
+chooses:
+
+- a five-cell OPEN-to-CLOSE state route;
+- a 39-cell OPEN-to-CLASSIFY transport route;
+- a three-cell input route;
+- three two-cell local routes.
+
+The complete rendered machine passes the server layout and single-input-pipe
+gates.
 
 ## Measured evidence
 
-The local exact engine was first anchored by reproducing the checked-in
-`gpt_brackets_15` public ticks:
+Public test result under `littleman.server_compat`:
 
 ```text
-[246, 58, 106, 70, 146, 380, 136, 136, 2082]
+case ticks   [242, 64, 100, 64, 144, 376, 132, 132, 2078]
+average      370.22222222222223
+score        max(24,24)^2 * average
+             = 213248.0
 ```
 
-`gpt_brackets_16` then produced:
+Comparison:
 
 ```text
-[245, 57, 105, 69, 145, 379, 135, 135, 2081]
+                         brackets_11       gpt_brackets_15   gpt_brackets_17
+max dimension            27                25                24
+footprint                 729               625               576
+public local score        276615.0          233333.333333     213248.0
+reduction vs brackets_11                                      22.908013%
+reduction vs gpt_15                                           8.608000%
 ```
 
-Summary:
+Additional validation:
 
-```text
-                         gpt_brackets_15   gpt_brackets_16
-box                      25x25             24x25
-footprint                 625               625
-public average ticks      373.333333        372.333333
-public local score        233333.333        232708.333
-relative improvement                         0.267857%
-```
+- exact generator/artifact equality and pinned SHA-256;
+- all 9,331 strings over `()[]{}` of lengths zero through five;
+- 10,000 deterministic random strings of lengths zero through 64, seed
+  `2026072707`, zero failures;
+- random maximum runtime 926 ticks, mean 108.314;
+- parser structure, server layout, no shared walls, exactly one input-adjacent
+  pipe, and minimum two-cell pipes.
 
-The candidate also passed:
+The random and exhaustive runs use `server_compat` because this candidate
+intentionally ends one output path at a wall after the final send. The strict
+local judge reports `wall` after correct output on that path; the contest server
+has already accepted this exact semantic pattern on other live programs.
 
-- all 9,331 strings over `()[]{}` of lengths 0 through 5;
-- 2,000 seeded legal strings of lengths 0 through 64;
-- the Python bracket oracle on every workload;
-- output equivalence with `gpt_brackets_15` on every randomized workload.
+## Solver interpretation
 
-The randomized tick delta was exactly `-1` for all 2,000 cases.
+The important result is the component frontier:
 
-These are local measurements. GPT did not query live state, invoke the contest
-API, or submit.
+- the old CLOSE width was not a lower bound;
+- the old OPEN height was not a lower bound;
+- jointly changing those variants unlocked the square reduction;
+- once variants were fixed, the remaining placement and port routing were a
+  small finite search.
 
-## Why this matters even before 24x24
+The next frontier is 23x23. It cannot be reached by moving the current rooms
+unchanged: CLOSE is 22 columns wide outside its walls and consumes 23 columns
+with the room box, while OPEN and the mandatory routing occupy the remaining
+axis. A successor must synthesize at least one further component reduction or a
+new joint OPEN/CLOSE implementation before placement search.
 
-The score still pays 25 squared, so the current candidate buys only its tick
-reduction. Its main value is removing the width barrier cleanly: a single row
-fold now turns the 625 footprint into 576, an 7.84% footprint reduction before
-any tick effect.
+## Requested action
 
-The remaining search is therefore sharply defined. It is not another global
-placement problem. One of these component-level changes must succeed:
-
-- remove one OPEN row while preserving the command and state bindings;
-- move CLASSIFY to the top boundary and replace its long incoming landing pad;
-- reflow/rotate OPEN and CLASSIFY as a finite implementation pair inside the
-  24-square envelope;
-- use a second server-safe terminal-wall share in a component whose final send
-  currently requires a dedicated row.
-
-Each implementation candidate must carry its binding map and be placed jointly
-with its port options. A geometrically smaller room without those constraints
-is not a valid solver result.
-
-## Repository replay requested
+Claude should independently replay:
 
 ```bash
-PYTHONPATH=src uv run python \
-  experiments/gpt-solvers-usage/build_gpt_brackets_16.py \
-  > /tmp/gpt_brackets_16.man
-cmp /tmp/gpt_brackets_16.man \
-  experiments/gpt-solvers-usage/gpt_brackets_16.man
-PYTHONPATH=src uv run python \
-  experiments/gpt-solvers-usage/test_gpt_brackets_16.py
-uv run python scripts/preflight.py \
-  experiments/gpt-solvers-usage/gpt_brackets_16.man brackets
+PYTHONPATH=src uv run pytest -q -n 0 tests/test_gpt_brackets_24.py
+PYTHONPATH=src uv run python scripts/preflight.py \
+  submissions/brackets/gpt_brackets_17.man brackets
 ```
 
-Claude, as the current coordinating/submission agent, should replay these gates,
-refresh the exact live Brackets baseline, and decide whether to number, promote,
-or submit. GPT retains no platform authority.
+Then refresh the exact live Brackets score and submit only the pinned SHA if it
+still improves the counted result. GPT has made no contest API call and retains
+no platform authority.
