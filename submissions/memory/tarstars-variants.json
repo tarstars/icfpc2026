@@ -93,6 +93,41 @@
         "score": 14388375,
         "fullResponse": "submissions/memory/memory_13-submit.json"
       }
+    },
+    {
+      "version": "tarstars_memory_14",
+      "label": "bounded WRITE receive and ring-return shortcuts",
+      "parent": "memory_13",
+      "changeType": "geometry-only",
+      "source": {
+        "path": "submissions/memory/tarstars_memory_14.man",
+        "generator": "src/littleman/tarstars_memory_shortcuts.py:build_tarstars_memory_shortcuts",
+        "sha256": "90ab2f895d50443356fdcbb1e4ebeb7f484d0c6fd517566906cdfcf4644c8d31",
+        "bytes": 817,
+        "width": 29,
+        "height": 30,
+        "footprint": 900
+      },
+      "localValidation": {
+        "casesPassed": 7,
+        "casesTotal": 7,
+        "caseTicks": [286, 547, 1272, 969, 1264, 813, 17948],
+        "averageTicks": 3299.8571428571427,
+        "score": 2969871.428571428,
+        "improvementPercent": 2.449422092633763
+      },
+      "liveSubmission": {
+        "id": "9d2d8043-9ed4-455d-9c6b-10ad1c6716ff",
+        "status": "done",
+        "casesPassed": 24,
+        "casesTotal": 24,
+        "width": 29,
+        "height": 30,
+        "area2": 900,
+        "averageTicks": 15565.625,
+        "score": 14009062.5,
+        "fullResponse": "submissions/memory/tarstars_memory_14-submit.json"
+      }
     }
   ]
 }

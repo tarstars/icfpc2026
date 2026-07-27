@@ -90,10 +90,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   75×131 machine. It passed all 20 live cases at server score 9,290,407,667.5,
   improving the preceding counted score by 17.84%. Its algorithm replacement
   also passed 17 directed order and duplicate workloads locally.
-- Memory `memory_13` stores three cells per signed-64 word and shares one
-  two-word relay between READ and WRITE. It is live 24/24 at 29×30, score
-  14,388,375, and rank 16 in the `2026-07-26T23:36:10.399Z` snapshot. See
-  `reports/2026-07-27-memory-two-word-unroll.md`.
+- Memory `tarstars_memory_14` keeps the three-cells-per-word shared relay and
+  shortcuts two bounded WRITE paths. It is live 24/24 at 29×30 with score
+  14,009,062.5, a 2.64% improvement over `memory_13`, and rank 16 in the
+  `2026-07-27T00:22:10.356Z` snapshot. The exact response is
+  `submissions/memory/tarstars_memory_14-submit.json`.
 - Plotter `plotter_08` fuses error testing, error updating, address generation,
   and the display driver into a compact racetrack. It is live 20/20 at
   130×130, score 1,097,878,080, and rank 58 in the
