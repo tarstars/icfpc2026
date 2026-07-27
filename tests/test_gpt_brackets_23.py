@@ -15,7 +15,6 @@ from littleman.sim import Machine
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / "submissions" / "brackets" / "gpt_brackets_18.man"
-PARENT = ROOT / "submissions" / "brackets" / "gpt_brackets_17.man"
 PROBLEM = json.loads((ROOT / "data" / "small" / "problems" / "brackets.json").read_text())
 SHA256 = "50e85872d47e81c90f1205f0ae4c0341b62626630b1a1efb66552d357425320c"
 TICKS = [256, 78, 114, 78, 158, 382, 140, 140, 2088]
@@ -31,6 +30,50 @@ EXPECTED_TOPOLOGY = sorted(
         ("input", "open"),
     ]
 )
+EXPECTED_BINDINGS = {
+    "classify": [
+        ("s", ("classify", "close")),
+        ("s", ("classify", "close")),
+        ("r", ("open", "classify")),
+        ("r", ("close", "classify")),
+        ("s", ("classify", "close")),
+        ("r", ("close", "classify")),
+        ("s", ("classify", "close")),
+        ("r", ("close", "classify")),
+        ("s", ("classify", "close")),
+        ("s", ("classify", "close")),
+        ("r", ("close", "classify")),
+    ],
+    "close": [
+        ("r", ("classify", "close")),
+        ("s", ("close", "output")),
+        ("r", ("open", "close")),
+        ("r", ("classify", "close")),
+        ("s", ("close", "classify")),
+        ("r", ("classify", "close")),
+        ("s", ("close", "classify")),
+        ("r", ("classify", "close")),
+        ("r", ("classify", "close")),
+        ("r", ("classify", "close")),
+        ("s", ("close", "output")),
+        ("s", ("close", "classify")),
+        ("r", ("classify", "close")),
+        ("s", ("close", "classify")),
+        ("r", ("classify", "close")),
+        ("s", ("close", "output")),
+    ],
+    "open": [
+        ("s", ("open", "close")),
+        ("s", ("open", "classify")),
+        ("q", ("input", "open")),
+        ("r", ("input", "open")),
+        ("r", ("input", "open")),
+        ("s", ("open", "close")),
+        ("s", ("open", "classify")),
+        ("s", ("open", "close")),
+        ("s", ("open", "classify")),
+    ],
+}
 
 
 class _Probe:
@@ -79,16 +122,15 @@ def _named_topology(text: str):
         id(pipe): (semantic[id(pipe.source)], semantic[id(pipe.dest)])
         for pipe in machine.pipes
     }
-    return machine, topology
+    return machine, by_origin, topology
 
 
 def _binding_signature(text: str):
-    machine, topology = _named_topology(text)
-    by_origin = {(room.top, room.left): room for room in machine.rooms}
-    signature = []
-    for name, origin in ROOMS.items():
-        room = by_origin[origin]
-        operation_index = 0
+    machine, by_origin, topology = _named_topology(text)
+    result = {}
+    for name in ("classify", "close", "open"):
+        room = by_origin[ROOMS[name]]
+        rows = []
         for row in range(room.top + 1, room.bottom):
             for column in range(room.left + 1, room.right):
                 char = machine.grid[row][column]
@@ -100,9 +142,9 @@ def _binding_signature(text: str):
                     if char == "s"
                     else machine._nearest_incoming(probe)
                 )
-                signature.append((name, operation_index, char, topology[id(pipe)]))
-                operation_index += 1
-    return signature
+                rows.append((char, topology[id(pipe)]))
+        result[name] = rows
+    return result
 
 
 def test_artifact_structure_hash_bindings_and_public_score():
@@ -111,18 +153,13 @@ def test_artifact_structure_hash_bindings_and_public_score():
     assert hashlib.sha256(candidate.encode()).hexdigest() == SHA256
     assert _box(candidate) == (23, 23)
 
-    machine, topology = _named_topology(candidate)
+    machine, _by_origin, topology = _named_topology(candidate)
     assert (len(machine.rooms), len(machine.pipes), len(machine.men)) == (5, 6, 3)
     assert [len(pipe.cells) for pipe in machine.pipes] == [4, 14, 2, 8, 4, 2]
     assert sorted(topology.values()) == EXPECTED_TOPOLOGY
+    assert _binding_signature(candidate) == EXPECTED_BINDINGS
     check_pipe_lengths(candidate)
     validate_layout(candidate)
-
-    # The component bodies are unchanged from gpt_brackets_17.  The named
-    # binding signature must therefore select the same logical pipe roles.
-    parent_machine = Machine.parse(PARENT.read_text())
-    assert len(parent_machine.rooms) == 5
-    assert len(_binding_signature(candidate)) == 36
 
     report = judge_problem(candidate, PROBLEM)
     assert report.cases_passed == report.cases_total == 9
