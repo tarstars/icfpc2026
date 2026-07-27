@@ -11,7 +11,7 @@
 \title{Little Man programming, super-detailed:\\the \textbf{Triangle},
 \textbf{Memory}, and \textbf{Grade Book} machines}
 \author{team wheezards --- ICFPC 2026 working notes}
-\date{2026-07-26}
+\date{2026-07-27}
 \begin{document}
 \maketitle
 
@@ -697,11 +697,13 @@ each operation names a subject, so our machine gives each subject its own
 engine and record ring.
 
 \textbf{The machine discussed here} is the current live
-\texttt{submissions/gradebook/gradebook\_04.man}: $386\times313$, footprint
-$386^2=148\,996$, 16 rooms, 30 pipes, and 14 men. Its preserved live result is
-20/20 at score $54\,422\,867\,494$. The state machines originate in
+\texttt{submissions/gradebook/gradebook\_05.man}: $382\times307$, footprint
+$382^2=145\,924$, 16 rooms, 30 pipes, and 14 men. Its preserved live result is
+20/20 at score $47\,115\,780\,604$. The state machines originate in
 \texttt{src/littleman/gradebook.py}; later variants first tightened their
-layout, then squeezed and staircase-folded the same architecture. The last
+layout, then squeezed and staircase-folded the same architecture.
+\texttt{gradebook\_05} additionally replaces three fixed worker delays with
+blocking ring receives and keeps only whole-machine-validated folds. The last
 fold removed 110 rows and reduced ticks by 21\%. It did not change the
 component protocol described below.
 
@@ -829,9 +831,9 @@ requires zero or one ready input, never two. \textbf{State:} only the
 in-flight value in \op{A}; no cross-operation state. \textbf{Unit boundary:}
 inject one value through each input in turn, then mixed sequential arrivals,
 and assert exact ordering and pipe binding. \textbf{Optimization:} the
-$384\times5$ room contains only nine interior operations. A compact arbiter
+$379\times5$ room contains only nine interior operations. A compact arbiter
 or two-level merge tree is promising, although shrinking it alone does not
-beat the current 386-column bound.
+beat the current 382-column bound.
 
 \paragraph{\texttt{output\_port}.}
 \textbf{Input/output protocol:} consumes the arbiter's stream and exposes it
@@ -974,12 +976,12 @@ independently replaceable module. The next safe sequence is:
         maps, and a fresh score benchmark before creating a new version.
 \end{enumerate}
 
-The score consequence matters. The current machine is width-bound at 386:
-the front-end is 385 wide, while four side-by-side engines and their gaps
-also span 386. More row folding is ``banked'' but does not reduce the squared
+The score consequence matters. The current machine is width-bound at 382:
+the front-end room is 381 cells wide, while the external pipe clearance
+reaches the final column. More row folding is ``banked'' but does not reduce the squared
 footprint. A real next generation must shrink engine \emph{columns}, change
 their arrangement after shrinking, or both. A previously measured $2\times2$
-arrangement was worse with the present $94$-column engines; it should be
+arrangement was worse with the present $93$-column engine rooms; it should be
 re-evaluated only after a component compiler makes those widths materially
 smaller.
 
@@ -990,9 +992,10 @@ smaller.
 \begin{tabular}{ll}
 \texttt{submissions/triangle/triangle\_02.man} & the live Triangle artifact (rank 1/239)\\
 \texttt{submissions/memory/memory\_04.man} & the packed Memory artifact explained here\\
-\texttt{submissions/gradebook/gradebook\_04.man} & the live Grade Book artifact catalogued here\\
+\texttt{submissions/gradebook/gradebook\_05.man} & the live Grade Book artifact catalogued here\\
 \texttt{src/littleman/memory\_packed.py} & Memory generator; the packing formulas with tests\\
 \texttt{src/littleman/gradebook.py} & Grade Book FSMs and original component layout\\
+\texttt{src/littleman/gradebook\_components.py} & Grade Book room contracts and live optimized generator\\
 \texttt{src/littleman/gradebook\_press.py} & named 16-room topology and pipe-role-preserving press\\
 \texttt{src/littleman/sim.py} & the reference simulator (the semantics authority)\\
 \texttt{src/littleman/fastsim.py} & the fast executor, proven bit-identical to \texttt{sim.py}\\
@@ -1007,7 +1010,7 @@ Triangle and Memory grids, block-graphs, traces, and packing numbers were
 generated from those artifacts by the real toolchain. The traces use
 \texttt{sim.py}, the block-graphs use \texttt{decompile.py}, and the packing
 arithmetic executes the formulas. Grade Book measurements were taken from
-the checked-in \texttt{gradebook\_04.man}. Live scores come only from
+the checked-in \texttt{gradebook\_05.man}. Live scores come only from
 preserved submission records.
 
 To re-verify the headline facts yourself:
@@ -1015,9 +1018,9 @@ To re-verify the headline facts yourself:
 \begin{verbatim}
 uv run python -m littleman submissions/triangle/triangle_02.man triangle
 uv run python -m littleman submissions/memory/memory_04.man memory
-uv run python -m littleman submissions/gradebook/gradebook_04.man gradebook
+uv run python -m littleman submissions/gradebook/gradebook_05.man gradebook
 uv run pytest tests/test_memory_packed.py tests/test_gradebook.py \
-  tests/test_gradebook_press.py -q
+  tests/test_gradebook_components.py -q
 \end{verbatim}
 
 \end{document}
