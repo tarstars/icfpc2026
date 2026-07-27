@@ -112,6 +112,32 @@ loses width; contract unchanged.
 its delays are private path lengths totalling `W^2 = 256` cells at W=16,
 which is exactly why a proven 1.52x algorithm could not fit its box.
 
+### B0a. PATHFINDER FOLD — geometry VERIFIED, one crossing short  (11:56Z)
+**Measured just now on the live `pathfinder_03` room 0 (183x938 at rows
+4..941), using `pathfinder_fold.fold_interior` with a single cut:**
+
+    interior 181 x 936   ->   352 x 480      k=1 fold at row 468
+    failures: exactly ONE -- an unrouted '^' crossing at row 468,
+              (5,162) dir (-1,0)  ->  (5,199) dir (1,0)
+
+**The fold routes.** That is new information: this morning's attempt on the
+un-merged 1877-row machine produced a working geometry that deadlocked on
+BINDING; this one is on the already-line-merged artifact and fails only on a
+single unrouted strand.
+
+**What it is worth.** Room 0 becomes ~354x482, so the machine box falls from
+960 to roughly 500: `(500/960)^2 = 0.27`, a further **~3.7x** on top of the
+3.68x already banked. **Pathfinder would go from 16.07e12 this morning to
+roughly 1.2e12.**
+
+**What remains.** (a) route that one crossing; (b) re-assemble the full
+machine -- walls, the other six rooms, all eleven pipes; (c) apply B0's
+merger rooms so the band-2 I/O cells keep their bindings. Steps (a) and (b)
+are mechanical. Step (c) is the real work and is exactly what B0 describes.
+
+**Start here.** This is the single most valuable unfinished item in the
+backlog, and the geometry is already proven.
+
 ### B0. MERGER ROOM — the piece that unblocks the fold  (user's idea, 11:52Z)
 **The blocker it removes.** Folding a tall room moves half its cells into a
 new column band. Binding is by NEAREST pipe, so band-2 cells rebind — and a
