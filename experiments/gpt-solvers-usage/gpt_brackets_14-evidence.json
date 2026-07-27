@@ -1,0 +1,83 @@
+{
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "codex or current submission controller",
+    "warning": "Run repository preflight and refresh exact live Brackets state before promotion or submission."
+  },
+  "baseline": {
+    "footprint": 729,
+    "height": 27,
+    "liveScoreFromRepository": 484532.65,
+    "publicAverageTicks": 379.44444444444446,
+    "publicLocalScore": 276615.0,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "sha256FromCheckedInText": "b89ea0736d6cda08f55a4a565aef19096d0b3f95e356dc78f55fc16ef2838ed2",
+    "version": "brackets_11",
+    "width": 27
+  },
+  "candidate": {
+    "bytes": 630,
+    "footprint": 625,
+    "generator": "littleman.gpt_brackets_25:build_gpt_brackets_14",
+    "height": 25,
+    "men": 3,
+    "parent": "gpt_brackets_13",
+    "path": "submissions/brackets/gpt_brackets_14.man",
+    "pipeLengthsParserOrder": [2, 2, 2, 42, 13, 2],
+    "pipes": 6,
+    "problem": "brackets",
+    "rooms": 5,
+    "sha256": "9aa12829131b7bd9c4771b4bbfd49eec9fe83374a01fee91227d58ca142b0875",
+    "version": "gpt_brackets_14",
+    "width": 25
+  },
+  "changesFrom13": [
+    "CLOSE empty-stack output turns at relative (2,21), executes + at (3,21), sends at (4,21), and shares the existing H at (5,21); outer room width 24 -> 23.",
+    "OPEN startup moves from dedicated row 8 to row 5 as @ r v, descends through a blank row-6 cell, and joins the existing row-7 westbound return; outer room height 10 -> 9.",
+    "OPEN-to-CLASSIFY corridor moves global column 25 -> 24; transport length 44 -> 42."
+  ],
+  "localReplay": {
+    "directed": {
+      "cases": 425,
+      "failures": 0,
+      "families": ["empty", "max-depth", "max-length", "every offense position", "unclosed", "wrong-type"]
+    },
+    "exhaustive": {
+      "alphabet": "()[]{}",
+      "cases": 9331,
+      "failures": 0,
+      "lengths": "0..5 inclusive"
+    },
+    "improvementVsGptBrackets13Percent": 7.544378698224863,
+    "localReductionPercentVsBrackets11": 15.3205317458883,
+    "publicAverageTicks": 374.77777777777777,
+    "publicCasesPassed": 9,
+    "publicCasesTotal": 9,
+    "publicLocalScore": 234236.1111111111,
+    "publicTicks": [249, 61, 109, 73, 146, 380, 136, 136, 2083],
+    "random": {
+      "cases": 10000,
+      "failures": 0,
+      "lengthRange": "0..64",
+      "nestingOpenCountCap": 32,
+      "seed": 2026072704,
+      "tickDeltaVsBrackets11": {
+        "counts": {"-8": 1440, "-7": 1169, "-6": 17, "-5": 61, "-1": 1972, "0": 5341},
+        "max": 0,
+        "mean": -2.2082,
+        "min": -8
+      }
+    },
+    "scoreRatioToBaselineLocal": 0.846794682541117
+  },
+  "staticReplay": {
+    "closeOuterWidth": 23,
+    "inputRoomAdjacentPipeIndices": [5],
+    "minimumPipeCells": 2,
+    "openOuterHeight": 9,
+    "roleCountSignatureByLogicalRoomPairUnchanged": true,
+    "sharedWallCells": 0
+  },
+  "schemaVersion": 1
+}
