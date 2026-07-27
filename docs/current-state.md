@@ -41,8 +41,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   exact API specifications and 36 total public cases are attached under
   `data/small/problems/`. Snake `snake_04` is accepted 17/17 at 150×129 and
   score 848,516,029.4117646; its four-cell state-ring reduction is documented
-  in `reports/2026-07-26-snake-ring-margin.md`. Pathfinder submission
-  `0c04a141-a73b-443c-a274-741bfe67d857` is accepted 18/18. Claude's pressed
+  in `reports/2026-07-26-snake-ring-margin.md`. Pathfinder `pathfinder_02`
+  deletes 84 judge-safe rows and is accepted 18/18 at 187×1,873, score
+  16,071,390,291,617.668, and rank 42 in the
+  `2026-07-27T00:32:10.377Z` snapshot; its submission is
+  `4b714c9e-d0e0-455a-857e-b06a30fa0e39`. Claude's pressed
   LLLM submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d` is accepted 21/21
   at 307×312 and score 22,187,469,586.285713. LLM submission
   `be96c6eb-e2bd-40a7-b5d2-a3aadbaf2b9b` is accepted 28/28 at server score
