@@ -45,9 +45,12 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   deletes 84 judge-safe rows and is accepted 18/18 at 187×1,873, score
   16,071,390,291,617.668, and rank 42 in the
   `2026-07-27T00:32:10.377Z` snapshot; its submission is
-  `4b714c9e-d0e0-455a-857e-b06a30fa0e39`. Claude's pressed
-  LLLM submission `efce1ac1-ece0-4557-a08e-4d34edd9dd4d` is accepted 21/21
-  at 307×312 and score 22,187,469,586.285713. LLM submission
+  `4b714c9e-d0e0-455a-857e-b06a30fa0e39`. LLLM `lllm_04` deletes one
+  globally blank row and four corridor columns while preserving all 628 pipe
+  resolutions. It is accepted 21/21 at 303×311, score
+  21,174,308,704.380955, and rank 14 in the
+  `2026-07-27T00:54:10.094Z` snapshot; see
+  `reports/2026-07-27-lllm-squeeze.md`. LLM submission
   `be96c6eb-e2bd-40a7-b5d2-a3aadbaf2b9b` is accepted 28/28 at server score
   8,775,033,253,482,888; its exact artifact and response are preserved. See
   `reports/2026-07-25-semester-4-release.md` and the latest immutable
