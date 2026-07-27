@@ -120,6 +120,25 @@ because it is already per-band.
 6. Leave pipes 3, 5, 7 untouched — they are single-band.
 7. Shift rooms 1-6 up by the height saved (~458 rows) and re-route.
 
+## Verified on the ORGANIZERS' OWN ENGINE, not just ours
+
+This distinction matters: our simulator was proven wrong twice on
+2026-07-27 -- it never implemented `Y`, and its wall rule changed
+pass/fail. A design resting on `sim.py` alone is not verified.
+
+    U, pipe on NORTH wall   WASM: dir [0,1] = SOUTH, a=7      matches sim.py
+    U, pipe on WEST  wall   WASM: dir [1,0] = EAST,  a=7      matches sim.py
+    R tie-break             WASM: output [7,9], status done   matches sim.py
+
+The `R` probe is a real machine (`tests/data_fold_r_tiebreak.man`): two
+values are sent into two pipes whose entry cells are (11,4) and (11,11),
+the first value going to the smaller. `R` twice, then out. **Both engines
+emit [7, 9]** -- the smaller-(row,col) entry drains first -- so a merger's
+ordering is controllable by geometry alone.
+
+`tests/test_fold_primitives.py` -- 7 tests, 4 against `sim.py` and 3
+against the WASM, all passing.
+
 ## What is verified, and what is not
 
 **Verified:** the fold geometry routes (one crossing short); the exact set

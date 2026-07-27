@@ -138,3 +138,91 @@ def test_a_mirror_would_break_conditional_turns_but_a_rotation_does_not():
     assert any(mirror[sim.CLOCKWISE[d]] != sim.CLOCKWISE[mirror[d]]
                for d in (NORTH, SOUTH, EAST, WEST)), \
         "a vertical mirror must NOT commute with CLOCKWISE"
+
+
+# ---------------------------------------------------------------------------
+# The same three facts, re-checked against the ORGANIZERS' OWN ENGINE.
+#
+# This matters because our simulator was proven wrong TWICE on 2026-07-27:
+# it never implemented `Y`, and it had the wall rule wrong in a way that
+# changed pass/fail. A design resting on sim.py alone is not verified.
+# ---------------------------------------------------------------------------
+
+import json
+import pathlib
+import shutil
+import subprocess
+
+REPO = pathlib.Path(__file__).resolve().parent.parent
+HARNESS = REPO / "claude" / "official-sim" / "harness.mjs"
+NODE = shutil.which("node")
+
+wasm_only = pytest.mark.skipif(
+    NODE is None or not HARNESS.exists(),
+    reason="organizers' WASM harness unavailable")
+
+
+def _wasm(program, inputs, max_ticks=200):
+    request = {"program": program, "input": [list(inputs)], "expected": [[]],
+               "maxTicks": max_ticks, "stopOnSettle": False}
+    proc = subprocess.run([NODE, str(HARNESS)], input=json.dumps(request),
+                          capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 0, proc.stderr[:300]
+    return json.loads(proc.stdout)
+
+
+@wasm_only
+@pytest.mark.parametrize("rows,expected_dir,label", [
+    ([
+        "  +-+      ",
+        "  |I|      ",
+        "  +-+      ",
+        "   v       ",
+        "   v       ",
+        " +-----+   ",
+        " |@ U  |   ",
+        " |     |   ",
+        " |     |   ",
+        " +-----+   ",
+    ], [0, 1], "north wall -> SOUTH"),
+    ([
+        "+-+        ",
+        "|I|        ",
+        "+-+        ",
+        " v         ",
+        " v +-----+ ",
+        " v |     | ",
+        " >>|@U   | ",
+        "   |     | ",
+        "   +-----+ ",
+    ], [1, 0], "west wall -> EAST"),
+])
+def test_U_wall_side_discrimination_on_the_real_engine(rows, expected_dir, label):
+    """`U` turns away from the SIDE OF THE ROOM the pipe attaches to.
+
+    The `wall` fatal is expected: these probes have no `H`, so the man
+    walks out after turning. The turn itself is the observable.
+    """
+    state = _wasm("\n".join(rows) + "\n", [7])
+    runners = state.get("runners") or []
+    assert runners, f"{label}: no runner reported"
+    assert runners[0]["dir"] == expected_dir, (
+        f"{label}: got {runners[0]['dir']}")
+    assert int(runners[0]["a"]) == 7, f"{label}: value not delivered"
+
+
+@wasm_only
+def test_R_tiebreak_matches_our_simulator_on_the_real_engine():
+    """The merger's entire ordering guarantee.
+
+    Two values are sent into two pipes whose entry cells are (11,4) and
+    (11,11); the first value goes to the smaller one. `R` twice, then out.
+    Output [7, 9] means the smaller-(row,col) entry drained first, so a
+    merger can be ordered by geometry alone.
+    """
+    artifact = REPO / "tests" / "data_fold_r_tiebreak.man"
+    if not artifact.exists():
+        pytest.skip("probe artifact missing")
+    state = _wasm(artifact.read_text(), [7, 9])
+    assert state.get("fatal") in (None, {}), state.get("fatal")
+    assert [int(v) for v in (state.get("output") or [])] == [7, 9]
