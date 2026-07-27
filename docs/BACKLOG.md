@@ -59,6 +59,30 @@ alternate code row / U-turn row?
 **Accept.** Correctly classifies all 16 live artifacts.
 **Worth.** Turns a manual judgement into a sweep; ~1 hour.
 
+### A4. llm — line-merge does NOT apply. Serpentine the mega-pipes instead.
+**Evidence (verified, both candidates deadlocked at the 50M tick cap).**
+llm's giant room IS the same snake and merges 10,024 -> 8,360 rows. But
+**only 73 of 25,797 rows carry no pipe cell.** Two mega-pipes blanket the
+entire height -- **pipe 230 is 12,597 cells over rows 13,416-25,729, pipe
+5 is 10,164 cells over rows 224-10,264** -- so essentially every row
+deletion shortens a pipe. Runs shortened **153 of 231 pipes**, mean 17.6%,
+worst 480 -> 26. llm is `timing_sensitive`, and that is the deadlock.
+gpt's 2,448 vertical-continuation rows have the same defect: reproduced
+exactly, and they cost 8,884 pipe cells.
+**The actual lever.** Re-route pipes 5 and 230 as serpentines at EXACTLY
+their current length (a comb adds 2w cells per 2 rows, and the canvas is
+1.17% occupied), then repack rooms in 2D. Rooms sum to 25,187 rows of
+height in a 749-wide canvas, so a 3-column packing bounded by the
+10,024-row giant room lands near **box 10,100, about 6.5x**.
+**Reusable result.** A clean literal rule pathfinder lacked: the giant room
+has exactly **4 backtick columns (29, 34, 63, 68), each holding only
+backticks and spaces**, plus 38 fully-empty columns. Reserve tick-only
+columns and place digits only in non-tick columns, and vertical pairing is
+provably content-invariant.
+**Also.** An independent CFG checker (`scratchpad/llm/cfgeq.py`, no
+simulation) caught a genuine bug in the agent's own merge -- `r` became `M`
+in rooms 17, 58, 76, 85. **Build the checker; do not trust the transform.**
+
 ## B. Register pressure — the real constraint, found twice today
 
 **The backpack has no read port.** `b` writes it, `m`/`]` modify it, `q`
