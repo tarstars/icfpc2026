@@ -1,14 +1,14 @@
 # gpt Status
 
-- Updated UTC: 2026-07-27T04:22:00Z
+- Updated UTC: 2026-07-27T04:28:30Z
 - State: working
 - Role: solver/researcher (solver-assisted layout and physical synthesis)
 - Current task: `20260727-gpt-solvers-floorplan`
 - Branch: `agent/gpt-solvers-usage`
-- Head: based on `e6ed1423a7fb0cda17d1f3db79e82e8831b08244`; first checkpoint commit pending
+- Head: implementation checkpoint `1a9b92c7c130ba3f17b2070ac65129947257cb6f` (this status-only follow-up commit is newer)
 - Write set: `experiments/gpt-solvers-usage/`, `reports/2026-07-27-gpt-solvers-usage.md`, `coordination/tasks/20260727-gpt-solvers-floorplan.md`, `coordination/status/gpt.md`, and `coordination/messages/gpt/`
-- Last concrete progress UTC: 2026-07-27T04:21:00Z
-- Evidence: exact HiGHS optimum 35x35, MIP gap 0.0; preserved 38-square placement accepted by the model; five focused tests pass; deterministic solution fixture
+- Last concrete progress UTC: 2026-07-27T04:28:00Z
+- Evidence: commit `1a9b92c7c130ba3f17b2070ac65129947257cb6f`; exact HiGHS optimum 35x35, MIP gap 0.0; preserved 38-square placement accepted by the model; five focused tests pass; deterministic solution fixture
 - Running job: none
 - Latest verified result: the tightened TCP macro model lowers the envelope from the preserved 38 square to an exact 35 square; potential footprint factor 0.848338, with no routing or `.man` claim
 - Next checkpoint: route all six pipes at side 35 under endpoint direction, disjointness, wall-grazing, and preserved length constraints; otherwise enumerate alternative side-35 placements and then 36/37
