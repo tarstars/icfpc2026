@@ -505,8 +505,7 @@ def build_compact_error_room() -> list[str]:
     )
     if rows_dropped != 51:
         raise ValueError(
-            "unexpected combined-worker squeeze "
-            f"{(rows_dropped, columns_dropped)}"
+            f"unexpected combined-worker squeeze {(rows_dropped, columns_dropped)}"
         )
     machine = Machine.parse(compact)
     room = machine.rooms[1]
@@ -550,8 +549,7 @@ def build_compact_fused_room() -> list[str]:
     )
     if (rows_dropped, columns_dropped) != (83, 33):
         raise ValueError(
-            "unexpected fused-worker squeeze "
-            f"{(rows_dropped, columns_dropped)}"
+            f"unexpected fused-worker squeeze {(rows_dropped, columns_dropped)}"
         )
 
     machine = Machine.parse(compact)
@@ -759,9 +757,7 @@ def build_plotter_racetrack_candidate() -> str:
     control_x = worker_left + COMPACT_PORTS["control"]
 
     # Existing S5 bottom port -> compact worker top.
-    canvas.pipe(
-        [(62, 102), (63, 102), (63, 134), (0, 134), (0, setup_x), (1, setup_x)]
-    )
+    canvas.pipe([(62, 102), (63, 102), (63, 134), (0, 134), (0, setup_x), (1, setup_x)])
 
     # Local state ring.  The outbound leg drops below the old machine before
     # crossing the control path; the return climbs just outside the worker.
@@ -833,11 +829,7 @@ def build_plotter_racetrack_repacked() -> str:
         )
     for pipe in machine.pipes:
         role = (indices[id(pipe.source)], indices[id(pipe.dest)])
-        if (
-            role == (2, 9)
-            or role[0] in removed_rooms
-            or role[1] in removed_rooms
-        ):
+        if role == (2, 9) or role[0] in removed_rooms or role[1] in removed_rooms:
             removed.update(pipe.cells)
 
     canvas = Canvas()
@@ -862,9 +854,7 @@ def build_plotter_racetrack_repacked() -> str:
     control_x = worker_left + COMPACT_PORTS["control"]
 
     # S5 -> worker.  Column 137 is one lane outside the translated source.
-    canvas.pipe(
-        [(62, 104), (63, 104), (63, 137), (0, 137), (0, setup_x), (1, setup_x)]
-    )
+    canvas.pipe([(62, 104), (63, 104), (63, 137), (0, 137), (0, setup_x), (1, setup_x)])
 
     # Worker -> ADDRESS, reusing the translated safe corridor.
     canvas.pipe(
