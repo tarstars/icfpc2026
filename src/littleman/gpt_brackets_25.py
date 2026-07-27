@@ -1,16 +1,16 @@
-"""Solver-guided 25x25 Brackets candidate.
+"""Solver-guided 25x25 Brackets candidates.
 
 Starting from ``gpt_brackets_13``:
 
 * CLOSE moves the empty-stack output addition/send vertically at relative
   column 21 and shares the existing terminal halt, reducing outer width 24->23.
-* OPEN moves its startup into row 5 and joins the existing row-7 return,
-  reducing outer height 10->9.
-* The OPEN->CLASSIFY transport corridor moves to global column 24, shortening
-  the route 44->42 cells.
+* OPEN moves startup into row 5 and joins the existing row-7 return, reducing
+  outer height 10->9.
+* The OPEN->CLASSIFY corridor moves to global column 24, shortening 44->42.
 
-The module only reproduces an immutable branch artifact. Submission and live
-freshness belong to the integrator/submission controller.
+``gpt_brackets_15`` additionally moves the OPEN->CLOSE state source to the
+highest legal left-wall cell, shortening that transport route 13->10 cells.
+The module only reproduces immutable branch artifacts; it never submits.
 """
 
 from __future__ import annotations
@@ -50,14 +50,16 @@ ROOMS = [
     (22, 22, "input"),
 ]
 
-PIPES = [
+PREFIX_PIPES = [
     ([(7, 6), (8, 6)], "v"),
     ([(8, 8), (7, 8)], "^"),
     ([(8, 20), (7, 20)], "^"),
-    ([(20, 3), (20, 2), (16, 2), (16, 0), (11, 0)], ">"),
-    ([(17, 20), (17, 24), (0, 24), (0, 4)], "v"),
-    ([(23, 21), (23, 20)], "<"),
 ]
+
+LONG_PIPE = ([(17, 20), (17, 24), (0, 24), (0, 4)], "v")
+INPUT_PIPE = ([(23, 21), (23, 20)], "<")
+STATE_PIPE_14 = ([(20, 3), (20, 2), (16, 2), (16, 0), (11, 0)], ">")
+STATE_PIPE_15 = ([(17, 3), (17, 0), (11, 0)], ">")
 
 
 def _box(interior: list[str]) -> list[str]:
@@ -68,9 +70,7 @@ def _box(interior: list[str]) -> list[str]:
     return [edge] + ["|" + row + "|" for row in interior] + [edge]
 
 
-def build_gpt_brackets_14() -> str:
-    """Render the exact 25x25 branch candidate."""
-
+def _build(state_pipe) -> str:
     art = {
         "classify": _box(CLASSIFY),
         "close": _box(CLOSE_25),
@@ -81,11 +81,23 @@ def build_gpt_brackets_14() -> str:
     canvas = Canvas()
     for row, column, name in ROOMS:
         canvas.put(row, column, art[name])
-    for waypoints, terminal in PIPES:
+    for waypoints, terminal in [*PREFIX_PIPES, state_pipe, LONG_PIPE, INPUT_PIPE]:
         canvas.pipe(waypoints)
         canvas.cells[waypoints[-1]] = terminal
     return canvas.render()
 
 
+def build_gpt_brackets_14() -> str:
+    """Render the first exact 25x25 branch candidate."""
+
+    return _build(STATE_PIPE_14)
+
+
+def build_gpt_brackets_15() -> str:
+    """Render the 25x25 candidate with the minimal state transport route."""
+
+    return _build(STATE_PIPE_15)
+
+
 if __name__ == "__main__":
-    print(build_gpt_brackets_14(), end="")
+    print(build_gpt_brackets_15(), end="")

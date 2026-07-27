@@ -1,4 +1,4 @@
-"""Regression and behavior gates for the solver-guided 25-square Brackets candidate."""
+"""Regression and behavior gates for solver-guided 25-square Brackets candidates."""
 
 from __future__ import annotations
 
@@ -10,17 +10,19 @@ from collections import Counter
 from pathlib import Path
 
 from littleman.alexey_pipecheck import check as check_pipe_lengths
-from littleman.gpt_brackets_25 import build_gpt_brackets_14
+from littleman.gpt_brackets_25 import build_gpt_brackets_14, build_gpt_brackets_15
 from littleman.judge import judge_case, judge_problem
 from littleman.server_compat import validate_layout
 from littleman.sim import Machine
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "submissions" / "brackets" / "gpt_brackets_14.man"
+ARTIFACT_14 = ROOT / "submissions" / "brackets" / "gpt_brackets_14.man"
+ARTIFACT_15 = ROOT / "submissions" / "brackets" / "gpt_brackets_15.man"
 BASELINE = ROOT / "submissions" / "brackets" / "brackets_11.man"
 PROBLEM = json.loads((ROOT / "data" / "small" / "problems" / "brackets.json").read_text())
-EXPECTED_SHA256 = "9aa12829131b7bd9c4771b4bbfd49eec9fe83374a01fee91227d58ca142b0875"
-EXPECTED_TICKS = [249, 61, 109, 73, 146, 380, 136, 136, 2083]
+SHA_14 = "9aa12829131b7bd9c4771b4bbfd49eec9fe83374a01fee91227d58ca142b0875"
+SHA_15 = "826553c4a58fd1ef83f81e8b05e9c3d54b575f2030d89c566cd5d9a99c09e605"
+TICKS_15 = [246, 58, 106, 70, 146, 380, 136, 136, 2082]
 BRACKETS = "()[]{}"
 MATCH = {"(": ")", "[": "]", "{": "}"}
 
@@ -86,38 +88,47 @@ def _round(text: str) -> list[dict]:
     return [{"in": [len(text), *(ord(char) for char in text)], "out": [_oracle(text)]}]
 
 
-def test_generator_artifact_hash_and_box():
-    candidate = ARTIFACT.read_text()
-    assert build_gpt_brackets_14() == candidate
-    assert hashlib.sha256(candidate.encode()).hexdigest() == EXPECTED_SHA256
-    assert _box(candidate) == (25, 25)
+def test_generators_artifacts_hashes_and_boxes():
+    candidate_14 = ARTIFACT_14.read_text()
+    candidate_15 = ARTIFACT_15.read_text()
+    assert build_gpt_brackets_14() == candidate_14
+    assert build_gpt_brackets_15() == candidate_15
+    assert hashlib.sha256(candidate_14.encode()).hexdigest() == SHA_14
+    assert hashlib.sha256(candidate_15.encode()).hexdigest() == SHA_15
+    assert _box(candidate_14) == _box(candidate_15) == (25, 25)
 
 
-def test_structure_layout_and_logical_roles():
-    candidate = ARTIFACT.read_text()
+def test_structure_layout_roles_and_state_route_floor():
+    candidate = ARTIFACT_15.read_text()
     machine = Machine.parse(candidate)
     assert (len(machine.rooms), len(machine.pipes), len(machine.men)) == (5, 6, 3)
-    assert [len(pipe.cells) for pipe in machine.pipes] == [2, 2, 2, 42, 13, 2]
+    assert [len(pipe.cells) for pipe in machine.pipes] == [2, 2, 2, 10, 42, 2]
     check_pipe_lengths(candidate)
     validate_layout(candidate)
     assert _topology_role_counts(candidate) == _topology_role_counts(BASELINE.read_text())
 
-    close_room = machine.rooms[2]
     open_room = machine.rooms[3]
-    assert (close_room.right - close_room.left + 1) == 23
-    assert (open_room.bottom - open_room.top + 1) == 9
+    close_room = machine.rooms[2]
+    state_pipe = next(
+        pipe for pipe in machine.pipes
+        if pipe.source is open_room and pipe.dest is close_room
+    )
+    assert state_pipe.cells[0] == (open_room.top + 1, open_room.left - 1)
+    assert state_pipe.cells[-1] == (close_room.top + 2, close_room.left - 1)
+    distance = sum(abs(a - b) for a, b in zip(state_pipe.cells[0], state_pipe.cells[-1]))
+    assert len(state_pipe.cells) == distance + 1 == 10
 
 
 def test_exact_public_suite_and_score():
-    report = judge_problem(ARTIFACT.read_text(), PROBLEM)
+    report = judge_problem(ARTIFACT_15.read_text(), PROBLEM)
     assert report.cases_passed == report.cases_total == 9
     assert report.footprint == 625
-    assert report.case_ticks == EXPECTED_TICKS
-    assert report.score == 234236.1111111111
+    assert report.case_ticks == TICKS_15
+    assert report.score == 233333.3333333333
 
 
 def test_exhaustive_strings_through_length_five():
-    candidate = ARTIFACT.read_text()
+    candidate = ARTIFACT_15.read_text()
     for length in range(6):
         for value in itertools.product(BRACKETS, repeat=length):
             result = judge_case(candidate, _round("".join(value)), max_ticks=100_000)
@@ -125,8 +136,8 @@ def test_exhaustive_strings_through_length_five():
 
 
 def test_seeded_boundary_fuzz():
-    candidate = ARTIFACT.read_text()
-    rng = random.Random(2026072704)
+    candidate = ARTIFACT_15.read_text()
+    rng = random.Random(2026072705)
     corpus = {
         "",
         "(" * 32 + ")" * 32,
