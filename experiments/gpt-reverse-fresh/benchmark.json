@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "problem": "reverse-a-list",
+  "problemId": "537ec979-d883-40f3-9663-b59579a0682c",
+  "artifact": "experiments/gpt-reverse-fresh/reverse_fresh_23.man",
+  "generator": "experiments/gpt-reverse-fresh/build_candidate.py",
+  "sha256": "b9d8784b5e96e56e826a55b6950ce75d64ee05b6587824d2c494ff1f9f46cb15",
+  "bytes": 516,
+  "width": 23,
+  "height": 23,
+  "maxDimension": 23,
+  "scoring": "max(width,height)^2 * average ticks",
+  "public": {
+    "casesPassed": 8,
+    "casesTotal": 8,
+    "caseTicks": [175, 94, 152, 238, 138, 154, 280, 420],
+    "averageTicks": 206.375,
+    "score": 109172.375,
+    "oracle": "organizers vendored WASM; stopped at final expected output emission"
+  },
+  "structure": {
+    "rooms": 3,
+    "pipes": 2,
+    "menInitially": 1,
+    "pipeLengths": [2, 13],
+    "minimumPipeLength": 2
+  },
+  "comparison": {
+    "currentLiveScore": 84423.95,
+    "scoreRatioToLive": 1.293128816,
+    "verdict": "correct research baseline; not submission-worthy"
+  },
+  "notes": [
+    "Fresh farm spawns exactly n workers per round; no blocked unused-worker rotation.",
+    "Every worker halts after sending, and the controller returns to the input receive for the next round.",
+    "This artifact is intended as the exact semantic baseline for solver-driven stage and layout search."
+  ]
+}
