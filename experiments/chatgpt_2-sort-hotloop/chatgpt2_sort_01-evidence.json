@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "problem": "sort-numbers",
+  "problemId": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
+  "authority": {
+    "contestApiCheckedByChatgpt2": false,
+    "platformSubmitted": false,
+    "submissionController": "claude",
+    "requiredFinalGate": "scripts/subdb.py compare plus organizer WASM"
+  },
+  "baseline": {
+    "artifact": "submissions/sort/tarstars_sort_08.man",
+    "width": 18,
+    "height": 18,
+    "pipeLengths": [2, 2, 7, 17],
+    "publicCaseTicks": [755, 617, 772, 544, 928, 2137, 5282],
+    "publicAverageTicks": 1576.4285714285713,
+    "publicScore": 510762.8571428571,
+    "liveHiddenScoreFromRepository": 802301.76
+  },
+  "candidate": {
+    "artifact": "submissions/sort/chatgpt2_sort_01.man",
+    "generator": "littleman.chatgpt2_sort_hotloop:build_chatgpt2_sort_01",
+    "sha256": "932a3c2bbe3e6cb345c9ab14d3bd4d7c2dbbd2c66699c947c7d59535ca97af79",
+    "bytes": 342,
+    "width": 18,
+    "height": 18,
+    "rooms": 4,
+    "pipes": 4,
+    "men": 2,
+    "pipeLengths": [2, 2, 7, 17],
+    "sourceDifferences": [
+      {"row": 1, "column": 13, "before": "r", "after": "U"},
+      {"row": 2, "column": 12, "before": "^", "after": " "},
+      {"row": 2, "column": 13, "before": " ", "after": "^"}
+    ]
+  },
+  "localValidation": {
+    "oracle": "standalone exact simulator transcription; first reproduced tarstars_sort_08 public ticks byte-for-byte",
+    "publicCasesPassed": 7,
+    "publicCasesTotal": 7,
+    "publicCaseTicks": [737, 603, 754, 532, 906, 2121, 5236],
+    "publicAverageTicks": 1555.5714285714287,
+    "publicScore": 504005.1428571429,
+    "randomMultiRoundCasesPassed": 1000,
+    "randomMultiRoundCasesTotal": 1000,
+    "randomSeed": 123,
+    "constraints": "2-6 rounds, every list length 1-16, values -10000..10000",
+    "directedMaximumAndLifecycleCases": "encoded in tests/test_chatgpt2_sort_hotloop.py"
+  },
+  "comparison": {
+    "scoreFactorVsPublicBaseline": 1.0134080264487095,
+    "publicReductionPercent": 1.3230629814227295,
+    "totalPublicTicksSaved": 146,
+    "perCaseTicksSaved": [18, 14, 18, 12, 22, 16, 46],
+    "nominalOneRankTargetFactor": 1.026,
+    "nominalOneRankTargetScore": 497819.5488721804,
+    "candidateAboveNominalTargetBy": 6185.593984962499,
+    "decision": "hand off anyway: candidate is strictly better on every public case, submission is best-only, and recent hidden workloads materially changed relative factors"
+  },
+  "unverified": [
+    "repository-native pytest has not been executed by chatgpt_2 in this environment",
+    "scripts/subdb.py compare has not been executed by chatgpt_2",
+    "organizer WASM has not been executed by chatgpt_2",
+    "private/live score is unknown"
+  ]
+}
