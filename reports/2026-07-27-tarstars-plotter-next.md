@@ -91,3 +91,5 @@ at 80×125, average 64,459.7 ticks, and score 1,007,182,812.5. This is a
 90,695,267.5-point (8.26096%) reduction from `plotter_08` and
 11,072,607.5 below the pre-submit next-rank threshold. The exact response is
 preserved in `submissions/plotter/tarstars_plotter_09-submit.json`.
+The `2026-07-27T01:12:10.350Z` standings snapshot places `wheezards` at
+rank 58, one position above its immediate pre-submit rank.

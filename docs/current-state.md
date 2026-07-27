@@ -67,10 +67,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   17-cell shrinking ring. It is live 25/25 at 18×18, score 802,301.76, and
   rank 45 in the `2026-07-26T23:56:10.445Z` snapshot. See
   `reports/2026-07-27-sort-18-square.md`.
-- History Lesson `history_05` uses a joint exact-DP dictionary and lookup-slot
-  search to fit the fixed archive into 82×82. It is live 1/1 at score 6,724
-  and rank 17 in the `2026-07-26T23:44:10.311Z` snapshot. See
-  `reports/2026-07-27-history-82-square.md`.
+- History Lesson `history_06` uses a joint exact-DP dictionary and lookup-slot
+  search to fit the fixed archive into 81×81. It is live 1/1 at score 6,561
+  and tied rank 13 in the `2026-07-27T01:10:10.416Z` snapshot, a
+  four-position gain. See `reports/2026-07-27-history-81-square.md`.
 - Packet Reassembly `tcp_00` passed 20/20 at 38×41 and score 20,028,106.4.
   Five platform downloads recovered the missing tag-through-ring lineage:
   `tcp_01/tcp_05 -> tcp_04 -> tcp_03 -> tcp_02`. The 38×38 `tcp_02` is
@@ -100,11 +100,11 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   14,009,062.5, a 2.64% improvement over `memory_13`, and rank 16 in the
   `2026-07-27T00:22:10.356Z` snapshot. The exact response is
   `submissions/memory/tarstars_memory_14-submit.json`.
-- Plotter `plotter_08` fuses error testing, error updating, address generation,
-  and the display driver into a compact racetrack. It is live 20/20 at
-  130×130, score 1,097,878,080, and rank 58 in the
-  `2026-07-27T00:04:10.359Z` snapshot. See
-  `reports/2026-07-27-plotter-fused-racetrack.md`.
+- Plotter `tarstars_plotter_09` reorders and folds the fused worker, then
+  packs the retained rooms beside its side ports. It is live 20/20 at
+  80×125, score 1,007,182,812.5, and rank 58 in the
+  `2026-07-27T01:12:10.350Z` snapshot, one position above the immediate
+  pre-submit rank. See `reports/2026-07-27-tarstars-plotter-next.md`.
 - Subset Sum is solved by a generated meet-in-the-middle machine with two
   1,024-stage systolic sorters. Its compact 3,646×3,029 artifact passed all
   20 live cases at score 91,769,596,778,389.8. The exact Git-LFS source,
