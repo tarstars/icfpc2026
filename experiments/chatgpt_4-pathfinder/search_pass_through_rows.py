@@ -376,6 +376,7 @@ def run(args: argparse.Namespace) -> int:
     best_result = baseline_result
 
     initial_groups = chunks(rows, args.chunk_size)
+    initial_groups.sort(key=lambda group: min(group), reverse=True)
     structurally_safe: list[tuple[int, ...]] = []
     structurally_failed: list[tuple[int, ...]] = []
     for group in initial_groups:
@@ -390,8 +391,12 @@ def run(args: argparse.Namespace) -> int:
                 flush=True,
             )
 
-    budget = max(0, args.max_tests - tests_used)
+    # Keep part of the judge budget for the union, greedy composition and
+    # recursive refinement.  Test lower rows first because the previous
+    # Pathfinder bisection localized its poison to the top-spanning group.
+    budget = max(0, args.max_tests - tests_used - args.reserve_tests)
     first_batch = structurally_safe[:budget]
+    untested = structurally_safe[budget:]
     first_results = judge_many(
         source_path, problem_path, first_batch, args.workers
     )
@@ -406,7 +411,7 @@ def run(args: argparse.Namespace) -> int:
         tuple(result["rows"])
         for result in first_results
         if not result["passed"]
-    ] + structurally_failed
+    ] + structurally_failed + untested
 
     # Prefer lower rows: they are less likely to move room ports and socket
     # distances in this machine, and the earlier bisection's poison was in the
@@ -570,6 +575,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunk-size", type=int, default=12)
     parser.add_argument("--workers", type=int, default=min(3, os.cpu_count() or 1))
     parser.add_argument("--max-tests", type=int, default=40)
+    parser.add_argument("--reserve-tests", type=int, default=12)
     parser.add_argument("--time-limit", type=float, default=2400.0)
     parser.add_argument("--target-rows", type=int, default=55)
     parser.add_argument("--target-factor", type=float, default=1.053)
