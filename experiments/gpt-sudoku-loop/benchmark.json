@@ -34,10 +34,10 @@
     "liveScore": 9290407667.5
   },
   "improvementFromParent": {
-    "footprintPercent": 40.55707657362625,
-    "averageTicksPercent": -11.7562567055216,
-    "localScorePercent": 33.56828146175818,
-    "projectedLiveScoreAtParentServerLocalRatio": 6169110626.300646
+    "footprintPercent": 40.557077093409475,
+    "averageTicksPercent": -11.757180435558015,
+    "localScorePercent": 33.56826539111198,
+    "projectedLiveScoreAtParentServerLocalRatio": 6171778965.757384
   },
   "validation": {
     "generatorByteEquality": "passed",
