@@ -26,17 +26,22 @@ must themselves be stored, packed over the base alphabet):
         56     127      1761   4116     462    4578   <- optimum
         96     167      1608   4020     672    4692
 
-56 tokens is the optimum, and the reason is a CLIFF, not a smooth curve:
-**127 is the largest radix that still packs 9 symbols into a signed-64
-literal** (127^9 = 8.60e18 <= 9.22e18, while 128^9 = 9.22e18 exceeds it).
-Crossing it costs a ninth of every word's capacity at once, which is why
-64 tokens is worse than 56 even though its bits/char is better.
+56 tokens is the optimum of THIS sweep, and the reason is a CLIFF, not a
+smooth curve: **128 is the largest radix that still packs 9 symbols into
+a signed-64 literal**, because nine radix-128 symbols span 0..128^9-1 and
+128^9-1 is exactly 2^63-1. Radix 129 drops to 8, costing a ninth of every
+word's capacity at once, which is why 64 tokens is worse than 56 even
+though its bits/char is better.
 
-The alphabet is **71 distinct characters**, so the slot budget is exactly
-`127 - 71 = 56`. The next gain is therefore NOT more tokens but a SMALLER
+The alphabet is **71 distinct characters**, so the slot budget is
+`128 - 71 = 57`. The next gain is therefore NOT more tokens but a SMALLER
 ALPHABET: 11 characters cover only 31 of 2,810 positions, and escaping
-them would free 10 more token slots at unchanged word capacity. See
-`docs/architecture/claude_33_history_encoding_frontier.md`.
+them would free 10 more token slots at unchanged word capacity.
+
+The live 81-square runs on radix 128 and was built by codex while
+`symbols_per_word` still reported 8 for it -- see the note on that
+function. Full state, including the order-1 measurement that dwarfs all
+of this, is in `docs/architecture/claude_35_history_tokenizer.md`.
 
 Decoding stays trivial *in cells* because ticks are free: to emit token
 k, walk the table from the start counting separators until the k-th is
@@ -65,9 +70,18 @@ def expected_text() -> str:
 
 
 def symbols_per_word(radix: int) -> int:
-    """How many radix-`radix` symbols fit in one signed-64 literal."""
+    """How many radix-`radix` symbols fit in one signed-64 literal.
+
+    The test is on the largest representable VALUE, not on the radix
+    power: nine radix-128 symbols span 0..128^9-1, and 128^9-1 is exactly
+    2^63-1 = LIMIT. An earlier version asked ``radix**(count+1) <= LIMIT``
+    and so reported 8 symbols at radix 128, which made the true ceiling
+    look like 127. Codex found the extra slot empirically and built the
+    live 81-square on radix 128 while this function still called it
+    impossible.
+    """
     count = 0
-    while radix ** (count + 1) <= LIMIT:
+    while radix ** (count + 1) - 1 <= LIMIT:
         count += 1
     return count
 
