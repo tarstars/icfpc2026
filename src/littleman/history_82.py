@@ -185,11 +185,17 @@ def _parser_safe_positions(
     return assignment
 
 
-def build_archive() -> CompactArchive:
-    """Build the fixed 1,763-symbol archive and its six lookup row-pairs."""
+def _build_archive(
+    token_source: tuple[str, ...],
+    pair_width_patterns: tuple[tuple[int, ...], ...],
+    expected_symbols: int,
+    expected_words: int,
+    label: str,
+) -> CompactArchive:
+    """Build one fixed archive and its six lookup row-pairs."""
 
     text = history_pack.expected_text()
-    tokens = list(TOKENS)
+    tokens = list(token_source)
     alphabet = sorted(set(text))
     ids = history_pack.tokenise(text, tokens)
     real_items = [
@@ -227,7 +233,7 @@ def build_archive() -> CompactArchive:
     for pair in pairs[1:]:
         pair_queues[pair[2]].append(pair)
     bins: list[list] = []
-    for index, pattern in enumerate(PAIR_WIDTH_PATTERNS):
+    for index, pattern in enumerate(pair_width_patterns):
         row_pairs = [pairs[0]] if index == 0 else []
         row_pairs.extend(pair_queues[width].popleft() for width in pattern)
         bins.append(row_pairs)
@@ -271,12 +277,12 @@ def build_archive() -> CompactArchive:
     main_words = _pack_little_endian(main_codes, MAIN_RADIX, MAIN_PER_WORD)
     if not (
         len(tokens) == 56
-        and len(main_codes) == 1763
-        and len(main_words) == 196
+        and len(main_codes) == expected_symbols
+        and len(main_words) == expected_words
         and len(lookup_values) == 128
     ):
         raise AssertionError(
-            "82-square archive measurements changed: "
+            f"{label} archive measurements changed: "
             f"{len(tokens), len(main_codes), len(main_words), len(lookup_values)}"
         )
     return CompactArchive(
@@ -288,6 +294,12 @@ def build_archive() -> CompactArchive:
         tuple(tuple(value for _, value in row) for row in item_rows),
         tuple(tuple(row) for row in width_rows),
     )
+
+
+def build_archive() -> CompactArchive:
+    """Build the fixed 1,763-symbol archive and its six lookup row-pairs."""
+
+    return _build_archive(TOKENS, PAIR_WIDTH_PATTERNS, 1763, 196, "82-square")
 
 
 def reference_decode(archive: CompactArchive) -> str:
@@ -302,23 +314,37 @@ def reference_decode(archive: CompactArchive) -> str:
     return "".join(output)
 
 
-def build_main_room(archive: CompactArchive) -> list[str]:
-    """Render 196 words, plus two inert zero words, in 66 rows."""
+def _build_main_room(archive: CompactArchive, rows: int) -> list[str]:
+    """Render three words per row, padding unused slots with inert zeros."""
 
     from .history_archive import build_word_room
 
     return build_word_room(
         archive.main_words,
         field=19,
-        rows=66,
+        rows=rows,
         cyclic=False,
     )
+
+
+def build_main_room(archive: CompactArchive) -> list[str]:
+    """Render 196 words, plus two inert zero words, in 66 rows."""
+
+    return _build_main_room(archive, rows=66)
 
 
 def build_lookup_room(archive: CompactArchive) -> list[str]:
     """Render the tight six-pair cyclic lookup in a 14x82 room."""
 
-    grid = _blank_room(14, 82)
+    return _build_lookup_room(archive, width=82)
+
+
+def _build_lookup_room(archive: CompactArchive, width: int) -> list[str]:
+    """Render a six-pair cyclic lookup in a fixed-width room."""
+
+    grid = _blank_room(14, width)
+    payload = width - 6
+    turn = width - 2
     for offset, (values, widths) in enumerate(
         zip(archive.lookup_rows, archive.lookup_width_rows, strict=True)
     ):
@@ -332,16 +358,18 @@ def build_lookup_room(archive: CompactArchive) -> list[str]:
         if east:
             physical = segments
             grid[row][2] = "@" if offset == 0 else ">"
-            grid[row][80] = "v"
+            grid[row][turn] = "v"
             start = 4
         else:
             physical = [segment[::-1] for segment in reversed(segments)]
-            grid[row][80] = "<"
+            grid[row][turn] = "<"
             grid[row][2] = "<" if last else "v"
             start = 3
         tape = "".join(physical)
-        if len(tape) != 76:
-            raise AssertionError("lookup row must fill its exact 76-cell payload")
+        if len(tape) != payload:
+            raise AssertionError(
+                f"lookup row must fill its exact {payload}-cell payload"
+            )
         grid[row][start : start + len(tape)] = tape
     grid[1][1] = ">"
     grid[12][1] = "^"
