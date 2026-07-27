@@ -42,10 +42,10 @@
     "localScore": 213248.0
   },
   "improvement": {
-    "reductionVsBrackets11LocalPercent": 22.90837445545903,
-    "factorVsBrackets11Local": 1.2971533071815452,
-    "reductionVsGptBrackets16Percent": 1.3610697430983138,
-    "projectedLiveAtParentServerLocalRatio": 373534.51845344633
+    "reductionVsBrackets11LocalPercent": 22.908012942175947,
+    "factorVsBrackets11Local": 1.2971516731692676,
+    "reductionVsGptBrackets16Percent": 1.3617525162818223,
+    "projectedLiveAtParentServerLocalRatio": 373535.84782893193
   },
   "validation": {
     "generatorByteEquality": "passed",
