@@ -112,6 +112,37 @@ loses width; contract unchanged.
 its delays are private path lengths totalling `W^2 = 256` cells at W=16,
 which is exactly why a proven 1.52x algorithm could not fit its box.
 
+### B0. MERGER ROOM — the piece that unblocks the fold  (user's idea, 11:52Z)
+**The blocker it removes.** Folding a tall room moves half its cells into a
+new column band. Binding is by NEAREST pipe, so band-2 cells rebind — and a
+pipe has ONE endpoint, which cannot be nearest to two disjoint column
+clusters while rivals compete. Splitting the pipe per band fixes binding but
+breaks FIFO order across the two queues. **That is where it has died twice.**
+
+**The construction.** Split pipe P into P1 (serving band 1) and P2 (band 2),
+then add a small MERGER room reading both and emitting into the real P.
+
+**Why order is preserved, and this is the crux:** `R` receives from ANY
+incoming pipe that has a value ready. **The man is in exactly one band at a
+time**, so only one of P1/P2 ever holds fresh data — `R` therefore picks
+them up in the original program order automatically. No tagging, no
+protocol, no control-flow duplication.
+
+    merger interior:   @ R s   in a loop     (a handful of cells)
+
+**Cost.** One tiny room, three pipes where there was one, and ~2-3 ticks of
+latency per value. Against a fold worth 2.4x on pathfinder and 0.0625x on
+llm's giant room, that is nothing.
+
+**Caveats to check before building.** `R` blocks until some pipe is ready,
+so a merger must never be the only thing gating progress. And if BOTH bands
+can legitimately hold data simultaneously, `R`'s choice is arbitrary and
+order is NOT preserved — verify single-band occupancy first, which the CFG
+in `room_reflow.walk_graph` can establish.
+
+**This is the general answer to "one endpoint cannot serve two clusters".**
+It applies to B3 below and to any multi-band fold.
+
 ### B3. Split a tall room into several shorter ones
 **Evidence.** Men cannot cross walls, so a split means splitting the WALK
 between two men, handshaking over a pipe. Room B's `@` starts blocked on
