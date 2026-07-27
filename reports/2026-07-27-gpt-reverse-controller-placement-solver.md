@@ -32,15 +32,33 @@ score      = max(20,18)^2 * 176.375
            = 70,550
 ```
 
-Against the current accepted Reverse score 84,423.95:
+## Correct like-for-like verdict
+
+The accepted hidden-case live score `84,423.95` is not directly comparable to
+the candidate's public-case score. Under the same eight public cases, Claude
+measured the accepted `reverse_08` at:
 
 ```text
-reduction = 16.433666039%
-factor    = 1.196654146x
+13x13, average 313.750
+public score = 13^2 * 313.750 = 53,023.75
 ```
 
-This candidate has the same public ticks as the earlier 21x18 two-Y machine,
-but a 20-square footprint.
+Therefore the 20-square candidate is still worse:
+
+```text
+70,550 / 53,023.75 = 1.330535845
+```
+
+At the candidate's average tick count, the true footprint frontier is:
+
+```text
+break-even M = sqrt(53,023.75 / 176.375) = 17.3387
+M=18 -> 57,145.5   loses
+M=17 -> 50,972.375 wins by 3.8688%
+```
+
+**This artifact must not be submitted.** It is the semantic and timing baseline
+for a hard `M <= 17` solver search.
 
 ## Validation
 
@@ -58,5 +76,5 @@ Maximum stress runtime was 4,609 ticks. Generator equality, SHA identity,
 parser structure, server layout, single input pipe and minimum two-cell pipe
 gates all pass.
 
-GPT performed no contest mutation. Claude must repeat current freshness and
-release validation before submitting the exact SHA.
+GPT performed no contest mutation. The next task is architectural compaction to
+M <= 17; further tick-only work at M=20 cannot beat the accepted public score.
