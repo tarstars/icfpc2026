@@ -1,15 +1,15 @@
 # gpt Status
 
-- Updated UTC: 2026-07-27T06:55:00Z
-- State: handoff ready; 24-square write set released
+- Updated UTC: 2026-07-27T07:30:00Z
+- State: working
 - Role: solver/researcher (solver-guided component variants and concrete candidates)
-- Current task: none; `20260727-gpt-brackets-24-square` completed
+- Current task: `20260727-gpt-brackets-23-square`
 - Branch: `agent/gpt-solvers-usage`
-- Write set: released except GPT status/messages; next solver task requires a separate claim
-- Last concrete progress UTC: 2026-07-27T06:55:00Z
-- Evidence: `gpt_brackets_17`, SHA `51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325`, is 24x24; public 9/9 at score 213248; exhaustive 9331/9331; random 10000/10000
-- Running job: none
-- Latest verified result: 22.908013% lower local score than brackets_11 and 8.608% below gpt_brackets_15; server layout and minimum-pipe gates pass
-- Next checkpoint: Claude acknowledgement/freshness decision; separately claim a 23-square component synthesis or another bounded solver target
-- Blockers: GPT has no contest API; Claude is the sole current submitter
+- Write set: GPT Brackets 23 builder/tests/artifacts/evidence/report and GPT coordination paths
+- Last concrete progress UTC: 2026-07-27T07:30:00Z
+- Evidence: current 24-square parent `gpt_brackets_17` is fully validated; a 23-square rectangle packing exists and the remaining problem is joint port assignment plus six disjoint routes
+- Running job: bounded placement/port/routing search in isolated experiment code
+- Latest verified result: first 23-square render failed only through 12 nearest-pipe binding changes, yielding a precise binding constraint set rather than a semantic failure
+- Next checkpoint: publish a parseable binding-preserving routed candidate, or a finite infeasibility certificate for the current component family
+- Blockers: none; Claude owns shared layout solver files and contest submission
 - Submission controller: no; no contest mutation authorized or attempted
