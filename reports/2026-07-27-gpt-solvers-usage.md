@@ -1,116 +1,150 @@
-# Solver usage track: decision and first exact benchmark
+# Solver usage track: hybrid decision, floorplanning, and port assignment
 
 Date: 2026-07-27
 
-Status: first executable floorplanning checkpoint complete; routing gate remains.
+Status: two exact solver layers implemented; Brackets replay measured; next
+missing variable is component/landing-pad selection.
 
-## Repository position
+## Synchronization findings
 
-The architecture notes converge on a hybrid rather than a monolithic solver:
+The current repository state changes the interpretation of the first TCP
+benchmark. The recovered `tcp_02` 38-square architecture remains a useful
+known-answer floorplanning case, but the live lineage is now `tarstars_tcp_10`
+at 30x30. A 35-square route for the old architecture would therefore not improve
+score and detailed routing is deferred.
 
-1. preserve or choose a process architecture and room implementations;
-2. use an exact solver for small, discrete physical decisions such as square
-   floorplanning, non-overlap, port choice, and bounded route-length relations;
-3. use a grid router or local search for detailed pipes;
-4. accept a result only through `Machine.parse`, port-resolution audit,
-   `server_compat`, and exact workload judging;
-5. feed routing or timing failures back into the next placement solve.
+Two peer messages determine the useful continuation:
 
-This division matches the measured repository evidence. Layout solvers can
-recover L0 gains once an architecture exists. They cannot invent packed state,
-a lower-initiation-interval pipeline, or a new process topology, which are the
-sources of the proposed 100x-class gains.
+- Codex explicitly identified the fixed-port limitation of the proposed placer
+  and said component relocation/folding has higher leverage when a room pins the
+  machine.
+- Alexey supplied a concrete customer for variable port assignment: Brackets'
+  width-pinning middle room and its landing-pad dependencies. Alexey also
+  established the acceptance rule for pipe shortening: transport pipes should
+  be shortest; storage pipes require occupancy and adversarial capacity proofs.
 
-The practical uses of solvers are therefore:
+The solver stack should therefore be layered:
 
-- exact macro floorplanning for small room counts;
-- component-variant and port-position selection;
-- bounded synthesis/model checking for compact room bodies;
-- repair and large-neighborhood search around known-good machines;
-- lower bounds and counterexamples that explain why a hand layout is pinned.
+1. room implementation/shape frontier;
+2. exact macro placement and square objective;
+3. exact port assignment under nearest-pipe semantics;
+4. detailed routing with transport/storage annotations;
+5. parser, compatibility, resolution, and judge oracle.
 
-A single SAT/MILP/CP-SAT model of rooms, every pipe cell, dynamic scheduling,
-and program semantics is the wrong first target. It would mix several kinds of
-constraints, lose the cheap exact simulator oracle, and still not search the
-architecture-level representations that dominate the largest scores.
+## Layer 1 already present: macro floorplanning
 
-## First vertical slice
-
-`experiments/gpt-solvers-usage/floorplan_milp.py` implements fixed-orientation
-square floorplanning with SciPy's HiGHS MILP backend. The benchmark imports the
-geometry and six preserved inclusive pipe-length caps of the five-room TCP
-architecture represented by `src/littleman/alexey_tcp_recovered.py`.
-
-The model includes:
-
-- integer room origins and square side;
-- pairwise four-way non-overlap disjunctions;
-- legal non-corner wall-relative endpoints;
-- exclusion of endpoint cells from unrelated rooms and unrelated side-wall
-  attachment cells, while retaining the corner-grazing behavior used by the
-  accepted TCP layout;
-- unique endpoint cells;
-- `|dx| + |dy| + 1 <= preserved_pipe_cells` for every net.
-
-The preserved 38x38 placement is a regression fixture and satisfies the model.
-HiGHS proves the model optimum is 35x35 with MIP gap 0.0. The room-area lower
-bound is 28, so geometry and endpoint relations account for seven additional
-side cells in this abstraction.
-
-Measured development run:
+`experiments/gpt-solvers-usage/floorplan_milp.py` uses integer room origins and
+four-way non-overlap disjunctions. On the recovered TCP benchmark:
 
 ```text
-solve wall time: 1.08 s
-peak RSS:        163396 KiB
-unit tests:      5 passed
-fixture:         deterministic
+preserved placement: 38x38, feasible
+exact abstract optimum: 35x35
+HiGHS MIP gap: 0.0
 ```
+
+The model rejects endpoints inside or beside unrelated non-corner walls. A
+weaker first formulation produced a false 33-square optimum and was discarded.
+This result remains a regression for placement constraints, not a live
+candidate.
+
+## New layer: exact joint port assignment
+
+`port_assignment_milp.py` treats logical pipe endpoints as one-hot candidate
+variables. For each `s`, `r`, or `q` instruction, incompatible candidate pairs
+are excluded using the simulator's exact key:
+
+```text
+(distance to endpoint, endpoint row, endpoint column)
+```
+
+For each net, source/sink pair variables enforce inclusive Manhattan pipe-cell
+bounds and supply the weighted objective. HiGHS must prove a zero-gap optimum.
+A second exact solve chooses a stable optimum with the fewest moved endpoints,
+then least displacement.
+
+The tool can read explicit problem JSON or derive the problem from
+`littleman.ir_export.machine_ir`. The adapter keeps movable endpoints on their
+current wall and obtains operation-to-pipe roles from the IR resolution map.
+It does not duplicate parser semantics.
+
+## Brackets measured replay
+
+The peer handoff described two five-cell room0<->room2 pipes whose endpoint
+freedom ranges overlap. The checked-in `brackets_10` instance contains:
+
+- 12 logical endpoints for six pipes;
+- 30 exact nearest-pipe binding constraints;
+- same-wall candidate ranges for the four movable endpoints;
+- the remaining endpoints fixed;
+- current length caps and a transport objective on the two gap pipes.
+
+Measured result:
+
+```text
+brackets_10 objective: 10 weighted pipe cells
+exact optimum:          4 weighted pipe cells
+selected gap lengths:   2 and 2
+HiGHS MIP gap:          0.0
+focused tests:          5 passed
+solve wall time:        1.31 s
+peak RSS:               149948 KiB
+```
+
+This automatically recovers the six-cell endpoint/latency reduction that led to
+live `brackets_11` (26/26, score 484,532.65). The solver's deterministic optimum
+moves fewer endpoints than the historical hand variant, which is a model-level
+alternative only; no new `.man` claim is made without routing and judge gates.
+
+The corresponding `brackets_11` instance returns objective four with its
+incumbent ports unchanged. Since every server pipe needs at least two cells,
+four is an absolute lower bound for two distinct pipes. The endpoint-only search
+for this gap is therefore exhausted.
 
 Hashes:
 
 ```text
-floorplan_milp.py       44c9ba3062b09bf874eeb3887fa26137eddb281025a60e164f1d8eb704c11718
-tcp_room_instance.json 5bd3fb0ae2f4e26b921c8c7d0fc26d52c8ec46379f8d0667e6a734b890cf6f86
-tcp_room_solution.json 32c187bc9dd28f97638f9c58820be9322d41dca2ad24bd8c1b150071c7c5f035
-test_floorplan_milp.py  952392157459293071749c0608fec4640c6f78f992d5290425d6e29bda974ff3
+port_assignment_milp.py        7e16d141e0cfb40cecee16374fb187bec0b7de77e83735d45430027e406785f0
+brackets_10_port_instance.json a161cf303690391c22822d65a6f4fdcb5b71ede5a0abb7e07f1f29d21d7239f0
+brackets_10_port_solution.json 16ab7cb0767e538f7858bb049917f01a61b31690369fed92773c96d7949ad15b
+brackets_11_port_instance.json f6f78ef62bdabc56fd44c7799bd4364886d667e6dbb5f28b024787794c9e325d
+brackets_11_port_solution.json 31cc5936fe19a26603eef68f51d403dafc060340c7634dd2d82c28be28bc90e1
+test_port_assignment_milp.py   8420c7b10624795e3616a92def77e87c3f5532b25838cf7ddfa2c02ba122783e
 ```
 
-The footprint-only potential is:
+## What this changes strategically
 
-```text
-35^2 / 38^2 = 0.8483379501
-```
+The most profitable immediate solver milestone is no longer routing the old TCP
+35-square placement. It is **component-frontier selection for the Brackets
+middle room**, with landing-pad positions and room width represented as discrete
+implementation choices.
 
-or 15.17% below the preserved 38-square footprint if detailed routing and exact
-behavior can be retained. No `.man` candidate or contest score is claimed.
+Why Brackets is the right next discriminating target:
 
-## Negative result that changed the model
+- a peer has identified the exact manual bottleneck;
+- the current machine is small, deterministic, and cheap to judge;
+- fixed-room port assignment is now proved exhausted, so the next variable is
+  unambiguous;
+- reducing 27x27 to 26x26 at unchanged ticks is a 7.2702% score reduction:
+  `484,532.65 -> approximately 449,306`;
+- the resulting component-choice machinery transfers directly to Plotter,
+  Grade Book, Sudoku, and the sparse Subset Sum selector room.
 
-The first version proved a 33-square optimum using only room non-overlap and
-endpoint Manhattan caps. Inspection showed that its two-cell I/O routes placed
-pipe endpoints on or beside unrelated room walls. This is exactly the kind of
-false positive warned about in the solver-stack design: a mathematically clean
-placement model is not a Littleman legality proof.
+The next implementation should not ask the MILP to invent arbitrary room code.
+Instead:
 
-The 33 result was discarded. Endpoint-room obstacle disjunctions and endpoint
-uniqueness raised the exact optimum to 35 and made the preserved accepted
-38-square layout a positive regression. This is evidence for keeping the
-parser/oracle loop central rather than trusting an abstract objective.
+1. extract the middle room's block graph and the three landing-pad dependency;
+2. generate a finite, tested frontier of equivalent room bodies with named port
+   offsets and exact walk costs;
+3. add one-hot implementation selection to the floorplanner;
+4. use the port solver to choose compatible endpoint cells;
+5. route and promote only through the repository oracle.
 
-## Next discriminating experiment
+## Negative and deferred directions
 
-For the exact 35-square placement:
-
-1. reserve room cells and all wall-grazing forbidden cells;
-2. route the two forced two-cell I/O nets first;
-3. route the exact-length event net, then the capacity/timing-sensitive feedback
-   nets, using disjoint orthogonal paths and legal endpoint directions;
-4. render the original room grids unchanged;
-5. run `Machine.parse`, `server_compat`, resolution-map comparison, all public
-   cases, and the 45-case TCP boundary suite.
-
-A route witness promotes 35 to a real geometry candidate. A routing
-counterexample should not be generalized into a proof that 35 is impossible;
-instead enumerate alternative optimal placements, then 36 and 37. The MILP
-should become a placement generator feeding a router, not a one-shot source of
-truth.
+- Old TCP 35-square routing: useful tool test, no longer score-positive against
+  live 30x30.
+- Endpoint-only Brackets gap work: exact lower bound reached.
+- Raw squeeze without occupancy annotation: unsafe; Snake and Subset Sum already
+  provide counterexamples.
+- One monolithic SAT/MILP over room code, every pipe cell, and runtime semantics:
+  too broad and ignores the cheap exact simulator oracle.

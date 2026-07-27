@@ -1,0 +1,66 @@
+{
+  "name": "brackets_10 fixed-room port replay",
+  "metadata": {
+    "source": "submissions/brackets/brackets_10.man",
+    "goal": "replay the endpoint moves that produced brackets_11",
+    "current_weighted_cells": 10,
+    "known_safe_successor": "submissions/brackets/brackets_11.man"
+  },
+  "ports": [
+    {"name": "p0.source", "room": "room0", "direction": "out", "candidates": {"row": 7, "columns": [1, 14]}, "incumbent": [7, 10]},
+    {"name": "p0.sink", "room": "room2", "direction": "in", "candidates": {"row": 8, "columns": [2, 24]}, "incumbent": [8, 7]},
+    {"name": "p1.source", "room": "room2", "direction": "out", "candidates": {"row": 8, "columns": [2, 24]}, "incumbent": [8, 5]},
+    {"name": "p1.sink", "room": "room0", "direction": "in", "candidates": {"row": 7, "columns": [1, 14]}, "incumbent": [7, 8]},
+    {"name": "p2.source", "room": "room2", "direction": "out", "candidates": [[8, 24]], "incumbent": [8, 24]},
+    {"name": "p2.sink", "room": "output", "direction": "in", "candidates": [[7, 24]], "incumbent": [7, 24]},
+    {"name": "p3.source", "room": "room3", "direction": "out", "candidates": [[20, 3]], "incumbent": [20, 3]},
+    {"name": "p3.sink", "room": "room2", "direction": "in", "candidates": [[11, 0]], "incumbent": [11, 0]},
+    {"name": "p4.source", "room": "room3", "direction": "out", "candidates": [[20, 20]], "incumbent": [20, 20]},
+    {"name": "p4.sink", "room": "room0", "direction": "in", "candidates": [[0, 4]], "incumbent": [0, 4]},
+    {"name": "p5.source", "room": "input", "direction": "out", "candidates": [[23, 21]], "incumbent": [23, 21]},
+    {"name": "p5.sink", "room": "room3", "direction": "in", "candidates": [[23, 20]], "incumbent": [23, 20]}
+  ],
+  "bindings": [
+    {"op": [3, 5], "port": "p4.sink", "competitors": ["p1.sink", "p4.sink"]},
+    {"op": [3, 7], "port": "p1.sink", "competitors": ["p1.sink", "p4.sink"]},
+    {"op": [3, 9], "port": "p1.sink", "competitors": ["p1.sink", "p4.sink"]},
+    {"op": [4, 8], "port": "p1.sink", "competitors": ["p1.sink", "p4.sink"]},
+    {"op": [5, 13], "port": "p1.sink", "competitors": ["p1.sink", "p4.sink"]},
+
+    {"op": [10, 12], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [11, 4], "port": "p3.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [11, 6], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [11, 8], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [11, 17], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [11, 19], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [12, 15], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [13, 8], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+    {"op": [14, 17], "port": "p0.sink", "competitors": ["p0.sink", "p3.sink"]},
+
+    {"op": [10, 17], "port": "p2.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [11, 7], "port": "p1.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [11, 9], "port": "p1.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [11, 23], "port": "p2.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [12, 19], "port": "p2.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [13, 4], "port": "p1.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [13, 9], "port": "p1.source", "competitors": ["p1.source", "p2.source"]},
+    {"op": [14, 21], "port": "p2.source", "competitors": ["p1.source", "p2.source"]},
+
+    {"op": [17, 8], "port": "p3.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [17, 14], "port": "p4.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [18, 8], "port": "p3.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [18, 14], "port": "p4.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [22, 8], "port": "p3.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [22, 14], "port": "p4.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [23, 8], "port": "p3.source", "competitors": ["p3.source", "p4.source"]},
+    {"op": [23, 14], "port": "p4.source", "competitors": ["p3.source", "p4.source"]}
+  ],
+  "nets": [
+    {"name": "p0", "source": "p0.source", "sink": "p0.sink", "min_cells": 2, "max_cells": 5, "weight": 1},
+    {"name": "p1", "source": "p1.source", "sink": "p1.sink", "min_cells": 2, "max_cells": 5, "weight": 1},
+    {"name": "p2", "source": "p2.source", "sink": "p2.sink", "min_cells": 2, "max_cells": 2, "weight": 0},
+    {"name": "p3", "source": "p3.source", "sink": "p3.sink", "min_cells": 2, "max_cells": 13, "weight": 0},
+    {"name": "p4", "source": "p4.source", "sink": "p4.sink", "min_cells": 2, "max_cells": 49, "weight": 0},
+    {"name": "p5", "source": "p5.source", "sink": "p5.sink", "min_cells": 2, "max_cells": 2, "weight": 0}
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "limitations": [
+    "fixed room positions",
+    "endpoint and Manhattan-length model only",
+    "detailed disjoint routing and parser/judge gates still required"
+  ],
+  "mip_gap": 0.0,
+  "nets": [
+    {
+      "cells": 2,
+      "name": "p0",
+      "sink": [
+        8,
+        6
+      ],
+      "source": [
+        7,
+        6
+      ],
+      "weight": 1
+    },
+    {
+      "cells": 2,
+      "name": "p1",
+      "sink": [
+        7,
+        8
+      ],
+      "source": [
+        8,
+        8
+      ],
+      "weight": 1
+    },
+    {
+      "cells": 2,
+      "name": "p2",
+      "sink": [
+        7,
+        20
+      ],
+      "source": [
+        8,
+        20
+      ],
+      "weight": 0
+    },
+    {
+      "cells": 13,
+      "name": "p3",
+      "sink": [
+        11,
+        0
+      ],
+      "source": [
+        20,
+        3
+      ],
+      "weight": 0
+    },
+    {
+      "cells": 37,
+      "name": "p4",
+      "sink": [
+        0,
+        4
+      ],
+      "source": [
+        20,
+        20
+      ],
+      "weight": 0
+    },
+    {
+      "cells": 2,
+      "name": "p5",
+      "sink": [
+        23,
+        20
+      ],
+      "source": [
+        23,
+        21
+      ],
+      "weight": 0
+    }
+  ],
+  "objective_weighted_cells": 4,
+  "ports": {
+    "p0.sink": [
+      8,
+      6
+    ],
+    "p0.source": [
+      7,
+      6
+    ],
+    "p1.sink": [
+      7,
+      8
+    ],
+    "p1.source": [
+      8,
+      8
+    ],
+    "p2.sink": [
+      7,
+      20
+    ],
+    "p2.source": [
+      8,
+      20
+    ],
+    "p3.sink": [
+      11,
+      0
+    ],
+    "p3.source": [
+      20,
+      3
+    ],
+    "p4.sink": [
+      0,
+      4
+    ],
+    "p4.source": [
+      20,
+      20
+    ],
+    "p5.sink": [
+      23,
+      20
+    ],
+    "p5.source": [
+      23,
+      21
+    ]
+  },
+  "problem": "brackets_11 fixed-room port certificate",
+  "solver": "scipy.optimize.milp/HiGHS",
+  "status": "Optimization terminated successfully. (HiGHS Status 7: Optimal)"
+}

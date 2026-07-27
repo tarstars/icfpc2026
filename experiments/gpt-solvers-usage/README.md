@@ -1,27 +1,19 @@
-# Solver usage: exact macro floorplanning
+# Solver usage: exact physical-synthesis subproblems
 
-This experiment is the first executable slice of the repository's
-solver-assisted layout plans. It does **not** try to synthesize a whole
-Littleman program. It keeps an existing architecture and its room bodies fixed,
-then asks an exact mixed-integer solver for the smallest square envelope that
-can still satisfy necessary endpoint and pipe-length constraints.
-
-The first benchmark is the preserved five-room TCP (`Packet Reassembly`)
-architecture from `littleman.alexey_tcp_recovered`.
-
-## Why this slice
-
-The contest footprint is `max(width, height)^2`, not rectangular area. For a
-fixed process network, integer floorplanning is therefore a natural exact
-solver task. Routing and behavior remain in an external oracle loop; a
-floorplanner should not pretend that Manhattan distance alone proves a legal
-`.man`.
+This experiment turns the repository's solver architecture notes into executable
+vertical slices. It deliberately does **not** model the whole Littleman language
+inside one optimizer. Exact solvers handle discrete physical choices; the real
+parser, compatibility checks, resolution audit, router, and judge remain the
+promotion oracle.
 
 SciPy/HiGHS is used only inside this experiment. No project dependency or lock
-file is changed. The model can later be ported to CP-SAT if that backend proves
-more convenient for optional component variants and routing decisions.
+file is changed.
 
-## Run
+## 1. Macro floorplanning benchmark
+
+`floorplan_milp.py` keeps room bodies and port offsets fixed and minimizes the
+bounding-square side. Its first benchmark is the recovered five-room TCP
+architecture.
 
 ```bash
 cd experiments/gpt-solvers-usage
@@ -33,57 +25,114 @@ python3 floorplan_milp.py \
 python3 -m unittest -v test_floorplan_milp.py
 ```
 
-## Model
+The preserved 38x38 placement satisfies the model; HiGHS proves a 35x35 macro
+optimum with MIP gap 0.0. This remains a useful regression and lower-bound
+exercise, but it is **not a live scoring target**: the current TCP lineage has
+already reached 30x30.
 
-The MILP uses integer room origins and one integer square side. It enforces:
+The benchmark also established an important negative result. A weaker
+rectangle-plus-distance formulation returned 33x33, but its endpoints occupied
+or grazed unrelated room walls. That result was discarded and endpoint-obstacle
+constraints were added. A clean MILP optimum is not a `.man` validity proof.
 
-- fixed-orientation rectangular rooms inside the square;
-- pairwise room non-overlap;
-- declared pipe endpoints one cell outside non-corner wall cells;
-- endpoint cells outside unrelated rooms and away from their non-corner wall
-  attachment cells;
-- distinct endpoint cells;
-- for every net, endpoint Manhattan distance plus one no larger than the
-  preserved inclusive pipe-cell count.
+## 2. Joint port assignment
 
-The objective is the square side itself. HiGHS must return success with a zero
-MIP gap; time-limited feasible answers are rejected rather than described as
-optimal.
-
-## TCP result
-
-The preserved 38x38 room placement satisfies this model. The exact optimum is:
+`port_assignment_milp.py` addresses the fixed-port limitation identified by
+Codex and Claude. For fixed room placements it chooses one exterior cell for
+each logical pipe endpoint while preserving the simulator's exact nearest-pipe
+rule:
 
 ```text
-35x35, objective 35, MIP gap 0.0
+(Manhattan distance, endpoint row, endpoint column)
 ```
 
-The solve took about 1.08 seconds in the development environment. Five focused
-unit tests, including a regression of the preserved 38-square placement, pass.
-The checked-in result is deterministic and stored in `tcp_room_solution.json`.
+It enforces:
 
-If a legal route with unchanged dynamic behavior exists at 35x35, the
-footprint multiplier becomes `1225 / 1444 = 0.848338`, a 15.17% reduction. This
-is a potential, not a candidate score.
+- one candidate cell per endpoint;
+- distinct endpoint cells;
+- exact `s`/`r`/`q` binding preservation, including reading-order ties;
+- source/sink direction and pipe-length bounds;
+- a weighted Manhattan pipe-length objective;
+- zero-gap optimality proof from HiGHS, followed by a deterministic secondary
+  objective that minimizes changed endpoints and displacement.
 
-An earlier rectangle-plus-distance model returned 33x33 but placed endpoints
-on or beside unrelated room walls. That placement was rejected, and endpoint
-obstacle constraints were added before publishing this checkpoint.
+Set-valued `S`/`R`/`U` operations need no positional constraint while the
+incident pipe set remains unchanged.
 
-## What is not proved yet
+Run the measured Brackets replay and certificate:
 
-The 35-square result is a rigorous optimum only for the recorded macro model.
-It does not prove:
+```bash
+python3 port_assignment_milp.py \
+  brackets_10_port_instance.json \
+  --output /tmp/brackets_10_port_solution.json
+python3 port_assignment_milp.py \
+  brackets_11_port_instance.json \
+  --output /tmp/brackets_11_port_solution.json
+python3 -m unittest -v test_port_assignment_milp.py
+```
 
-- six mutually disjoint orthogonal pipe routes exist;
-- every route obeys first/last arrow direction and minimum length;
-- intermediate cells avoid accidental room-wall grazing;
-- exact capacity or timing-sensitive route lengths are preserved;
-- nearest-pipe instruction bindings remain unchanged;
-- `Machine.parse`, `server_compat`, or the TCP boundary judge accepts a rendered
-  program.
+### Brackets result
 
-The next checkpoint is an exact or backtracking grid router for the 35-square
-placement, followed by the repository's existing parser, binding, compatibility,
-and judge gates. If 35 is unroutable, the search should enumerate 36- and
-37-square placements instead of weakening legality constraints.
+In `brackets_10`, the two room0<->room2 gap pipes were five cells each. The
+exact port model proves their joint lower bound is four cells total: two legal
+pipes of two cells each. This replays the six-cell reduction that produced the
+live `brackets_11` result.
+
+For `brackets_11`, the same model returns objective four with the incumbent
+ports unchanged. Therefore those two pipes are now at the server's absolute
+minimum. More endpoint-only work on that gap cannot improve score.
+
+This is the first solver slice in the repository that both:
+
+1. automatically recovers a known measured optimization; and
+2. certifies that the corresponding local search direction is exhausted.
+
+### Machine-IR adapter
+
+The same tool accepts JSON from `littleman.ir_export.machine_ir`:
+
+```bash
+PYTHONPATH=src python3 - <<'PY'
+import json
+from pathlib import Path
+from littleman.ir_export import machine_ir
+
+text = Path("submissions/brackets/brackets_10.man").read_text()
+Path("/tmp/brackets-ir.json").write_text(json.dumps(machine_ir(text), indent=2))
+PY
+
+python3 experiments/gpt-solvers-usage/port_assignment_milp.py \
+  /tmp/brackets-ir.json --machine-ir \
+  --movable-pipes 0,1 --transport-pipes 0,1
+```
+
+Movable endpoints stay on their incumbent wall. Pipes not listed as transport
+are fixed in the objective and retain their current length cap for a later
+exact-length router. The adapter derives nearest-pipe constraints directly from
+the versioned resolution map rather than reimplementing the parser.
+
+## Promotion boundary
+
+Neither solver proves detailed routing. Before a placement or port assignment
+becomes a candidate, a later stage must still establish:
+
+- mutually disjoint orthogonal routes;
+- legal first/last arrow directions and minimum two-cell pipes;
+- no accidental foreign-wall grazing or phantom pipes;
+- required capacity and timing lengths, informed by occupancy measurements;
+- identical resolution map where required;
+- `Machine.parse`, `server_compat`, focused adversaries, and exact judging.
+
+## Next scoring-oriented solver step
+
+The Brackets replay answers Alexey's message precisely: exterior port offsets
+are now solver variables. It also shows the remaining barrier. `brackets_11` is
+27x27 and the 25-column middle room pins the width; its two gap pipes are already
+minimal. The next useful model must select among **interior landing-pad / room
+implementation variants**, then feed those shapes and ports into the existing
+floorplanner.
+
+A validated 26x26 Brackets machine at unchanged ticks would multiply score by
+`26^2 / 27^2 = 0.927298`, reducing the current 484,532.65 result to about
+449,306. This is the first scoring hypothesis for the next solver milestone,
+not a measured candidate.
