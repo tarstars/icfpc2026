@@ -1,0 +1,1 @@
+var e=`littleman:v2:problem-active`;function t(){try{let t=localStorage.getItem(e);if(!t)return{};let n=JSON.parse(t);return n&&typeof n==`object`?n:{}}catch{return{}}}function n(e){let n=t()[e];return typeof n==`string`?n:null}function r(n,r){try{let i=t();if(i[n]===r)return;i[n]=r,localStorage.setItem(e,JSON.stringify(i))}catch{}}export{r as n,n as t};

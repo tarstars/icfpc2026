@@ -1,0 +1,50 @@
+{
+  "_snapshot": {
+    "apiBaseUrl": "https://icfpcontest2026.com/api/v1",
+    "note": "Public, unauthenticated endpoints only. JSON whitespace was normalised (indent=2, sorted keys); values are exactly as returned. No authenticated endpoint and no other team's data was fetched."
+  },
+  "endpoints": [
+    {
+      "bytes": 335,
+      "description": "Contest start/end and scoreboard-freeze timing.",
+      "endpoint": "GET /api/v1/public/contest-clock",
+      "fetchedAtUtc": "2026-07-27T08:38:17Z",
+      "file": "clock.json"
+    },
+    {
+      "bytes": 4506,
+      "description": "Every released problem with its UUID, slug, problem set and status.",
+      "endpoint": "GET /api/v1/public/problems",
+      "fetchedAtUtc": "2026-07-27T08:37:56Z",
+      "file": "problems.json"
+    },
+    {
+      "bytes": 134,
+      "description": "Judge queue depth/latency at fetch time (ephemeral).",
+      "endpoint": "GET /api/v1/public/queue",
+      "fetchedAtUtc": "2026-07-27T08:48:10Z",
+      "file": "public-queue.json"
+    },
+    {
+      "bytes": 1794,
+      "description": "Content for the /split page (the Y \"split\" instruction), served from the API rather than bundled in JS.",
+      "endpoint": "GET /api/v1/split/docs",
+      "fetchedAtUtc": "2026-07-27T08:48:11Z",
+      "file": "split-docs.json"
+    },
+    {
+      "bytes": 5322,
+      "description": "Our own team's (wheezards) per-problem standings detail.",
+      "endpoint": "GET /api/v1/standings/teams/{teamId}",
+      "fetchedAtUtc": "2026-07-27T08:48:14Z",
+      "file": "standings-our-team.json"
+    },
+    {
+      "bytes": 46589,
+      "description": "Global leaderboard across all 16 graded problems.",
+      "endpoint": "GET /api/v1/standings",
+      "fetchedAtUtc": "2026-07-27T08:48:08Z",
+      "file": "standings-overall.json"
+    }
+  ]
+}

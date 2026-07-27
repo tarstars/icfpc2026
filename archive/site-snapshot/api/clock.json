@@ -1,0 +1,11 @@
+{
+  "end": "2026-07-27T12:00:00.000Z",
+  "finalFreeze": "2026-07-27T10:00:00.000Z",
+  "freezeEnd": "2026-07-25T14:00:00.000Z",
+  "freezeStart": "2026-07-25T10:00:00.000Z",
+  "lightningEnd": "2026-07-25T12:00:00.000Z",
+  "standingsFrozen": false,
+  "start": "2026-07-24T12:00:00.000Z",
+  "started": true,
+  "submissionsClosed": false
+}

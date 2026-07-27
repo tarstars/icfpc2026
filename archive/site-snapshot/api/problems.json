@@ -1,0 +1,182 @@
+[
+  {
+    "id": "537ec979-d883-40f3-9663-b59579a0682c",
+    "name": "Reverse a List",
+    "orderInSet": 2,
+    "problemSetName": "Semester 1",
+    "problemSetVisible": true,
+    "slug": "reverse-a-list",
+    "status": "graded"
+  },
+  {
+    "id": "ea9fd9cc-e0dd-4636-a47e-ccbda45ab18d",
+    "name": "atoi",
+    "orderInSet": 0,
+    "problemSetName": "Practice Problems (Ungraded)",
+    "problemSetVisible": true,
+    "slug": "atoi",
+    "status": "practice"
+  },
+  {
+    "id": "12e85ddb-a14f-4209-a516-eb4ff70977bf",
+    "name": "Hello World",
+    "orderInSet": 1,
+    "problemSetName": "Practice Problems (Ungraded)",
+    "problemSetVisible": true,
+    "slug": "hello-world",
+    "status": "practice"
+  },
+  {
+    "id": "3ef9ec95-03ff-4825-b42d-dbad3ee54af0",
+    "name": "History Lesson",
+    "orderInSet": 0,
+    "problemSetName": "Semester 2",
+    "problemSetVisible": true,
+    "slug": "history-lesson",
+    "status": "graded"
+  },
+  {
+    "id": "0be2c6f5-5b34-4b5f-9356-65feda74ddda",
+    "name": "Max Element",
+    "orderInSet": 2,
+    "problemSetName": "Practice Problems (Ungraded)",
+    "problemSetVisible": true,
+    "slug": "max-element",
+    "status": "practice"
+  },
+  {
+    "id": "d82d7d2f-4be9-47ad-a3cd-7deb763a76a9",
+    "name": "Triangle",
+    "orderInSet": 0,
+    "problemSetName": "Semester 1",
+    "problemSetVisible": true,
+    "slug": "triangle",
+    "status": "graded"
+  },
+  {
+    "id": "ef2d75ff-c252-40d4-9f7f-639e5ef844e7",
+    "name": "Palette",
+    "orderInSet": 3,
+    "problemSetName": "Practice Problems (Ungraded)",
+    "problemSetVisible": true,
+    "slug": "palette",
+    "status": "practice"
+  },
+  {
+    "id": "5977822a-7bab-4fc5-9fe8-f79583113072",
+    "name": "Brackets",
+    "orderInSet": 1,
+    "problemSetName": "Semester 2",
+    "problemSetVisible": true,
+    "slug": "brackets",
+    "status": "graded"
+  },
+  {
+    "id": "d1415447-bf8d-49ef-924e-e024b06a504d",
+    "name": "Grade Book",
+    "orderInSet": 0,
+    "problemSetName": "Semester 3",
+    "problemSetVisible": true,
+    "slug": "gradebook",
+    "status": "graded"
+  },
+  {
+    "id": "58f54636-3ec4-497d-8102-b486f13a1ed1",
+    "name": "Matrix Multiply",
+    "orderInSet": 1,
+    "problemSetName": "Semester 3",
+    "problemSetVisible": true,
+    "slug": "matmul",
+    "status": "graded"
+  },
+  {
+    "id": "d0b34a23-67c1-4087-b88e-90a74404d50e",
+    "name": "Memory",
+    "orderInSet": 1,
+    "problemSetName": "Semester 1",
+    "problemSetVisible": true,
+    "slug": "memory",
+    "status": "graded"
+  },
+  {
+    "id": "c778ba35-4918-415b-83d0-37dc8f6f68c9",
+    "name": "Pathfinder",
+    "orderInSet": 1,
+    "problemSetName": "Semester 4",
+    "problemSetVisible": true,
+    "slug": "pathfinder",
+    "status": "graded"
+  },
+  {
+    "id": "0c3e3d4d-2901-45f1-81cf-5704d49c9139",
+    "name": "Plotter",
+    "orderInSet": 3,
+    "problemSetName": "Semester 2",
+    "problemSetVisible": true,
+    "slug": "plotter",
+    "status": "graded"
+  },
+  {
+    "id": "85dc7d34-1c5a-4ba4-9712-b151c1970301",
+    "name": "Sort",
+    "orderInSet": 3,
+    "problemSetName": "Semester 1",
+    "problemSetVisible": true,
+    "slug": "sort-numbers",
+    "status": "graded"
+  },
+  {
+    "id": "b5e48adc-317d-480d-88a4-e2edc659453a",
+    "name": "Subset Sum",
+    "orderInSet": 3,
+    "problemSetName": "Semester 3",
+    "problemSetVisible": true,
+    "slug": "subset-sum",
+    "status": "graded"
+  },
+  {
+    "id": "f66c928f-3369-4870-9153-8b20cafc2ecd",
+    "name": "Sudoku Auditor",
+    "orderInSet": 2,
+    "problemSetName": "Semester 3",
+    "problemSetVisible": true,
+    "slug": "sudoku-validity",
+    "status": "graded"
+  },
+  {
+    "id": "d61a3af1-c74f-44c0-98f7-4f20eeefa3fb",
+    "name": "Packet Reassembly",
+    "orderInSet": 2,
+    "problemSetName": "Semester 2",
+    "problemSetVisible": true,
+    "slug": "tcp",
+    "status": "graded"
+  },
+  {
+    "id": "383158cc-1891-46b2-9a9f-d9ed2661c85d",
+    "name": "LLM",
+    "orderInSet": 3,
+    "problemSetName": "Semester 4",
+    "problemSetVisible": true,
+    "slug": "little-little-man",
+    "status": "graded"
+  },
+  {
+    "id": "15982f19-7465-4902-b7ef-c592e2b0150b",
+    "name": "Snake",
+    "orderInSet": 0,
+    "problemSetName": "Semester 4",
+    "problemSetVisible": true,
+    "slug": "snake",
+    "status": "graded"
+  },
+  {
+    "id": "d91edb43-4e94-4541-b8f7-9c79ba8c8331",
+    "name": "LLLM",
+    "orderInSet": 2,
+    "problemSetName": "Semester 4",
+    "problemSetVisible": true,
+    "slug": "little-little-little-man",
+    "status": "graded"
+  }
+]

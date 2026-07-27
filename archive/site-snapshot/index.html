@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ICFPC 2026 — offline snapshot</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.55 system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem; }
+  h1 { font-size: 1.5rem; margin-bottom: .2rem; }
+  h2 { font-size: 1.05rem; margin: 2rem 0 .4rem; }
+  .sub { opacity: .7; margin-top: 0; }
+  ul { padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  code, kbd { background: rgba(128,128,128,.18); padding: .1rem .35rem; border-radius: 3px; font-size: .9em; }
+  .note { border-left: 3px solid rgba(128,128,128,.45); padding: .5rem 0 .5rem .9rem; margin: 1rem 0; opacity: .9; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+
+<h1>ICFP Programming Contest 2026 — offline snapshot</h1>
+<p class="sub">Captured 2026-07-27, roughly 08:37–09:00 UTC, while the contest was still running
+(it ended 12:00 UTC that day). Team <strong>wheezards</strong>.</p>
+
+<div class="note">
+This page is a plain-HTML index and works from <code>file://</code>.
+<strong>The captured website itself does not.</strong> It is a single-page app that loads
+ES modules and WebAssembly, both of which browsers block over <code>file://</code>.
+Start the bundled server instead:
+<p><code>python3 serve.py</code> &nbsp;→&nbsp; <a href="http://localhost:8000/">http://localhost:8000/</a></p>
+Run it from the directory that contains this file. See <code>RESTORE.md</code> for the details.
+</div>
+
+<h2>The captured site</h2>
+<ul>
+  <li><code>site/</code> — <code>index.html</code>, all 37 JS chunks, CSS, the four Lato fonts,
+      icons, and the <code>littleman.wasm</code> engine. Served by <code>serve.py</code>.</li>
+  <li><code>engine/</code> — the pretty-printed engine embed JS, for reading rather than running.</li>
+</ul>
+
+<h2>Contest data (plain JSON, browsable from <code>file://</code>)</h2>
+<ul>
+  <li><a href="problems/index.json">problems/index.json</a> — all 20 problems with their UUIDs;
+      one file per problem alongside it, each with the statement, I/O spec, scoring and public tests.</li>
+  <li><a href="standings/index.json">standings/index.json</a> — frozen standings, one file per graded
+      problem (16 of them), plus our own row in each.</li>
+  <li><a href="api/index.json">api/index.json</a> — the raw public API captures, including the
+      <a href="api/standings-overall.json">overall leaderboard</a> and the
+      <a href="api/clock.json">contest clock</a>.</li>
+  <li><a href="submissions/index.json">submissions/index.json</a> — our 105 submission response
+      records, and the per-problem originals next to it.</li>
+</ul>
+
+<h2>Provenance</h2>
+<ul>
+  <li><a href="MANIFEST.md">MANIFEST.md</a> — what was fetched, when, from where, and what was not.</li>
+  <li><a href="RESTORE.md">RESTORE.md</a> — how to serve this, what works offline and what cannot.</li>
+  <li><a href="fetch-log.csv">fetch-log.csv</a> — every HTTP request made against the static site,
+      with timestamp, status and byte count.</li>
+</ul>
+
+</body>
+</html>

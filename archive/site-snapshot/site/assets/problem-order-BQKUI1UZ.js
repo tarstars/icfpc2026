@@ -1,0 +1,1 @@
+var e=[`Semester 1`,`Unvalidated Candidates 101`,`Unvalidated Candidates 102`,`Unvalidated Candidates 103`,`Test Problems`,`Fable Tests`];function t(t){let n=e.indexOf(t);return n===-1?e.length:n}export{t};

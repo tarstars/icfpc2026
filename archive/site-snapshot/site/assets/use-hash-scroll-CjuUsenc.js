@@ -1,0 +1,1 @@
+import{at as e,st as t}from"./ui-wC2GCM-8.js";var n=t(e(),1);function r(e){(0,n.useEffect)(()=>{if(!e)return;let t=decodeURIComponent(window.location.hash.slice(1));if(!t)return;let n=requestAnimationFrame(()=>{document.getElementById(t)?.scrollIntoView()});return()=>cancelAnimationFrame(n)},[e])}export{r as t};

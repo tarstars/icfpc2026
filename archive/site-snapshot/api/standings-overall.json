@@ -1,0 +1,1883 @@
+{
+  "frozen": false,
+  "problemCount": 16,
+  "teams": [
+    {
+      "fullPasses": 16,
+      "points": 31.757008515161765,
+      "rank": 1,
+      "teamId": "vJAt4mQuKjQD87ftkWEyT13L05JUcVGi",
+      "teamName": "DIgital Experts"
+    },
+    {
+      "fullPasses": 16,
+      "points": 31.36149879283045,
+      "rank": 2,
+      "teamId": "V3HLMjVQLYXQJL3sEawcai0fAvtZbQIu",
+      "teamName": "Heuristic Artis"
+    },
+    {
+      "fullPasses": 16,
+      "points": 31.01139211316412,
+      "rank": 3,
+      "teamId": "0QgCG9guaLxMWK5DpgtWHOQdtjri3A7e",
+      "teamName": "toomer"
+    },
+    {
+      "fullPasses": 16,
+      "points": 30.43178834693662,
+      "rank": 4,
+      "teamId": "FzexGTRQvLyiaFgvILCi8dvvqdqgElPl",
+      "teamName": "Purely Functional Networks"
+    },
+    {
+      "fullPasses": 16,
+      "points": 30.14371203602078,
+      "rank": 5,
+      "teamId": "Bqu2cX5ea2HJwWomXwMkungahb66ImQ1",
+      "teamName": "Snakes, Monkeys, and Two Smoking Lambdas"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.964204003516702,
+      "rank": 6,
+      "teamId": "j6AAH0Jylvbp3KyNZW5TEgOly7fvSpIt",
+      "teamName": "TBD"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.92997098514758,
+      "rank": 7,
+      "teamId": "goRhC0bpt9jvKxYKhOGRSZQQgGGxIGhG",
+      "teamName": "Team THIRD"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.804908975906738,
+      "rank": 8,
+      "teamId": "bOWKUlLm4omuPnlN6qomMgGAuVjmk090",
+      "teamName": "kumanomi"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.653682378897848,
+      "rank": 9,
+      "teamId": "xamIcoMHMuXbKs7zi9i4XR6MoUDalpUj",
+      "teamName": "suica_bar_fan_club"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.595732348353103,
+      "rank": 10,
+      "teamId": "0vpDi6uYAa7X497Du0B1jVguR7fnUkSt",
+      "teamName": "DiamondPrincess"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.313857452046356,
+      "rank": 11,
+      "teamId": "Qdzi6Xw5xlopaLByyl3Awo1TePHA23H4",
+      "teamName": "Unagi"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.269084152106302,
+      "rank": 12,
+      "teamId": "VWw16IXIyzz6FBBYQGVg1DzbssPYlu8P",
+      "teamName": "\u03bbbubu"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.21969324509112,
+      "rank": 13,
+      "teamId": "ZzJQySdBy67VNQnVrbWqHJZpnQO1xNfX",
+      "teamName": "Nagoya Optimization University"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.18925483880036,
+      "rank": 14,
+      "teamId": "zcXqQwjJQ6rBo7iYujlz4wJLDkWAnOnN",
+      "teamName": "TSG"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.14443854340911,
+      "rank": 15,
+      "teamId": "daJsddydHpWtr2G5fLtJhqtDac8me0C4",
+      "teamName": "sonna*baka*na"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.109552227728834,
+      "rank": 16,
+      "teamId": "hBmQhaoHr79bidBWScKc8PEKiLNTQl1I",
+      "teamName": "Spacecat"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.091499237446847,
+      "rank": 17,
+      "teamId": "HJu1h5qrkW92NZPnCSBdWiHOxzZoxJaE",
+      "teamName": "MJ & JM"
+    },
+    {
+      "fullPasses": 16,
+      "points": 29.0749926248978,
+      "rank": 18,
+      "teamId": "iQgNREN5xd1aXdic9ZMwGqgIvIGc8yEv",
+      "teamName": "kiduna1228 and haru0707"
+    },
+    {
+      "fullPasses": 16,
+      "points": 28.98348896358497,
+      "rank": 19,
+      "teamId": "OWAEDEL7jBmn9qvqJecPtYPvCnMiXNJj",
+      "teamName": "Gon the Fox"
+    },
+    {
+      "fullPasses": 15,
+      "points": 28.893541069079358,
+      "rank": 20,
+      "teamId": "0Pcjvcv0EqMxgZaIu3aEFjrvTgkvmW7X",
+      "teamName": "manarimo"
+    },
+    {
+      "fullPasses": 16,
+      "points": 28.642766363414445,
+      "rank": 21,
+      "teamId": "JSKVwHaBsZ63cz2EH3Lxfq5rwnz64jV6",
+      "teamName": "Lambda Quakens"
+    },
+    {
+      "fullPasses": 16,
+      "points": 28.569218492840005,
+      "rank": 22,
+      "teamId": "odT2fVDXPI5uRdU0zWirKCn3BbCxhYc8",
+      "teamName": "RGBTeam"
+    },
+    {
+      "fullPasses": 16,
+      "points": 27.754554539858923,
+      "rank": 23,
+      "teamId": "DFCx2rlwihA30fV3uh7743pqpuAWSUGR",
+      "teamName": "I doubt I'll win"
+    },
+    {
+      "fullPasses": 16,
+      "points": 27.505804826779926,
+      "rank": 24,
+      "teamId": "FKKus5G6dYeFd1DIlf2wPqWMpJrlgw2s",
+      "teamName": "L1"
+    },
+    {
+      "fullPasses": 16,
+      "points": 27.239719195835242,
+      "rank": 25,
+      "teamId": "afFLdensZkeZ2IlXFhv6WzIB5lRz45mO",
+      "teamName": "\u767e\u4e07\u904d \u3042\u3084\u3068\u308a"
+    },
+    {
+      "fullPasses": 16,
+      "points": 27.094460097319754,
+      "rank": 26,
+      "teamId": "Sph1Ym4eabVp3xm9H7i90gv71OOLbf8T",
+      "teamName": "Bottle kids!"
+    },
+    {
+      "fullPasses": 16,
+      "points": 27.02314710034799,
+      "rank": 27,
+      "teamId": "MMGZS5Ujl5UVvcl0ENN7v6SM1WCGEUjk",
+      "teamName": "Pigimarl Point Zero"
+    },
+    {
+      "fullPasses": 16,
+      "points": 26.861843636974104,
+      "rank": 28,
+      "teamId": "UoEkRJWeKrTLDSDuZkWCzTaKi0pFbjPR",
+      "teamName": "thylinao"
+    },
+    {
+      "fullPasses": 16,
+      "points": 26.72930922028834,
+      "rank": 29,
+      "teamId": "ZF26f41nQcje4WG7heIIhLR0MrpW8CZN",
+      "teamName": "\u03a3(,,\u00ba\u0394\u00ba,,*)"
+    },
+    {
+      "fullPasses": 16,
+      "points": 26.67671595181979,
+      "rank": 30,
+      "teamId": "txCSym5doMENEseKHEOFa0vL8nCZCCGe",
+      "teamName": "youth"
+    },
+    {
+      "fullPasses": 16,
+      "points": 26.357951945267477,
+      "rank": 31,
+      "teamId": "gbgUYJEJxYtq599kG38oo1B7Ino1ckqV",
+      "teamName": "traO"
+    },
+    {
+      "fullPasses": 15,
+      "points": 26.32556268789677,
+      "rank": 32,
+      "teamId": "Cqyl11YI7IISReXuTjTOvdVdMXHZJykA",
+      "teamName": "Aegislash"
+    },
+    {
+      "fullPasses": 16,
+      "points": 25.71976530889595,
+      "rank": 33,
+      "teamId": "JmP8VqbXWnDi6Y9jKjTEzJwZMO4CPuF1",
+      "teamName": "CMYKTeam"
+    },
+    {
+      "fullPasses": 16,
+      "points": 25.388786542803587,
+      "rank": 34,
+      "teamId": "VFKd3YtejAIISeinpYjhpvynh0ZS5Lq8",
+      "teamName": "sosuupoyo-ecto"
+    },
+    {
+      "fullPasses": 16,
+      "points": 25.26132309267673,
+      "rank": 35,
+      "teamId": "Yncoqmf2xAbmdgqrp1jvaFkWKIR3a6gp",
+      "teamName": "Psyho"
+    },
+    {
+      "fullPasses": 15,
+      "points": 24.97612670644199,
+      "rank": 36,
+      "teamId": "lckpwa5lhCYhjuCgeLZkoq4eBxiqmGUH",
+      "teamName": "Maximum"
+    },
+    {
+      "fullPasses": 16,
+      "points": 24.765728325514456,
+      "rank": 37,
+      "teamId": "kFE1A7cfXCFCAYHXYEvNOVIFakLH8iz0",
+      "teamName": "TCPC"
+    },
+    {
+      "fullPasses": 15,
+      "points": 24.696184188996746,
+      "rank": 38,
+      "teamId": "kB3A7k3An28BWtonoqBqsksBGyi1u9tG",
+      "teamName": "negainoido"
+    },
+    {
+      "fullPasses": 16,
+      "points": 24.67865417552332,
+      "rank": 39,
+      "teamId": "oKL5N8kSqJjEOb9DOIhOMi0eoNHrjusd",
+      "teamName": "wheezards"
+    },
+    {
+      "fullPasses": 16,
+      "points": 24.53899142088377,
+      "rank": 40,
+      "teamId": "Lu1FIZbO8fD71SBbWyHHjNUE5AweIEMJ",
+      "teamName": "Kaede Sander"
+    },
+    {
+      "fullPasses": 15,
+      "points": 24.232276386871625,
+      "rank": 41,
+      "teamId": "rtCeA54uouJDF6wbAk4CwuXnCZl3kR0B",
+      "teamName": "MOYOU"
+    },
+    {
+      "fullPasses": 16,
+      "points": 24.163784996391737,
+      "rank": 42,
+      "teamId": "abJntfixBfcs88CjskzjMlFhfc51e3mC",
+      "teamName": "WILD BASHKORT MAGES"
+    },
+    {
+      "fullPasses": 16,
+      "points": 23.77463318872708,
+      "rank": 43,
+      "teamId": "Ow3dOyhn6lIGkHCAFQA4F47LvHjUB4Gp",
+      "teamName": "trap"
+    },
+    {
+      "fullPasses": 15,
+      "points": 23.422726766811895,
+      "rank": 44,
+      "teamId": "qZyW3ZmcTgdjX8oRAMhbomZOu29glK0O",
+      "teamName": "ktnk"
+    },
+    {
+      "fullPasses": 16,
+      "points": 22.60740199681945,
+      "rank": 45,
+      "teamId": "a6XW7b0C3HXfqzTqhH1azUx6vxiKYDWl",
+      "teamName": "IKS"
+    },
+    {
+      "fullPasses": 15,
+      "points": 22.289298007338534,
+      "rank": 46,
+      "teamId": "D5stWzMb7qB89zL2KxAqTLJH2nx6rwzi",
+      "teamName": "sanma"
+    },
+    {
+      "fullPasses": 16,
+      "points": 21.742790141992703,
+      "rank": 47,
+      "teamId": "f5DhTYf9TZtNSjOIH8i4U7VeNGkHAzs7",
+      "teamName": "mtmr_s1"
+    },
+    {
+      "fullPasses": 13,
+      "points": 21.43516142639701,
+      "rank": 48,
+      "teamId": "BW9teA4m4MgAduckfCj3Tkw4twvrjaJH",
+      "teamName": "codingteam"
+    },
+    {
+      "fullPasses": 15,
+      "points": 21.22032637647702,
+      "rank": 49,
+      "teamId": "XxozZgY9r3nnNdeuiuHtxf5lY4GXr0e6",
+      "teamName": "DNIWE :: a"
+    },
+    {
+      "fullPasses": 12,
+      "points": 20.912249283198303,
+      "rank": 50,
+      "teamId": "eGWOiRsCjZx51kwq6cdQtPmBaFQNAH4O",
+      "teamName": "fixstars"
+    },
+    {
+      "fullPasses": 12,
+      "points": 20.462928733596208,
+      "rank": 51,
+      "teamId": "PX4EJ9kAQAXhxzXE427yPk3kdX0SmyXh",
+      "teamName": "code-o-matic"
+    },
+    {
+      "fullPasses": 15,
+      "points": 20.244324126732728,
+      "rank": 52,
+      "teamId": "37QUHQVrUpNOxIfnQjAKofHagUaAyH7P",
+      "teamName": "mogura20"
+    },
+    {
+      "fullPasses": 14,
+      "points": 20.239263164956775,
+      "rank": 53,
+      "teamId": "hfcueNreu0fXi8ihATuVJj8V9DD8NqGg",
+      "teamName": "omgicfpftw"
+    },
+    {
+      "fullPasses": 12,
+      "points": 20.101227532888615,
+      "rank": 54,
+      "teamId": "SdR4AvKHpygdY7PTOxN0FlqPGNKzegKv",
+      "teamName": "udfew"
+    },
+    {
+      "fullPasses": 13,
+      "points": 19.91073357494099,
+      "rank": 55,
+      "teamId": "Bbu02yQvwJCsKpzXWbzm9GdLYspPCHUa",
+      "teamName": "everyday sukusuku"
+    },
+    {
+      "fullPasses": 12,
+      "points": 19.90928952268104,
+      "rank": 56,
+      "teamId": "wHWcpt4S7gRKQjBBRsHE8FdicTmiZNis",
+      "teamName": "-"
+    },
+    {
+      "fullPasses": 12,
+      "points": 19.768987488565323,
+      "rank": 57,
+      "teamId": "hN6hqRjz2w2bhwbvOIY55LIZEXWpGUFK",
+      "teamName": "b"
+    },
+    {
+      "fullPasses": 11,
+      "points": 19.71893028861342,
+      "rank": 58,
+      "teamId": "MiwstDb7C58MspMDErqgM3SVK8AGEagE",
+      "teamName": "LILiK"
+    },
+    {
+      "fullPasses": 13,
+      "points": 19.65547238718489,
+      "rank": 59,
+      "teamId": "goMBf0bCtYwlGQsvA2qP3Qfsmg79g5uZ",
+      "teamName": "Taiwan Boy"
+    },
+    {
+      "fullPasses": 11,
+      "points": 19.53670071158904,
+      "rank": 60,
+      "teamId": "kF6evtseJsil0iLdkg4jIWpcJ3ofmtQB",
+      "teamName": "The Cat is #1!!"
+    },
+    {
+      "fullPasses": 12,
+      "points": 19.43870187684831,
+      "rank": 61,
+      "teamId": "fE4NBN1m8y1qVbwt8VVkDa2MtLsOECCF",
+      "teamName": "nu & nya"
+    },
+    {
+      "fullPasses": 12,
+      "points": 19.177697529174182,
+      "rank": 62,
+      "teamId": "1M5oNpFEOPdizBNV2YjY9eoQ3Qd7DORE",
+      "teamName": "SajayR"
+    },
+    {
+      "fullPasses": 11,
+      "points": 18.820471257337292,
+      "rank": 63,
+      "teamId": "QCj8A6pUu5FfR3HtuWRmbxDTguIQQCwc",
+      "teamName": "powder"
+    },
+    {
+      "fullPasses": 13,
+      "points": 18.629570423056723,
+      "rank": 64,
+      "teamId": "K1UDBcM8Ybx2BNqCNLWyPS2TwQw52KME",
+      "teamName": "Clankers United"
+    },
+    {
+      "fullPasses": 14,
+      "points": 18.44183986692483,
+      "rank": 65,
+      "teamId": "ATLpC38NVtnTLZJgcVgCjCzcmPdsW3EX",
+      "teamName": "omu"
+    },
+    {
+      "fullPasses": 14,
+      "points": 18.183720850644963,
+      "rank": 66,
+      "teamId": "A1QlNXUtw89foqQOgLa5eelc8woFCl0a",
+      "teamName": "NeungzAI"
+    },
+    {
+      "fullPasses": 13,
+      "points": 17.998724128402017,
+      "rank": 67,
+      "teamId": "un9tS2fkkEUHTSxgBtw0bxOtnlOw3R5j",
+      "teamName": "barely-working"
+    },
+    {
+      "fullPasses": 11,
+      "points": 17.941333097480364,
+      "rank": 68,
+      "teamId": "IjxifeyTsl6MEFe1UpKVxV6ZmRSkOrdg",
+      "teamName": "a11ce"
+    },
+    {
+      "fullPasses": 11,
+      "points": 16.572442921540024,
+      "rank": 69,
+      "teamId": "9bow54N2IoRp6TqWLblf0AOAbhg4pRFE",
+      "teamName": "omsincoconutpakindioxidepetezatemporary1"
+    },
+    {
+      "fullPasses": 13,
+      "points": 16.543721303712577,
+      "rank": 70,
+      "teamId": "KkL7vy6mn5EbrUYWcsMa9KaGbPqHqqwD",
+      "teamName": "arvindcr4"
+    },
+    {
+      "fullPasses": 12,
+      "points": 15.945917632984031,
+      "rank": 71,
+      "teamId": "UPkYhHLWkvewm6kpcLQluMmS3zQRzKdR",
+      "teamName": "N=3"
+    },
+    {
+      "fullPasses": 11,
+      "points": 15.661834179110555,
+      "rank": 72,
+      "teamId": "eearczoA5FQlqdCljzY9x0qCQcRh5tdL",
+      "teamName": "t"
+    },
+    {
+      "fullPasses": 10,
+      "points": 15.029132952915868,
+      "rank": 73,
+      "teamId": "m85UNkziiGAUwf8WEY2ieOM4a2NbHkRp",
+      "teamName": "fyi"
+    },
+    {
+      "fullPasses": 10,
+      "points": 14.930847001904468,
+      "rank": 74,
+      "teamId": "0rDx7sBsYeg7ZaMg0BCMPMJTcw5Xr50X",
+      "teamName": "Begot"
+    },
+    {
+      "fullPasses": 12,
+      "points": 14.768974246444902,
+      "rank": 75,
+      "teamId": "qIA2B5uDg2UOtOTKUzET6wPNPaZxzfTt",
+      "teamName": "ichyo"
+    },
+    {
+      "fullPasses": 9,
+      "points": 14.092115244794488,
+      "rank": 76,
+      "teamId": "f7SpFTUTuyG2Wpfs5HnIVqWd9zyedI5s",
+      "teamName": "Wile E."
+    },
+    {
+      "fullPasses": 9,
+      "points": 13.963488778306777,
+      "rank": 77,
+      "teamId": "AELnXIH8R8NicuCE5uKdZFA09Bss9Y3J",
+      "teamName": "Monadn't"
+    },
+    {
+      "fullPasses": 9,
+      "points": 13.744609197291597,
+      "rank": 78,
+      "teamId": "fKSYFsEnPV3nUDgBRuPEFh2yUsO0hwik",
+      "teamName": "Raging Mushrooms"
+    },
+    {
+      "fullPasses": 9,
+      "points": 13.627700251063903,
+      "rank": 79,
+      "teamId": "c9RqUNTWCFWgIh3acM1Ay09h5qQ4dpa8",
+      "teamName": "Team Sampou"
+    },
+    {
+      "fullPasses": 9,
+      "points": 13.622392731075118,
+      "rank": 80,
+      "teamId": "w4jlw8VzFxvQVt3SBjmyhRBtyg9DkiGF",
+      "teamName": "NCPLUG"
+    },
+    {
+      "fullPasses": 10,
+      "points": 13.162413604947243,
+      "rank": 81,
+      "teamId": "045bF42votUrqtf3Ta5cLvxMrHNizUGB",
+      "teamName": "Cup<T>"
+    },
+    {
+      "fullPasses": 8,
+      "points": 12.980121458818742,
+      "rank": 82,
+      "teamId": "RazcGHoCzl6585dyY62ub5KlRYSFChnW",
+      "teamName": "House of Lambdas"
+    },
+    {
+      "fullPasses": 11,
+      "points": 12.849687992122709,
+      "rank": 83,
+      "teamId": "pofBYfieH8tpnIBTtrtI4lGrSaFizxWf",
+      "teamName": "Union+Grand"
+    },
+    {
+      "fullPasses": 8,
+      "points": 12.83544835436091,
+      "rank": 84,
+      "teamId": "Dk7jecIE63va1Y4P1j7kikpK6KG3E3zX",
+      "teamName": "undercut"
+    },
+    {
+      "fullPasses": 8,
+      "points": 12.746825038193611,
+      "rank": 85,
+      "teamId": "HxSUTLTgNM4IVlrAwsSt10dQ55AxJwNz",
+      "teamName": "yupiteru"
+    },
+    {
+      "fullPasses": 8,
+      "points": 12.539470184289202,
+      "rank": 86,
+      "teamId": "EOZXaItKaJLXXblq23AD9ClqXnbUANp9",
+      "teamName": "You are destined to recover the Amulet for your deity, or die in the attempt."
+    },
+    {
+      "fullPasses": 7,
+      "points": 12.156443861701812,
+      "rank": 87,
+      "teamId": "HtH5AXJHxD86ZAgYBuouEXzrzpvuhkCr",
+      "teamName": "cashto"
+    },
+    {
+      "fullPasses": 8,
+      "points": 12.152265149649189,
+      "rank": 88,
+      "teamId": "I8FDonjkCpsFAKgdhQ8aJxF2cb7gpNt9",
+      "teamName": "A Storm of Minds"
+    },
+    {
+      "fullPasses": 11,
+      "points": 12.10564738989893,
+      "rank": 89,
+      "teamId": "jwB6qqjOqKFNZ4SEAImUzTOma73s5sqH",
+      "teamName": "Lion All Stars"
+    },
+    {
+      "fullPasses": 9,
+      "points": 11.596770670038083,
+      "rank": 90,
+      "teamId": "AQc0CZ1TMKeJ5wc3xoWxPcctfMle2UKn",
+      "teamName": "Strictly Positive"
+    },
+    {
+      "fullPasses": 7,
+      "points": 11.499470651562687,
+      "rank": 91,
+      "teamId": "xzeEhXPJFlZminS13lzqC7YLiN6HwH3H",
+      "teamName": "piggyneck"
+    },
+    {
+      "fullPasses": 7,
+      "points": 11.393314675248194,
+      "rank": 92,
+      "teamId": "qWq3sCCi5S8loM2Oy8aZZshx0iuiHeF6",
+      "teamName": "tomerun"
+    },
+    {
+      "fullPasses": 6,
+      "points": 11.319987489355286,
+      "rank": 93,
+      "teamId": "hJQz1G24ommk9CtoAMG34Gb2e070IRjW",
+      "teamName": "mech_39"
+    },
+    {
+      "fullPasses": 7,
+      "points": 11.268795728831693,
+      "rank": 94,
+      "teamId": "JhD3Mopxkw0ry56FpBEKWrS19uRA6r93",
+      "teamName": "locally constant"
+    },
+    {
+      "fullPasses": 7,
+      "points": 11.172175907809313,
+      "rank": 95,
+      "teamId": "SKvnEZbsS1IJlQRgysZD16zJEYoNnf4T",
+      "teamName": "Turing Machinists"
+    },
+    {
+      "fullPasses": 9,
+      "points": 10.66088732893194,
+      "rank": 96,
+      "teamId": "CljiiiphMieXcWmnoPVFMtFzxN3BVasc",
+      "teamName": "migorec"
+    },
+    {
+      "fullPasses": 9,
+      "points": 10.544505806016703,
+      "rank": 97,
+      "teamId": "6cekDi4hy4tHhNAUj0Ss599zV0GxkKiT",
+      "teamName": "Scalaship Hikawamaru"
+    },
+    {
+      "fullPasses": 7,
+      "points": 10.417874112650031,
+      "rank": 98,
+      "teamId": "sXBjmJewE1m33I5jhHhgOSgxwX3T79uy",
+      "teamName": "The Invisible Imp"
+    },
+    {
+      "fullPasses": 8,
+      "points": 10.357856517930575,
+      "rank": 99,
+      "teamId": "UY1jT8Nfxf4XQ5fmq4waf2mGmCaKgqLS",
+      "teamName": "Sri Parvathy S. Nair"
+    },
+    {
+      "fullPasses": 7,
+      "points": 10.260626543401363,
+      "rank": 100,
+      "teamId": "PdTDOyiUfU5leSS3D1IZz19BjeKov39p",
+      "teamName": "ush"
+    },
+    {
+      "fullPasses": 8,
+      "points": 10.17985911699758,
+      "rank": 101,
+      "teamId": "aBuGTD8GOfMG26CU9kSTpzC9f65h2ctg",
+      "teamName": "yorofuwa"
+    },
+    {
+      "fullPasses": 6,
+      "points": 10.133156612606234,
+      "rank": 102,
+      "teamId": "q0edhOAdYeHBfAgJAZms2GXnr4xuk5fy",
+      "teamName": "al13n"
+    },
+    {
+      "fullPasses": 6,
+      "points": 9.925261669360001,
+      "rank": 103,
+      "teamId": "HpNBd9gSUOPrtubujImHkrorlpxme9F4",
+      "teamName": "Yahoo knows him"
+    },
+    {
+      "fullPasses": 8,
+      "points": 9.845116917246843,
+      "rank": 104,
+      "teamId": "ajgUy3LtK10axPdBMcCo4zmTxMyplzj1",
+      "teamName": "Dare Ludum"
+    },
+    {
+      "fullPasses": 6,
+      "points": 9.597228801137263,
+      "rank": 105,
+      "teamId": "lkmTXMOFGpzu6LPZoMJbYaVF4qZNOl0r",
+      "teamName": "smctt"
+    },
+    {
+      "fullPasses": 6,
+      "points": 9.52353732069801,
+      "rank": 106,
+      "teamId": "5HRlDWz2nSMYgsZN5b2KIc7plF4FL9H1",
+      "teamName": "superfight"
+    },
+    {
+      "fullPasses": 7,
+      "points": 9.389373954502467,
+      "rank": 107,
+      "teamId": "qkkn80SGGyM9jDUKg1nrmFyhRdodcE4Q",
+      "teamName": "OpenMasters"
+    },
+    {
+      "fullPasses": 6,
+      "points": 9.364365466228662,
+      "rank": 108,
+      "teamId": "jfaeysRgXQR6viXq4e5WVpVM3OvIh2JQ",
+      "teamName": "plasto"
+    },
+    {
+      "fullPasses": 7,
+      "points": 9.02500332484869,
+      "rank": 109,
+      "teamId": "bxUkao3W2tuc7YY2OpMxtG3Wi8W2ddCZ",
+      "teamName": "'; CREATE TABLE fun(); --"
+    },
+    {
+      "fullPasses": 6,
+      "points": 8.739335273803585,
+      "rank": 110,
+      "teamId": "8Ps59PcyYl379cFSwRFCtkeJGtbZe0Z6",
+      "teamName": "ringo"
+    },
+    {
+      "fullPasses": 6,
+      "points": 8.598738375415847,
+      "rank": 111,
+      "teamId": "0trAiMq0s0UaOOZFcZ4FEPiLH5xrgfvB",
+      "teamName": "xyz600"
+    },
+    {
+      "fullPasses": 6,
+      "points": 8.572480146654701,
+      "rank": 112,
+      "teamId": "GaoUZxJvHQol8NHlRZ1gTXEALFJHeRXw",
+      "teamName": "/innit"
+    },
+    {
+      "fullPasses": 5,
+      "points": 8.40369845147411,
+      "rank": 113,
+      "teamId": "gDmYtKgWpQwj2PN6GgW07aQG3hstsBlP",
+      "teamName": "gaha"
+    },
+    {
+      "fullPasses": 5,
+      "points": 8.166454094631739,
+      "rank": 114,
+      "teamId": "Ht2QEfN0lxQxAxeEAZAtjcwkngwRD4ox",
+      "teamName": "Zergushonki"
+    },
+    {
+      "fullPasses": 6,
+      "points": 8.136709588808618,
+      "rank": 115,
+      "teamId": "k7EE5chWtDh9JNeCmjEllLfZBNQATgah",
+      "teamName": "Junk Food"
+    },
+    {
+      "fullPasses": 5,
+      "points": 8.12720597598754,
+      "rank": 116,
+      "teamId": "WSME2ZTsARLWeCJReX3Ag2Bcdz2OJaEz",
+      "teamName": "jabber.ru"
+    },
+    {
+      "fullPasses": 7,
+      "points": 8.060824107939087,
+      "rank": 117,
+      "teamId": "j1GMTDV5uSsJ4XUAqZFfTelsevBYv0B3",
+      "teamName": "Argentina Code Club"
+    },
+    {
+      "fullPasses": 6,
+      "points": 7.9687487185888415,
+      "rank": 118,
+      "teamId": "EQuFkxf92gMHlLP4QU5C0WRNINWGw1eJ",
+      "teamName": "uguu.org"
+    },
+    {
+      "fullPasses": 6,
+      "points": 7.821723772922896,
+      "rank": 119,
+      "teamId": "zj4VuwozCBUGAM1C8wUmYC611SYqzhC5",
+      "teamName": "Dis Functional"
+    },
+    {
+      "fullPasses": 6,
+      "points": 7.664172682722073,
+      "rank": 120,
+      "teamId": "WSIGQVksn9CyOTywHhUr2scUI42bAHqb",
+      "teamName": "spaceorc@pegovka"
+    },
+    {
+      "fullPasses": 6,
+      "points": 7.495554245791144,
+      "rank": 121,
+      "teamId": "pN2LFxZur7YXXQXuOm0dQJ1lzQWkF6fx",
+      "teamName": "THIRTEEN"
+    },
+    {
+      "fullPasses": 5,
+      "points": 7.464072463046217,
+      "rank": 122,
+      "teamId": "e7OGmvBMyGmQn85h8iDltBcOGIO7oEyz",
+      "teamName": "taxidriver"
+    },
+    {
+      "fullPasses": 5,
+      "points": 7.437134505435117,
+      "rank": 123,
+      "teamId": "6O38k4VnY9uUBZE21OZBqxkmmbO8gkN9",
+      "teamName": "Strange Characters"
+    },
+    {
+      "fullPasses": 5,
+      "points": 7.391992212397169,
+      "rank": 124,
+      "teamId": "MiqFMXqMWAnHiINDE1XWQD7na604NLLV",
+      "teamName": "ToastUz"
+    },
+    {
+      "fullPasses": 6,
+      "points": 7.176483629332474,
+      "rank": 125,
+      "teamId": "SCZdrvIJcTSpaVkUtAsL6zQpo882YXSH",
+      "teamName": "The Higher Order Of Zeuxis"
+    },
+    {
+      "fullPasses": 4,
+      "points": 7.010864944928621,
+      "rank": 126,
+      "teamId": "OtVGnJrARJvuJ0EzeiGd8FmiS1irhZts",
+      "teamName": "GrinGene"
+    },
+    {
+      "fullPasses": 5,
+      "points": 6.988531564346911,
+      "rank": 127,
+      "teamId": "kBBNiCuUQue5iVDbIgKXO19zopJfobvW",
+      "teamName": "paiv"
+    },
+    {
+      "fullPasses": 5,
+      "points": 6.924026333284368,
+      "rank": 128,
+      "teamId": "4DuAM5rMbcDgMn1CxDRn9UAAUoKsFsyP",
+      "teamName": "chungus"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.710977337736011,
+      "rank": 129,
+      "teamId": "GbC04CChwBtOhwY41nGKAB5PxBYx4c7b",
+      "teamName": "killswitch"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.575820157703872,
+      "rank": 130,
+      "teamId": "j1vzERUoXgMBujdpq4ui41uHGE9iVIqj",
+      "teamName": "igusarov"
+    },
+    {
+      "fullPasses": 5,
+      "points": 6.456320620414838,
+      "rank": 131,
+      "teamId": "1yNZjCfRVrtcCKEevdOf9dxahgBIn6uz",
+      "teamName": "oglraz"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.3725519102316905,
+      "rank": 132,
+      "teamId": "4lF2gMhygKVtS7lUdPEvAlYM0ml7IOVq",
+      "teamName": "nutshelly"
+    },
+    {
+      "fullPasses": 5,
+      "points": 6.298145684912075,
+      "rank": 133,
+      "teamId": "SoyzHl6z956pXnxoGRJSiKI7HfIptAdv",
+      "teamName": "Channable & Friends"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.264446952073245,
+      "rank": 134,
+      "teamId": "C8pTPfcBBtiN9krd3yU044TU7l0Fu05I",
+      "teamName": "nekotic"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.252281081103176,
+      "rank": 135,
+      "teamId": "qdIVGD5ANKhcyM6ytRPzszchVK1l4oYU",
+      "teamName": "\u3075\u304b\u3048\u308a"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.222696608010568,
+      "rank": 136,
+      "teamId": "YGkUSOl1T3crqug1KDfj2TvEKXMbQzU9",
+      "teamName": "bitterlesson42"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.193324148884955,
+      "rank": 137,
+      "teamId": "ztFFo1GZuHQlYMgUYMp5YN3mL0lRwMnV",
+      "teamName": "b_jonas"
+    },
+    {
+      "fullPasses": 4,
+      "points": 6.060437902127074,
+      "rank": 138,
+      "teamId": "lcQKZWCX9QkRCXSx4acmV9WuFsTu4VPc",
+      "teamName": "Ask Me Art, Matey"
+    },
+    {
+      "fullPasses": 4,
+      "points": 5.908595772467161,
+      "rank": 139,
+      "teamId": "bh7CF9DtOdHp53Asftjll4kI4yWWAVjl",
+      "teamName": "3"
+    },
+    {
+      "fullPasses": 5,
+      "points": 5.782922815066721,
+      "rank": 140,
+      "teamId": "WO4iRzH6N36qriuqU4vMOjMwbZz5uwTr",
+      "teamName": "KajiKaji"
+    },
+    {
+      "fullPasses": 5,
+      "points": 5.619691816626702,
+      "rank": 141,
+      "teamId": "TCvYPT4mHKsMNSYavzXih4wrPLBqKSRt",
+      "teamName": "Side Effects by Johnny Manchild and the Poor Bastards is out now go listen to it"
+    },
+    {
+      "fullPasses": 4,
+      "points": 5.535594383583024,
+      "rank": 142,
+      "teamId": "wlj09iygP6asyQiWqN9ZHp95gEt9WNkI",
+      "teamName": "rtevilinc"
+    },
+    {
+      "fullPasses": 4,
+      "points": 5.389629279427023,
+      "rank": 143,
+      "teamId": "UboZo87H31zBYdq17yAhfCpHKAnaFd4G",
+      "teamName": "Waaaghfarers"
+    },
+    {
+      "fullPasses": 3,
+      "points": 5.377005824319506,
+      "rank": 144,
+      "teamId": "atNgqY9qXx8fkCNFvRHjnPZBNYAhqtNH",
+      "teamName": "Eepy"
+    },
+    {
+      "fullPasses": 4,
+      "points": 5.375691641000412,
+      "rank": 145,
+      "teamId": "VvWGY5z1cN0HAfbGYZrbYKg38xm2ywpK",
+      "teamName": "zfhrp7"
+    },
+    {
+      "fullPasses": 4,
+      "points": 5.193620112706801,
+      "rank": 146,
+      "teamId": "KGC66xEHtev4F0LjAOmdAYDgNAYrWVaK",
+      "teamName": "R22b"
+    },
+    {
+      "fullPasses": 4,
+      "points": 5.101651766246947,
+      "rank": 147,
+      "teamId": "ZrcwC9CQW0QEiviObnAWRkOPxTItmyY9",
+      "teamName": "boboji"
+    },
+    {
+      "fullPasses": 3,
+      "points": 5.008409604184001,
+      "rank": 148,
+      "teamId": "lTL6HiHEi7YIOHzbE2m18kzrO6B2WDqE",
+      "teamName": "fishy15"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.980744086532747,
+      "rank": 149,
+      "teamId": "8UCwOR5m9nuaV74jijTpaCaOUwG05bJY",
+      "teamName": "prefeitura"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.971145845714965,
+      "rank": 150,
+      "teamId": "vDQo16Naxj6A7MEp2iSracYUNfz89zbA",
+      "teamName": "Eg\u00e9r a buszon"
+    },
+    {
+      "fullPasses": 4,
+      "points": 4.904682614925847,
+      "rank": 151,
+      "teamId": "A47Jm0MYmVeWMceCogOl6q8B60DeAJzD",
+      "teamName": "Null502"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.879412813502912,
+      "rank": 152,
+      "teamId": "2x54krPvzVRfTXQN6vSQX446EVeNGUPT",
+      "teamName": "Sjoerd Visscher"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.795019612504458,
+      "rank": 153,
+      "teamId": "uqwz312N0YSZwqcqKvPARWSr0zMzo5vU",
+      "teamName": "LowfiPoE"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.794710875716462,
+      "rank": 154,
+      "teamId": "YDNdjnrwYzR0SuhcaYlkrhra75cHGLIh",
+      "teamName": "Bears ate our brains"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.761024604778319,
+      "rank": 155,
+      "teamId": "dwLt1dh9Y8uFlB0Dz8SIPcYFRkrHXQAN",
+      "teamName": "El Jard\u00edn de Lucy"
+    },
+    {
+      "fullPasses": 4,
+      "points": 4.6887872242117234,
+      "rank": 156,
+      "teamId": "DsNCHrWx9nU5l4AhMhOzyoqqswy5xzYZ",
+      "teamName": "Blueboar's team"
+    },
+    {
+      "fullPasses": 4,
+      "points": 4.640874016785045,
+      "rank": 157,
+      "teamId": "dnTMypGdiclBcnDc9MT6fuoJBHFno2VK",
+      "teamName": "Esther vs The Machine"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.605640080827291,
+      "rank": 158,
+      "teamId": "Ncdlpt9Pt5Efa0AjsWD7Wm3YmI4uBaPE",
+      "teamName": "The Sand Masters"
+    },
+    {
+      "fullPasses": 4,
+      "points": 4.589960578374499,
+      "rank": 159,
+      "teamId": "B5uRldAogoLlCPJhpks9jPL0w6zHfCQi",
+      "teamName": "chupacabra"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.521038868417925,
+      "rank": 160,
+      "teamId": "6Tfc3Y9JYEiSbhDg3xDxtKe2UhYw7NBR",
+      "teamName": "poyo"
+    },
+    {
+      "fullPasses": 4,
+      "points": 4.4136823889907095,
+      "rank": 161,
+      "teamId": "cJJUOm4nz5CMRAQnZYri21K7mbx3Nesa",
+      "teamName": "Mira & Plught"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.363012024729167,
+      "rank": 162,
+      "teamId": "sVf5HbGAgjIM6h9sP7IlZIfahrSx8sZg",
+      "teamName": "Human Instrumentality Project"
+    },
+    {
+      "fullPasses": 3,
+      "points": 4.057865154983024,
+      "rank": 163,
+      "teamId": "ncfGa6OsyAtZI5XYtyYHCfo26iAURwLC",
+      "teamName": "Denneboom"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.9230123463509665,
+      "rank": 164,
+      "teamId": "T1Z7GVfLmAm5PNfgVimvC2B2U2ndiUj5",
+      "teamName": "Willow"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.8856848825975554,
+      "rank": 165,
+      "teamId": "MaqSIRIgDRKBUKZVlTRNiSkYhIHa63xC",
+      "teamName": "FIRQ"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.8379888268156424,
+      "rank": 166,
+      "teamId": "9u9qcmnbhQ3KnLHaGLpiFqwzdDI9MvvS",
+      "teamName": "chez"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.754591667567826,
+      "rank": 167,
+      "teamId": "IRJHwcRvuOfAcBye0par3srKDjaYbFUa",
+      "teamName": "TheTraitor"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.736814400198761,
+      "rank": 168,
+      "teamId": "vpyhw6UsbRp4DzVf73L7lRKWpchTo0Ul",
+      "teamName": "fish"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.7074468085106385,
+      "rank": 169,
+      "teamId": "7yTdgAvsXuAfOmdLTh9x7tRJZlSGNr7F",
+      "teamName": "hiro116s"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.7037065083828464,
+      "rank": 170,
+      "teamId": "WzdZPbyzsrLny5UTLsZFcCYPYVDTFF1e",
+      "teamName": "ItzsleepyXD"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.6916712320442135,
+      "rank": 171,
+      "teamId": "HQ86nRNSlmalKDejesMKgYdCVkqtbDzc",
+      "teamName": "Sunspear"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.6703910614525137,
+      "rank": 172,
+      "teamId": "x93YMhq3zjOkqJVOjgG0JaFG73K71hdC",
+      "teamName": "910z"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.642458100558659,
+      "rank": 173,
+      "teamId": "vzMuTN7usC3poTcvVqDQIrbkJzDAipiF",
+      "teamName": "A man, a plan, a canal: Panama"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.6117021276595747,
+      "rank": 174,
+      "teamId": "3JCZQPfNOte0hrcr8E0ZjJHZsbeiCKou",
+      "teamName": "AISlop100%"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.60207037265099,
+      "rank": 175,
+      "teamId": "thcfJ5Lg3QOZ8y59aYIrU3tkORuRzzgX",
+      "teamName": "Prostrong Cofunctor"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.5839414989376346,
+      "rank": 176,
+      "teamId": "gkxeKlwrmATqkZg0MwnzyIm2GbodcMlj",
+      "teamName": "rdis"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.5696136662826685,
+      "rank": 177,
+      "teamId": "wHDIVybvQJSGAm6RYgbFZNL1GEdvNjYm",
+      "teamName": "Zimtschnecke"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.5691489361702127,
+      "rank": 178,
+      "teamId": "E7QfcpSzcrRJUZ8VoyC7qpA4cTvZtQcz",
+      "teamName": "keles"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.5128321368022455,
+      "rank": 179,
+      "teamId": "nsLIbyUUL5wvl07HUxRIJyesCJBUPAc0",
+      "teamName": "labaspasauli"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.5,
+      "rank": 180,
+      "teamId": "XMjd355TlZwhoGc1JZkyxVtQhLVP2SO4",
+      "teamName": "Ueddy"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.4486661219892127,
+      "rank": 181,
+      "teamId": "ZsiKvA1abuPYUdbcd5VJAN3j65vs5zjv",
+      "teamName": "47P4R0"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.3617021276595747,
+      "rank": 182,
+      "teamId": "RFwEneonYzHpZXUM7L2wuYKrz78dalJk",
+      "teamName": "\ud83d\udc10"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.2156145824184637,
+      "rank": 183,
+      "teamId": "kIn1e8mnEKNMzKhYJjtsijhexLBslIFj",
+      "teamName": "Codermal"
+    },
+    {
+      "fullPasses": 3,
+      "points": 3.2052896117626766,
+      "rank": 184,
+      "teamId": "GjCBj5AXxIl9ImPX03DbPSxHyhvCAm9w",
+      "teamName": "NoobTeam"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.082569172545056,
+      "rank": 185,
+      "teamId": "fY1FObvliIySRvrIHtH06erIqBWKEbLC",
+      "teamName": "mnuyav"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.0638297872340425,
+      "rank": 186,
+      "teamId": "o4hoaUEV3icbIy5p9sFrG5j9C3DoAXMs",
+      "teamName": "do you know the boxed man?"
+    },
+    {
+      "fullPasses": 2,
+      "points": 3.0452327627579585,
+      "rank": 187,
+      "teamId": "NA7k6OtFMFu4iwsr7s9LXw4ZmCgDe49W",
+      "teamName": "Pi"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.9594864821628537,
+      "rank": 188,
+      "teamId": "yG06PhRy44StscOne8bEoHu8vjsGkQ3n",
+      "teamName": "kmohr and co"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.885458326667733,
+      "rank": 189,
+      "teamId": "gLWz1uZneAg8AxBz44tybKde4ZXUp3JO",
+      "teamName": "Olympia"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2.8546099290780145,
+      "rank": 190,
+      "teamId": "Fmt9MllMAly3pkLFvxUyNOU0z6tClgF1",
+      "teamName": "GOTO"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.8108119460662833,
+      "rank": 191,
+      "teamId": "gGeOvVUs6lZUoBt5PfL01VFWOl40Y35Z",
+      "teamName": "CoderBoys"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.7799043062200957,
+      "rank": 192,
+      "teamId": "QXYO3FKB4RI6OvRrLfkiLCpYRfhdkNBL",
+      "teamName": "O"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.7090386750241175,
+      "rank": 193,
+      "teamId": "UhWEMF9f6OTRsGynQd6MMicCr4U5l3w2",
+      "teamName": "InforFun"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.688649816029435,
+      "rank": 194,
+      "teamId": "XxukMqq61Q8po2dPoanbadFWBpwg3L8T",
+      "teamName": "TerraLuna"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.5710868079289133,
+      "rank": 195,
+      "teamId": "0cTMNuLzdCvaBLtOTuoJlfCI78lppZ2w",
+      "teamName": "LarpingICFP"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.4576213260423785,
+      "rank": 196,
+      "teamId": "6Up1frqylHXfYGBDPgwfeB2zGUcEeeUW",
+      "teamName": "mutability"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.438209886418173,
+      "rank": 197,
+      "teamId": "rFVSEGDH7QXWeDkm8tyiYW0GY2ZCdF3d",
+      "teamName": "ls"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.4355651699080103,
+      "rank": 198,
+      "teamId": "UnvP6WJpC99voep45Gnwc8g9MEwFBj8f",
+      "teamName": "for x in lagrange():"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.424292113261878,
+      "rank": 199,
+      "teamId": "YHnSDSbcVdo9oLdoPYkFKrNVZRB2581o",
+      "teamName": "Slow"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.4130507833830386,
+      "rank": 200,
+      "teamId": "hKoOyljLdgN7iGaAbjgiCZjOOBGhe7YY",
+      "teamName": "LarpingICFP"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.3820588705807073,
+      "rank": 201,
+      "teamId": "iIoA97ihWOGFrzPYJJDW8ENLUMhBtRlN",
+      "teamName": "Diet CBV"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.3365461526155817,
+      "rank": 202,
+      "teamId": "TO5r0q2WJ870YaMubOPIGxZMj6Zquhrv",
+      "teamName": "Rogue Operations"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.2845544712845944,
+      "rank": 203,
+      "teamId": "jMThpJ9zVE9jRLMMhNEllIQDuazkjXOG",
+      "teamName": "swordofhonor"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.262438009918413,
+      "rank": 204,
+      "teamId": "4mHB99hGD29fIs4ZFGYn7CRGKladjZXU",
+      "teamName": "Yeti"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.2565989441689327,
+      "rank": 205,
+      "teamId": "gxa7QIJ4meyXF7DZ122zIFFggWubNdmP",
+      "teamName": "Xeniac"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.1876099824028152,
+      "rank": 206,
+      "teamId": "3olXuMzSXHMljfcgGeXWQQlB9lTZ9H3N",
+      "teamName": "Gr"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.1308954203691046,
+      "rank": 207,
+      "teamId": "jidSLPhXrG5Vx8xHLMWYRsh0QFS0IGqu",
+      "teamName": "ScoreboardAttemptNext"
+    },
+    {
+      "fullPasses": 2,
+      "points": 2.0881749829118252,
+      "rank": 208,
+      "teamId": "ZXN6AqKyE1D26WCELOPOj4hxBZd9H4cQ",
+      "teamName": "Jack's Team"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "004x4CddQ6BtsGmq9u0MDEPAFINBhTvr",
+      "teamName": "Trisolarans"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "5iMv27n93FKx1tM39JxmlYyUxrLaNqjt",
+      "teamName": "qweeze"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "6KMBPWfRl5HJSpQ6zNqj4RwYmMNyAfLz",
+      "teamName": "seiyakyokai"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "CpqJiuhdyBPkSOWiaIGZe83Zs4Gx5NRV",
+      "teamName": "The Bro Code"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "FtB9GThJidveBopOKBN4uZoixAm9S6m1",
+      "teamName": "ExHa"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "R9Q4yNYtgLD0GJiV3FMwO9A3wluMejsY",
+      "teamName": "woooking"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "agDOSK2yK7TKTkBr2wXfvX3Sr89IeLeo",
+      "teamName": "mug1wara26"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "c5CyhANBRpqBzv4KxWSa4l2zcD4Zktjj",
+      "teamName": "labubu"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "eRjWcOlL4dZamAw4f0He9SBOT6vCriLR",
+      "teamName": "the mondays"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "f8hY6RNDwi17DhvrvxQNL7ClVDoXjG2u",
+      "teamName": "JustBruce"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "oBEW3UB5F9j9gteJd3WT4OVs1k2qMBMB",
+      "teamName": "poka"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "pOk8NB7FvTGbFf9EJBOaovzHNHgQFpL5",
+      "teamName": "rmk (:"
+    },
+    {
+      "fullPasses": 1,
+      "points": 2,
+      "rank": 209,
+      "teamId": "pPWgKVVNQSyUaBYtcredxcYnybQTx2Fq",
+      "teamName": "Smurfinators"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.6710326347784354,
+      "rank": 222,
+      "teamId": "xEEixVOvvYkc2pdHid9kdPYTseuZUIqM",
+      "teamName": "Dancer Cinamon"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.5463659147869675,
+      "rank": 223,
+      "teamId": "ff6jYZIWcYBJGc6i8H6uzeMOTOCCWqWK",
+      "teamName": "Shashank"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "2EwQAFJCUGxpe0f7P4nkVQErGrwbwGfs",
+      "teamName": "Seagate Exos 28TB"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "GqhietqQX6siB5PMrlkLnCx5N1gQAgvl",
+      "teamName": "cld"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "OdCWsAOw2W9z8ukfmJFmE9LbBV2MjkE5",
+      "teamName": "treaps"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "Uy3eK5FJTnVYeBlqlniBCYKOveBnChNE",
+      "teamName": "Inverted Lambdas"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "cVt8ih8gVMoo3Z9qcriX7q4PY3Y5SCCH",
+      "teamName": "cyexclam"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "p6fm0I6LKjEjPDc9JZnwNC0flw2td0s0",
+      "teamName": "zussini"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.481203007518797,
+      "rank": 224,
+      "teamId": "y5ikT1hUPmiZYF74mz8vwKRVc8yjvjXb",
+      "teamName": "non"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.3909774436090225,
+      "rank": 231,
+      "teamId": "Kw3qSYb3eboA8kZJMWAjURh6kXPmlCmk",
+      "teamName": "BiggiesTeam"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.3796992481203008,
+      "rank": 232,
+      "teamId": "7RZxUs4JLKyM406dHAWwIe2K6J9aHqgm",
+      "teamName": "ankt"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.3796992481203008,
+      "rank": 232,
+      "teamId": "K5dfrSLQj0JT2JuhIkSblAsF8gmKgtAz",
+      "teamName": "May the Forth be with you"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.3796992481203008,
+      "rank": 232,
+      "teamId": "NShX4qvqUfONr6jIbw0KDxUf9uSvOWsV",
+      "teamName": "pupbark"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.3796992481203008,
+      "rank": 232,
+      "teamId": "TNeWnhEzzppmvCFC1On8T728aX5mCh20",
+      "teamName": "NaN"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.3796992481203008,
+      "rank": 232,
+      "teamId": "wuLkdnrhrl3T0pp4tRo6j9i3QURK04m2",
+      "teamName": "Vectors Galore"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.263157894736842,
+      "rank": 237,
+      "teamId": "EC4UzsGumYKipjoAgh21YNBAYJtXhOMA",
+      "teamName": "Bing-bap-boom-boom-boom-bap-bam"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.2593984962406015,
+      "rank": 238,
+      "teamId": "Ef4PDbkXbeSLA5Nn8beCyX7iUVdbWtWg",
+      "teamName": "FlowTeam"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.2593984962406015,
+      "rank": 238,
+      "teamId": "O3RXPj8gVK1a2Qpysu1TPES0AH3KIPZU",
+      "teamName": "hk"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.2593984962406015,
+      "rank": 238,
+      "teamId": "fvIseXMPx4McTy1UqEyPYZkn4orlMJtH",
+      "teamName": "yong0315"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.2593984962406015,
+      "rank": 238,
+      "teamId": "hTHAPPY0XXJ49xX5g9CibRysidLrjW2W",
+      "teamName": "juergen"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.2593984962406015,
+      "rank": 238,
+      "teamId": "niSNKqdO7qLZRU8dB2oVR10dlIzpplnw",
+      "teamName": "dfyz"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.2067669172932332,
+      "rank": 243,
+      "teamId": "10lZTpVVmKVCQ6ek2pATAqimvXFDsZIc",
+      "teamName": "Ty chyo pyos? 3.11"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1954887218045114,
+      "rank": 244,
+      "teamId": "WC8CufM976EhVxWQ6ndVOZPNjJwC6MSc",
+      "teamName": "Ruchira S. Datta"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1917293233082706,
+      "rank": 245,
+      "teamId": "aVBKxIzHvtngOT8MYFSrMF8sBGJSnvWv",
+      "teamName": "roman"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1766917293233083,
+      "rank": 246,
+      "teamId": "DhwoHpdED3FFYyrjUr3wQLKQRA1yhOFm",
+      "teamName": "ABDT"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1654135338345863,
+      "rank": 247,
+      "teamId": "O9qUAIyyzH7QPXu46A34Rabmm2G6J8Mz",
+      "teamName": "pack"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1578947368421053,
+      "rank": 248,
+      "teamId": "ZqacrKdylYPBopzhEAdfAl1hGZ8hUvc6",
+      "teamName": "sanityinc"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.131578947368421,
+      "rank": 249,
+      "teamId": "D0aoL57p1LhSmKQMJWDxrKrYpdqdp162",
+      "teamName": "wind-up birds"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1278195488721805,
+      "rank": 250,
+      "teamId": "jeA0qhRZ9qLwHBzDndZxGxX7G6Jcy17P",
+      "teamName": "s1mahoeg"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1240601503759398,
+      "rank": 251,
+      "teamId": "lbDHAM2zktheoLzhdOo2aDUFumDM6Fsd",
+      "teamName": "Janiczek"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.1165413533834587,
+      "rank": 252,
+      "teamId": "PcfmeXkyAo9AczZPJTnymsI1KW5N2tw5",
+      "teamName": "savarin"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0977443609022557,
+      "rank": 253,
+      "teamId": "hVX3urAE5R1gDUOkj5gyerPpyk0Q9l8L",
+      "teamName": "N=3"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.093984962406015,
+      "rank": 254,
+      "teamId": "Oc6Q5utlOIkNUhBDZdS9CKRmSsOUIGaG",
+      "teamName": "ome-god!"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.086466165413534,
+      "rank": 255,
+      "teamId": "bIKyLh7pY2fOFmjmadlE5N4ZUTxiN3xI",
+      "teamName": "wahi"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.086466165413534,
+      "rank": 255,
+      "teamId": "xzIibQvBvGyrruon7hYPBKCw6VDnGvXx",
+      "teamName": "gio"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0639097744360901,
+      "rank": 257,
+      "teamId": "xuGfxCGPAS2uAJxatN7l4TduSLjqsMvW",
+      "teamName": "Spencer Avenue Labs"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0601503759398496,
+      "rank": 258,
+      "teamId": "CwT52a9l4SMnNbPBIUkdU6vg65s03Eel",
+      "teamName": "autobahnotoban"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.045112781954887,
+      "rank": 259,
+      "teamId": "qTWL2hSPK6jJ9OP1KtUY7mse52OXmxkC",
+      "teamName": "Erdan"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0413533834586466,
+      "rank": 260,
+      "teamId": "gCxdf61BUQA0HrO1kpWLiFE2W0tku8RZ",
+      "teamName": "DSA_GoD"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.037593984962406,
+      "rank": 261,
+      "teamId": "nRg1WwvxM8Pl44Vzts6F8dVJVnoFPFvj",
+      "teamName": "oh-Artist-burger!!!-AHAHAHAHAHAHAHIHAHA-AHIHIHIHIHIHIHIHI-delicious-Meat-Ibibibibibi!!!!!!"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0338345864661653,
+      "rank": 262,
+      "teamId": "ddOqMfzwG5rRJBjjVNcB4dNGUGLbiQ8Q",
+      "teamName": "oh-my-alice"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0263157894736843,
+      "rank": 263,
+      "teamId": "5uq50v94B532UxfslahwndWG5Mpr1eeT",
+      "teamName": "aspizu"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.018796992481203,
+      "rank": 264,
+      "teamId": "9SzKOj0OwEpUVb8rYoEgY08OdWoLHKrm",
+      "teamName": "Testers"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0075187969924813,
+      "rank": 265,
+      "teamId": "F1urqCJWczaWXgOJm6c5fmdT15lrQm08",
+      "teamName": "QIMaps"
+    },
+    {
+      "fullPasses": 1,
+      "points": 1.0037593984962405,
+      "rank": 266,
+      "teamId": "7HmwXI2mP7huDU9CefUGl30Bawe85a6m",
+      "teamName": "aburka"
+    },
+    {
+      "fullPasses": 0,
+      "points": 0.9473684210526315,
+      "rank": 267,
+      "teamId": "bkG3lLoXOhjQesYv0IYeUQfXEnocHUko",
+      "teamName": "Xulfi"
+    },
+    {
+      "fullPasses": 0,
+      "points": 0,
+      "rank": 268,
+      "teamId": "UgMMGBJKOGN2dhhPTX3BHD4zZodnWYxS",
+      "teamName": "anurag"
+    }
+  ],
+  "updatedAt": "2026-07-27T08:46:10.339Z"
+}
