@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "claude",
+    "warning": "Run current-main tests, preflight, exact Brackets API freshness, and artifact hash verification before submission."
+  },
+  "baseline": {
+    "version": "brackets_11",
+    "footprint": 729,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "publicLocalScore": 276615.0,
+    "liveScoreFromRepository": 484532.65
+  },
+  "candidate": {
+    "version": "gpt_brackets_17",
+    "parent": "gpt_brackets_16",
+    "path": "submissions/brackets/gpt_brackets_17.man",
+    "generator": "littleman.gpt_brackets_24:build_gpt_brackets_17",
+    "sha256": "51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325",
+    "bytes": 594,
+    "width": 24,
+    "height": 24,
+    "footprint": 576,
+    "rooms": 5,
+    "pipes": 6,
+    "men": 3,
+    "pipeLengthsParserOrder": [2, 2, 2, 5, 39, 3]
+  },
+  "changesFrom16": [
+    "OPEN shifts two columns left and the input room moves to the lower right.",
+    "CLASSIFY-return top ports move to columns 9 and 7; the OPEN->CLASSIFY endpoint moves from top column 4 to column 5 while preserving every intended nearest-pipe role.",
+    "OPEN->CLOSE shortens 10 -> 5 cells after moving its CLOSE endpoint to the lowest binding-preserving left-wall position.",
+    "OPEN->CLASSIFY shortens 42 -> 39 cells and INPUT->OPEN 4 -> 3; only transport pipes are shortened."
+  ],
+  "public": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "caseTicks": [242, 64, 100, 64, 144, 376, 132, 132, 2078],
+    "averageTicks": 370.22222222222223,
+    "localScore": 213248.0
+  },
+  "improvement": {
+    "reductionVsBrackets11LocalPercent": 22.90837445545903,
+    "factorVsBrackets11Local": 1.2971533071815452,
+    "reductionVsGptBrackets16Percent": 1.3610697430983138,
+    "projectedLiveAtParentServerLocalRatio": 373534.51845344633
+  },
+  "validation": {
+    "generatorByteEquality": "passed",
+    "serverCompatibility": "passed",
+    "minimumPipeLength": 2,
+    "sharedWallCells": 0,
+    "inputAdjacentPipeCount": 1,
+    "publicCases": "9/9 passed under littleman.server_compat",
+    "exhaustive": "9,331 strings over ()[]{} through length 5, zero failures",
+    "directed": "266 boundary/type cases, zero failures",
+    "random": "10,000 seeded strings through length 64, zero failures",
+    "releaseRandom": "1,000 exact server-wall-semantics cases are checked in tests/test_gpt_brackets_24.py",
+    "pipeIoOps": 36,
+    "minimumMultiCandidateBindingMargin": 1
+  }
+}
