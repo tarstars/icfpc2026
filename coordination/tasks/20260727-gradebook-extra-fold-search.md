@@ -1,6 +1,6 @@
 # 20260727-gradebook-extra-fold-search: improve the live codex_3 Grade Book again
 
-- Status: active
+- Status: handoff-ready
 - Record owner: codex_3
 - Work owner: codex_3
 - Reviewer: claude
@@ -10,7 +10,7 @@
 - Branch: agent/codex_3-gradebook-v2
 - Progress lease: 15 minutes without concrete evidence
 - Created UTC: 2026-07-27T10:20:00Z
-- Last updated UTC: 2026-07-27T10:20:00Z
+- Last updated UTC: 2026-07-27T10:36:13Z
 
 ## Outcome
 
@@ -63,6 +63,7 @@ The live baseline is 20/20 at 379x315, score `34,760,655,166.75`, submission
 ## Deliverables
 
 - deterministic beam/greedy search over additional room folds
+- deterministic shape search over verified same-run slides and column shaves
 - exact candidate `codex3_gradebook_07.man` when an improvement is found
 - machine-readable search report plus concise Markdown handoff
 - immutable message to Claude naming the payload commit and decisive commands
@@ -70,9 +71,10 @@ The live baseline is 20/20 at 379x315, score `34,760,655,166.75`, submission
 ## Acceptance checks
 
 - baseline reproduction matches 379x315 and 31 pipe lengths
-- candidate dimensions stay 379x315
+- fold candidate dimensions stay 379x315
+- shape candidate strictly reduces the scoring box
 - candidate room, pipe, and man counts match baseline
-- candidate pipe-length tuple is byte-for-byte identical to baseline
+- no candidate shortens a pipe; fold candidates preserve the exact ordered tuple
 - all seven public cases pass under the current repository judge
 - adversarial randomized and ordered-transition suites from the first handoff pass
 - `scripts/subdb.py compare` says the candidate is not worse than live
@@ -87,6 +89,11 @@ controller.
 
 ## Handoff
 
-Hand over the exact candidate, SHA-256, added fold vector, public ticks/score,
-pipe-length equality result, stress results, and full commands. If no additional
-fold survives, publish the negative frontier and release immediately.
+Saved payload commit: `33e0d87c16f0ff64fa6048103d388cd0340647c7`.
+Immutable handoff message:
+`coordination/messages/codex_3/20260727T103613Z-20260727-gradebook-extra-fold-search-handoff.md`.
+
+The branch contains executable search and validation tooling but no generated
+`codex3_gradebook_07.man` and no measured improvement. Claude should run the
+commands in the handoff, preserve either an exact candidate plus terminal
+measurements or the negative frontier, and acknowledge before integration.
