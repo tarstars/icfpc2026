@@ -15,6 +15,27 @@ interior (``interior_lines[y][x]``). ``direction`` is one of
 verbatim from ``sim`` so this module can never drift from the simulator's
 own convention.
 
+**A fold changes pipe BINDINGS, so a fold must export them.** ``r``/``R``
+read from the *nearest incoming* pipe and ``s``/``S`` write to the nearest
+outgoing one, and ``sim.Machine._nearest`` resolves that by Manhattan
+distance from the man's own cell, tie-broken by absolute coordinates. An
+I/O cell's binding is therefore a function of **where the cell sits**, and
+relocating it rebinds it -- silently, with the pipe set and every pipe
+length completely unchanged.
+
+That is not hypothetical: the pathfinder fold built on this analysis was
+geometrically perfect (box 1873 -> 813, pipe multiset identical) and
+deadlocked with all five men blocked on ``r``. The program man executed an
+identical glyph sequence for 145 steps, then blocked on a read that
+succeeds in the original.
+
+This is a missing hand-off, not a dead end. The reflow knows, for every
+I/O cell, which pipe that cell bound to *before* the move; the placer
+chooses where ports sit and can be made to preserve it. See
+``binding_map`` below: it is the contract a folded room owes the layout
+level, and ``docs/architecture/claude_36_solver_unfreeze.md`` describes how
+``layout_solve`` should consume it.
+
 Glyph handling (mirrors ``sim.Machine._execute`` exactly):
 
 * ``>``, ``<``, ``^``, ``v``/``V`` set direction unconditionally.
@@ -44,6 +65,8 @@ Public API:
     walk_graph(interior_lines) -> graph over (x, y, direction) states
     strand_profile(interior_lines) -> per-cut-line crossing counts
     fold_points(interior_lines, max_strands=1) -> cheap cut lines
+    binding_map(text) -> {(row, col): (direction, pipe_index)} I/O contract
+    bindings_preserved(before, after, moved) -> cells a reflow rebound
 """
 
 from __future__ import annotations
@@ -210,3 +233,76 @@ def fold_points(interior_lines, max_strands: int = 1):
         for (y, count, _cols) in strand_profile(interior_lines)
         if count <= max_strands
     ]
+
+
+# `r`/`R` bind to the nearest INCOMING pipe, `s`/`S` to the nearest
+# OUTGOING one, and `U` reads like `R` then turns away from whichever pipe
+# fed it. All three therefore care about which pipe is nearest.
+IO_OPS = frozenset("rRsSU")
+
+
+def binding_map(text: str) -> dict[tuple[int, int], tuple[str, int]]:
+    """Which pipe each I/O cell resolves to, in the layout as written.
+
+    This is the contract a room owes the layout level. `sim` resolves
+    `r`/`s` to the *nearest* pipe by Manhattan distance from the man's own
+    cell (`Machine._nearest`), so an I/O cell's binding is a function of
+    where that cell sits -- and any reflow that moves the cell rebinds it
+    silently, with the pipe set and every pipe length unchanged. That is
+    exactly how the pathfinder fold deadlocked while looking perfect.
+
+    Export this BEFORE folding and require the new layout to reproduce it:
+    for each cell at its new position, the intended pipe's endpoint must be
+    strictly nearer than every other candidate, under the same
+    distance-then-absolute-coordinate ordering.
+
+    Returns ``{(row, col): ("in"|"out", pipe_index)}`` for every I/O cell in
+    every room. A cell with no candidate pipe is omitted -- that is a
+    pre-existing fault in the artifact, not something a fold introduces.
+
+    Delegates to `sim`'s own `_nearest_incoming` / `_nearest_outgoing` via a
+    stand-in man, so it cannot drift from the simulator's rule.
+    """
+    from . import sim  # local: keeps this module importable without a machine
+
+    machine = sim.Machine.parse(text)
+    index_of = {id(pipe): i for i, pipe in enumerate(machine.pipes)}
+    bindings: dict[tuple[int, int], tuple[str, int]] = {}
+
+    for room in machine.rooms:
+        for row in range(room.top + 1, room.bottom):
+            for col in range(room.left + 1, room.right):
+                glyph = machine.grid[row][col]
+                if glyph not in IO_OPS:
+                    continue
+                probe = sim.Man(r=row, c=col, room=room)
+                incoming = glyph in "rRU"
+                pipe = (machine._nearest_incoming(probe) if incoming
+                        else machine._nearest_outgoing(probe))
+                if pipe is not None:
+                    bindings[(row, col)] = (
+                        "in" if incoming else "out", index_of[id(pipe)])
+    return bindings
+
+
+def bindings_preserved(before: str, after: str,
+                       moved: dict[tuple[int, int], tuple[int, int]]) -> list:
+    """Cells whose pipe binding a reflow broke.
+
+    `moved` maps each original (row, col) to its new (row, col). Returns the
+    list of ``(old_pos, new_pos, old_binding, new_binding)`` that differ --
+    empty means the reflow is safe on this axis. Checking this costs
+    milliseconds and would have caught the pathfinder fold before a 434 KB
+    artifact and a multi-minute judge run.
+    """
+    old = binding_map(before)
+    new = binding_map(after)
+    broken = []
+    for old_pos, old_bind in old.items():
+        new_pos = moved.get(old_pos)
+        if new_pos is None:
+            continue
+        new_bind = new.get(new_pos)
+        if new_bind != old_bind:
+            broken.append((old_pos, new_pos, old_bind, new_bind))
+    return broken

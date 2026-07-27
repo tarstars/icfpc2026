@@ -135,6 +135,72 @@ only safe on the 76.
 
 Notably `history_06` is our LIVE 81-square, and it loses 4,221 cells.
 
+## THE MISSING HAND-OFF: a fold must export its pipe bindings
+
+The pathfinder fold was built and it **hangs** — 0/7, every case
+tick-cap. This is not a bug in the implementation; it is a property of
+the language, and it kills the naive approach outright.
+
+The candidate was structurally perfect: 545x809 (box 813, down from
+1873), parses as 7 rooms / 11 pipes / 5 men exactly like the original,
+and its pipe-length multiset is **identical** —
+`[2,3,3,3,3,10,10,23,35,142,146]`, nothing shortened.
+
+Traced against the original, the program man executes an **identical
+glyph sequence for 145 steps** and then:
+
+    step 145   orig (14,97) 'r' A=16   |  fold (22,459) 'r' A=16
+    step 146   orig (14,98) ' ' A=1    |  fold (22,459) 'r' A=16  BLOCKED
+    ...        (continues)             |  (blocked forever)
+
+Both machines reach the same `r`. The original's read succeeds; the
+folded one blocks for ever, and eventually **all five men are blocked on
+`r`** — total deadlock.
+
+### Why
+
+`r` receives from the **nearest incoming pipe**, and `s` sends to the
+nearest outgoing one. `sim.Machine._nearest` picks by Manhattan distance
+from *the man's own cell* to the pipe endpoint, tie-broken by absolute
+coordinates. So **an `r`/`s` cell's binding is a function of where that
+cell sits.**
+
+Folding relocates interior cells — in this case by up to 362 columns —
+and therefore **silently rebinds every `r` and `s` to a different pipe**.
+Room #0 contains roughly 209 `r` and 288 `s`. The pipes are untouched;
+the *bindings* are destroyed.
+
+### This is a missing hand-off, not a dead end
+
+The fold operated at the wrong level of abstraction: it moved cells while
+treating the pipes as fixed furniture. But **which pipe an I/O cell binds
+to is derivable before the move, and the placer already owns port
+positions** — M2 made ports solver variables (`claude_32` §7). So the
+fix is to carry the binding upward as a constraint rather than hope it
+survives:
+
+1. **`room_reflow` exports a binding map.** For each `r`/`R`/`s`/`S`/`U`
+   cell in the ORIGINAL room, record which pipe `_nearest` resolves it
+   to. That map is the room's I/O contract and it is invariant under the
+   fold — it says what the folded room still needs to be true.
+2. **`layout_solve` consumes it as constraints.** For every I/O cell at
+   its new position, require that the intended pipe's port is strictly
+   closer (Manhattan, with the same absolute-coordinate tie-break) than
+   every other port on that room. These are ordinary linear constraints
+   over port variables the model already has.
+3. **Where one room's bands cannot share a port, split the pipe.** A
+   per-band stub gives each band a local endpoint. That changes the pipe
+   count and lengths, so it needs its own capacity argument — never
+   shorter than the original.
+
+Step 1 is small and mechanical; step 2 is the real work and reuses the
+port machinery. Doing them in that order also makes the failure loud
+instead of silent: with the binding map in hand, a fold can *check*
+whether it preserved bindings before anyone spends a judge run.
+
+Recording this so the next attempt starts from the constraint rather
+than rediscovering it after building a 434 KB artifact.
+
 ## Integration
 
 The three agents do not commit; this worktree integrates them, runs the
