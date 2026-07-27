@@ -2,7 +2,7 @@
 
 Date: 2026-07-27
 
-Status: release candidate; not submitted.
+Status: submitted and accepted.
 
 ## Result
 
@@ -52,7 +52,7 @@ Public ticks are:
 - 44 focused TCP tests passed;
 - composite preflight: `READY TO SUBMIT`, 6/6 public cases.
 
-## Freshness and live projection
+## Freshness and live result
 
 The branch was rebased onto `origin/main` at
 `3d8fab2e0d493d4fa2c97822ecaeb0c2d34c7107` before staging. A fresh contest
@@ -61,10 +61,12 @@ API read confirmed that submission
 1,639.05 average ticks, and score 1,575,127.05. The unfrozen standings read
 placed `wheezards` rank 29; rank 28 was 1,397,162.8.
 
-Applying the measured local score ratio to the live result projects score
-1,484,049.81, a 91,077.24 improvement. This is only a projection: private
-traffic can change the tick ratio. It would remain about 86,887 above the
-current rank-28 score.
+Submission `3c6ab7f4-bded-4d49-9ec4-ee1d13995650` passed all 20 live cases
+at 30×30, average 1,656.3 ticks, and score 1,490,670. The exact response is
+preserved in `submissions/tcp/tarstars_tcp_10-submit.json`. This is an
+84,457.05-point (5.362%) reduction from `tcp_09`; the private tick ratio was
+slightly weaker than the public projection. It remains above the current
+rank-28 threshold.
 
 ## Rejected precursor
 
