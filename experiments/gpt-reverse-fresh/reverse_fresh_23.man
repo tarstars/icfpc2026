@@ -1,0 +1,23 @@
+  +-+               +-+
+  |O|               |I|
+  +-+               +-+
+   ^                 v
+   ^                 |
++------------------+ |
+|Hsam        <     | |
+|  >    mdsH       | |
+|Hsam    <         | |
+|  >    mdsHv a< U | |
+|Hsam    <   ^<dv  | |
+|  >    mdsH ^<m>Y | |
+|Hsam    <     ^ m | |
+|  >    mdsH   Y<d | |
+|Hsam    <       >v|<<
+|  >    mdsH  ^U   |
+|Hsam    <         |
+|  >    mdsH       |
+|Hsam    <         |
+|  >    mdsH>     v|
+|Hsam    <     vb@U|
+|  >    mdsH   >^  |
++------------------+
