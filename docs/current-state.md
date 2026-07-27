@@ -74,13 +74,12 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   uniquely identified as the counted 5,981,625.6 winner and now reproduces
   byte-for-byte from a structural generator. All recovered sources have
   stable hashes, pass public cases and a 45-case boundary suite, and are
-  catalogued under `submissions/tcp/`. The `tcp_08` geometry compacts the
-  machine to 31×31. Its `tcp_09` successor adds a two-cell shortcut to the
-  packed controller's insertion-return path without changing the footprint
-  or any pipe binding. It is the current live best: 20/20 at score
-  1,575,127.05 and rank 29/98 in the refreshed snapshot. Only the older
-  `tcp_02` submission UUID remains unavailable. See
-  `reports/2026-07-27-tcp-hotpath.md`.
+  catalogued under `submissions/tcp/`. The 30×30 `tarstars_tcp_10` repacks
+  the `tcp_09` rooms without changing any of its 35 logical pipe bindings.
+  It is the current live best: 20/20 at score 1,490,670, a 5.362%
+  improvement, and rank 29 in the `2026-07-27T00:50:10.346Z` snapshot. Only
+  the older `tcp_02` submission UUID remains unavailable. See
+  `reports/2026-07-27-tarstars-tcp-repack.md`.
 - Grade Book `gradebook_05` replaces fixed worker delays with blocking ring
   receives. It is live 20/20 at 382×307, score 47,115,780,603.6, and rank 55
   in the `2026-07-27T00:12:10.405Z` snapshot. Its room contracts and
