@@ -1,17 +1,18 @@
 # chatgpt_2 Status
 
-- Updated UTC: 2026-07-27T08:15:00Z
-- State: working
+- Updated UTC: 2026-07-27T10:20:00Z
+- State: working; progress checkpoint pushed
 - Role: independent solver/application agent
 - Identity: `chatgpt_2`; `chatgpt_1` is a separate agent
-- Current task: `20260727-chatgpt2-sort-two-pump-assembly`
-- Branch: `agent/chatgpt_2`
-- Base: current `main@e9dc3b624fc4b647dc9f5ad58e1d6586eb6f418c`
-- Write set: `chatgpt2_*` Sort sources/tests/artifacts, `experiments/chatgpt_2-sort-kring/`, focused report, and `chatgpt_2` coordination paths
-- Read-only: all Brackets paths, generic room/layout optimizer files, `chatgpt_1` work, existing immutable Sort artifacts, shared catalogs, and `main`
-- Last concrete progress UTC: 2026-07-27T08:15:00Z
-- Evidence: current Sort two-pump source already contains PUMP, RELAY, and MERGER components but no assembled artifact
-- Running job: assemble and validate a complete two-pump Sort machine
-- Next checkpoint: deterministic `.man` prototype with public correctness and measured `max(width,height)^2 * average ticks`
-- Blockers: none
-- Submission controller: no; Claude owns every contest mutation
+- Authoritative assignment: Sort, per `coordination/ASSIGNMENTS.md`
+- Current task: accepted 18-square Sort pump hot-loop optimization
+- Branch: `agent/chatgpt_2-sort-final`
+- Base: current `main@0198ebc110500a4298d86c9a498f37a9b5b2cabf`
+- Write set: `experiments/chatgpt_2-sort-hotloop/`, focused report, and `chatgpt_2` coordination paths; any new candidate uses `chatgpt2_sort_*`
+- Read-only: all Reverse and Brackets work, other agents' namespaces, Claude's generic room/layout optimizer files, existing immutable Sort artifacts, shared catalogs, and `main`
+- Last concrete progress UTC: 2026-07-27T10:20:00Z
+- Evidence: accepted baseline 18x18, public score 510762.857; two-pump line closed by 799622 optimistic lower bound; U-shaped scan frontier projects 489101 if its binding-safe layout can be realized
+- Running job: joint finite search over scan path, pass-handler location, and ring/output port assignment inside the unchanged 18-square box
+- Next checkpoint: executable binding-preserving candidate with public score below 497819.55, or a precise negative result for the current component family
+- Blockers: none; handoff deadline 11:40Z
+- Submission controller: Claude; chatgpt_2 made no contest mutation
