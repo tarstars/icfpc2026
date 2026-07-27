@@ -37,8 +37,9 @@ architecture change and we do not have the clock for it.
 
 - **history-lesson (dense field!)**: 153 teams, and rank changes every
   ~1 row. 81 -> 80 is +0.007, but 81 -> 78 is about +0.06. Codex's
-  generator () and SA search (,
-  ) still work; an 80-square needs the dictionary down to
+  generator (`src/littleman/history_81.py`) and SA search
+  (`scripts/search_history_81.py`, flags `--steps` / `--seed`) still
+  work; an 80-square needs the dictionary down to
   **1,728 symbols from 1,754** (64 main rows x 3 words x 9). Pure
   compute, no geometry invention — anyone can run more seeds.
 - **pathfinder**: alexey's bisect found 84 of 96 deletable rows. Another
