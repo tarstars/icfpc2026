@@ -330,7 +330,20 @@ def solve(layout: Layout, *, seconds: float = 30.0, slack: int = 6,
         model.Add(dist == ar + ac)
         dists.append(dist)
         if conn.exact:
-            model.Add(dist == conn.length - 1)
+            # An exact-LENGTH pipe does not need an exact DISTANCE: a grid
+            # path between two ports at Manhattan distance `d` can only be
+            # `d`, `d+2`, `d+4`, ... long, because every detour off the
+            # straight line adds a cell out and a cell back. So the port
+            # distance can never exceed `length - 1`, and whatever slack
+            # remains must be even -- pin THAT, not the distance itself, or
+            # placement is frozen by a geometric relation the machine never
+            # asked for.
+            # NB: named `detours`, not `slack` -- `slack` is this function's
+            # own keyword argument (used for `ub` above), and rebinding it
+            # here silently shadows it for the rest of the call.
+            model.Add(dist <= conn.length - 1)
+            detours = model.NewIntVar(0, conn.length, f"k{ci}")
+            model.Add(conn.length - 1 - dist == 2 * detours)
         else:
             # Only a LOWER bound. Capping length near the original forbade
             # the spreading that squarification needs -- and cold-path pipe
