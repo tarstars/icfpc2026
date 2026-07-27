@@ -6,11 +6,11 @@
 - Reviewer: claude
 - Integrator: claude
 - Problem: `brackets`
-- Base main commit: `2fd9ee6a41fbb2f06e4c3e12510c102be5376bdd`
+- Base main commit: `03a8f74ad1c0d8db9db34d08da3718ec3db08629`
 - Branch: `agent/chatgpt-1-solvers`
 - Progress lease: 15 minutes without concrete evidence
 - Created UTC: `2026-07-27T09:55:00Z`
-- Last updated UTC: `2026-07-27T09:55:00Z`
+- Last updated UTC: `2026-07-27T10:16:00Z`
 
 ## Assignment
 
@@ -77,16 +77,50 @@ consume 465 cells, so a 22-square solution is a 96% pack. The 39-cell pipe is
 74% of all pipe cells and is the primary routing slack. Rows 7 and 8 are sparse
 but load-bearing: deleting them directly destroys three pipes.
 
+## Checkpoint: macro frontier
+
+Checkpoint commit:
+
+```text
+ee852aa1ad81c3ff89234c3a3dcf5e63b0dfc237
+```
+
+Saved artifacts:
+
+```text
+experiments/chatgpt1-brackets-22/README.md
+experiments/chatgpt1-brackets-22/macro_frontier.py
+experiments/chatgpt1-brackets-22/macro_frontier.json
+reports/2026-07-27-chatgpt1-brackets-22.md
+```
+
+The fixed-component stack family has been enumerated deterministically:
+
+```text
+22-square packings examined             25,764
+safe-port necessary-condition survivors  1,700
+best independent route lower bound          21 cells
+```
+
+Best lower-bound seed:
+
+```text
+CLOSE (15,0), OPEN (0,3), CLASSIFY (9,0), INPUT (0,0), OUTPUT (10,17)
+per-net inclusive lower bounds [3,3,2,7,3,3]
+```
+
+This is a placement seed, not a `.man`. The model still omits global endpoint
+uniqueness, exact named nearest-pipe bindings, six vertex-disjoint routes,
+parser topology, and behavior.
+
 ## Search order
 
-1. Extract the five room rectangles, six named connections, exact endpoint
-   binding ranges, and current route lengths from `gpt_brackets_17`.
-2. Generate finite component variants only under behavioral and binding gates;
-   prioritize a narrower CLOSE body and a shorter/relocated long transport pipe.
-3. Jointly enumerate room order/origins, same-wall ports, and six disjoint
-   routes inside a 22-square canvas.
-4. Render every abstract survivor and reject parser-created phantom pipes,
-   changed bindings, shared walls, one-cell pipes, or extra input adjacency.
+1. Use the saved 1,700-placement frontier rather than restarting macro search.
+2. Add globally unique endpoint choices and the exact accepted `s`/`r`/`q`
+   named binding signature.
+3. Route all six directed nets vertex-disjointly inside the 22-square canvas.
+4. Render every survivor and reject parser-created phantom pipes, changed
+   bindings, shared walls, one-cell pipes, or extra input adjacency.
 5. Judge with the corrected simulator, then organizers' WASM, then
    `scripts/subdb.py compare`.
 
