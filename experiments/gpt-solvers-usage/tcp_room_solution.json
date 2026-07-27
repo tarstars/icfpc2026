@@ -1,0 +1,47 @@
+{
+  "clearance": 0,
+  "endpoint_policy": "exclude-room-cells-and-noncorner-wall-grazing",
+  "lower_bound": 28,
+  "mip_gap": 0.0,
+  "objective": 35.0,
+  "rectangles": [
+    {
+      "height": 23,
+      "name": "pump",
+      "width": 24,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "height": 3,
+      "name": "output",
+      "width": 3,
+      "x": 13,
+      "y": 23
+    },
+    {
+      "height": 3,
+      "name": "input",
+      "width": 3,
+      "x": 29,
+      "y": 19
+    },
+    {
+      "height": 7,
+      "name": "forwarder",
+      "width": 18,
+      "x": 2,
+      "y": 28
+    },
+    {
+      "height": 6,
+      "name": "splitter",
+      "width": 13,
+      "x": 21,
+      "y": 24
+    }
+  ],
+  "side": 35,
+  "solver": "scipy.optimize.milp/HiGHS",
+  "status": "Optimization terminated successfully. (HiGHS Status 7: Optimal)"
+}

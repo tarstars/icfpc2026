@@ -1,0 +1,80 @@
+{
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "codex or current submission controller",
+    "warning": "Run repository preflight and refresh exact live Brackets state before promotion or submission."
+  },
+  "baseline": {
+    "footprint": 729,
+    "liveScoreFromRepository": 484532.65,
+    "publicLocalScore": 276615.0,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "version": "brackets_11"
+  },
+  "candidate": {
+    "bytes": 630,
+    "footprint": 625,
+    "generator": "littleman.gpt_brackets_25:build_gpt_brackets_15",
+    "height": 25,
+    "men": 3,
+    "parent": "gpt_brackets_14",
+    "path": "submissions/brackets/gpt_brackets_15.man",
+    "pipeLengthsParserOrder": [2, 2, 2, 10, 42, 2],
+    "pipes": 6,
+    "problem": "brackets",
+    "rooms": 5,
+    "sha256": "826553c4a58fd1ef83f81e8b05e9c3d54b575f2030d89c566cd5d9a99c09e605",
+    "version": "gpt_brackets_15",
+    "width": 25
+  },
+  "changesFrom14": [
+    "OPEN-to-CLOSE source moves global (20,3) -> (17,3), the highest legal cell on OPEN's left wall.",
+    "The route becomes (17,3)->(17,0)->(11,0), shortening 13 -> 10 cells.",
+    "Room bodies, placements, other five routes, logical topology, and footprint remain unchanged."
+  ],
+  "endpointCertificate": {
+    "destination": [11, 0],
+    "inclusiveManhattanLowerBound": 10,
+    "routeCells": 10,
+    "selectedSource": [17, 3],
+    "sourceReason": "highest binding-preserving and non-overlapping left-wall endpoint"
+  },
+  "localReplay": {
+    "directed": {"cases": 425, "failures": 0},
+    "exhaustive": {
+      "alphabet": "()[]{}",
+      "cases": 9331,
+      "failures": 0,
+      "lengths": "0..5 inclusive"
+    },
+    "improvementVsGptBrackets14Percent": 0.38541357841683777,
+    "localReductionPercentVsBrackets11": 15.64689791467082,
+    "publicAverageTicks": 373.3333333333333,
+    "publicCasesPassed": 9,
+    "publicCasesTotal": 9,
+    "publicLocalScore": 233333.3333333333,
+    "publicTicks": [246, 58, 106, 70, 146, 380, 136, 136, 2082],
+    "random": {
+      "cases": 10000,
+      "failures": 0,
+      "lengthRange": "0..64",
+      "nestingOpenCountCap": 32,
+      "seed": 2026072705,
+      "tickDeltaVsBrackets11": {
+        "counts": {"-8": 2670, "-7": 52, "-4": 1879, "-3": 5399},
+        "max": -3,
+        "mean": -4.5437,
+        "min": -8
+      }
+    },
+    "scoreRatioToBaselineLocal": 0.8435312804902115
+  },
+  "staticReplay": {
+    "inputRoomAdjacentPipeIndices": [5],
+    "minimumPipeCells": 2,
+    "roleCountSignatureByLogicalRoomPairUnchanged": true,
+    "sharedWallCells": 0
+  },
+  "schemaVersion": 1
+}

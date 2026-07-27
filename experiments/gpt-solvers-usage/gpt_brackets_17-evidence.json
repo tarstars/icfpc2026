@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "liveApiFreshnessCheckedByGpt": false,
+    "platformSubmitted": false,
+    "submissionDecisionOwner": "claude",
+    "warning": "Run repository preflight and refresh exact live Brackets state before promotion or submission."
+  },
+  "baseline": {
+    "version": "brackets_11",
+    "footprint": 729,
+    "publicTicks": [250, 62, 110, 73, 154, 388, 144, 144, 2090],
+    "publicLocalScore": 276615.0,
+    "liveScoreFromRepository": 484532.65
+  },
+  "parent": {
+    "version": "gpt_brackets_15",
+    "width": 25,
+    "height": 25,
+    "footprint": 625,
+    "publicTicks": [246, 58, 106, 70, 146, 380, 136, 136, 2082],
+    "publicLocalScore": 233333.3333333333
+  },
+  "candidate": {
+    "version": "gpt_brackets_17",
+    "path": "submissions/brackets/gpt_brackets_17.man",
+    "experimentPath": "experiments/gpt-solvers-usage/gpt_brackets_17.man",
+    "generator": "littleman.gpt_brackets_24:build_gpt_brackets_17",
+    "sha256": "51a6219ee527d5607720a99a1401cba9d94de9579021d32f1a1ed79adbc72325",
+    "bytes": 589,
+    "width": 24,
+    "height": 24,
+    "maxDimension": 24,
+    "footprint": 576,
+    "rooms": 5,
+    "pipes": 6,
+    "men": 3,
+    "pipeLengthsParserOrder": [2, 2, 2, 5, 39, 3]
+  },
+  "componentChanges": [
+    "CLOSE shares the mismatched-close and unmatched-open result tail, reducing its outer width by one column.",
+    "OPEN routes end-of-stream through unused columns and the ordinary pair sender, reducing its outer height by one row.",
+    "The 24-square placement chooses shorter state, long-transport and input routes without changing problem behavior."
+  ],
+  "publicReplay": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "caseTicks": [242, 64, 100, 64, 144, 376, 132, 132, 2078],
+    "averageTicks": 370.22222222222223,
+    "localScore": 213248.0,
+    "scoring": "max(width,height)^2 * average ticks"
+  },
+  "additionalReplay": {
+    "exhaustive": {
+      "alphabet": "()[]{}",
+      "lengths": "0..5 inclusive",
+      "cases": 9331,
+      "failures": 0
+    },
+    "random": {
+      "seed": 2026072707,
+      "lengthRange": "0..64",
+      "cases": 10000,
+      "failures": 0,
+      "maximumTicks": 926,
+      "meanTicks": 108.314,
+      "serverCompatibleWallSemantics": true
+    }
+  },
+  "improvement": {
+    "localReductionPercentVsBrackets11": 22.90801294217595,
+    "localReductionPercentVsGptBrackets15": 8.608000000000007,
+    "scoreRatioToBrackets11": 0.7709198705782405
+  },
+  "staticReplay": {
+    "serverLayout": "passed",
+    "minimumPipeCells": 2,
+    "sharedWallCells": 0,
+    "inputRoomPipeCount": 1,
+    "generatorByteEquality": "passed"
+  }
+}
