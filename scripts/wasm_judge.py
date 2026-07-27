@@ -60,6 +60,32 @@ def geometry(text: str) -> tuple[int, int]:
     return max((len(line) for line in lines), default=0), len(lines)
 
 
+# Problems whose expected output is display FRAMES rather than values. We pass
+# `expected` (the round's `out` list) to the engine and read `outputSettled`
+# back -- but for these problems every `out` is EMPTY, so `outputSettled` flips
+# true without proving anything about the frames actually committed. Verified
+# by a corrupted-frame `palette_00`, which this tool would happily call a pass.
+#
+# The engine does expose the real answer as `frameJudge:{matched,total}`, but
+# `harness.mjs` does not surface it and we do not pass frames in at all, so the
+# honest behaviour is to REFUSE rather than return a wrong verdict -- four
+# agents were told to gate submissions on this script.
+FRAME_JUDGED = frozenset({
+    "little-little-little-man", "little-little-man", "palette",
+    "pathfinder", "plotter", "snake",
+})
+
+
+def frame_based(spec: dict) -> bool:
+    for case in spec.get("publicTestData") or []:
+        if not isinstance(case, dict):
+            continue
+        for rd in case.get("rounds") or []:
+            if isinstance(rd, dict) and rd.get("frames"):
+                return True
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifact")
@@ -78,6 +104,16 @@ def main() -> int:
     print(f"artifact : {args.artifact}")
     print(f"engine   : organizers' WASM (claude/official-sim) -- authority for `Y`")
     print(f"size     : {width}x{height}  box {box}  footprint {box * box}")
+
+    if args.problem in FRAME_JUDGED or frame_based(spec):
+        print(f"cases    : REFUSED -- {args.problem} is judged on display FRAMES")
+        print("           Every round's `out` is empty here, so `outputSettled`")
+        print("           proves nothing about the frames committed: a corrupted")
+        print("           -frame palette_00 passes this check. Use")
+        print("           `scripts/preflight.py` for these problems, and treat")
+        print("           the contest server as the final authority.")
+        print("VERDICT  : CANNOT JUDGE -- do not use this result as a gate")
+        return 2
 
     passed = 0
     ticks_total = 0

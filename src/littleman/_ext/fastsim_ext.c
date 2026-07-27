@@ -342,6 +342,7 @@ static PyObject *fs_run(PyObject *self, PyObject *args)
     PyObject *m_pop = NULL, *m_out = NULL, *m_frame = NULL;
     Py_ssize_t n;
     const char *error = NULL;
+    int crashed = 0;   /* a wall step is pending its one grace tick */
     const char *status = "tick-cap";
     PyObject *verdict = NULL;
     int64_t ticks = 0;
@@ -559,6 +560,9 @@ static PyObject *fs_run(PyObject *self, PyObject *args)
             }
         }
         /* ------------------------------------------------------- 3. execute */
+        /* A crash from the previous tick stops everything before any
+           man executes; there is no drain-to-empty. */
+        if (crashed) { error = "wall"; goto exec_err; }
         x.heap_n = 0;
         for (int32_t i = 0; i < x.runbuf_n; i++) {
             int32_t mi = x.runbuf[i];
@@ -765,7 +769,17 @@ static PyObject *fs_run(PyObject *self, PyObject *args)
             if (x.mhalt[i]) continue;
             int32_t cell = x.mcell[i];
             int32_t ncell = x.step[x.mdir[i]][cell];
-            if (ncell < 0) { error = "wall"; goto exec_err; }
+            if (ncell < 0) {
+                /* ONE GRACE TICK, mirroring sim.py and fastsim.py. The
+                   official engine lets the man enter the wall cell and
+                   fires the fatal at the start of the NEXT execute
+                   phase, so that tick's pipe shift and output emit
+                   still happen. */
+                crashed = 1;
+                x.mhalt[i] = 1;
+                runnable_discard(&x, i);
+                continue;
+            }
             int32_t np = x.cellpos[ncell];
             int32_t occupant = x.occ[np];
             if (occupant >= 0) {
@@ -785,6 +799,11 @@ static PyObject *fs_run(PyObject *self, PyObject *args)
             for (int32_t j = 0; j < x.n_disp_pipes; j++)
                 if (x.pipes[x.disp_pipes[j]].count) { drained = 1; break; }
             if (drained) continue;
+            if (crashed) {
+                /* marked halted so it stops moving, but the program did
+                   NOT end cleanly; a wall fatal does not drain. */
+                error = "wall"; goto exec_err;
+            }
             status = "halted";
             break;
         }

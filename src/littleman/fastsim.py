@@ -369,6 +369,7 @@ def _nearest_pick(cand, pos, W):
 
 
 def run_program(P, res, input_queue, controller, max_ticks):  # noqa: C901
+    crashed = False        # a wall step is pending its grace tick
     W = P.W
     code = P.code
     lit = P.lit
@@ -565,6 +566,12 @@ def run_program(P, res, input_queue, controller, max_ticks):  # noqa: C901
                 elif input_queue:
                     put0(input_pipe, input_queue.pop(0))
         # -------------------------------------------------------- 3. execute
+        # A crash from the previous tick stops everything here: no man
+        # executes and there is no drain-to-empty.
+        if crashed:
+            error = "wall"
+            tick_heap = None
+            break
         tick_heap = list(runnable)
         heapq.heapify(tick_heap)
         runnable = set()
@@ -817,8 +824,14 @@ def run_program(P, res, input_queue, controller, max_ticks):  # noqa: C901
             cell = mcell[index]
             ncell = step[mdir[index]][cell]
             if ncell < 0:
-                error = "wall"
-                break
+                # ONE GRACE TICK, mirroring sim.py. The official engine
+                # lets the man enter the wall cell and fires the fatal
+                # at the start of the NEXT execute phase, so that
+                # tick's pipe shift and output emit still happen.
+                crashed = True
+                mhalt[index] = True
+                runnable.discard(index)
+                continue
             npos = cellpos[ncell]
             occupant = occupied.get(npos, -1)
             if occupant >= 0:
@@ -848,6 +861,13 @@ def run_program(P, res, input_queue, controller, max_ticks):  # noqa: C901
             if drained:
                 continue
             res.ticks = ticks
+            if crashed:
+                # marked halted so it stops moving, but the program did
+                # NOT end cleanly, and a wall fatal does not drain
+                res.status = "error"
+                res.error = "wall"
+                _writeback(P, wait_kind)
+                return res
             res.status = "halted"
             _writeback(P, wait_kind)
             return res

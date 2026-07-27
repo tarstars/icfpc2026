@@ -169,6 +169,11 @@ class Man:
     blocked: bool = False
     wait_kind: str | None = None
     wait_pipes: tuple = ()
+    # Stepped into a wall. The official engine lets the man ENTER the
+    # wall cell and fires the fatal on the NEXT tick, after that tick's
+    # pipe-shift and output-emit phases -- exactly one grace tick. See
+    # docs/language-reference-updates-2026-07-27.md.
+    crashed: bool = False
 
 
 @dataclass
@@ -610,6 +615,13 @@ class Machine:
                     continue  # drain output pipe
                 if any(p.count for p in self.pipes if p.dest.kind == "display"):
                     continue  # displays keep consuming in-flight values
+                if any(man.crashed for man in self.men):
+                    # A crashed man is marked halted so it stops moving,
+                    # but the program did NOT end cleanly -- and a wall
+                    # fatal does not drain, unlike a real `H` halt.
+                    res.status = "error"
+                    res.error = "wall"
+                    return res
                 res.status = "halted"
                 return res
         return res
@@ -648,6 +660,12 @@ class Machine:
             elif self._input_queue:
                 self._pipe_put(self.input_pipe, 0, self._input_queue.pop(0))
         # 3. execute
+        # A crash from the previous tick ends the program here: no man
+        # executes, and there is no drain-to-empty (a clean `H` halt
+        # DOES drain; a wall fatal does not).
+        if any(man.crashed for man in self.men):
+            self._tick_heap = None
+            return "wall"
         self._tick_heap = list(self._runnable_men)
         heapq.heapify(self._tick_heap)
         self._runnable_men = set()
@@ -698,8 +716,17 @@ class Machine:
                 continue
             nr, nc = man.r + man.direction[0], man.c + man.direction[1]
             if not man.room.contains_interior(nr, nc):
-                self._tick_heap = None
-                return "wall"
+                # ONE GRACE TICK. The man enters the wall cell; the
+                # fatal fires at the start of the next execute phase,
+                # so the next tick's pipe shift and output emit still
+                # happen. Measured against the organizers' engine: a
+                # value one cell from the end of an output pipe lands
+                # (gpt_brackets_17, live at 376,792), one thirteen
+                # cells away is lost (gpt_brackets_18, 19/26).
+                man.crashed = True
+                man.halted = True
+                self._runnable_men.discard(index)
+                continue
             occupant = occupied.get((nr, nc))
             if occupant:
                 man.halted = True
