@@ -109,7 +109,10 @@ communicating through pipes, with I/O rooms and an LM-75 display.
   variant properties, and validation are documented under
   `submissions/subset-sum/` and in
   `reports/2026-07-24-subset-sum.md`.
-- Reverse `reverse_07` is live 20/20 at 13×13 and score 84,922.5. A separate
+- Reverse `reverse_08` shortens the input-side ring while keeping the 13×13
+  footprint. It is live 20/20 at score 84,423.95 and rank 39 in the
+  `2026-07-27T00:34:10.477Z` snapshot; the exact response is
+  `submissions/reverse-a-list/alexey-reverse_08-submit.json`. A separate
   `Y`-spawned spatial schedule reverses every one-round length 1–16 under the
   organizer WASM, but still needs a proven multi-round lifecycle before it
   can replace the counted machine; see
