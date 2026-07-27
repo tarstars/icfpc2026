@@ -88,6 +88,54 @@ def _adjacent_rooms(cell: tuple[int, int],
     return out
 
 
+def coil_to_length(path: list[tuple[int, int]], target: int,
+                   blocked: set[tuple[int, int]]
+                   ) -> list[tuple[int, int]] | None:
+    """Lengthen `path` to exactly `target` cells, or return None.
+
+    `path` is a list of (row, col) from source end to destination end.
+    `blocked` is the set of cells already used by rooms and other pipes.
+    Endpoints must not move.
+
+    A length-exact pipe that routes SHORTER than required is not a dead
+    end: a grid path between two FIXED cells only changes length in steps
+    of 2, because every detour is a "staple" -- side-step off the path
+    one cell, forward one cell (parallel to the edge it replaces), then
+    back onto the path -- which trades one edge for three and so adds
+    exactly 2 cells. An even shortfall can always be absorbed wherever
+    there is free space beside the path; an odd one never can, on any
+    grid, so that case is rejected outright rather than searched for.
+    """
+    shortfall = target - len(path)
+    if shortfall == 0:
+        return list(path)
+    if shortfall < 0 or shortfall % 2:
+        return None                 # never shorten; odd parity impossible
+    result = list(path)
+    occupied = set(result)
+    for _ in range(shortfall // 2):
+        placed = False
+        for i in range(len(result) - 1):
+            a, b = result[i], result[i + 1]
+            dr, dc = b[0] - a[0], b[1] - a[1]
+            for side in ((dc, dr), (-dc, -dr)):
+                s = (a[0] + side[0], a[1] + side[1])
+                f = (b[0] + side[0], b[1] + side[1])
+                if (s in occupied or f in occupied
+                        or s in blocked or f in blocked):
+                    continue
+                result[i + 1:i + 1] = [s, f]
+                occupied.add(s)
+                occupied.add(f)
+                placed = True
+                break
+            if placed:
+                break
+        if not placed:
+            return None              # nowhere left to coil
+    return result
+
+
 def route(layout: Layout, place: Placement, *, margin: int = 0,
           order: list[int] | None = None):
     """Route every connection greedily. Returns (paths, None) or (None, err).
@@ -130,8 +178,13 @@ def route(layout: Layout, place: Placement, *, margin: int = 0,
             return None, RouteError(ci, "degenerate path")
         conn = layout.conns[ci]
         if conn.exact and len(path) != conn.length:
-            return None, RouteError(
-                ci, f"timing-exact needs {conn.length}, routed {len(path)}")
+            if len(path) < conn.length:
+                coiled = coil_to_length(path, conn.length, blocked)
+                if coiled is not None:
+                    path = coiled
+            if len(path) != conn.length:
+                return None, RouteError(
+                    ci, f"timing-exact needs {conn.length}, routed {len(path)}")
         used.update(path)
         paths.append((ci, path))
     paths.sort()
@@ -397,17 +450,31 @@ _SETTLE_MAX = 24
 
 def _accept(layout: Layout, place: Placement, paths):
     """The checks a conflict-free path set still has to pass."""
-    for ci, path in paths:
+    owned = _room_cells(layout, place)
+    fixed = list(paths)
+    for idx, (ci, path) in enumerate(fixed):
         conn = layout.conns[ci]
+        if conn.exact and len(path) < conn.length:
+            # Every OTHER net's cells (already-coiled ones included, via
+            # `fixed` being updated in place) are what a new detour must
+            # dodge -- same "rooms and other pipes" contract as `route`.
+            blocked = set(owned)
+            for cj, other in fixed:
+                if cj != ci:
+                    blocked.update(other)
+            coiled = coil_to_length(path, conn.length, blocked)
+            if coiled is not None:
+                path = coiled
+                fixed[idx] = (ci, path)
         if conn.exact and len(path) != conn.length:
             return None, RouteError(
                 ci, f"timing-exact needs {conn.length}, routed {len(path)}")
         if len(path) < 2:
             return None, RouteError(ci, "degenerate path")
-    bad = _violations(layout, place, paths)
+    bad = _violations(layout, place, fixed)
     if bad:
         return None, RouteError(bad[0][0], bad[0][1])
-    return paths, None
+    return fixed, None
 
 
 def _crossings(paths, occupancy) -> int:

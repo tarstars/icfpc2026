@@ -99,6 +99,42 @@ delay *and* capacity, and a short pipe deadlocks silently.
 
 Independent of A and B: it is a pure function on a grid.
 
+## PREREQUISITE FOUND DURING INTEGRATION: the IR is not faithful
+
+While verifying package A I checked `render(parse(t)) == t` across every
+artifact under 400 KB. **76 of 88 round-trip byte-exact; 12 do not.**
+
+    history_04 / _05 / _06     differ by 4,507 / 4,313 / 4,221 cells
+    matmul_00 / _01 / _02      PARSE FAIL (IndexError, ragged lines)
+    history_00                 PARSE FAIL (LoadError)
+    reverse_03 / _04 / _05     differ by 1 cell each
+    tarstars_sort_09           differs by 1 cell
+    alexey-triangle_8x8_960    differs by 14 cells
+
+These are **pre-existing** — confirmed by running the same check against
+`HEAD`'s `layout_ir.py` — and package A did not cause any of them.
+
+The single-cell cases are instructive. In `tarstars_sort_09`, line 16 is
+
+    original  |+-+ >-----^v|^r <|
+    rendered  |+-+ >-----^ |^r <|
+
+`parse` drops the `v` at column 11: it attributes that cell to neither a
+room nor a pipe, and `render` writes pipes from their stored cells, so
+the glyph vanishes. Two adjacent counter-running pipe cells (`^` beside
+`v`) are enough to lose one.
+
+**Why this gates everything above.** The solver's entire contract is
+"parse to rigid rooms + connections, re-place, re-emit". If `parse` loses
+a cell, the re-emitted machine is missing an instruction — and it will
+still parse, still load, and fail only in the judge, or worse, pass the
+public cases and fail a hidden one. **A round-trip check must run before
+any solver output is trusted**, and `layout_gate.py` should refuse a
+machine whose IR does not reproduce its input. Until then the solver is
+only safe on the 76.
+
+Notably `history_06` is our LIVE 81-square, and it loses 4,221 cells.
+
 ## Integration
 
 The three agents do not commit; this worktree integrates them, runs the

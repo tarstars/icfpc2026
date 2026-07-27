@@ -133,20 +133,32 @@ def parse(text: str) -> Layout:
         return Port(room.index, placed[0], placed[1])
 
     timing = False
-    for room in machine.rooms:
+    room_has_timing = [False] * len(machine.rooms)
+    for idx, room in enumerate(machine.rooms):
         for r in range(room.top + 1, room.bottom):
             line = lines[r] if r < len(lines) else ""
             for c in range(room.left + 1, min(room.right, len(line))):
                 if line[c] in TIMING_OPS:
                     timing = True
+                    room_has_timing[idx] = True
 
+    # Conn.exact must be PER-PIPE, not the layout-wide `timing` flag above.
+    # `timing`/`timing_sensitive` answers "does q/R/U exist anywhere?"; a
+    # pipe only needs its exact length reproduced if ITS OWN endpoint room
+    # is one that observes occupancy/order. Using the blanket flag here used
+    # to mark every pipe in a machine exact as soon as one distant room had
+    # a timing op (measured: 231/231 pipes pinned when only 6 touched a
+    # timing room), which froze the placer solid. So: exact only if the
+    # source or destination room actually contains a timing op.
     conns: list[Conn] = []
     for pipe in machine.pipes:
+        src_port = port_for(pipe.source, pipe.cells[0])
+        dst_port = port_for(pipe.dest, pipe.cells[-1])
         conns.append(Conn(
-            src=port_for(pipe.source, pipe.cells[0]),
-            dst=port_for(pipe.dest, pipe.cells[-1]),
+            src=src_port,
+            dst=dst_port,
             length=len(pipe.cells),
-            exact=timing,
+            exact=room_has_timing[src_port.room] or room_has_timing[dst_port.room],
             cells=list(pipe.cells),
             glyphs=[lines[r][c] for r, c in pipe.cells],
         ))
