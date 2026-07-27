@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "scoringDefinition": "max(width, height)^2 * average ticks across all test cases",
+  "source": "docs/grading.md",
+  "candidate": {
+    "sha256": "066c00b3f5aa34c0ec9d54c55d6f231bfd429522a9680d3f0cd9b45233d35ed9",
+    "bytes": 8080520,
+    "width": 749,
+    "height": 23580,
+    "maxDimension": 23580,
+    "footprint": 556016400,
+    "rooms": 145,
+    "pipes": 231,
+    "men": 143,
+    "minimumPipeLength": 2,
+    "publicCasesPassed": 14,
+    "publicCasesTotal": 14,
+    "caseTicks": [
+      5861492,
+      19855920,
+      8007221,
+      10134168,
+      15231000,
+      12143224,
+      10716618,
+      7599401,
+      6937114,
+      16342436,
+      11303289,
+      12942792,
+      26946574,
+      8376758
+    ],
+    "averageTicks": 12314143.357142856,
+    "localScore": 6846865658522485.0,
+    "logicalPipeBindings": {
+      "instructions": 13299,
+      "normalizedFingerprint": "9f24f98f5d5ec6e25ce19b8d034b97684762209151bfbf9e076f46c2f89a0f70",
+      "equalsParent": true,
+      "minimumMargin": 3
+    },
+    "serverCompatibility": "passed",
+    "pipeCheck": "passed"
+  },
+  "parent": {
+    "version": "llm_codex_01",
+    "sha256": "568d0b87937e9a41370d0b3434583d7109eb51ea9944b788e825e45c53e40ff6",
+    "width": 749,
+    "height": 25797,
+    "maxDimension": 25797,
+    "footprint": 665485209,
+    "caseTicks": [
+      5877438,
+      20047788,
+      8045884,
+      10178879,
+      15312080,
+      12205273,
+      10794079,
+      7622854,
+      6968623,
+      16441209,
+      11362261,
+      13076595,
+      27216732,
+      8419831
+    ],
+    "averageTicks": 12397823.285714285,
+    "localScore": 8250568020438638.0,
+    "liveScore": 8775033253482888.0
+  },
+  "improvement": {
+    "rowsDeleted": 2217,
+    "maxDimensionPercent": 8.594797844710626,
+    "footprintPercent": 16.449525476255405,
+    "averageTicksPercent": 0.6749613769560929,
+    "localScorePercent": 17.01340269468533,
+    "projectedLiveScoreAtParentServerLocalRatio": 7282101509475297.0
+  },
+  "negativeResults": {
+    "alternativeEqualFootprintGroup4": "failed public cases by tick-cap",
+    "all107ColumnsAfterRows": "rejected before judging: normalized pipe-binding fingerprint changed and minimum margin fell from 3 to 1"
+  },
+  "liveSubmission": null
+}
