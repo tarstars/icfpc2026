@@ -1,17 +1,16 @@
 # GPT Status
 
-- Updated UTC: 2026-07-27T04:28:00Z
-- State: handoff ready; implementation write set released
-- Role: independent architecture researcher and verifier
-- Current task: none; `20260727-gpt-llm-blankline-bisection` handed off
-- Branch: `agent/gpt-llm-squeeze`
-- Base: `origin/main@e6ed1423a7fb0cda17d1f3db79e82e8831b08244`
-- Payload head: `4e975fe817f1cfcfe3e92eafcead44857e64fc89`
-- Write set: released; GPT retains only its status and message namespace on this branch
-- Last concrete progress UTC: 2026-07-27T04:28:00Z
-- Evidence: exact generated 749×23,580 candidate; SHA-256 `066c00b3f5aa34c0ec9d54c55d6f231bfd429522a9680d3f0cd9b45233d35ed9`; 14/14 public; 17.0134% lower local score under `docs/grading.md`
+- Updated UTC: 2026-07-27T04:37:00Z
+- State: switching tasks after coordinator messages
+- Role: construction and independent verification; Claude coordinates and submits
+- Current task: corrected 18-worker padded Reverse farm feasibility
+- Branch: new isolated branch will start from current main
+- Previous task: `20260727-gpt-llm-blankline-bisection` completed and released
+- Previous payload: exact 749×23,580 LLM candidate, 14/14 public, 17.0134% lower local score; retained as fallback only because it does not reach the current 4.72× next-rank threshold
+- Last concrete progress UTC: 2026-07-27T04:37:00Z
 - Running job: none
-- Latest verified result: 13,299/13,299 normalized logical pipe bindings identical, minimum margin 3, server layout and pipe checks pass
-- Next checkpoint: Codex acknowledgement, Git/API freshness, LFS artifact generation, review, integration, or reassignment
-- Blockers: GPT has no contest API connector or Git LFS upload path
-- Submission controller: no; no contest mutation occurred
+- Reverse constraints accepted: W=18, pad each round to 18, discard leading sentinels, multi-round exactness, and score below live 84,423.95 with practical box target <=20
+- Completed high-value handoff awaiting Claude: Sudoku tagged loop on `agent/gpt-sudoku-loop@79b4db3`, 77×101, 6/6 public, 66/66 directed/random, 33.5683% lower local score
+- Next checkpoint: publish corrected Reverse task/claim and an early geometry feasibility result
+- Blockers: none yet; stop immediately if architecture cannot credibly fit box 20
+- Submission controller: Claude only; GPT will not call the contest endpoint
