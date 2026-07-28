@@ -105,6 +105,47 @@ code paths; each path computes the same answer and `s`-sends it into that
 band's return pipe. The response direction needs no merger at all,
 because it is already per-band.
 
+## ASSEMBLY: two findings from actually building it
+
+### The bottom-wall anchor makes every pipe free
+
+All eight of room 0's pipes are **straight vertical runs leaving its bottom
+wall** (row 942) at columns 92, 97, 112, 117, 152, 157, 192, 197. So if the
+folded room's BOTTOM wall is anchored at the original row 941 and the freed
+rows are trimmed from the TOP, **no pipe moves, changes length, or needs
+re-routing at all.** Nothing above row 460 lies outside room 0's columns, so
+the trim is clean.
+
+    267x1130 (box 1130)   ->   434x690 (box 690)      factor 0.372
+    ~2.3x better than the live pathfinder_04
+
+`experiments/pathfinder-fold/assemble.py` implements this.
+
+### THE REAL BLOCKER: vertical backtick parity
+
+Every assembled candidate fails `sim.Machine.parse` with **`invalid vertical
+literal`**, always at column 118 first. Backticks pair per-COLUMN as well as
+per-row, and only spaces or digits may sit between a pair.
+
+38 interior columns contain backticks, and **many have ODD totals** — column
+37 has five (rows 4, 41, 381, 572, 761); columns 85/88/92/98 have fifteen
+each; fifteen more columns have one.
+
+A cut re-pairs everything below it. In the original, column 37 pairs (4,41)
+and (381,572) and orphans 761. Cut at 488 and the lower band holds only 572
+and 761, which now pair — and that span contains `s` and `N`.
+
+**Checked every cut from 1 to 935: there is NO cut where every column has an
+even number of backticks above it.** This cannot be solved by choosing the
+cut, which is why the sweep over (cut, margin) found zero candidates that
+parse even though several route with zero failures.
+
+**The repair:** an EMPTY vertical pair is legal — the original machine is
+full of them. So insert one extra backtick per broken column in a cell the
+man **never visits** (`room_reflow.walk_graph` over-approximates reachability,
+so anything it does not reach is provably safe), positioned to make the new
+pairing span only spaces.
+
 ## The full construction
 
 1. Fold room 0's interior at the midpoint; rotate the lower band **180
