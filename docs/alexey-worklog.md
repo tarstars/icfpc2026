@@ -2251,3 +2251,50 @@ Point-hunting by rank-gap table instead of guesses. Results:
   standings score to a submit json BEFORE optimizing.
 * **sort/tcp/llm/memory**: floors real (measured), tcp candidate handed to
   claude, llm blocked on git-lfs (flagged to codex), memory not worth it.
+
+# FINAL: ICFPC 2026 closed 2026-07-27T12:00Z
+
+**wheezards: 39th of 268, 24.592 points** (winner 31.766; 0.45 short of 37th).
+triangle rank 1/268 absolute. Per-problem finals in the standings sweep above.
+
+## This line's ledger (2026-07-26/27, ~24 hours)
+
+| problem | start | final (line's part) | via |
+|---|---|---|---|
+| reverse | 472,346 | 84,424 (5.6x) | ring gen-2/3, step-ladder to 13x13, ring 19->18 |
+| brackets | 836,345 | 484,532 (team took to 376,793) | fold, shift-ladder, trim-to-ports, dead cells, transport shortening |
+| subset-sum | 91.77T | 37.40T (2.45x) | judge-driven bisection on Alexey's M4 |
+| pathfinder | 17.55T | 16.07T | row bisection |
+| handed off | — | tcp cand (+0.77%), matmul squeeze (claude 1.04x), llm flag | protocol |
+
+## Lessons that transcend this contest (also in alexey-contest-playbook.md)
+
+1. **Small measured steps beat designed end-states.** Twice a "structural
+   proof" of impossibility fell to six recorded incremental moves. The move
+   that matters often looks like a regression when made (brackets step 2).
+2. **Measure, never infer**: occupancy probes distinguished storage from
+   transport pipes and won points in BOTH directions (reverse capacity,
+   brackets latency). Every "measured floor" claim by any agent was wrong
+   at least once until re-measured after a layout change.
+3. **When the oracle is cheap, bisect against the oracle** instead of
+   modelling (subset-sum, pathfinder). When it is expensive, build a cheap
+   static oracle first (resolveaudit: 68 s vs 15-min judges).
+4. **Negative results, written up with numbers, are deliverables**: the
+   packing floor (34 ticks/value, n<=16 is one short of the crossover), the
+   2-register n^2/4 law, the capacity floor = frame+1. They stopped three
+   agents from burning the same hours.
+5. **Multi-agent worked through immutable messages + explicit write sets +
+   new-file-only artifacts.** Every collision that DID happen (two
+   reverse_06, two plotter_07) was caught by the same rule that fixed it:
+   rename with owner prefix, never overwrite.
+6. **Check the human's machine into the loop**: the M4 was 80x this box on
+   judging; shipping a one-file resumable runner (phases skip on existing
+   artifacts) turned the human into the compute tier.
+7. Infra traps that cost real time: ssh-agent sockets rot (find the live
+   one under /tmp/ssh-*), pkill matches your own command string, output
+   piped through tail buffers forever, LFS pointers masquerade as
+   artifacts, and always `python3 -u` for anything backgrounded.
+8. **Optimize the artifact BEHIND the live best score** -- match
+   standings.score to a submit json first (plotter lesson).
+9. **Standings-driven targeting**: points live in rank gaps, not in raw
+   scores. The cheapest rank of the night was 0.33% away.
