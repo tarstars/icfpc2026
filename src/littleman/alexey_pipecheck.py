@@ -29,9 +29,11 @@ Divergences run BOTH ways: `history_00.man` is live at 7,921 yet the local
 parser rejects it with `invalid vertical literal at (20, 2)`. Never treat a
 local parse failure as proof the server will refuse a program.
 
-`littleman.server_compat.validate_layout` covers the other two known
-divergences (rooms sharing a wall; a man stepping into a wall after its
-final send). It does not cover this one, so run `check` as well.
+`littleman.server_compat.validate_layout` now includes this rule alongside
+the shared-wall and input-wall-adjacency checks. This module remains as a
+narrow backwards-compatible helper: unlike the strict parser-like entry
+point, `check` deliberately passes through a local `LoadError` because a
+local parse failure is not proof of a server rejection.
 """
 
 from .sim import LoadError, Machine
