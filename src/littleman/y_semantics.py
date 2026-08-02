@@ -10,9 +10,9 @@ Why an installed subclass instead of a second simulator:
 * every existing caller that imports ``littleman.sim.Machine`` gets the new
   semantics;
 * the change is isolated to the dynamic-population and collision phases;
-* ``littleman.fastsim.Machine`` still uses its flattened executor for programs
-  without ``Y`` and is wrapped at class creation to fall back to this reference
-  loop for programs whose population can change.
+* ``littleman.fastsim.Machine`` still uses its flattened executor for ordinary
+  independent rooms, and is wrapped at class creation to fall back to this
+  reference loop for ``Y`` programs or any room that starts with several men.
 
 The contract is the organizer-confirmed text archived in
 ``docs/language-reference-updates-2026-07-27.md``.  In particular, dead men
@@ -54,17 +54,31 @@ def install(sim: ModuleType):
             self.max_live_men = MEN_CAP
             self._live_men = len(self.men)
             self.graveyard = []
+
+            # The flattened executor models the pre-split "both stop" collision
+            # rule and leaves stopped men as obstacles.  The organizer's final
+            # rule is simultaneous annihilation/removal, so a room that starts
+            # with several men must use this reference movement phase even if
+            # its grid contains no Y.  Men in distinct rooms cannot collide.
+            seen_rooms = set()
+            self._requires_population_reference = self._uses_split
             for man in self.men:
                 man.alive = True
+                room_id = id(man.room)
+                if room_id in seen_rooms:
+                    self._requires_population_reference = True
+                seen_rooms.add(room_id)
 
         def __init_subclass__(cls, **kwargs):
             """Make the flattened fast executor decline dynamic populations.
 
             ``fastsim.Machine`` is defined after this class is installed.  Its
-            static parallel arrays cannot grow when a man splits, so its
-            existing ``run`` method is wrapped at class creation: a ``Y`` grid
-            uses the reference run loop, while every ordinary program keeps the
-            optimized Python/C path unchanged.
+            static parallel arrays cannot grow when a man splits and its legacy
+            collision phase stops rather than removes participants, so its
+            existing ``run`` method is wrapped at class creation.  A machine
+            that needs the final population semantics uses the reference run
+            loop; every ordinary independent-room program keeps the optimized
+            Python/C path unchanged.
             """
 
             super().__init_subclass__(**kwargs)
@@ -76,7 +90,7 @@ def install(sim: ModuleType):
 
             @functools.wraps(fast_run)
             def run_with_y_fallback(self, inputs=None, max_ticks=5_000_000, controller=None):
-                if getattr(self, "_uses_split", False):
+                if getattr(self, "_requires_population_reference", False):
                     return base_machine.run(self, inputs, max_ticks, controller)
                 return fast_run(self, inputs, max_ticks, controller)
 
