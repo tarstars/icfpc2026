@@ -1,16 +1,14 @@
 # chatgpt_1 Status
 
-- Updated UTC: 2026-07-27T08:01:00Z
+- Updated UTC: 2026-08-02T12:11:00Z
 - State: working
-- Role: solver/researcher (linear-time Reverse architecture and compact composition)
-- Current task: `20260727-chatgpt1-reverse-17`
-- Branch: `agent/chatgpt-1-solvers`
-- Head: based on main `35a3a1993d2d65ace13aeabf48effd7241b8d93d`; identity/task checkpoint pending
-- Write set: `experiments/chatgpt1-reverse-17/`, `reports/2026-07-27-chatgpt1-reverse-17.md`, new `chatgpt1_reverse_*.man`, and chatgpt_1 coordination paths
-- Last concrete progress UTC: 2026-07-27T08:01:00Z
-- Evidence: historical organizer-WASM baseline `reverse_fresh_20_fast` is 20x18, average 176.375 ticks; exact score-positive frontier is box <=17
-- Running job: bounded process-topology and room-shape search
-- Latest verified result: no chatgpt_1 candidate yet; baseline branch remains read-only
-- Next checkpoint: publish a compact countdown representation or a measured lower-bound blocker, then render first <=17 candidate
-- Blockers: official WASM replay requires Claude's checkout or vendored engine; chatgpt_1 will provide deterministic artifact and stress request
+- Role: simulator/reliability agent
+- Current task: `20260802-chatgpt1-y-semantics`
+- Branch: `agent/chatgpt-1-y-semantics`
+- Head: task claim published; implementation pending
+- Write set: production simulator, fastsim fallback, focused Y tests/report, and chatgpt_1 coordination paths
+- Last concrete progress UTC: 2026-08-02T12:11:00Z
+- Evidence: organizer-confirmed Y contract and a complete single-room reference implementation already exist in `split_probe.YMachine`; production `sim` still returns `bad-op`, and fastsim compiles `Y` as `OP_BAD`
+- Next checkpoint: land dynamic split population and simultaneous die-collision semantics in `sim.py`, then gate the flattened fast path to reference fallback
+- Blockers: full checkout is unavailable through direct network access; focused execution will reconstruct the exact changed files and archived fixtures locally
 - Submission controller: no; no contest mutation authorized or attempted
