@@ -20,7 +20,7 @@ TRIANGLES = SUBMISSIONS / "triangle"
 
 KNOWN_SERVER_REJECTIONS = [
     ("reverse-a-list/reverse_02.man", "shorter than 2 cells"),
-    ("reverse-a-list/reverse_03.man", "against its wall"),
+    ("reverse-a-list/reverse_03.man", "outward pipe starts"),
     ("sort/sort_05.man", "shorter than 2 cells"),
     ("triangle/triangle_03.man", "share 3 wall cell"),
 ]
