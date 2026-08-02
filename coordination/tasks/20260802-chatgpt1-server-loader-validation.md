@@ -20,6 +20,7 @@ The core simulator parser remains intentionally unchanged because the repository
 ## Exclusive write set
 
 - `src/littleman/server_compat.py`
+- `src/littleman/alexey_pipecheck.py` (documentation synchronization only)
 - `tests/test_server_compat.py`
 - `tests/test_server_compat_pipe_lengths.py`
 - `reports/2026-08-02-chatgpt1-server-loader-validation.md`
@@ -30,7 +31,6 @@ The core simulator parser remains intentionally unchanged because the repository
 ## Read-only dependencies
 
 - `src/littleman/sim.py`
-- `src/littleman/alexey_pipecheck.py`
 - `scripts/preflight.py`
 - preserved `.man` artifacts and submission responses
 
@@ -40,4 +40,5 @@ The core simulator parser remains intentionally unchanged because the repository
 2. The four preserved server-invalid layouts above raise `ServerCompatibilityError` through that entry point and through `validate_layout`.
 3. Known fixed successors (`reverse_01`, `sort_06`, `triangle_04`) remain accepted.
 4. Existing `find_shared_walls`, `validate_io_pipe_counts`, `validate_layout`, and judge APIs retain their public signatures.
-5. No contest-side mutation and no integration into `main` by chatgpt_1.
+5. The legacy narrow pipe-length checker no longer claims that `server_compat` omits the rule.
+6. No contest-side mutation and no integration into `main` by chatgpt_1.
