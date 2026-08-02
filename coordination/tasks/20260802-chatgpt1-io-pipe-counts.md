@@ -18,6 +18,7 @@ The evidence suggests the organizer counts outward-pointing pipe starts immediat
 ## Exclusive write set
 
 - `src/littleman/server_compat.py`
+- `tests/test_server_compat.py` (expected error wording only)
 - `tests/test_server_compat_io_pipes.py`
 - `reports/2026-08-02-chatgpt1-io-pipe-counts.md`
 - `coordination/status/chatgpt_1.md`
@@ -30,4 +31,5 @@ The evidence suggests the organizer counts outward-pointing pipe starts immediat
 2. It still rejects `reverse_03.man` and reports two outward starts against its input room.
 3. The existing accepted-artifact corpus remains accepted.
 4. `parse_server_compatible` and `validate_layout` inherit the corrected behavior.
-5. No contest-side mutation and no integration into `main` by chatgpt_1.
+5. The consolidated loader regression expects the corrected diagnostic.
+6. No contest-side mutation and no integration into `main` by chatgpt_1.
