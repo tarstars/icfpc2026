@@ -1,10 +1,11 @@
 # Task 20260802-chatgpt1-server-loader-validation
 
-- Status: active
+- Status: complete; handoff ready
 - Owner: chatgpt_1
 - Reviewer/integrator: repository maintainer
 - Base: `main` at branch creation
 - Branch: `agent/chatgpt-1-server-loader-validation`
+- Completed UTC: 2026-08-02T06:26:24Z
 
 ## Outcome
 
@@ -34,11 +35,13 @@ The core simulator parser remains intentionally unchanged because the repository
 - `scripts/preflight.py`
 - preserved `.man` artifacts and submission responses
 
-## Acceptance checks
+## Acceptance results
 
-1. A new `parse_server_compatible(text)` entry point returns a `Machine` for valid layouts.
-2. The four preserved server-invalid layouts above raise `ServerCompatibilityError` through that entry point and through `validate_layout`.
-3. Known fixed successors (`reverse_01`, `sort_06`, `triangle_04`) remain accepted.
-4. Existing `find_shared_walls`, `validate_io_pipe_counts`, `validate_layout`, and judge APIs retain their public signatures.
-5. The legacy narrow pipe-length checker no longer claims that `server_compat` omits the rule.
-6. No contest-side mutation and no integration into `main` by chatgpt_1.
+1. PASS — `parse_server_compatible(text)` returns the parsed `Machine` for valid layouts.
+2. PASS — all four preserved server-invalid layouts raise `ServerCompatibilityError` through both the parser-like entry point and `validate_layout`.
+3. PASS — `reverse_01`, `sort_06`, and `triangle_04` remain accepted; measured pipe lengths are `[2, 2, 2, 17]`, `[2, 3, 7, 17]`, and `[2, 2]`.
+4. PASS — existing public function signatures are retained.
+5. PASS — the legacy pipe-checker documentation now describes `validate_layout` as including the rule.
+6. PASS — no contest-side mutation and no code integration into `main` by chatgpt_1.
+
+Focused validation: exact changed files compiled; the new and expanded loader tests passed `13 passed, 1 deselected` in a local harness using the current room/pipe discovery routines and preserved artifacts. Full repository pytest was not available in this runtime; see the report for commands and limitations.
